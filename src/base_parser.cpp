@@ -25,7 +25,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "parser.h"
+#include "../include/parser.h"
 #include <queue>
 #include <stack>
 
@@ -396,7 +396,6 @@ namespace SMTLIBParser{
 
 		// (assert <expr>) or (assert <expr> [:id <symbol>])
 		if (command == "assert") {
-			size_t key_ln = line_number;
 			std::string grp_id = "";
 			KEYWORD key = attemptParseKeywords();
 			if(key == KEYWORD::KW_ID){
@@ -463,7 +462,6 @@ namespace SMTLIBParser{
 
 			// get returned type
 			std::shared_ptr<DAGNode> res = nullptr;
-			size_t type_ln = line_number;
 			std::shared_ptr<Sort> sort = parseSort();
 			res = mkVar(sort, name);
 
@@ -491,7 +489,6 @@ namespace SMTLIBParser{
 			std::shared_ptr<DAGNode> res = nullptr;
 			if(sort->isNull()){
 				// (declare-fun <symbol> () <sort>)
-				size_t type_ln = line_number;
 				sort = parseSort();
 				res = mkVar(sort, name);
 			}
@@ -515,7 +512,6 @@ namespace SMTLIBParser{
 		// (declare-sort <symbol> <numeral>)
 		if (command == "declare-sort") {
 			//get name
-			size_t name_ln = line_number;
 			std::string name = getSymbol();
 
 			//get numeral
@@ -550,7 +546,6 @@ namespace SMTLIBParser{
 			parseLpar();
 			std::vector<std::shared_ptr<DAGNode>> params;
 			std::vector<std::string> key_list;
-			int cnt = 0; // the index of paramters.
 			while(*bufptr!=')'){ // there are still (x Int) left.
 				// (x Int)
 				// ^
@@ -578,7 +573,6 @@ namespace SMTLIBParser{
 			parseRpar();
 
 			//get returned type
-			size_t type_ln = line_number;
 			std::shared_ptr<Sort> out_sort = parseSort();
 			std::shared_ptr<DAGNode> func_body = parseExpr();
 			std::shared_ptr<DAGNode> res = mkFuncDef(name, params, out_sort, func_body);

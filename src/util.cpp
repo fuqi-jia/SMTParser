@@ -395,7 +395,6 @@ namespace SMTLIBParser{
         assert(bv1[0] == '#' && bv1[1] == 'b');
         assert(bv2[0] == '#' && bv2[1] == 'b');
         bool isNeg1 = bv1[2] == '1';
-        bool isNeg2 = bv2[2] == '1';
         std::string res = SMTLIBParser::bvUrem(bv1, bv2);
         if(isNeg1){
             res = "b#" + SMTLIBParser::bvNot(res.substr(2, res.size() - 2));
@@ -407,7 +406,6 @@ namespace SMTLIBParser{
         assert(bv1[0] == '#' && bv1[1] == 'b');
         assert(bv2[0] == '#' && bv2[1] == 'b');
         bool isNeg1 = bv1[2] == '1';
-        bool isNeg2 = bv2[2] == '1';
         std::string res = SMTLIBParser::bvSrem(bv1, bv2);
         if(isNeg1){
             res = "b#" + SMTLIBParser::bvNot(res.substr(2, res.size() - 2));
@@ -533,6 +531,12 @@ namespace SMTLIBParser{
     std::string natToBv(const Integer& i, const Integer& n){
         std::string res = "#b";
         std::string bin = i.get_str(2);
+        if(bin.size() < n.get_ui()){
+            res += std::string(n.get_ui() - bin.size(), '0') + bin;
+        }
+        else{
+            res += bin.substr(bin.size() - n.get_ui(), n.get_ui());
+        }
         return res;
     }
 
@@ -557,8 +561,8 @@ namespace SMTLIBParser{
         if(i >= 0){
             std::string res = "#b0";
             std::string bin = i.get_str(2);
-            if(bin.size() < i.get_ui()){
-                res += std::string(i.get_ui() - bin.size(), '0') + bin;
+            if(bin.size() < n.get_ui()){
+                res += std::string(n.get_ui() - bin.size(), '0') + bin;
             }
             else{
                 res += bin.substr(bin.size() - i.get_ui(), i.get_ui());
@@ -569,8 +573,8 @@ namespace SMTLIBParser{
             std::string res = "#b1";
             Integer j = -i;
             std::string bin = j.get_str(2);
-            if(bin.size() < i.get_ui()){
-                res += std::string(i.get_ui() - bin.size(), '0') + bin;
+            if(bin.size() < n.get_ui()){
+                res += std::string(n.get_ui() - bin.size(), '0') + bin;
             }
             else{
                 res += bin.substr(bin.size() - i.get_ui(), i.get_ui());
@@ -583,22 +587,48 @@ namespace SMTLIBParser{
     std::string fpToUbv(const std::string& fp, const Integer& n){
         assert(fp[0] == '#' && fp[1] == 'x');
         std::string res = "";
-        if(fp[2] == '0'){
-            res = "b0" + fp.substr(3, fp.size() - 3);
+        bool isNeg = fp[2] == '1';
+        if(!isNeg){
+            res = fp.substr(3, fp.size() - 3);
         }
         else{
-            res = "b1" + fp.substr(3, fp.size() - 3);
+            res = fp.substr(3, fp.size() - 3);
+        }
+        if(res.size() < n.get_ui() - 1){
+            res = std::string(n.get_ui() - res.size() - 1, '0') + res;
+        }
+        else{
+            res = res.substr(res.size() - n.get_ui() + 1, n.get_ui() - 1);
+        }
+        if(isNeg){
+            res = "b1" + res;
+        }
+        else{
+            res = "b0" + res;
         }
         return res;
     }
     std::string fpToSbv(const std::string& fp, const Integer& n){
         assert(fp[0] == '#' && fp[1] == 'x');
         std::string res = "";
-        if(fp[2] == '0'){
-            res = "b0" + fp.substr(3, fp.size() - 3);
+        bool isNeg = fp[2] == '1';
+        if(!isNeg){
+            res = fp.substr(3, fp.size() - 3);
         }
         else{
             res = "b1" + fp.substr(3, fp.size() - 3);
+        }
+        if(res.size() < n.get_ui() - 1){
+            res = std::string(n.get_ui() - res.size() - 1, '0') + res;
+        }
+        else{
+            res = res.substr(res.size() - n.get_ui() + 1, n.get_ui() - 1);
+        }
+        if(isNeg){
+            res = "b1" + res;
+        }
+        else{
+            res = "b0" + res;
         }
         return res;
     }

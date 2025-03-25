@@ -25,7 +25,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "parser.h"
+#include "../include/parser.h"
 
 namespace SMTLIBParser{
     
@@ -232,7 +232,6 @@ namespace SMTLIBParser{
     }
 
     std::shared_ptr<Objective> Parser::parseMultiObj(const OPT_KIND& opt_type){
-        size_t key_ln = line_number;
         std::string grp_id = "";
         KEYWORD key = attemptParseKeywords();
         if(key == KEYWORD::KW_ID){

@@ -1,0 +1,66 @@
+# CMake 构建目录
+build/
+out/
+cmake-build-*/
+
+# IDE 配置文件
+.idea/
+.vscode/
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.suo
+*.user
+*.userosscache
+*.sdf
+*.opensdf
+*.VC.db
+*.VC.VC.opendb
+
+# 编译产物
+*.o
+*.obj
+*.exe
+*.out
+*.app
+*.dll
+*.so
+*.dylib
+*.lib
+*.a
+
+# 调试文件
+*.pdb
+*.ilk
+*.idb
+*.ipch
+
+# 临时文件
+*.swp
+*.swo
+*~
+*.bak
+*.tmp
+*.temp
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 日志文件
+*.log
+logs/
+log/
+
+# 依赖目录
+vcpkg_installed/
+conan.lock
+conanbuildinfo.txt
+conaninfo.txt
+
+# 其他
+*.cache
+*.cmake
+!CMakeLists.txt
+!cmake/*.cmake 

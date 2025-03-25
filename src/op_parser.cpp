@@ -25,7 +25,7 @@
 * DEALINGS IN THE SOFTWARE.
 */
 
-#include "parser.h"
+#include "../include/parser.h"
 #include <queue>
 #include <stack>
 

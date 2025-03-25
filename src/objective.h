@@ -163,8 +163,14 @@ namespace SMTLIBParser{
         // multi-objective
         // get the objective
         const std::shared_ptr<MetaObjective>& getObjective(const size_t& idx) const override{
-            static const std::shared_ptr<MetaObjective> nullPtr;
-            return nullPtr;
+            if(idx == 0){
+                static std::shared_ptr<MetaObjective> self = std::static_pointer_cast<MetaObjective>(std::shared_ptr<SingleObjective>(const_cast<SingleObjective*>(this)));
+                return self;
+            }
+            else{
+                static const std::shared_ptr<MetaObjective> nullPtr;
+                return nullPtr;
+            }
         }
         // get the size of the objectives
         size_t getObjectiveSize() const override{

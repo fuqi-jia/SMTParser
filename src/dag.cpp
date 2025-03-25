@@ -483,5 +483,6 @@ namespace SMTLIBParser{
         default:
             return "UNKNOWN_KIND";
         }
+        return res;
     }
 }
