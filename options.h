@@ -1,0 +1,135 @@
+/* -*- Header -*-
+ *
+ * The Option Class
+ *
+ * Author: Fuqi Jia <jiafq@ios.ac.cn>
+ *
+ * Copyright (C) 2025 Fuqi Jia
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ */
+#ifndef _OPTIONS_H
+#define _OPTIONS_H
+
+#include "kind.h"
+#include <boost/unordered_map.hpp>
+
+namespace SMTLIBParser{
+    class GlobalOptions {
+    public:
+        // ENUM_LOGIC logic = UNKNOWN_LOGIC;
+        std::string logic = "UNKNOWN_LOGIC";
+        bool check_sat = false;
+        bool get_assertions = false;
+        bool get_assignment = false;
+        // set-info
+        boost::unordered_map<std::string, std::string> info;
+        // get-info
+        boost::unordered_map<std::string, std::string> get_info;
+        bool get_model = false;
+        // set-option
+        boost::unordered_map<std::string, std::string> options;
+        // get-option
+        boost::unordered_map<std::string, std::string> get_options;
+        bool get_proof = false;
+        bool get_unsat_assumptions = false;
+        bool get_unsat_core = false;
+        // get-value
+        boost::unordered_map<std::string, std::string> values;
+
+        // get-objectives
+        bool get_objectives = false;
+        
+
+    public:
+        GlobalOptions() = default;
+        ~GlobalOptions() = default;
+
+        bool setLogic(const std::string& logic_name) {
+            if( logic_name == "QF_ABV" || 
+                logic_name == "QF_ABVFP" ||
+                logic_name == "QF_ABVFPLRA" ||
+                logic_name == "QF_ALIA" ||
+                logic_name == "QF_ANIA" ||
+                logic_name == "QF_AUFBV" ||
+                logic_name == "QF_AUFBVFP" ||
+                logic_name == "QF_AUFLIA" ||
+                logic_name == "QF_AUFNIA" ||
+                logic_name == "QF_AX" ||
+                logic_name == "QF_BV" ||
+                logic_name == "QF_BVFP" ||
+                logic_name == "QF_DT" ||
+                logic_name == "QF_BVFPLRA" ||
+                logic_name == "QF_FP" ||
+                logic_name == "QF_FPLRA" ||
+                logic_name == "QF_IDL" ||
+                logic_name == "QF_LIA" ||
+                logic_name == "QF_LIRA" ||
+                logic_name == "QF_LRA" ||
+                logic_name == "QF_NIA" ||
+                logic_name == "QF_NIRA" ||
+                logic_name == "QF_NRA" ||
+                logic_name == "QF_RDL" ||
+                logic_name == "QF_S" ||
+                logic_name == "QF_SLIA" ||
+                logic_name == "QF_SNIA" ||
+                logic_name == "QF_UF" ||
+                logic_name == "QF_UFBV" ||
+                logic_name == "QF_UFBVDT" ||
+                logic_name == "QF_UFDT" ||
+                logic_name == "QF_UFDTLIA" ||
+                logic_name == "QF_UFDTLIRA" ||
+                logic_name == "QF_UFDTNIA" ||
+                logic_name == "QF_UFFP" ||
+                logic_name == "QF_UFFPDTNIRA" ||
+                logic_name == "QF_UFIDL" ||
+                logic_name == "QF_UFLIA" ||
+                logic_name == "QF_UFLRA" ||
+                logic_name == "QF_UFNIA" ||
+                logic_name == "QF_UFNRA" ) {
+                    logic = logic_name;
+                    return true;
+                } else {
+                    logic = "UNKNOWN_LOGIC";
+                    return false;
+                }
+        }
+
+        void setOption(const std::string& key, const std::string& value) {
+            options[key] = value;
+        }
+
+        void setInfo(const std::string& key, const std::string& value) {
+            info[key] = value;
+        }
+
+        void getValue(const std::string& key, const std::string& value) {
+            values[key] = value;
+        }
+
+        void getInfo(const std::string& key, const std::string& value) {
+            get_info[key] = value;
+        }
+
+        void getOption(const std::string& key, const std::string& value) {
+            get_options[key] = value;
+        }
+    };
+}
+#endif // _OPTIONS_H
