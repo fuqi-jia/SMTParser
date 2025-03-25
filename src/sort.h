@@ -25,6 +25,9 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+#ifndef _SORT_H
+#define _SORT_H
+
 #include "kind.h"
 #include <vector>
 #include <string>
@@ -180,3 +183,4 @@ namespace SMTLIBParser{
     std::shared_ptr<Sort> mkFPSort(size_t exp, size_t sig);
     std::shared_ptr<Sort> mkArraySort(std::shared_ptr<Sort> index, std::shared_ptr<Sort> elem);
 }
+#endif
