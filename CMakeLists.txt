@@ -30,7 +30,7 @@ if(NOT GMP_FOUND)
 endif()
 
 # 设置库名称
-set(LIB_NAME "smtparser")
+set(LIB_NAME "smtlibparser")
 
 # 添加源文件
 set(SOURCES
