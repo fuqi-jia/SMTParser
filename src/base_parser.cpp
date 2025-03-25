@@ -52,8 +52,8 @@ namespace SMTLIBParser{
 	}
 
 	
-	void Parser::parse(const std::string& filename){
-		parseSmtlib2File(filename);
+	bool Parser::parse(const std::string& filename){
+		return parseSmtlib2File(filename);
 	}
 
 	Parser::Parser(const std::string& filename) {
@@ -317,7 +317,7 @@ namespace SMTLIBParser{
 	}
 
 	// parse smt-lib2 file
-	void Parser::parseSmtlib2File(const std::string filename) {
+	bool Parser::parseSmtlib2File(const std::string filename) {
 
 		/*
 		load file
@@ -362,6 +362,7 @@ namespace SMTLIBParser{
 		// constants.clear();
 		bufptr = nullptr;
 		delete[] buffer;
+		return true;
 	}
 
 	KEYWORD Parser::parseKeyword(){

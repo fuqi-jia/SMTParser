@@ -159,7 +159,7 @@ namespace SMTLIBParser{
         Parser(const std::string& filename);
         Parser();
         ~Parser();
-        void parse(const std::string& filename);
+        bool parse(const std::string& filename);
 
         // to solver
         std::vector<std::shared_ptr<DAGNode>> getAssertions() const;
@@ -453,7 +453,7 @@ namespace SMTLIBParser{
         
 
         // parse smt-lib2 file
-        void 	                 parseSmtlib2File(const std::string filename);
+        bool 	                 parseSmtlib2File(const std::string filename);
         // // // parse model file
         // void 	            parseModel(std::string filename, boost::unordered_map<std::string, vType>& recs);
 
