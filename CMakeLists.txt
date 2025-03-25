@@ -47,12 +47,12 @@ set(SOURCES
 # 定义公共头文件
 set(PUBLIC_HEADERS
     include/parser.h
-    src/dag.h
-    src/util.h
-    src/objective.h
-    src/kind.h
-    src/sort.h
-    src/options.h
+    include/dag.h
+    include/util.h
+    include/objective.h
+    include/kind.h
+    include/sort.h
+    include/options.h
 )
 
 # 创建include目录

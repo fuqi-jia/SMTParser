@@ -25,7 +25,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "kind.h"
+#include "../include/kind.h"
 
 namespace SMTLIBParser{
 

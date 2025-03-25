@@ -25,7 +25,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "util.h"
+#include "../include/util.h"
 #include <vector>
 #include <sstream>
 namespace SMTLIBParser{
