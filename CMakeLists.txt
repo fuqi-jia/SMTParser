@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.12)
-project(SMTParser CXX)
+project(SMTLIBParser CXX)
 
 # 设置CMake策略
 if(CMAKE_VERSION VERSION_GREATER "3.3")
