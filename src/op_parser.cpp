@@ -71,7 +71,7 @@ namespace SMTLIBParser{
         return sort;
     }
     std::shared_ptr<Sort> Parser::getSort(std::shared_ptr<DAGNode> param){
-        return getSort({param});
+        return param->getSort();
     }
     std::shared_ptr<Sort> Parser::getSort(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         return getSort({l, r});
