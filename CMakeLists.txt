@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 cmake_minimum_required(VERSION 2.8.12)
 project(SMTLIBParser CXX)
 
@@ -5,19 +6,14 @@ project(SMTLIBParser CXX)
 if(CMAKE_VERSION VERSION_GREATER "3.3")
     cmake_policy(SET CMP0063 NEW)
 endif()
+=======
+cmake_minimum_required(VERSION 3.10)
+project(SMTParser VERSION 1.0.0 LANGUAGES CXX)
+>>>>>>> parent of 7cca21c (Update CMakeLists.txt)
 
 # 设置C++标准
-if(CMAKE_VERSION VERSION_GREATER "3.1")
-    set(CMAKE_CXX_STANDARD 17)
-    set(CMAKE_CXX_STANDARD_REQUIRED ON)
-else()
-    if(MSVC)
-        add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
-    else()
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
-    endif()
-endif()
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # 添加选项：BUILD_SHARED_LIBS
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
@@ -34,18 +30,20 @@ else()
 endif()
 
 # 查找GMP库
-if(UNIX)
-    find_package(PkgConfig REQUIRED)
-    pkg_check_modules(GMP REQUIRED gmp)
-else()
-    # Windows下使用环境变量
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GMP REQUIRED gmp)
+
+if(NOT GMP_FOUND)
+    # 如果pkg-config找不到，尝试使用环境变量
     if(DEFINED ENV{GMP_DIR})
         set(GMP_INCLUDE_DIRS $ENV{GMP_DIR}/include)
         set(GMP_LIBRARY_DIRS $ENV{GMP_DIR}/lib)
         set(GMP_LIBRARIES gmp)
         set(GMP_FOUND TRUE)
     else()
-        message(FATAL_ERROR "GMP library not found. Please set GMP_DIR environment variable")
+        message(FATAL_ERROR "GMP library not found. Please install GMP and either:\n"
+                          "1. Install pkg-config and ensure GMP is properly installed\n"
+                          "2. Set GMP_DIR environment variable to point to GMP installation directory")
     endif()
 endif()
 
@@ -76,19 +74,11 @@ set(PUBLIC_HEADERS
 )
 
 # 创建include目录
-if(CMAKE_VERSION VERSION_GREATER "3.0")
-    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include)
-else()
-    file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/include")
-endif()
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include)
 
 # 复制头文件到构建目录
 foreach(header ${PUBLIC_HEADERS})
-    if(CMAKE_VERSION VERSION_GREATER "3.0")
-        file(COPY ${header} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/include)
-    else()
-        file(COPY "${header}" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/include")
-    endif()
+    file(COPY ${header} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/include)
 endforeach()
 
 # 添加头文件目录
@@ -103,45 +93,26 @@ set(INCLUDE_DIRS
 add_library(${LIB_NAME} ${SOURCES})
 
 # 设置库的属性
-if(CMAKE_VERSION VERSION_GREATER "3.0")
-    set_target_properties(${LIB_NAME} PROPERTIES
-        VERSION ${PROJECT_VERSION}
-        SOVERSION ${PROJECT_VERSION_MAJOR}
-        PUBLIC_HEADER "${PUBLIC_HEADERS}"
-        CXX_VISIBILITY_PRESET hidden
-        VISIBILITY_INLINES_HIDDEN YES
-    )
-else()
-    set_target_properties(${LIB_NAME} PROPERTIES
-        VERSION ${PROJECT_VERSION}
-        SOVERSION ${PROJECT_VERSION_MAJOR}
-        PUBLIC_HEADER "${PUBLIC_HEADERS}"
-    )
-endif()
+set_target_properties(${LIB_NAME} PROPERTIES
+    VERSION ${PROJECT_VERSION}
+    SOVERSION ${PROJECT_VERSION_MAJOR}
+    PUBLIC_HEADER ${PUBLIC_HEADERS}
+    CXX_VISIBILITY_PRESET hidden
+    VISIBILITY_INLINES_HIDDEN YES
+)
 
 # 设置包含目录
-if(CMAKE_VERSION VERSION_GREATER "3.0")
-    target_include_directories(${LIB_NAME}
-        PUBLIC
-            ${INCLUDE_DIRS}
-    )
-else()
-    include_directories(${INCLUDE_DIRS})
-endif()
+target_include_directories(${LIB_NAME}
+    PUBLIC
+        ${INCLUDE_DIRS}
+)
 
 # 链接依赖库
-if(CMAKE_VERSION VERSION_GREATER "3.0")
-    target_link_libraries(${LIB_NAME}
-        PUBLIC
-            ${Boost_LIBRARIES}
-            ${GMP_LIBRARIES}
-    )
-else()
-    target_link_libraries(${LIB_NAME}
+target_link_libraries(${LIB_NAME}
+    PUBLIC
         ${Boost_LIBRARIES}
         ${GMP_LIBRARIES}
-    )
-endif()
+)
 
 # 安装规则
 install(TARGETS ${LIB_NAME}
@@ -153,17 +124,9 @@ install(TARGETS ${LIB_NAME}
 
 # 添加编译选项
 if(MSVC)
-    if(CMAKE_VERSION VERSION_GREATER "3.0")
-        target_compile_options(${LIB_NAME} PRIVATE /W4)
-    else()
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
-    endif()
+    target_compile_options(${LIB_NAME} PRIVATE /W4)
 else()
-    if(CMAKE_VERSION VERSION_GREATER "3.0")
-        target_compile_options(${LIB_NAME} PRIVATE -Wall -Wextra -Wpedantic)
-    else()
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
-    endif()
+    target_compile_options(${LIB_NAME} PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
 # 设置输出目录
