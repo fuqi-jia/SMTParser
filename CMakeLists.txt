@@ -23,7 +23,15 @@ endif()
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 
 # 查找依赖包
-find_package(Boost REQUIRED COMPONENTS system)
+if(CMAKE_VERSION VERSION_GREATER "3.5")
+    find_package(Boost REQUIRED COMPONENTS system)
+else()
+    # 对于低版本CMake，使用更基础的查找方式
+    find_package(Boost REQUIRED)
+    if(NOT Boost_FOUND)
+        message(FATAL_ERROR "Boost library not found")
+    endif()
+endif()
 
 # 查找GMP库
 if(UNIX)
