@@ -1,15 +1,5 @@
-<<<<<<< HEAD
-cmake_minimum_required(VERSION 2.8.12)
-project(SMTLIBParser CXX)
-
-# 设置CMake策略
-if(CMAKE_VERSION VERSION_GREATER "3.3")
-    cmake_policy(SET CMP0063 NEW)
-endif()
-=======
 cmake_minimum_required(VERSION 3.10)
 project(SMTParser VERSION 1.0.0 LANGUAGES CXX)
->>>>>>> parent of 7cca21c (Update CMakeLists.txt)
 
 # 设置C++标准
 set(CMAKE_CXX_STANDARD 17)
@@ -19,15 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 
 # 查找依赖包
-if(CMAKE_VERSION VERSION_GREATER "3.5")
-    find_package(Boost REQUIRED COMPONENTS system)
-else()
-    # 对于低版本CMake，使用更基础的查找方式
-    find_package(Boost REQUIRED)
-    if(NOT Boost_FOUND)
-        message(FATAL_ERROR "Boost library not found")
-    endif()
-endif()
+find_package(Boost REQUIRED COMPONENTS system)
 
 # 查找GMP库
 find_package(PkgConfig REQUIRED)
