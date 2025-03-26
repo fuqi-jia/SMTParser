@@ -1869,6 +1869,15 @@ namespace SMTLIBParser{
 
 	
 	std::shared_ptr<DAGNode> Parser::substitute(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::string, std::shared_ptr<DAGNode>> &params){
+		boost::unordered_map<size_t, bool> visited;
+		return substitute(expr, params, visited);
+	}
+	// visited is used to avoid infinite loop
+	std::shared_ptr<DAGNode> Parser::substitute(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::string, std::shared_ptr<DAGNode>> &params, boost::unordered_map<size_t, bool> & visited){
+		if(visited.find(expr->hashCode()) != visited.end()){
+			return expr;
+		}
+		visited[expr->hashCode()] = true;
 		if(expr->isVar() && params.find(expr->getName()) != params.end()){
 			return params[expr->getName()];
 		}
@@ -1878,11 +1887,12 @@ namespace SMTLIBParser{
 		else{
 			std::vector<std::shared_ptr<DAGNode>> record;
 			for(size_t i=0;i<expr->getChildrenSize();i++){
-				record.emplace_back(substitute(expr->getChild(i), params));
+				record.emplace_back(substitute(expr->getChild(i), params, visited));
 			}
 			return mkOper(expr->getSort(), expr->getKind(), record);
 		}
 	}
+
 
 
 	// aux functions
