@@ -137,7 +137,7 @@ namespace SMTLIBParser{
         bool isConst() 				const { return kind == NODE_KIND::NT_CONST || kind == NODE_KIND::NT_CONST_TRUE || kind == NODE_KIND::NT_CONST_FALSE; };
         bool isCInt()       		const { return isConst() && (sort->isInt() || sort->isIntOrReal()); };
         bool isCRat()               const { return isConst() && (sort->isRat() || sort->isIntOrReal()); };
-        bool isCReal()      		const { return isConst() && !isPi() && !isE() && (sort->isReal() || sort->isIntOrReal()); };
+        bool isCReal()      		const { return isConst() && !isPi() && !isE() && (sort->isReal() || sort->isRat() || sort->isIntOrReal()); };
         bool isCBV()        		const { return isConst() && sort->isBv(); };
         bool isCFP()        		const { return isConst() && sort->isFp(); };
         bool isCStr()       		const { return isConst() && sort->isStr(); };
@@ -454,6 +454,9 @@ namespace SMTLIBParser{
         // convert to real
         Real toReal() const {
             assert(isCReal());
+            if(isCRat()){
+                return Real(toRat());
+            }
             return Real(name);
         }
         // convert to rational
