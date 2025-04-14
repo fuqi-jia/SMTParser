@@ -751,14 +751,17 @@ namespace SMTLIBParser{
             return new_params[0];
         }
         else{
-            if(sort->isInt() && IntSum != 0){
+            if(sort->isInt()){
                 new_params.emplace_back(mkConstInt(IntSum));
             }
-            else if(sort->isReal() && RealSum != 0.0){
-                new_params.emplace_back(mkConstReal(RealSum));
+            else if(sort->isReal()){
+                if(IntSum != 0) new_params.emplace_back(mkConstInt(IntSum));
+                if(RealSum != 0.0) new_params.emplace_back(mkConstReal(RealSum));
+                if(RatSum != 0) new_params.emplace_back(mkConstRat(RatSum));
             }
-            else if(sort->isRat() && RatSum != 0){
-                new_params.emplace_back(mkConstRat(RatSum));
+            else if(sort->isRat()){
+                if(RatSum != 0) new_params.emplace_back(mkConstRat(RatSum));
+                if(IntSum != 0) new_params.emplace_back(mkConstInt(IntSum));
             }
             return mkOper(sort, NODE_KIND::NT_ADD, new_params);
         }
@@ -822,12 +825,27 @@ namespace SMTLIBParser{
                 }
             }
             else if(sort->isReal()){
+                if(IntProd == 0) return mkConstInt("0");
+                else if(IntProd != 1){
+                    new_params.emplace_back(mkConstInt(IntProd));
+                }
+
                 if(RealProd == 0.0) return mkConstReal("0");
                 else if(RealProd != 1.0){
                     new_params.emplace_back(mkConstReal(RealProd));
                 }
+
+                if(RatProd == 0) return mkConstReal("0");
+                else if(RatProd != 1){
+                    new_params.emplace_back(mkConstRat(RatProd));
+                }
             }
             else if(sort->isRat()){
+                if(IntProd == 0) return mkConstReal("0");
+                else if(IntProd != 1){
+                    new_params.emplace_back(mkConstInt(IntProd));
+                }
+
                 if(RatProd == 0) return mkConstReal("0");
                 else if(RatProd != 1){
                     new_params.emplace_back(mkConstRat(RatProd));
