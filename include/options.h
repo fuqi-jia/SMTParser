@@ -55,6 +55,7 @@ namespace SMTLIBParser{
 
         // get-objectives
         bool get_objectives = false;
+
         
 
     public:
@@ -130,6 +131,16 @@ namespace SMTLIBParser{
         void getOption(const std::string& key, const std::string& value) {
             get_options[key] = value;
         }
+
+        
+        // logic checking
+        bool isIntTheory() const {
+            return logic.find("I") != std::string::npos;
+        }
+        bool isRealTheory() const {
+            return logic.find("R") != std::string::npos;
+        }
+        
     };
 }
 #endif // _OPTIONS_H

@@ -64,10 +64,7 @@ namespace SMTLIBParser{
                 break;
             }
         }
-        // all constant
-        if(sort == nullptr){
-            sort = params[0]->getSort();
-        }
+        // all constant -> nullptr
         return sort;
     }
     std::shared_ptr<Sort> Parser::getSort(std::shared_ptr<DAGNode> param){
@@ -254,7 +251,7 @@ namespace SMTLIBParser{
 
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(!params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             if(params[i]->isTrue()){
                 // x = true => x
                 continue;
@@ -331,7 +328,7 @@ namespace SMTLIBParser{
 
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(!params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             if(params[i]->isFalse()){
                 // x != False => x
                 continue;
@@ -711,57 +708,45 @@ namespace SMTLIBParser{
 
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
-        Integer IntSum = 0;
-        Real RealSum = 0.0;
-        Rational RatSum = 0;
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(!params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
-            if(params[i]->isCInt()){
-                IntSum += params[i]->toInt();
-            }
-            else if(params[i]->isCReal()){
-                RealSum += params[i]->toReal();
-            }
-            else if(params[i]->isCRat()){
-                RatSum += params[i]->toRat();
+            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(params[i]->isZero()){
+                continue;
             }
             else{
                 new_params.emplace_back(params[i]);
             }
         }
 
+        // checking
         if(new_params.size() == 0){
             // all 0 constant
-            if(sort->isInt()){
-                return mkConstInt(IntSum);
+            if(options->isRealTheory()){
+                return mkConstReal("0");
             }
-            else if(sort->isReal()){
-                return mkConstReal(RealSum);
-            }
-            else if(sort->isRat()){
-                return mkConstRat(RatSum);
+            else if(options->isIntTheory()){
+                return mkConstInt("0");
             }
             else{
                 return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             }
         }
-        else if(new_params.size() == 1 && (IntSum == 0 && RealSum == 0.0)){
+        else if(new_params.size() == 1){
             // only one uncertain param
             return new_params[0];
         }
         else{
-            if(sort->isInt()){
-                new_params.emplace_back(mkConstInt(IntSum));
-            }
-            else if(sort->isReal()){
-                if(IntSum != 0) new_params.emplace_back(mkConstInt(IntSum));
-                if(RealSum != 0.0) new_params.emplace_back(mkConstReal(RealSum));
-                if(RatSum != 0) new_params.emplace_back(mkConstRat(RatSum));
-            }
-            else if(sort->isRat()){
-                if(RatSum != 0) new_params.emplace_back(mkConstRat(RatSum));
-                if(IntSum != 0) new_params.emplace_back(mkConstInt(IntSum));
+            if(sort == nullptr){
+                if(options->isRealTheory()){
+                    sort = REAL_SORT;
+                }
+                else if(options->isIntTheory()){
+                    sort = INT_SORT;
+                }
+                else{
+                    return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+                }
             }
             return mkOper(sort, NODE_KIND::NT_ADD, new_params);
         }
@@ -778,20 +763,19 @@ namespace SMTLIBParser{
 
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
-        Integer IntProd = 1;
-        Real RealProd = 1.0;
-        Rational RatProd = 1;
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(!params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
-            if(params[i]->isCInt()){
-                IntProd *= params[i]->toInt();
+            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(params[i]->isZero()){
+                if(options->isIntTheory()){
+                    return mkConstInt("0");
+                }
+                else if(options->isRealTheory()){
+                    return mkConstReal("0");
+                }
             }
-            else if(params[i]->isCReal()){
-                RealProd *= params[i]->toReal();
-            }
-            else if(params[i]->isCRat()){
-                RatProd *= params[i]->toRat();
+            else if(params[i]->isOne()){
+                continue;
             }
             else{
                 new_params.emplace_back(params[i]);
@@ -800,55 +784,30 @@ namespace SMTLIBParser{
 
         if(new_params.size() == 0){
             // all 1 constant
-            if(sort->isInt()){
-                return mkConstInt(IntProd);
+            if(options->isIntTheory()){
+                return mkConstInt("1");
             }
-            else if(sort->isReal()){
-                return mkConstReal(RealProd);
-            }
-            else if(sort->isRat()){
-                return mkConstRat(RatProd);
+            else if(options->isRealTheory()){
+                return mkConstReal("1");
             }
             else{
                 return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             }
         }
-        else if(new_params.size() == 1 && (IntProd == 1 && RealProd == 1.0)){
+        else if(new_params.size() == 1){
             // only one uncertain param
             return new_params[0];
         }
         else{
-            if(sort->isInt()){
-                if(IntProd == 0) return mkConstInt("0");
-                else if(IntProd != 1){
-                    new_params.emplace_back(mkConstInt(IntProd));
+            if(sort == nullptr){
+                if(options->isRealTheory()){
+                    sort = REAL_SORT;
                 }
-            }
-            else if(sort->isReal()){
-                if(IntProd == 0) return mkConstInt("0");
-                else if(IntProd != 1){
-                    new_params.emplace_back(mkConstInt(IntProd));
+                else if(options->isIntTheory()){
+                    sort = INT_SORT;
                 }
-
-                if(RealProd == 0.0) return mkConstReal("0");
-                else if(RealProd != 1.0){
-                    new_params.emplace_back(mkConstReal(RealProd));
-                }
-
-                if(RatProd == 0) return mkConstReal("0");
-                else if(RatProd != 1){
-                    new_params.emplace_back(mkConstRat(RatProd));
-                }
-            }
-            else if(sort->isRat()){
-                if(IntProd == 0) return mkConstReal("0");
-                else if(IntProd != 1){
-                    new_params.emplace_back(mkConstInt(IntProd));
-                }
-
-                if(RatProd == 0) return mkConstReal("0");
-                else if(RatProd != 1){
-                    new_params.emplace_back(mkConstRat(RatProd));
+                else{
+                    return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
                 }
             }
             return mkOper(sort, NODE_KIND::NT_MUL, new_params);
@@ -868,9 +827,21 @@ namespace SMTLIBParser{
         std::vector<std::shared_ptr<DAGNode>> new_params;
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(!params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
             new_params.emplace_back(params[i]);
+        }
+
+        if(sort == nullptr){
+            if(options->isRealTheory()){
+                sort = REAL_SORT;
+            }
+            else if(options->isIntTheory()){
+                sort = INT_SORT;
+            }
+            else{
+                return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            }
         }
 
         return mkOper(sort, NODE_KIND::NT_IAND, new_params);
@@ -906,10 +877,20 @@ namespace SMTLIBParser{
         // (- a b c)
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(!params[i]->getSort()->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !params[i]->getSort()->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             new_params.emplace_back(params[i]);
         }
-
+        if(sort == nullptr){
+            if(options->isRealTheory()){
+                sort = REAL_SORT;
+            }
+            else if(options->isIntTheory()){
+                sort = INT_SORT;
+            }
+            else{
+                return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            }
+        }
         return mkOper(sort, NODE_KIND::NT_SUB, new_params);
     }
     /*
@@ -1433,7 +1414,7 @@ namespace SMTLIBParser{
         // pair-wise comparison: (<= a b c d) <=> (and (<= a b) (<= b c) (<= c d))
         for(size_t i=0;i<params.size() - 1;i++){
             if(params[i]->isErr()) return params[i];
-            if(!params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             std::shared_ptr<DAGNode> le = mkLe(params[i], params[i + 1]);
             if(le->isErr()) return le;
             new_params.emplace_back(le);
@@ -1454,7 +1435,7 @@ namespace SMTLIBParser{
         // pair-wise comparison: (< a b c d) <=> (and (< a b) (< b c) (< c d))
         for(size_t i=0;i<params.size() - 1;i++){
             if(params[i]->isErr()) return params[i];
-            if(!params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             std::shared_ptr<DAGNode> lt = mkLt(params[i], params[i + 1]);
             if(lt->isErr()) return lt;
             new_params.emplace_back(lt);
@@ -1475,7 +1456,7 @@ namespace SMTLIBParser{
         // pair-wise comparison: (>= a b c d) <=> (and (>= a b) (>= b c) (>= c d))
         for(size_t i=0;i<params.size() - 1;i++){
             if(params[i]->isErr()) return params[i];
-            if(!params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             std::shared_ptr<DAGNode> ge = mkGe(params[i], params[i + 1]);
             if(ge->isErr()) return ge;
             new_params.emplace_back(ge);
@@ -1496,7 +1477,7 @@ namespace SMTLIBParser{
         // pair-wise comparison: (> a b c d) <=> (and (> a b) (> b c) (> c d))
         for(size_t i=0;i<params.size() - 1;i++){
             if(params[i]->isErr()) return params[i];
-            if(!params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             std::shared_ptr<DAGNode> gt = mkGt(params[i], params[i + 1]);
             if(gt->isErr()) return gt;
             new_params.emplace_back(gt);
@@ -1681,7 +1662,7 @@ namespace SMTLIBParser{
 
         for(size_t i=0;i<params.size() - 1;i++){
             if(params[i]->isErr()) return params[i];
-            if(!params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             new_params.emplace_back(params[i]);
         }
 
@@ -1715,8 +1696,12 @@ namespace SMTLIBParser{
 
         for(size_t i=0;i<params.size() - 1;i++){
             if(params[i]->isErr()) return params[i];
-            if(!params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             new_params.emplace_back(params[i]);
+        }
+
+        if(sort == nullptr){
+            sort = new_params[0]->getSort();
         }
 
         return mkOper(sort, NODE_KIND::NT_BV_OR, new_params);
@@ -1744,8 +1729,12 @@ namespace SMTLIBParser{
 
         for(size_t i=0;i<params.size() - 1;i++){
             if(params[i]->isErr()) return params[i];
-            if(!params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             new_params.emplace_back(params[i]);
+        }
+
+        if(sort == nullptr){
+            sort = new_params[0]->getSort();
         }
 
         return mkOper(sort, NODE_KIND::NT_BV_XOR, new_params);
@@ -1775,8 +1764,12 @@ namespace SMTLIBParser{
 
         for(size_t i=0;i<params.size() - 1;i++){
             if(params[i]->isErr()) return params[i];
-            if(!params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             new_params.emplace_back(params[i]);
+        }
+
+        if(sort == nullptr){
+            sort = new_params[0]->getSort();
         }
 
         return mkOper(sort, NODE_KIND::NT_BV_NAND, new_params);
@@ -1806,8 +1799,12 @@ namespace SMTLIBParser{
 
         for(size_t i=0;i<params.size() - 1;i++){
             if(params[i]->isErr()) return params[i];
-            if(!params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             new_params.emplace_back(params[i]);
+        }
+
+        if(sort == nullptr){
+            sort = new_params[0]->getSort();
         }
 
         return mkOper(sort, NODE_KIND::NT_BV_NOR, new_params);
@@ -1837,8 +1834,12 @@ namespace SMTLIBParser{
 
         for(size_t i=0;i<params.size() - 1;i++){
             if(params[i]->isErr()) return params[i];
-            if(!params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             new_params.emplace_back(params[i]);
+        }
+
+        if(sort == nullptr){
+            sort = new_params[0]->getSort();
         }
 
         return mkOper(sort, NODE_KIND::NT_BV_XNOR, new_params);
@@ -1890,8 +1891,12 @@ namespace SMTLIBParser{
 
         for(size_t i=0;i<params.size() - 1;i++){
             if(params[i]->isErr()) return params[i];
-            if(!params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             new_params.emplace_back(params[i]);
+        }
+
+        if(sort == nullptr){
+            sort = new_params[0]->getSort();
         }
 
         return mkOper(sort, NODE_KIND::NT_BV_ADD, new_params);
@@ -1920,8 +1925,12 @@ namespace SMTLIBParser{
 
         for(size_t i=0;i<params.size() - 1;i++){
             if(params[i]->isErr()) return params[i];
-            if(!params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             new_params.emplace_back(params[i]);
+        }
+
+        if(sort == nullptr){
+            sort = new_params[0]->getSort();
         }
 
         return mkOper(sort, NODE_KIND::NT_BV_SUB, new_params);
@@ -1950,8 +1959,12 @@ namespace SMTLIBParser{
 
         for(size_t i=0;i<params.size() - 1;i++){
             if(params[i]->isErr()) return params[i];
-            if(!params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             new_params.emplace_back(params[i]);
+        }
+
+        if(sort == nullptr){
+            sort = new_params[0]->getSort();
         }
 
         return mkOper(sort, NODE_KIND::NT_BV_MUL, new_params);
@@ -2072,7 +2085,7 @@ namespace SMTLIBParser{
         size_t width = 0;
         for(size_t i=0;i<params.size() - 1;i++){
             if(params[i]->isErr()) return params[i];
-            if(!params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             width += params[i]->getSort()->getBitWidth();
             new_params.emplace_back(params[i]);
         }
@@ -2340,8 +2353,12 @@ namespace SMTLIBParser{
 
         for(size_t i=0;i<params.size() - 1;i++){
             if(params[i]->isErr()) return params[i];
-            if(!params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             new_params.emplace_back(params[i]);
+        }
+
+        if(sort == nullptr){
+            sort = new_params[0]->getSort();
         }
 
         return mkOper(sort, NODE_KIND::NT_FP_ADD, new_params);
@@ -2356,8 +2373,12 @@ namespace SMTLIBParser{
 
         for(size_t i=0;i<params.size() - 1;i++){
             if(params[i]->isErr()) return params[i];
-            if(!params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             new_params.emplace_back(params[i]);
+        }
+
+        if(sort == nullptr){
+            sort = new_params[0]->getSort();
         }
 
         return mkOper(sort, NODE_KIND::NT_FP_SUB, new_params);
@@ -2372,8 +2393,12 @@ namespace SMTLIBParser{
 
         for(size_t i=0;i<params.size() - 1;i++){
             if(params[i]->isErr()) return params[i];
-            if(!params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             new_params.emplace_back(params[i]);
+        }
+
+        if(sort == nullptr){
+            sort = new_params[0]->getSort();
         }
 
         return mkOper(sort, NODE_KIND::NT_FP_MUL, new_params);
@@ -2388,8 +2413,12 @@ namespace SMTLIBParser{
 
         for(size_t i=0;i<params.size() - 1;i++){
             if(params[i]->isErr()) return params[i];
-            if(!params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             new_params.emplace_back(params[i]);
+        }
+
+        if(sort == nullptr){
+            sort = new_params[0]->getSort();
         }
 
         return mkOper(sort, NODE_KIND::NT_FP_DIV, new_params);
@@ -2431,8 +2460,12 @@ namespace SMTLIBParser{
 
         for(size_t i=0;i<params.size() - 2;i++){
             if(params[i]->isErr()) return params[i];
-            if(!params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             new_params.emplace_back(params[i]);
+        }
+
+        if(sort == nullptr){
+            sort = new_params[0]->getSort();
         }
 
         return mkOper(sort, NODE_KIND::NT_FP_FMA, new_params);
@@ -2465,8 +2498,12 @@ namespace SMTLIBParser{
 
         for(size_t i=0;i<params.size() - 1;i++){
             if(params[i]->isErr()) return params[i];
-            if(!params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             new_params.emplace_back(params[i]);
+        }
+
+        if(sort == nullptr){
+            sort = new_params[0]->getSort();
         }
 
         return mkOper(sort, NODE_KIND::NT_FP_MIN, new_params);
@@ -2481,8 +2518,12 @@ namespace SMTLIBParser{
 
         for(size_t i=0;i<params.size() - 1;i++){
             if(params[i]->isErr()) return params[i];
-            if(!params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             new_params.emplace_back(params[i]);
+        }
+
+        if(sort == nullptr){
+            sort = new_params[0]->getSort();
         }
 
         return mkOper(sort, NODE_KIND::NT_FP_MAX, new_params);

@@ -465,6 +465,34 @@ namespace SMTLIBParser{
             return Rational(name);
         }
 
+        // check if it is zero
+        bool isZero() const {
+            if(isCInt()){
+                return toInt() == 0;
+            }
+            else if(isCReal()){
+                return toReal() == 0.0;
+            }
+            else if(isCRat()){
+                return toRat() == 0;
+            }
+            return false;
+        }
+
+        // check if it is one
+        bool isOne() const {
+            if(isCInt()){
+                return toInt() == 1;
+            }
+            else if(isCReal()){
+                return toReal() == 1.0;
+            }
+            else if(isCRat()){
+                return toRat() == 1;
+            }
+            return false;
+        }
+
 
         // is really equal to another node
         bool isEquivalentTo(const DAGNode& other) const {
