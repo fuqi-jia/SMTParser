@@ -498,6 +498,9 @@ namespace SMTLIBParser{
         // additional functions
         std::shared_ptr<DAGNode>            substitute(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::string, std::shared_ptr<DAGNode>> &params);
         std::shared_ptr<DAGNode>            substitute(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::string, std::shared_ptr<DAGNode>> &params, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> & visited);
+        // apply function
+        std::shared_ptr<DAGNode>	        applyFun(std::shared_ptr<DAGNode> fun, const std::vector<std::shared_ptr<DAGNode>> & params);
+        std::shared_ptr<DAGNode>	        applyFunPostOrder(std::shared_ptr<DAGNode> fun, std::vector<std::shared_ptr<DAGNode>>& record, boost::unordered_map<std::string, std::shared_ptr<DAGNode>> &params);
 
     private:
         // parse smt-lib2 file
@@ -521,8 +524,6 @@ namespace SMTLIBParser{
         // auxilary functions
         std::shared_ptr<DAGNode>	        bindLetVar(const std::string &key, std::shared_ptr<DAGNode> expr);
         std::shared_ptr<DAGNode>	        bindFunVar(const std::string &key, std::shared_ptr<DAGNode> expr);
-        std::shared_ptr<DAGNode>	        applyFun(std::shared_ptr<DAGNode> fun, const std::vector<std::shared_ptr<DAGNode>> & params);
-        std::shared_ptr<DAGNode>	        applyFunPostOrder(std::shared_ptr<DAGNode> fun, std::vector<std::shared_ptr<DAGNode>>& record, boost::unordered_map<std::string, std::shared_ptr<DAGNode>> &params);
         //errors & warnings
         // mk errror node
         std::shared_ptr<DAGNode>	        mkErr(const ERROR_TYPE t);
