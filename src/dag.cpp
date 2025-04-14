@@ -95,7 +95,14 @@ namespace SMTLIBParser{
     }
 
     std::string dumpConst(const std::string& name, const std::shared_ptr<Sort>& sort){
-        if(sort->isReal()){}
+        if(sort->isReal()){
+            if(name[0] == '-'){
+                return "(- " + name.substr(1) + ")";
+            }
+            else{
+                return name;
+            }
+        }
         else if(sort->isRat()){
             size_t pos = name.find("/");
             if(pos == std::string::npos){
@@ -103,9 +110,30 @@ namespace SMTLIBParser{
             }
             std::string num = name.substr(0, pos);
             std::string den = name.substr(pos+1);
-            return "(/ " + num + " " + den + ")";
+            bool is_neg = false;
+            if(num[0] == '-'){
+                is_neg = true;
+                num = num.substr(1);
+            }
+            if(den[0] == '-'){
+                is_neg = !is_neg;
+                den = den.substr(1);
+            }
+            if(is_neg){
+                return "(/ (- " + num + ") " + den + ")";
+            }
+            else{
+                return "(/ " + num + " " + den + ")";
+            }
         }
-        else if(sort->isInt()){}
+        else if(sort->isInt()){
+            if(name[0] == '-'){
+                return "(- " + name.substr(1) + ")";
+            }
+            else{
+                return name;
+            }
+        }
         else if(sort->isBool()){}
         else if(sort->isBv()){}
         else if(sort->isFp()){}
