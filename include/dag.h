@@ -481,7 +481,14 @@ namespace SMTLIBParser{
         }
 
         std::string hashString() const {
-            return sha256(sort->toString() + "__" + kindToString(kind) + "__" + name + "__" + std::to_string(children.size()));
+            std::string children_hash = "__";
+            for(auto& child : children){    
+                children_hash += child->hashString() + "__";
+            }
+            if(children.size() == 0){
+                children_hash = "";
+            }
+            return sha256(sort->toString() + "__" + kindToString(kind) + "__" + name + "__" + std::to_string(children.size()) + "__" + children_hash);
         }
 
         std::size_t hashCode() const{

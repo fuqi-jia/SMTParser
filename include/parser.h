@@ -497,7 +497,7 @@ namespace SMTLIBParser{
         
         // additional functions
         std::shared_ptr<DAGNode>            substitute(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::string, std::shared_ptr<DAGNode>> &params);
-        std::shared_ptr<DAGNode>            substitute(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::string, std::shared_ptr<DAGNode>> &params, boost::unordered_map<size_t, bool> & visited);
+        std::shared_ptr<DAGNode>            substitute(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::string, std::shared_ptr<DAGNode>> &params, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> & visited);
 
     private:
         // parse smt-lib2 file

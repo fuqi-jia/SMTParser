@@ -1869,15 +1869,14 @@ namespace SMTLIBParser{
 
 	
 	std::shared_ptr<DAGNode> Parser::substitute(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::string, std::shared_ptr<DAGNode>> &params){
-		boost::unordered_map<size_t, bool> visited;
+		boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> visited;
 		return substitute(expr, params, visited);
 	}
 	// visited is used to avoid infinite loop
-	std::shared_ptr<DAGNode> Parser::substitute(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::string, std::shared_ptr<DAGNode>> &params, boost::unordered_map<size_t, bool> & visited){
-		if(visited.find(expr->hashCode()) != visited.end()){
-			return expr;
+	std::shared_ptr<DAGNode> Parser::substitute(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::string, std::shared_ptr<DAGNode>> &params, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> & visited){
+		if( visited.find(expr) != visited.end()){
+			return visited[expr];
 		}
-		visited[expr->hashCode()] = true;
 		if(expr->isVar() && params.find(expr->getName()) != params.end()){
 			return params[expr->getName()];
 		}
