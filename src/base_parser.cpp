@@ -153,7 +153,7 @@ namespace SMTLIBParser{
 				}
 				else if (*bufptr == ';' || *bufptr == '|' || *bufptr == '"' || *bufptr == '(' || *bufptr == ')') {
 
-					// out of symbol mode bu ';', '|', '(', and ')'
+					// out of symbol mode by ';', '|', '(', and ')'
 					std::string tmp_s(beg, bufptr - beg);
 					return tmp_s;
 
