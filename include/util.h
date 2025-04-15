@@ -157,6 +157,16 @@ namespace SMTLIBParser{
     
         // Function to process the input string and return the hash
         std::string process(const std::string &input) {
+            // Handle empty input
+            if (input.empty()) {
+                // Process a single block with just padding
+                std::vector<uint8_t> data(64, 0);
+                data[0] = 0x80; // Append 1 bit
+                data[63] = 0;   // Message length is 0
+                processBlock(data.data());
+                return toHexString();
+            }
+
             // Step 1: Padding the input
             std::vector<uint8_t> data = padInput(input);
     
