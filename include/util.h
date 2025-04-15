@@ -202,16 +202,14 @@ namespace SMTLIBParser{
     
         // Process a 512-bit block of data (64 bytes)
         void processBlock(const uint8_t *block) {
-            uint32_t w[64] = {0};  // 初始化数组为0
+            uint32_t w[64];
             
             // Break the block into 16 32-bit words
             for (int i = 0; i < 16; i++) {
-                if (block + i * 4 + 3 < block + 64) {  // 确保不会越界访问
-                    w[i] = (block[i * 4] << 24) |
-                           (block[i * 4 + 1] << 16) |
-                           (block[i * 4 + 2] << 8) |
-                           (block[i * 4 + 3]);
-                }
+                w[i] = (block[i * 4] << 24) |
+                       (block[i * 4 + 1] << 16) |
+                       (block[i * 4 + 2] << 8) |
+                       (block[i * 4 + 3]);
             }
     
             // Extend the 16 words into 64 words
