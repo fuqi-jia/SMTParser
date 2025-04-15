@@ -104,32 +104,30 @@ namespace SMTLIBParser{
 
         // print the sort
         std::string toString() const {
-            std::string res = "";
             switch (kind) {
-                case SORT_KIND::SK_BOOL: res = "Bool"; break;
-                case SORT_KIND::SK_INT: res = "Int"; break;
-                case SORT_KIND::SK_REAL: res = "Real"; break;
+                case SORT_KIND::SK_BOOL: return "Bool";
+                case SORT_KIND::SK_INT: return "Int";
+                case SORT_KIND::SK_REAL: return "Real";
                 case SORT_KIND::SK_BV:
-                    res = "(_ BitVec " + std::to_string(children[0]->arity) + ")"; break;
+                    return "(_ BitVec " + std::to_string(children[0]->arity) + ")";
                 case SORT_KIND::SK_FP:
-                    res = "(_ FloatingPoint " + std::to_string(children[0]->arity) + " " + std::to_string(children[1]->arity) + ")"; break;
-                case SORT_KIND::SK_STR: res = "String"; break;
-                case SORT_KIND::SK_ARRAY: res = "(Array " + children[0]->toString() + " " + children[1]->toString() + ")"; break;
-                case SORT_KIND::SK_DATATYPE: res = "Datatype"; break;
-                case SORT_KIND::SK_SET: res = "Set"; break;
-                case SORT_KIND::SK_RELATION: res = "Relation"; break;
-                case SORT_KIND::SK_BAG: res = "Bag"; break;
-                case SORT_KIND::SK_SEQ: res = "Sequence"; break;
-                case SORT_KIND::SK_UF: res = "UF"; break;
-                case SORT_KIND::SK_REG: res = "RegLan"; break;
-                case SORT_KIND::SK_EXT: res = "ExtReal"; break;
-                case SORT_KIND::SK_RAT: res = "Rational"; break;
-                case SORT_KIND::SK_NAT: res = "Natural"; break;
-                case SORT_KIND::SK_RAND: res = "Random"; break;
-                case SORT_KIND::SK_INTOREAL: res = "IntOrReal"; break;
-                default: res = "Unknown"; break;
+                    return "(_ FloatingPoint " + std::to_string(children[0]->arity) + " " + std::to_string(children[1]->arity) + ")";
+                case SORT_KIND::SK_STR: return "String";
+                case SORT_KIND::SK_ARRAY: return "(Array " + children[0]->toString() + " " + children[1]->toString() + ")";
+                case SORT_KIND::SK_DATATYPE: return "Datatype";
+                case SORT_KIND::SK_SET: return "Set";
+                case SORT_KIND::SK_RELATION: return "Relation";
+                case SORT_KIND::SK_BAG: return "Bag";
+                case SORT_KIND::SK_SEQ: return "Sequence";
+                case SORT_KIND::SK_UF: return "UF";
+                case SORT_KIND::SK_REG: return "RegLan";
+                case SORT_KIND::SK_EXT: return "ExtReal";
+                case SORT_KIND::SK_RAT: return "Rational";
+                case SORT_KIND::SK_NAT: return "Natural";
+                case SORT_KIND::SK_RAND: return "Random";
+                case SORT_KIND::SK_INTOREAL: return "IntOrReal";
+                default: return "Unknown";
             }
-            return res;
         }
 
         size_t getBitWidth() const {
