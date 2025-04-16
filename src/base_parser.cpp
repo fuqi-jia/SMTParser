@@ -1793,7 +1793,7 @@ namespace SMTLIBParser{
 			}
 			else{
 				std::shared_ptr<DAGNode> res = nullptr;
-				if(*bufptr == '('){
+				if(*bufptr == ')'){
 					res = std::make_shared<DAGNode>(params[0]->getSort(), NODE_KIND::NT_LET, "let", params);
 				}
 				else{
