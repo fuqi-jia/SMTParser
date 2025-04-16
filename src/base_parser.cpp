@@ -1704,6 +1704,15 @@ namespace SMTLIBParser{
 
 	}
 
+	// struct for let context
+	struct LetContext {
+		std::vector<std::shared_ptr<DAGNode>> params;
+		std::vector<std::string> key_list;
+		int nesting_level;
+		bool is_complete;
+		
+		LetContext(int level = 0) : nesting_level(level), is_complete(false) {}
+	};
 	/*
 	keybinding ::= (<symbol> expr)
 	(let (<keybinding>+) expr), return expr
@@ -1712,10 +1721,10 @@ namespace SMTLIBParser{
 		// This function uses an iterative approach instead of recursion to handle nested let expressions
 		
 		// Create a stack to store parsing states and contexts
-		std::vector<std::pair<std::vector<std::shared_ptr<DAGNode>>, std::vector<std::string>>> stateStack;
+		std::vector<LetContext> stateStack;
 		
 		// Push initial state onto the stack
-		stateStack.push_back({std::vector<std::shared_ptr<DAGNode>>(), std::vector<std::string>()});
+		stateStack.push_back(LetContext(0));
 		
 		// Enter the initial "("
 		parseLpar();
@@ -1726,71 +1735,81 @@ namespace SMTLIBParser{
 			auto &params = currentState.first;
 			auto &key_list = currentState.second;
 			
-			// Parse the current let bindings
-			while (*bufptr != ')') {
-				// Process binding expression (<symbol> expr)
-				parseLpar();
-				
-				size_t name_ln = line_number;
-				std::string name = getSymbol();
-				
-				// Check for duplicate key bindings
-				if (let_key_map.find(name) != let_key_map.end()) {
-					// Clean up all variable bindings in the state stack
-					for (auto &state : stateStack) {
-						for (const auto &key : state.second) {
-							let_key_map.erase(key);
+			if(!currentState.is_complete){
+				// Parse the current let bindings
+				while (*bufptr != ')') {
+					// Process binding expression (<symbol> expr)
+					parseLpar();
+					
+					size_t name_ln = line_number;
+					std::string name = getSymbol();
+					
+					// Check for duplicate key bindings
+					if (let_key_map.find(name) != let_key_map.end()) {
+						// Clean up all variable bindings in the state stack
+						for (auto &state : stateStack) {
+							for (const auto &key : state.second) {
+								let_key_map.erase(key);
+							}
 						}
+						return mkErr(ERROR_TYPE::ERR_MUL_DECL);
 					}
-					return mkErr(ERROR_TYPE::ERR_MUL_DECL);
+					
+					// Parse the expression value (this won't trigger recursive let parsing)
+					std::shared_ptr<DAGNode> expr = parseExpr();
+					
+					if (expr->isErr()) {
+						// Clean up all variable bindings in the state stack
+						for (auto &state : stateStack) {
+							for (const auto &key : state.second) {
+								let_key_map.erase(key);
+							}
+						}
+						err_all(expr, name, name_ln);
+					}
+					
+					// Add the binding
+					let_key_map.insert(std::pair<std::string, std::shared_ptr<DAGNode>>(name, expr));
+					params.emplace_back(expr);
+					key_list.emplace_back(name);
+					
+					parseRpar();
 				}
 				
-				// Parse the expression value (this won't trigger recursive let parsing)
-				std::shared_ptr<DAGNode> expr = parseExpr();
-				
-				if (expr->isErr()) {
-					// Clean up all variable bindings in the state stack
-					for (auto &state : stateStack) {
-						for (const auto &key : state.second) {
-							let_key_map.erase(key);
-						}
-					}
-					err_all(expr, name, name_ln);
-				}
-				
-				// Add the binding
-				let_key_map.insert(std::pair<std::string, std::shared_ptr<DAGNode>>(name, expr));
-				params.emplace_back(expr);
-				key_list.emplace_back(name);
-				
+				// Finished parsing all bindings for the current let, handle the closing parenthesis
 				parseRpar();
 			}
-			
-			// Finished parsing all bindings for the current let, handle the closing parenthesis
-			parseRpar();
 			
 			// Process the body of the let expression
 			if (*bufptr == '(' && peek_symbol() == "let") {
 				// If the body is another let expression, we don't recursively call parseLet
 				// Instead, push it as a new state onto the stack
 				parseLpar();  // Consume '('
-				getSymbol();  // Consume "let"
+				std::string let_key = getSymbol();  // Consume "let"
+				assert(let_key == "let");
 				parseLpar();  // Consume the second let expression's starting '('
 				
-				stateStack.push_back({std::vector<std::shared_ptr<DAGNode>>(), std::vector<std::string>()});
-			} else if (*bufptr == ')') {
-
-				// create let node
-				std::shared_ptr<DAGNode> res = std::make_shared<DAGNode>(params[0]->getSort(), NODE_KIND::NT_LET, "let", params);
+				stateStack.push_back(LetContext(currentState.nesting_level + 1));
+			}
+			else{
+				std::shared_ptr<DAGNode> res = nullptr;
+				if(*bufptr == '('){
+					res = std::make_shared<DAGNode>(params[0]->getSort(), NODE_KIND::NT_LET, "let", params);
+				}
+				else{
+					std::shared_ptr<DAGNode> expr = parseExpr();
+					params.insert(params.begin(), expr);
+					res = std::make_shared<DAGNode>(expr->getSort(), NODE_KIND::NT_LET, "let", params);
+				}
 
 				// Remove all variable bindings for the current state
 				for (const auto &key : key_list) {
 					let_key_map.erase(key);
 				}
-				
+
 				// State processing complete, pop from stack
 				stateStack.pop_back();
-				
+
 				// If stack is empty, return the result; otherwise, use the result as the body of the parent let
 				if (stateStack.empty()) {
 					return res;
@@ -1799,32 +1818,8 @@ namespace SMTLIBParser{
 					// Consume the closing parenthesis
 					parseRpar();
 					// Use the result as the body of the parent let
-					stateStack.back().first.insert(stateStack.back().first.begin(), res);
-				}
-			} else {
-				// Body is a regular expression, parse it directly
-				std::shared_ptr<DAGNode> expr = parseExpr();
-				
-				// Insert the body expression at the beginning of the parameters list
-				params.insert(params.begin(), expr);
-				
-				// Create the let node
-				std::shared_ptr<DAGNode> res = std::make_shared<DAGNode>(expr->getSort(), NODE_KIND::NT_LET, "let", params);
-
-				// Remove all variable bindings for the current state
-				for (const auto &key : key_list) {
-					let_key_map.erase(key);
-				}
-				
-				// State processing complete, pop from stack
-				stateStack.pop_back();
-
-				// If stack is empty, return the result; otherwise, use the result as the body of the parent let
-				if (stateStack.empty()) {
-					return res;
-				} else {
-					// Use the result as the body of the parent let
-					stateStack.back().first.insert(stateStack.back().first.begin(), res);
+					stateStack.back().params.insert(stateStack.back().params.begin(), res);
+					stateStack.back().is_complete = true;
 				}
 			}
 		}
