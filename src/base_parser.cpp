@@ -1709,34 +1709,34 @@ namespace SMTLIBParser{
 	(let (<keybinding>+) expr), return expr
 	*/
 	std::shared_ptr<DAGNode> Parser::parseLet() {
-		// 这个函数采用迭代方式替代原来的递归方式来处理嵌套的let表达式
+		// This function uses an iterative approach instead of recursion to handle nested let expressions
 		
-		// 创建栈来存储解析状态和上下文
+		// Create a stack to store parsing states and contexts
 		std::vector<std::pair<std::vector<std::shared_ptr<DAGNode>>, std::vector<std::string>>> stateStack;
 		
-		// 初始状态入栈
+		// Push initial state onto the stack
 		stateStack.push_back({std::vector<std::shared_ptr<DAGNode>>(), std::vector<std::string>()});
 		
-		// 进入初始的"("
+		// Enter the initial "("
 		parseLpar();
 		
-		// 主循环，处理所有嵌套的let
+		// Main loop to handle all nested let expressions
 		while (!stateStack.empty()) {
 			auto &currentState = stateStack.back();
 			auto &params = currentState.first;
 			auto &key_list = currentState.second;
 			
-			// 解析当前let的绑定
+			// Parse the current let bindings
 			while (*bufptr != ')') {
-				// 处理绑定表达式 (<symbol> expr)
+				// Process binding expression (<symbol> expr)
 				parseLpar();
 				
 				size_t name_ln = line_number;
 				std::string name = getSymbol();
 				
-				// 检查是否有重复的key绑定
+				// Check for duplicate key bindings
 				if (let_key_map.find(name) != let_key_map.end()) {
-					// 清理所有状态栈中的变量绑定
+					// Clean up all variable bindings in the state stack
 					for (auto &state : stateStack) {
 						for (const auto &key : state.second) {
 							let_key_map.erase(key);
@@ -1745,11 +1745,11 @@ namespace SMTLIBParser{
 					return mkErr(ERROR_TYPE::ERR_MUL_DECL);
 				}
 				
-				// 解析表达式值（这里不会触发递归的let解析）
+				// Parse the expression value (this won't trigger recursive let parsing)
 				std::shared_ptr<DAGNode> expr = parseExpr();
 				
 				if (expr->isErr()) {
-					// 清理所有状态栈中的变量绑定
+					// Clean up all variable bindings in the state stack
 					for (auto &state : stateStack) {
 						for (const auto &key : state.second) {
 							let_key_map.erase(key);
@@ -1758,7 +1758,7 @@ namespace SMTLIBParser{
 					err_all(expr, name, name_ln);
 				}
 				
-				// 添加绑定
+				// Add the binding
 				let_key_map.insert(std::pair<std::string, std::shared_ptr<DAGNode>>(name, expr));
 				params.emplace_back(expr);
 				key_list.emplace_back(name);
@@ -1766,51 +1766,52 @@ namespace SMTLIBParser{
 				parseRpar();
 			}
 			
-			// 解析完当前let的所有绑定，处理闭括号
+			// Finished parsing all bindings for the current let, handle the closing parenthesis
 			parseRpar();
 			
-			// 处理let表达式的主体部分
+			// Process the body of the let expression
 			if (*bufptr == '(' && peek_symbol() == "let") {
-				// 如果主体是另一个let表达式，我们不递归调用parseLet，而是将其作为新状态入栈
-				parseLpar();  // 消费'('
-				getSymbol();  // 消费"let"
-				parseLpar();  // 消费第二个let表达式的开始'('
+				// If the body is another let expression, we don't recursively call parseLet
+				// Instead, push it as a new state onto the stack
+				parseLpar();  // Consume '('
+				getSymbol();  // Consume "let"
+				parseLpar();  // Consume the second let expression's starting '('
 				
 				stateStack.push_back({std::vector<std::shared_ptr<DAGNode>>(), std::vector<std::string>()});
 			} else {
-				// 主体是普通表达式，直接解析
+				// Body is a regular expression, parse it directly
 				std::shared_ptr<DAGNode> expr = parseExpr();
 				
-				// 将主体表达式插入到参数列表的开头
+				// Insert the body expression at the beginning of the parameters list
 				params.insert(params.begin(), expr);
 				
-				// 创建let节点
+				// Create the let node
 				std::shared_ptr<DAGNode> res = std::make_shared<DAGNode>(expr->getSort(), NODE_KIND::NT_LET, "let", params);
 				
-				// 移除当前状态的所有变量绑定
+				// Remove all variable bindings for the current state
 				for (const auto &key : key_list) {
 					let_key_map.erase(key);
 				}
 				
-				// 状态处理完成，弹出栈
+				// State processing complete, pop from stack
 				stateStack.pop_back();
 				
-				// 如果栈为空，返回结果；否则，将结果作为上一级let的主体
+				// If stack is empty, return the result; otherwise, use the result as the body of the parent let
 				if (stateStack.empty()) {
 					return res;
 				} else {
-					// 将结果作为上一级let的主体
+					// Use the result as the body of the parent let
 					stateStack.back().first.insert(stateStack.back().first.begin(), res);
 					stateStack.pop_back();
 				}
 			}
 		}
 		
-		// 应该不会到这里，但为了安全添加
+		// Should not reach here, but added for safety
 		return mkErr(ERROR_TYPE::ERR_UNEXP_EOF);
 	}
 
-	// 添加一个辅助函数来预览下一个符号，不消耗输入
+	// Helper function to preview the next symbol without consuming input
 	std::string Parser::peek_symbol() {
 		char *save_bufptr = bufptr;
 		SCAN_MODE save_mode = scan_mode;
@@ -1825,7 +1826,7 @@ namespace SMTLIBParser{
 			symbol = getSymbol();
 		}
 		
-		// 恢复状态
+		// Restore state
 		bufptr = save_bufptr;
 		scan_mode = save_mode;
 		line_number = save_line;

@@ -509,6 +509,7 @@ namespace SMTLIBParser{
         void		                    parseLpar();
         void 		                    parseRpar();
         void		                    skipToRpar();
+        std::string                     peek_symbol();
 
 
         CMD_TYPE	                            parseCommand();
@@ -552,7 +553,6 @@ namespace SMTLIBParser{
 
         void 		warn_cmd_nsup(const std::string nm, const size_t ln) const;
 
-        std::string                             peek_symbol();
 
     };
 }
