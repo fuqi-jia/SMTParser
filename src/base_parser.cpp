@@ -1732,8 +1732,8 @@ namespace SMTLIBParser{
 		// Main loop to handle all nested let expressions
 		while (!stateStack.empty()) {
 			auto &currentState = stateStack.back();
-			auto &params = currentState.first;
-			auto &key_list = currentState.second;
+			auto &params = currentState.params;
+			auto &key_list = currentState.key_list;
 			
 			if(!currentState.is_complete){
 				// Parse the current let bindings
@@ -1748,7 +1748,7 @@ namespace SMTLIBParser{
 					if (let_key_map.find(name) != let_key_map.end()) {
 						// Clean up all variable bindings in the state stack
 						for (auto &state : stateStack) {
-							for (const auto &key : state.second) {
+							for (const auto &key : state.key_list) {
 								let_key_map.erase(key);
 							}
 						}
@@ -1761,7 +1761,7 @@ namespace SMTLIBParser{
 					if (expr->isErr()) {
 						// Clean up all variable bindings in the state stack
 						for (auto &state : stateStack) {
-							for (const auto &key : state.second) {
+							for (const auto &key : state.key_list) {
 								let_key_map.erase(key);
 							}
 						}
