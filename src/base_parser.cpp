@@ -1778,6 +1778,30 @@ namespace SMTLIBParser{
 				parseLpar();  // Consume the second let expression's starting '('
 				
 				stateStack.push_back({std::vector<std::shared_ptr<DAGNode>>(), std::vector<std::string>()});
+			} else if (*bufptr == ')') {
+
+				// create let node
+				std::shared_ptr<DAGNode> res = std::make_shared<DAGNode>(params[0]->getSort(), NODE_KIND::NT_LET, "let", params);
+
+				// Remove all variable bindings for the current state
+				for (const auto &key : key_list) {
+					let_key_map.erase(key);
+				}
+				
+				// State processing complete, pop from stack
+				stateStack.pop_back();
+				
+				
+				// If stack is empty, return the result; otherwise, use the result as the body of the parent let
+				if (stateStack.empty()) {
+					return res;
+				}
+				else{
+					// Consume the closing parenthesis
+					parseRpar();
+					// Use the result as the body of the parent let
+					stateStack.back().first.insert(stateStack.back().first.begin(), res);
+				}
 			} else {
 				// Body is a regular expression, parse it directly
 				std::shared_ptr<DAGNode> expr = parseExpr();
@@ -1787,7 +1811,7 @@ namespace SMTLIBParser{
 				
 				// Create the let node
 				std::shared_ptr<DAGNode> res = std::make_shared<DAGNode>(expr->getSort(), NODE_KIND::NT_LET, "let", params);
-				
+
 				// Remove all variable bindings for the current state
 				for (const auto &key : key_list) {
 					let_key_map.erase(key);
@@ -1795,14 +1819,16 @@ namespace SMTLIBParser{
 				
 				// State processing complete, pop from stack
 				stateStack.pop_back();
+
 				
 				// If stack is empty, return the result; otherwise, use the result as the body of the parent let
 				if (stateStack.empty()) {
 					return res;
 				} else {
+					// consume the closing parenthesis
+					parseRpar();
 					// Use the result as the body of the parent let
 					stateStack.back().first.insert(stateStack.back().first.begin(), res);
-					stateStack.pop_back();
 				}
 			}
 		}
