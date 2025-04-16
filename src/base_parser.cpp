@@ -1791,7 +1791,6 @@ namespace SMTLIBParser{
 				// State processing complete, pop from stack
 				stateStack.pop_back();
 				
-				
 				// If stack is empty, return the result; otherwise, use the result as the body of the parent let
 				if (stateStack.empty()) {
 					return res;
@@ -1820,13 +1819,10 @@ namespace SMTLIBParser{
 				// State processing complete, pop from stack
 				stateStack.pop_back();
 
-				
 				// If stack is empty, return the result; otherwise, use the result as the body of the parent let
 				if (stateStack.empty()) {
 					return res;
 				} else {
-					// consume the closing parenthesis
-					parseRpar();
 					// Use the result as the body of the parent let
 					stateStack.back().first.insert(stateStack.back().first.begin(), res);
 				}
