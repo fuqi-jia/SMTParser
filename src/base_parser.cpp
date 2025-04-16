@@ -1709,56 +1709,128 @@ namespace SMTLIBParser{
 	(let (<keybinding>+) expr), return expr
 	*/
 	std::shared_ptr<DAGNode> Parser::parseLet() {
-
+		// 这个函数采用迭代方式替代原来的递归方式来处理嵌套的let表达式
+		
+		// 创建栈来存储解析状态和上下文
+		std::vector<std::pair<std::vector<std::shared_ptr<DAGNode>>, std::vector<std::string>>> stateStack;
+		
+		// 初始状态入栈
+		stateStack.push_back({std::vector<std::shared_ptr<DAGNode>>(), std::vector<std::string>()});
+		
+		// 进入初始的"("
 		parseLpar();
-
-		// 2021.08.29: function like parser.
-		// let -> children[0]: expr, children[1, ..., k]: keybinding[1, ..., k].
-		std::vector<std::shared_ptr<DAGNode>> params;
-		// parse key bindings
-		std::vector<std::string> key_list;
-		while (*bufptr != ')') {
-
-			//(<symbol> expr)
-			parseLpar();
-
-			size_t name_ln = line_number;
-			std::string name = getSymbol();
-			// TODO! now we use an variable to represent the let 
-			std::shared_ptr<DAGNode> expr = parseExpr();
-			// e.g. ?v_0 -> children[0] = (+ 1 x)
-			if(let_key_map.find(name) != let_key_map.end()){
-				// multiple key bindings
-				return mkErr(ERROR_TYPE::ERR_MUL_DECL);
-			}
-			else{
+		
+		// 主循环，处理所有嵌套的let
+		while (!stateStack.empty()) {
+			auto &currentState = stateStack.back();
+			auto &params = currentState.first;
+			auto &key_list = currentState.second;
+			
+			// 解析当前let的绑定
+			while (*bufptr != ')') {
+				// 处理绑定表达式 (<symbol> expr)
+				parseLpar();
+				
+				size_t name_ln = line_number;
+				std::string name = getSymbol();
+				
+				// 检查是否有重复的key绑定
+				if (let_key_map.find(name) != let_key_map.end()) {
+					// 清理所有状态栈中的变量绑定
+					for (auto &state : stateStack) {
+						for (const auto &key : state.second) {
+							let_key_map.erase(key);
+						}
+					}
+					return mkErr(ERROR_TYPE::ERR_MUL_DECL);
+				}
+				
+				// 解析表达式值（这里不会触发递归的let解析）
+				std::shared_ptr<DAGNode> expr = parseExpr();
+				
+				if (expr->isErr()) {
+					// 清理所有状态栈中的变量绑定
+					for (auto &state : stateStack) {
+						for (const auto &key : state.second) {
+							let_key_map.erase(key);
+						}
+					}
+					err_all(expr, name, name_ln);
+				}
+				
+				// 添加绑定
 				let_key_map.insert(std::pair<std::string, std::shared_ptr<DAGNode>>(name, expr));
+				params.emplace_back(expr);
+				key_list.emplace_back(name);
+				
+				parseRpar();
 			}
-			params.emplace_back(expr);
-			if (expr->isErr()) err_all(expr, name, name_ln);
-
+			
+			// 解析完当前let的所有绑定，处理闭括号
 			parseRpar();
-
-			//new key
-			key_list.emplace_back(name);
+			
+			// 处理let表达式的主体部分
+			if (*bufptr == '(' && peek_symbol() == "let") {
+				// 如果主体是另一个let表达式，我们不递归调用parseLet，而是将其作为新状态入栈
+				parseLpar();  // 消费'('
+				getSymbol();  // 消费"let"
+				parseLpar();  // 消费第二个let表达式的开始'('
+				
+				stateStack.push_back({std::vector<std::shared_ptr<DAGNode>>(), std::vector<std::string>()});
+			} else {
+				// 主体是普通表达式，直接解析
+				std::shared_ptr<DAGNode> expr = parseExpr();
+				
+				// 将主体表达式插入到参数列表的开头
+				params.insert(params.begin(), expr);
+				
+				// 创建let节点
+				std::shared_ptr<DAGNode> res = std::make_shared<DAGNode>(expr->getSort(), NODE_KIND::NT_LET, "let", params);
+				
+				// 移除当前状态的所有变量绑定
+				for (const auto &key : key_list) {
+					let_key_map.erase(key);
+				}
+				
+				// 状态处理完成，弹出栈
+				stateStack.pop_back();
+				
+				// 如果栈为空，返回结果；否则，将结果作为上一级let的主体
+				if (stateStack.empty()) {
+					return res;
+				} else {
+					// 将结果作为上一级let的主体
+					stateStack.back().first.insert(stateStack.back().first.begin(), res);
+					stateStack.pop_back();
+				}
+			}
 		}
+		
+		// 应该不会到这里，但为了安全添加
+		return mkErr(ERROR_TYPE::ERR_UNEXP_EOF);
+	}
 
-		parseRpar();
-
-		//parse let right expression
-		std::shared_ptr<DAGNode> expr = parseExpr();
-
-		// it will insert into params's front.
-		params.insert(params.begin(), expr);
-		std::shared_ptr<DAGNode> res = std::make_shared<DAGNode>(expr->getSort(), NODE_KIND::NT_LET, "let", params);
-
-		//remove key bindings: for let uses local variables. 
-		while (key_list.size() > 0) {
-			let_key_map.erase(key_list.back());
-			key_list.pop_back();
+	// 添加一个辅助函数来预览下一个符号，不消耗输入
+	std::string Parser::peek_symbol() {
+		char *save_bufptr = bufptr;
+		SCAN_MODE save_mode = scan_mode;
+		size_t save_line = line_number;
+		
+		std::string symbol;
+		if (*bufptr == '(') {
+			bufptr++;
+			scanToNextSymbol();
+			symbol = getSymbol();
+		} else {
+			symbol = getSymbol();
 		}
-
-		return res;
+		
+		// 恢复状态
+		bufptr = save_bufptr;
+		scan_mode = save_mode;
+		line_number = save_line;
+		
+		return symbol;
 	}
 
 	std::shared_ptr<DAGNode> Parser::applyFun(std::shared_ptr<DAGNode> fun, const std::vector<std::shared_ptr<DAGNode>> & params){

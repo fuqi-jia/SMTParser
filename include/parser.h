@@ -552,6 +552,8 @@ namespace SMTLIBParser{
 
         void 		warn_cmd_nsup(const std::string nm, const size_t ln) const;
 
+        std::string                             peek_symbol();
+
     };
 }
 #endif
