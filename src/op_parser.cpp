@@ -401,7 +401,7 @@ namespace SMTLIBParser{
         else{
             sort = sort_key_map[sort_key_name];
         }
-        std::string bv_v = natToBv(Integer(v), width);
+        std::string bv_v = natToBv(v, width);
         return mkConst(sort, bv_v);
     }
     std::shared_ptr<DAGNode> Parser::mkConstFp(const std::string &v, const size_t& e, const size_t& s){

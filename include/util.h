@@ -60,6 +60,7 @@ namespace SMTLIBParser{
 
     std::string bvToNat(const std::string& bv);
     std::string natToBv(const Integer& i, const Integer& n);
+    std::string natToBv(const std::string& i, const Integer& n);
     std::string bvToInt(const std::string& bv);
     std::string intToBv(const Integer& i, const Integer& n);
 

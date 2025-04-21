@@ -533,7 +533,14 @@ namespace SMTLIBParser{
         }
         return res;
     }
-
+    std::string natToBv(const std::string& i, const Integer& n){
+        if(i.size() > 2 && i[0] == '#' && i[1] == 'b'){
+            return i;
+        }
+        else{
+            return natToBv(Integer(i), n);
+        }
+    }
     std::string bvToInt(const std::string& bv){
         assert(bv[0] == '#' && bv[1] == 'b');
         if(bv[2] == '0'){
