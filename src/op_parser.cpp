@@ -2086,7 +2086,8 @@ namespace SMTLIBParser{
         size_t width = 0;
         for(size_t i=0;i<params.size() - 1;i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            // no need to check equal sort
+            if(sort != nullptr) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             width += params[i]->getSort()->getBitWidth();
             new_params.emplace_back(params[i]);
         }
@@ -2107,7 +2108,10 @@ namespace SMTLIBParser{
             return mkConstBv(bvExtract(l->toString(), r->toInt(), s->toInt()), size.get_ui());
         }
 
-        return mkOper(l->getSort(), NODE_KIND::NT_BV_EXTRACT, l, r, s);
+        size_t width = r->toInt().get_ui() - s->toInt().get_ui() + 1;
+        std::shared_ptr<Sort> new_sort = mkBVSort(width);
+
+        return mkOper(new_sort, NODE_KIND::NT_BV_EXTRACT, l, r, s);
     }
     /*
     (bvrepeat Bv Int), return Bv
@@ -2138,7 +2142,10 @@ namespace SMTLIBParser{
             return mkConstBv(bvZeroExtend(l->toString(), r->toInt()), size.get_ui());
         }
 
-        return mkOper(l->getSort(), NODE_KIND::NT_BV_ZERO_EXT, l, r);
+        size_t width = l->getSort()->getBitWidth() + r->toInt().get_ui();
+        std::shared_ptr<Sort> new_sort = mkBVSort(width);
+
+        return mkOper(new_sort, NODE_KIND::NT_BV_ZERO_EXT, l, r);
     }
     /*
     (bvsign_extend Bv Int), return Bv
@@ -2152,7 +2159,10 @@ namespace SMTLIBParser{
             return mkConstBv(bvSignExtend(l->toString(), r->toInt()), size.get_ui());
         }
 
-        return mkOper(l->getSort(), NODE_KIND::NT_BV_SIGN_EXT, l, r);
+        size_t width = l->getSort()->getBitWidth() + r->toInt().get_ui();
+        std::shared_ptr<Sort> new_sort = mkBVSort(width);
+
+        return mkOper(new_sort, NODE_KIND::NT_BV_SIGN_EXT, l, r);
     }
     /*
     (bvrotate_left Bv Int), return Bv
@@ -2165,7 +2175,10 @@ namespace SMTLIBParser{
             return mkConstBv(bvRotateLeft(l->toString(), r->toInt()), l->getSort()->getBitWidth());
         }
 
-        return mkOper(l->getSort(), NODE_KIND::NT_BV_ROTATE_LEFT, l, r);
+        size_t width = l->getSort()->getBitWidth();
+        std::shared_ptr<Sort> new_sort = mkBVSort(width);
+
+        return mkOper(new_sort, NODE_KIND::NT_BV_ROTATE_LEFT, l, r);
     }
     /*
     (bvrotate_right Bv Int), return Bv
@@ -2178,7 +2191,10 @@ namespace SMTLIBParser{
             return mkConstBv(bvRotateRight(l->toString(), r->toInt()), l->getSort()->getBitWidth());
         }
 
-        return mkOper(l->getSort(), NODE_KIND::NT_BV_ROTATE_RIGHT, l, r);
+        size_t width = l->getSort()->getBitWidth();
+        std::shared_ptr<Sort> new_sort = mkBVSort(width);
+
+        return mkOper(new_sort, NODE_KIND::NT_BV_ROTATE_RIGHT, l, r);
     }
     // BITVECTOR COMP
     /*
