@@ -325,14 +325,18 @@ namespace SMTLIBParser{
         // Function
         case NODE_KIND::NT_BV_CONCAT:
             return dumpChainOp(kind, children);
-        case NODE_KIND::NT_BV_EXTRACT:
-            return dumpTripleOp(kind, children[0], children[1], children[2]);
+        case NODE_KIND::NT_BV_EXTRACT:{
+            std::string res = "((_ extract " + children[1]->dumpSMTLIB2() + " " + children[2]->dumpSMTLIB2() + ") " + children[0]->dumpSMTLIB2() + ")";
+            return res;
+        }
         case NODE_KIND::NT_BV_REPEAT:
         case NODE_KIND::NT_BV_ZERO_EXT:
         case NODE_KIND::NT_BV_SIGN_EXT:
         case NODE_KIND::NT_BV_ROTATE_LEFT:
-        case NODE_KIND::NT_BV_ROTATE_RIGHT:
-            return dumpDoubleOp(kind, children[0], children[1]);
+        case NODE_KIND::NT_BV_ROTATE_RIGHT:{
+            std::string res = "((_ " + kindToString(kind) + " " + children[1]->dumpSMTLIB2() + ") " + children[0]->dumpSMTLIB2() + ")";
+            return res;
+        }
         // BITVECTOR COMP
         case NODE_KIND::NT_BV_ULT:
         case NODE_KIND::NT_BV_ULE:
