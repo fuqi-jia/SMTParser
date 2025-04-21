@@ -483,28 +483,22 @@ namespace SMTLIBParser{
 			// (declare-fun <symbol> (<sort>*) <sort>)
 			//                       ^
 			parseLpar();
-			std::shared_ptr<Sort> sort = nullptr;
-			if(peekSymbol() == ")"){
-				sort = NULL_SORT;
-			}
-			else{
-				sort = parseSort();
-			}
 			// (declare-fun <symbol> (<sort>*) <sort>)
 			//                               ^
-			parseRpar();
 			std::shared_ptr<DAGNode> res = nullptr;
-			if(sort->isNull()){
+			if(peekSymbol() == ")"){
 				// (declare-fun <symbol> () <sort>)
-				sort = parseSort();
-				res = mkVar(sort, name);
+				parseRpar();
+				std::shared_ptr<Sort> out_sort = parseSort();
+				res = mkVar(out_sort, name);
 			}
 			else{
 				// (declare-fun <symbol> (<sort>+) <sort>)
 				std::vector<std::shared_ptr<Sort>> params;
-				while(*bufptr!=')'){
+				while(peekSymbol() != ")"){
 					params.emplace_back(parseSort());
 				}
+				parseRpar();
 				std::shared_ptr<Sort> out_sort = parseSort();
 				res = mkFuncDec(name, params, out_sort);
 			}
