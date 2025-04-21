@@ -927,670 +927,695 @@ namespace SMTLIBParser{
 			return expr;
 		}
 
-		//(<identifier> <expr>+)
+		// (<identifier> <expr>+)
+		// ((_ f args) <expr>+)
 		parseLpar();
-
-		size_t expr_ln = line_number;
-		std::string s = getSymbol();
-
-		//parse identifier and get params
 		std::shared_ptr<DAGNode> expr = nullptr;
-		if(s == "_"){
-			// ( _ <identifier> <expr>+)
-			//     ^
+		size_t expr_ln = line_number;
+		if(*bufptr == '('){
+			parseLpar();
+			// ((_ f args) <expr>+)
 			std::string s = getSymbol();
-			if(s[0] == 'b' && s[1] == 'v'){
-				// e.g. (_ bv13 32)
-				std::string num = s.substr(2);
-				std::string width_ = getSymbol();
-				size_t width = std::stoi(width_);
-				expr = mkConstBv(num, width);
-			}
-		}
-		else if (s == "let") {
-			expr = parseLet();
-			if (expr->isErr())
-				err_all(expr, "let", expr_ln);
-		}
-		else {
-			std::vector<std::shared_ptr<DAGNode>> params = parseParams();
-			if (s == "and") {
-				expr = mkAnd(params);
-			}
-			else if (s == "or") {
-				expr = mkOr(params);
-			}
-			else if (s == "not") {
-				assert(params.size() == 1);
-				expr = mkNot(params[0]);
-			}
-			else if (s == "=>") {
-				expr = mkImplies(params);
-			}
-			else if (s == "xor") {
-				expr = mkXor(params);
-			}
-			else if (s == "=") {
-				expr = mkEq(params);
-			}
-			else if (s == "distinct") {
-				expr = mkDistinct(params);
-			}
-			else if (s == "ite") {
-				expr = mkIte(params);
-			}
-			else if (s == "+") {
-				expr = mkAdd(params);
-			}
-			else if (s == "-") {
-				expr = mkSub(params);
-			}
-			else if (s == "*") {
-				expr = mkMul(params);
-			}
-			else if (s == "iand") {
-				expr = mkIand(params);
-			}
-			else if (s == "pow2") {
-				assert(params.size() == 1);
-				expr = mkPow2(params[0]);
-			}
-			else if (s == "pow") {
-				assert(params.size() == 2);
-				expr = mkPow(params[0], params[1]);
-			}
-			else if (s == "div") {
-				assert(params.size() == 2);
-				expr = mkDivInt(params[0], params[1]);
-			}
-			else if (s == "/") {
-				assert(params.size() == 2);
-				expr = mkDivReal(params[0], params[1]);
-			}
-			else if (s == "mod") {
-				assert(params.size() == 2);
-				expr = mkMod(params[0], params[1]);
-			}
-			else if (s == "abs") {
-				assert(params.size() == 1);
-				expr = mkAbs(params[0]);
-			}
-			else if (s == "sqrt") {
-				assert(params.size() == 1);
-				expr = mkSqrt(params[0]);
-			}
-			else if (s == "ceil") {
-				assert(params.size() == 1);
-				expr = mkCeil(params[0]);
-			}
-			else if (s == "floor") {
-				assert(params.size() == 1);
-				expr = mkFloor(params[0]);
-			}
-			else if (s == "round") {
-				assert(params.size() == 1);
-				expr = mkRound(params[0]);
-			}
-			else if (s == "exp") {
-				assert(params.size() == 1);
-				expr = mkExp(params[0]);
-			}
-			else if (s == "ln") {
-				assert(params.size() == 1);
-				expr = mkLn(params[0]);
-			}
-			else if (s == "lg") {
-				assert(params.size() == 1);
-				expr = mkLg(params[0]);
-			}
-			else if (s == "log") {
-				assert(params.size() == 2);
-				expr = mkLog(params[0], params[1]);
-			}
-			else if (s == "sin") {
-				assert(params.size() == 1);
-				expr = mkSin(params[0]);
-			}
-			else if (s == "cos") {
-				assert(params.size() == 1);
-				expr = mkCos(params[0]);
-			}
-			else if (s == "tan") {
-				assert(params.size() == 1);
-				expr = mkTan(params[0]);
-			}
-			else if (s == "asin") {
-				assert(params.size() == 1);
-				expr = mkAsin(params[0]);
-			}
-			else if (s == "acos") {
-				assert(params.size() == 1);
-				expr = mkAcos(params[0]);
-			}
-			else if (s == "atan") {
-				assert(params.size() == 1);
-				expr = mkAtan(params[0]);
-			}
-			else if (s == "atan2") {
-				assert(params.size() == 1);
-				expr = mkAtan(params[0]);
-			}
-			else if (s == "sinh") {
-				assert(params.size() == 1);
-				expr = mkSinh(params[0]);
-			}
-			else if (s == "cosh") {
-				assert(params.size() == 1);
-				expr = mkCosh(params[0]);
-			}
-			else if (s == "tanh") {
-				assert(params.size() == 1);
-				expr = mkTanh(params[0]);
-			}
-			else if (s == "asinh") {
-				assert(params.size() == 1);
-				expr = mkAsinh(params[0]);
-			}
-			else if (s == "acosh") {
-				assert(params.size() == 1);
-				expr = mkAcosh(params[0]);
-			}
-			else if (s == "atanh") {
-				assert(params.size() == 1);
-				expr = mkAtanh(params[0]);
-			}
-			else if (s == "asech") {
-				assert(params.size() == 1);
-				expr = mkAsech(params[0]);
-			}
-			else if (s == "acsch") {
-				assert(params.size() == 1);
-				expr = mkAcsch(params[0]);
-			}
-			else if (s == "acoth") {
-				assert(params.size() == 1);
-				expr = mkAcoth(params[0]);
-			}
-			else if (s == "<=") {
-				assert(params.size() == 2);
-				expr = mkLe(params[0], params[1]);
-			}
-			else if (s == "<") {
-				assert(params.size() == 2);
-				expr = mkLt(params[0], params[1]);
-			}
-			else if (s == ">=") {
-				assert(params.size() == 2);
-				expr = mkGe(params[0], params[1]);
-			}
-			else if (s == ">") {
-				assert(params.size() == 2);
-				expr = mkGt(params[0], params[1]);
-			}
-			else if (s == "to_real") {
-				assert(params.size() == 1);
-				expr = mkToReal(params[0]);
-			}
-			else if (s == "to_int") {
-				assert(params.size() == 1);
-				expr = mkToInt(params[0]);
-			}
-			else if (s == "is_int") {
-				assert(params.size() == 1);
-				expr = mkIsInt(params[0]);
-			}
-			else if (s == "is_divisible") {
-				assert(params.size() == 2);
-				expr = mkIsDivisible(params[0], params[1]);
-			}
-			else if (s == "is_prime") {
-				assert(params.size() == 1);
-				expr = mkIsPrime(params[0]);
-			}
-			else if (s == "is_even") {
-				assert(params.size() == 1);
-				expr = mkIsEven(params[0]);
-			}
-			else if (s == "is_odd") {
-				assert(params.size() == 1);
-				expr = mkIsOdd(params[0]);
-			}
-			else if (s == "gcd") {
-				assert(params.size() == 2);
-				expr = mkGcd(params[0], params[1]);
-			}
-			else if (s == "lcm") {
-				assert(params.size() == 2);
-				expr = mkLcm(params[0], params[1]);
-			}
-			else if (s == "factorial") {
-				assert(params.size() == 1);
-				expr = mkFact(params[0]);
-			}
-			else if (s == "bvnot") {
-				assert(params.size() == 1);
-				expr = mkBvNot(params[0]);
-			}
-			else if (s == "bvneg") {
-				assert(params.size() == 1);
-				expr = mkBvNeg(params[0]);
-			}
-			else if (s == "bvand") {
-				expr = mkBvAnd(params);
-			}
-			else if (s == "bvor") {
-				expr = mkBvOr(params);
-			}
-			else if (s == "bvxor") {
-				expr = mkBvXor(params);
-			}
-			else if (s == "bvnand") {
-				expr = mkBvNand(params);
-			}
-			else if (s == "bvnor") {
-				expr = mkBvNor(params);
-			}
-			else if (s == "bvxnor") {
-				expr = mkBvXnor(params);
-			}
-			else if (s == "bvcomp") {
-				assert(params.size() == 2);
-				expr = mkBvComp(params[0], params[1]);
-			}
-			else if (s == "bvadd") {
-				expr = mkBvAdd(params);
-			}
-			else if (s == "bvsub") {
-				expr = mkBvSub(params);
-			}
-			else if (s == "bvmul") {
-				expr = mkBvMul(params);
-			}
-			else if (s == "bvudiv") {
-				assert(params.size() == 2);
-				expr = mkBvUdiv(params[0], params[1]);
-			}
-			else if (s == "bvurem") {
-				assert(params.size() == 2);
-				expr = mkBvUrem(params[0], params[1]);
-			}
-			else if (s == "bvsdiv") {
-				assert(params.size() == 2);
-				expr = mkBvSdiv(params[0], params[1]);
-			}
-			else if (s == "bvsrem") {
-				assert(params.size() == 2);
-				expr = mkBvSrem(params[0], params[1]);
-			}
-			else if (s == "bvsmod") {
-				assert(params.size() == 2);
-				expr = mkBvSmod(params[0], params[1]);
-			}
-			else if (s == "bvshl") {
-				assert(params.size() == 2);
-				expr = mkBvShl(params[0], params[1]);
-			}
-			else if (s == "bvlshr") {
-				assert(params.size() == 2);
-				expr = mkBvLshr(params[0], params[1]);
-			}
-			else if (s == "bvashr") {
-				assert(params.size() == 2);
-				expr = mkBvAshr(params[0], params[1]);
-			}
-			else if (s == "bvult") {
-				assert(params.size() == 2);
-				expr = mkBvUlt(params[0], params[1]);
-			}
-			else if (s == "bvule") {
-				assert(params.size() == 2);
-				expr = mkBvUle(params[0], params[1]);
-			}
-			else if (s == "bvugt") {
-				assert(params.size() == 2);
-				expr = mkBvUgt(params[0], params[1]);
-			}
-			else if (s == "bvuge") {
-				assert(params.size() == 2);
-				expr = mkBvUge(params[0], params[1]);
-			}
-			else if (s == "bvslt") {
-				assert(params.size() == 2);
-				expr = mkBvSlt(params[0], params[1]);
-			}
-			else if (s == "bvsle") {
-				assert(params.size() == 2);
-				expr = mkBvSle(params[0], params[1]);
-			}
-			else if (s == "bvsgt") {
-				assert(params.size() == 2);
-				expr = mkBvSgt(params[0], params[1]);
-			}
-			else if (s == "bvsge") {
-				assert(params.size() == 2);
-				expr = mkBvSge(params[0], params[1]);
-			}
-			else if (s == "concat") {
-				expr = mkBvConcat(params);
-			}
-			else if (s == "extract") {
-				assert(params.size() == 3);
-				expr = mkBvExtract(params[0], params[1], params[2]);
-			}
-			else if (s == "repeat") {
-				assert(params.size() == 2);
-				expr = mkBvRepeat(params[0], params[1]);
-			}
-			else if (s == "zero_extend") {
-				assert(params.size() == 2);
-				expr = mkBvZeroExt(params[0], params[1]);
-			}
-			else if (s == "sign_extend") {
-				assert(params.size() == 2);
-				expr = mkBvSignExt(params[0], params[1]);
-			}
-			else if (s == "rotate_left") {
-				assert(params.size() == 2);
-				expr = mkBvRotateLeft(params[0], params[1]);
-			}
-			else if (s == "rotate_right") {
-				assert(params.size() == 2);
-				expr = mkBvRotateRight(params[0], params[1]);
-			}
-			else if (s == "bv2nat") {
-				assert(params.size() == 1);
-				expr = mkBvToNat(params[0]);
-			}
-			else if (s == "nat2bv") {
-				assert(params.size() == 2);
-				expr = mkNatToBv(params[0], params[1]);
-			}
-			else if (s == "int2bv") {
-				assert(params.size() == 2);
-				expr = mkIntToBv(params[0], params[1]);
-			}
-			else if (s == "bv2int") {
-				assert(params.size() == 1);
-				expr = mkBvToInt(params[0]);
-			}
-			else if (s == "fp.abs") {
-				assert(params.size() == 1);
-				expr = mkFpAbs(params[0]);
-			}
-			else if (s == "fp.neg") {
-				assert(params.size() == 1);
-				expr = mkFpNeg(params[0]);
-			}
-			else if (s == "fp.add") {
-				expr = mkFpAdd(params);
-			}
-			else if (s == "fp.sub") {
-				expr = mkFpSub(params);
-			}
-			else if (s == "fp.mul") {
-				expr = mkFpMul(params);
-			}
-			else if (s == "fp.div") {
-				expr = mkFpDiv(params);
-			}
-			else if (s == "fp.fma") {
-				assert(params.size() == 3);
-				expr = mkFpFma(params);
-			}
-			else if (s == "fp.sqrt") {
-				assert(params.size() == 1);
-				expr = mkFpSqrt(params[0]);
-			}
-			else if (s == "fp.rem") {
-				assert(params.size() == 2);
-				expr = mkFpRem(params[0], params[1]);
-			}
-			else if (s == "fp.roundToIntegral") {
-				assert(params.size() == 1);
-				expr = mkFpRoundToIntegral(params[0]);
-			}
-			else if (s == "fp.min") {
-				assert(params.size() == 2);
-				expr = mkFpMin(params);
-			}
-			else if (s == "fp.max") {
-				assert(params.size() == 2);
-				expr = mkFpMax(params);
-			}
-			else if (s == "fp.leq") {
-				assert(params.size() == 2);
-				expr = mkFpLe(params[0], params[1]);
-			}
-			else if (s == "fp.lt") {
-				assert(params.size() == 2);
-				expr = mkFpLt(params[0], params[1]);
-			}
-			else if (s == "fp.geq") {
-				assert(params.size() == 2);
-				expr = mkFpGe(params[0], params[1]);
-			}
-			else if (s == "fp.gt") {
-				assert(params.size() == 2);
-				expr = mkFpGt(params[0], params[1]);
-			}
-			else if (s == "fp.eq") {
-				assert(params.size() == 2);
-				expr = mkFpEq(params[0], params[1]);
-			}
-			else if (s == "fp.to_ubv") {
-				assert(params.size() == 2);
-				expr = mkFpToUbv(params[0], params[1]);
-			}
-			else if (s == "fp.to_sbv") {
-				assert(params.size() == 2);
-				expr = mkFpToSbv(params[0], params[1]);
-			}
-			else if (s == "fp.to_real") {
-				assert(params.size() == 1);
-				expr = mkFpToReal(params[0]);
-			}
-			else if (s == "to_fp") {
-				assert(params.size() == 3);
-				expr = mkToFp(params[0], params[1], params[2]);
-			}
-			else if (s == "fp.isNormal"){
-				assert(params.size() == 1);
-				expr = mkFpIsNormal(params[0]);
-			}
-			else if (s == "fp.isSubnormal"){
-				assert(params.size() == 1);
-				expr = mkFpIsSubnormal(params[0]);
-			}
-			else if (s == "fp.isZero"){
-				assert(params.size() == 1);
-				expr = mkFpIsZero(params[0]);
-			}
-			else if (s == "fp.isInfinite"){
-				assert(params.size() == 1);
-				expr = mkFpIsInf(params[0]);
-			}
-			else if (s == "fp.isNaN"){
-				assert(params.size() == 1);
-				expr = mkFpIsNan(params[0]);
-			}
-			else if (s == "fp.isNegative"){
-				assert(params.size() == 1);
-				expr = mkFpIsNeg(params[0]);
-			}
-			else if (s == "fp.isPositive"){
-				assert(params.size() == 1);
-				expr = mkFpIsPos(params[0]);
-			}
-			else if (s == "select") {
-				assert(params.size() == 2);
-				expr = mkSelect(params[0], params[1]);
-			}
-			else if (s == "store") {
-				assert(params.size() == 3);
-				expr = mkStore(params[0], params[1], params[2]);
-			}
-			else if (s == "str.len") {
-				assert(params.size() == 1);
-				expr = mkStrLen(params[0]);
-			}
-			else if (s == "str.++") {
-				expr = mkStrConcat(params);
-			}
-			else if (s == "str.substr") {
-				assert(params.size() == 3);
-				expr = mkStrSubstr(params[0], params[1], params[2]);
-			}
-			else if (s == "str.prefixof") {
-				assert(params.size() == 2);
-				expr = mkStrPrefixof(params[0], params[1]);
-			}
-			else if (s == "str.suffixof") {
-				assert(params.size() == 2);
-				expr = mkStrSuffixof(params[0], params[1]);
-			}
-			else if (s == "str.indexof") {
-				assert(params.size() == 3);
-				expr = mkStrIndexof(params[0], params[1], params[2]);
-			}
-			else if (s == "str.at") {
-				assert(params.size() == 2);
-				expr = mkStrCharat(params[0], params[1]);
-			}
-			else if (s == "str.update") {
-				assert(params.size() == 3);
-				expr = mkStrUpdate(params[0], params[1], params[2]);
-			}
-			else if (s == "str.replace") {
-				assert(params.size() == 3);
-				expr = mkStrReplace(params[0], params[1], params[2]);
-			}
-			else if (s == "str.replace_all") {
-				assert(params.size() == 3);
-				expr = mkStrReplaceAll(params[0], params[1], params[2]);
-			}
-			else if (s == "str.to_lower") {
-				assert(params.size() == 1);
-				expr = mkStrToLower(params[0]);
-			}
-			else if (s == "str.to_upper") {
-				assert(params.size() == 1);
-				expr = mkStrToUpper(params[0]);
-			}
-			else if (s == "str.rev") {
-				assert(params.size() == 1);
-				expr = mkStrRev(params[0]);
-			}
-			else if (s == "str.split") {
-				assert(params.size() == 2);
-				expr = mkStrSplit(params[0], params[1]);
-			}
-			else if (s == "str.<"){
-				assert(params.size() == 2);
-				expr = mkStrLt(params[0], params[1]);
-			}
-			else if (s == "str.<="){
-				assert(params.size() == 2);
-				expr = mkStrLe(params[0], params[1]);
-			}
-			else if (s == "str.>"){
-				assert(params.size() == 2);
-				expr = mkStrGt(params[0], params[1]);
-			}
-			else if (s == "str.>="){
-				assert(params.size() == 2);
-				expr = mkStrGe(params[0], params[1]);
-			}
-			else if (s == "str.in_re"){
-				assert(params.size() == 2);
-				expr = mkStrInReg(params[0], params[1]);
-			}
-			else if (s == "str.contains"){
-				assert(params.size() == 2);
-				expr = mkStrContains(params[0], params[1]);
-			}
-			else if (s == "str.is_digit"){
-				assert(params.size() == 1);
-				expr = mkStrIsDigit(params[0]);
-			}
-			else if (s == "str.from_int"){
-				assert(params.size() == 1);
-				expr = mkStrFromInt(params[0]);
-			}
-			else if (s == "str.to_int"){
-				assert(params.size() == 1);
-				expr = mkStrToInt(params[0]);
-			}
-			else if (s == "str.to_re"){
-				assert(params.size() == 1);
-				expr = mkStrToReg(params[0]);
-			}
-			else if (s == "str.to_code"){
-				assert(params.size() == 1);
-				expr = mkStrToCode(params[0]);
-			}
-			else if (s == "str.from_code"){
-				assert(params.size() == 1);
-				expr = mkStrFromCode(params[0]);
-			}
-			else if (s == "re.none"){
-				expr = mkRegNone();
-			}
-			else if (s == "re.all"){
-				expr = mkRegAll();
-			}
-			else if (s == "re.allchar"){
-				expr = mkRegAllChar();
-			}
-			else if (s == "re.++") {
-				expr = mkRegConcat(params);
-			}
-			else if (s == "re.union") {
-				expr = mkRegUnion(params);
-			}
-			else if (s == "re.inter") {
-				expr = mkRegInter(params);
-			}
-			else if (s == "re.diff") {
-				expr = mkRegDiff(params);
-			}
-			else if (s == "re.*") {
-				assert(params.size() == 1);
-				expr = mkRegStar(params[0]);
-			}
-			else if (s == "re.+") {
-				assert(params.size() == 1);
-				expr = mkRegPlus(params[0]);
-			}
-			else if (s == "re.?") {
-				assert(params.size() == 1);
-				expr = mkRegOpt(params[0]);
-			}
-			else if (s == "re.range") {
-				assert(params.size() == 2);
-				expr = mkRegRange(params[0], params[1]);
-			}
-			else if (s == "re.repeat") {
-				assert(params.size() == 2);
-				expr = mkRegRepeat(params[0], params[1]);
-			}
-			else if (s == "re.loop") {
-				assert(params.size() == 3);
-				expr = mkRegLoop(params[0], params[1], params[2]);
-			}
-			else if (s == "re.complement") {
-				assert(params.size() == 1);
-				expr = mkRegComplement(params[0]);
-			}
-			else if (fun_key_map.find(s) != fun_key_map.end()) {
-				// function
-				expr = applyFun(fun_key_map[s], params);
+			if(s == "_"){
+				// (_ f args): a function with parameters
+				// ((_ f args) param) 
+				std::vector<std::shared_ptr<DAGNode>> args = parseParams();
+				parseRpar();
+				std::vector<std::shared_ptr<DAGNode>> params = parseParams();
+				if (s == "extract") {
+					assert(args.size() == 2);
+					assert(params.size() == 1);
+					expr = mkBvExtract(params[0], args[0], args[1]);
+				}
+				else if (s == "repeat") {
+					assert(args.size() == 1);
+					assert(params.size() == 1);
+					expr = mkBvRepeat(params[0], args[0]);
+				}
+				else if (s == "zero_extend") {
+					assert(args.size() == 1);
+					assert(params.size() == 1);
+					expr = mkBvZeroExt(params[0], args[0]);
+				}
+				else if (s == "sign_extend") {
+					assert(args.size() == 1);
+					assert(params.size() == 1);
+					expr = mkBvSignExt(params[0], args[0]);
+				}
+				else if(s == "int_to_bv") {
+					assert(args.size() == 1);
+					assert(params.size() == 1);
+					expr = mkIntToBv(params[0], args[0]);
+				}
+				else err_unkwn_sym(s, expr_ln);
 			}
 			else err_unkwn_sym(s, expr_ln);
-
-			// check error
-			if (expr->isErr()) err_all(expr, s, expr_ln);
 		}
+		else{
+			// (<identifier> <expr>+)
+			std::string s = getSymbol();
 
+			//parse identifier and get params
+			if(s == "_"){
+				// ( _ <identifier> <expr>+)
+				//     ^
+				std::string s = getSymbol();
+				if(s[0] == 'b' && s[1] == 'v'){
+					// e.g. (_ bv13 32)
+					std::string num = s.substr(2);
+					std::string width_ = getSymbol();
+					size_t width = std::stoi(width_);
+					expr = mkConstBv(num, width);
+				}
+			}
+			else if (s == "let") {
+				expr = parseLet();
+				if (expr->isErr())
+					err_all(expr, "let", expr_ln);
+			}
+			else {
+				std::vector<std::shared_ptr<DAGNode>> params = parseParams();
+				if (s == "and") {
+					expr = mkAnd(params);
+				}
+				else if (s == "or") {
+					expr = mkOr(params);
+				}
+				else if (s == "not") {
+					assert(params.size() == 1);
+					expr = mkNot(params[0]);
+				}
+				else if (s == "=>") {
+					expr = mkImplies(params);
+				}
+				else if (s == "xor") {
+					expr = mkXor(params);
+				}
+				else if (s == "=") {
+					expr = mkEq(params);
+				}
+				else if (s == "distinct") {
+					expr = mkDistinct(params);
+				}
+				else if (s == "ite") {
+					expr = mkIte(params);
+				}
+				else if (s == "+") {
+					expr = mkAdd(params);
+				}
+				else if (s == "-") {
+					expr = mkSub(params);
+				}
+				else if (s == "*") {
+					expr = mkMul(params);
+				}
+				else if (s == "iand") {
+					expr = mkIand(params);
+				}
+				else if (s == "pow2") {
+					assert(params.size() == 1);
+					expr = mkPow2(params[0]);
+				}
+				else if (s == "pow") {
+					assert(params.size() == 2);
+					expr = mkPow(params[0], params[1]);
+				}
+				else if (s == "div") {
+					assert(params.size() == 2);
+					expr = mkDivInt(params[0], params[1]);
+				}
+				else if (s == "/") {
+					assert(params.size() == 2);
+					expr = mkDivReal(params[0], params[1]);
+				}
+				else if (s == "mod") {
+					assert(params.size() == 2);
+					expr = mkMod(params[0], params[1]);
+				}
+				else if (s == "abs") {
+					assert(params.size() == 1);
+					expr = mkAbs(params[0]);
+				}
+				else if (s == "sqrt") {
+					assert(params.size() == 1);
+					expr = mkSqrt(params[0]);
+				}
+				else if (s == "ceil") {
+					assert(params.size() == 1);
+					expr = mkCeil(params[0]);
+				}
+				else if (s == "floor") {
+					assert(params.size() == 1);
+					expr = mkFloor(params[0]);
+				}
+				else if (s == "round") {
+					assert(params.size() == 1);
+					expr = mkRound(params[0]);
+				}
+				else if (s == "exp") {
+					assert(params.size() == 1);
+					expr = mkExp(params[0]);
+				}
+				else if (s == "ln") {
+					assert(params.size() == 1);
+					expr = mkLn(params[0]);
+				}
+				else if (s == "lg") {
+					assert(params.size() == 1);
+					expr = mkLg(params[0]);
+				}
+				else if (s == "log") {
+					assert(params.size() == 2);
+					expr = mkLog(params[0], params[1]);
+				}
+				else if (s == "sin") {
+					assert(params.size() == 1);
+					expr = mkSin(params[0]);
+				}
+				else if (s == "cos") {
+					assert(params.size() == 1);
+					expr = mkCos(params[0]);
+				}
+				else if (s == "tan") {
+					assert(params.size() == 1);
+					expr = mkTan(params[0]);
+				}
+				else if (s == "asin") {
+					assert(params.size() == 1);
+					expr = mkAsin(params[0]);
+				}
+				else if (s == "acos") {
+					assert(params.size() == 1);
+					expr = mkAcos(params[0]);
+				}
+				else if (s == "atan") {
+					assert(params.size() == 1);
+					expr = mkAtan(params[0]);
+				}
+				else if (s == "atan2") {
+					assert(params.size() == 1);
+					expr = mkAtan(params[0]);
+				}
+				else if (s == "sinh") {
+					assert(params.size() == 1);
+					expr = mkSinh(params[0]);
+				}
+				else if (s == "cosh") {
+					assert(params.size() == 1);
+					expr = mkCosh(params[0]);
+				}
+				else if (s == "tanh") {
+					assert(params.size() == 1);
+					expr = mkTanh(params[0]);
+				}
+				else if (s == "asinh") {
+					assert(params.size() == 1);
+					expr = mkAsinh(params[0]);
+				}
+				else if (s == "acosh") {
+					assert(params.size() == 1);
+					expr = mkAcosh(params[0]);
+				}
+				else if (s == "atanh") {
+					assert(params.size() == 1);
+					expr = mkAtanh(params[0]);
+				}
+				else if (s == "asech") {
+					assert(params.size() == 1);
+					expr = mkAsech(params[0]);
+				}
+				else if (s == "acsch") {
+					assert(params.size() == 1);
+					expr = mkAcsch(params[0]);
+				}
+				else if (s == "acoth") {
+					assert(params.size() == 1);
+					expr = mkAcoth(params[0]);
+				}
+				else if (s == "<=") {
+					assert(params.size() == 2);
+					expr = mkLe(params[0], params[1]);
+				}
+				else if (s == "<") {
+					assert(params.size() == 2);
+					expr = mkLt(params[0], params[1]);
+				}
+				else if (s == ">=") {
+					assert(params.size() == 2);
+					expr = mkGe(params[0], params[1]);
+				}
+				else if (s == ">") {
+					assert(params.size() == 2);
+					expr = mkGt(params[0], params[1]);
+				}
+				else if (s == "to_real") {
+					assert(params.size() == 1);
+					expr = mkToReal(params[0]);
+				}
+				else if (s == "to_int") {
+					assert(params.size() == 1);
+					expr = mkToInt(params[0]);
+				}
+				else if (s == "is_int") {
+					assert(params.size() == 1);
+					expr = mkIsInt(params[0]);
+				}
+				else if (s == "is_divisible") {
+					assert(params.size() == 2);
+					expr = mkIsDivisible(params[0], params[1]);
+				}
+				else if (s == "is_prime") {
+					assert(params.size() == 1);
+					expr = mkIsPrime(params[0]);
+				}
+				else if (s == "is_even") {
+					assert(params.size() == 1);
+					expr = mkIsEven(params[0]);
+				}
+				else if (s == "is_odd") {
+					assert(params.size() == 1);
+					expr = mkIsOdd(params[0]);
+				}
+				else if (s == "gcd") {
+					assert(params.size() == 2);
+					expr = mkGcd(params[0], params[1]);
+				}
+				else if (s == "lcm") {
+					assert(params.size() == 2);
+					expr = mkLcm(params[0], params[1]);
+				}
+				else if (s == "factorial") {
+					assert(params.size() == 1);
+					expr = mkFact(params[0]);
+				}
+				else if (s == "bvnot") {
+					assert(params.size() == 1);
+					expr = mkBvNot(params[0]);
+				}
+				else if (s == "bvneg") {
+					assert(params.size() == 1);
+					expr = mkBvNeg(params[0]);
+				}
+				else if (s == "bvand") {
+					expr = mkBvAnd(params);
+				}
+				else if (s == "bvor") {
+					expr = mkBvOr(params);
+				}
+				else if (s == "bvxor") {
+					expr = mkBvXor(params);
+				}
+				else if (s == "bvnand") {
+					expr = mkBvNand(params);
+				}
+				else if (s == "bvnor") {
+					expr = mkBvNor(params);
+				}
+				else if (s == "bvxnor") {
+					expr = mkBvXnor(params);
+				}
+				else if (s == "bvcomp") {
+					assert(params.size() == 2);
+					expr = mkBvComp(params[0], params[1]);
+				}
+				else if (s == "bvadd") {
+					expr = mkBvAdd(params);
+				}
+				else if (s == "bvsub") {
+					expr = mkBvSub(params);
+				}
+				else if (s == "bvmul") {
+					expr = mkBvMul(params);
+				}
+				else if (s == "bvudiv") {
+					assert(params.size() == 2);
+					expr = mkBvUdiv(params[0], params[1]);
+				}
+				else if (s == "bvurem") {
+					assert(params.size() == 2);
+					expr = mkBvUrem(params[0], params[1]);
+				}
+				else if (s == "bvsdiv") {
+					assert(params.size() == 2);
+					expr = mkBvSdiv(params[0], params[1]);
+				}
+				else if (s == "bvsrem") {
+					assert(params.size() == 2);
+					expr = mkBvSrem(params[0], params[1]);
+				}
+				else if (s == "bvsmod") {
+					assert(params.size() == 2);
+					expr = mkBvSmod(params[0], params[1]);
+				}
+				else if (s == "bvshl") {
+					assert(params.size() == 2);
+					expr = mkBvShl(params[0], params[1]);
+				}
+				else if (s == "bvlshr") {
+					assert(params.size() == 2);
+					expr = mkBvLshr(params[0], params[1]);
+				}
+				else if (s == "bvashr") {
+					assert(params.size() == 2);
+					expr = mkBvAshr(params[0], params[1]);
+				}
+				else if (s == "bvult") {
+					assert(params.size() == 2);
+					expr = mkBvUlt(params[0], params[1]);
+				}
+				else if (s == "bvule") {
+					assert(params.size() == 2);
+					expr = mkBvUle(params[0], params[1]);
+				}
+				else if (s == "bvugt") {
+					assert(params.size() == 2);
+					expr = mkBvUgt(params[0], params[1]);
+				}
+				else if (s == "bvuge") {
+					assert(params.size() == 2);
+					expr = mkBvUge(params[0], params[1]);
+				}
+				else if (s == "bvslt") {
+					assert(params.size() == 2);
+					expr = mkBvSlt(params[0], params[1]);
+				}
+				else if (s == "bvsle") {
+					assert(params.size() == 2);
+					expr = mkBvSle(params[0], params[1]);
+				}
+				else if (s == "bvsgt") {
+					assert(params.size() == 2);
+					expr = mkBvSgt(params[0], params[1]);
+				}
+				else if (s == "bvsge") {
+					assert(params.size() == 2);
+					expr = mkBvSge(params[0], params[1]);
+				}
+				else if (s == "concat") {
+					expr = mkBvConcat(params);
+				}
+				else if (s == "rotate_left") {
+					assert(params.size() == 2);
+					expr = mkBvRotateLeft(params[0], params[1]);
+				}
+				else if (s == "rotate_right") {
+					assert(params.size() == 2);
+					expr = mkBvRotateRight(params[0], params[1]);
+				}
+				else if (s == "bv2nat") {
+					assert(params.size() == 1);
+					expr = mkBvToNat(params[0]);
+				}
+				else if (s == "nat2bv") {
+					assert(params.size() == 2);
+					expr = mkNatToBv(params[0], params[1]);
+				}
+				else if (s == "int2bv") {
+					assert(params.size() == 2);
+					expr = mkIntToBv(params[0], params[1]);
+				}
+				else if (s == "bv2int") {
+					assert(params.size() == 1);
+					expr = mkBvToInt(params[0]);
+				}
+				else if (s == "fp.abs") {
+					assert(params.size() == 1);
+					expr = mkFpAbs(params[0]);
+				}
+				else if (s == "fp.neg") {
+					assert(params.size() == 1);
+					expr = mkFpNeg(params[0]);
+				}
+				else if (s == "fp.add") {
+					expr = mkFpAdd(params);
+				}
+				else if (s == "fp.sub") {
+					expr = mkFpSub(params);
+				}
+				else if (s == "fp.mul") {
+					expr = mkFpMul(params);
+				}
+				else if (s == "fp.div") {
+					expr = mkFpDiv(params);
+				}
+				else if (s == "fp.fma") {
+					assert(params.size() == 3);
+					expr = mkFpFma(params);
+				}
+				else if (s == "fp.sqrt") {
+					assert(params.size() == 1);
+					expr = mkFpSqrt(params[0]);
+				}
+				else if (s == "fp.rem") {
+					assert(params.size() == 2);
+					expr = mkFpRem(params[0], params[1]);
+				}
+				else if (s == "fp.roundToIntegral") {
+					assert(params.size() == 1);
+					expr = mkFpRoundToIntegral(params[0]);
+				}
+				else if (s == "fp.min") {
+					assert(params.size() == 2);
+					expr = mkFpMin(params);
+				}
+				else if (s == "fp.max") {
+					assert(params.size() == 2);
+					expr = mkFpMax(params);
+				}
+				else if (s == "fp.leq") {
+					assert(params.size() == 2);
+					expr = mkFpLe(params[0], params[1]);
+				}
+				else if (s == "fp.lt") {
+					assert(params.size() == 2);
+					expr = mkFpLt(params[0], params[1]);
+				}
+				else if (s == "fp.geq") {
+					assert(params.size() == 2);
+					expr = mkFpGe(params[0], params[1]);
+				}
+				else if (s == "fp.gt") {
+					assert(params.size() == 2);
+					expr = mkFpGt(params[0], params[1]);
+				}
+				else if (s == "fp.eq") {
+					assert(params.size() == 2);
+					expr = mkFpEq(params[0], params[1]);
+				}
+				else if (s == "fp.to_ubv") {
+					assert(params.size() == 2);
+					expr = mkFpToUbv(params[0], params[1]);
+				}
+				else if (s == "fp.to_sbv") {
+					assert(params.size() == 2);
+					expr = mkFpToSbv(params[0], params[1]);
+				}
+				else if (s == "fp.to_real") {
+					assert(params.size() == 1);
+					expr = mkFpToReal(params[0]);
+				}
+				else if (s == "to_fp") {
+					assert(params.size() == 3);
+					expr = mkToFp(params[0], params[1], params[2]);
+				}
+				else if (s == "fp.isNormal"){
+					assert(params.size() == 1);
+					expr = mkFpIsNormal(params[0]);
+				}
+				else if (s == "fp.isSubnormal"){
+					assert(params.size() == 1);
+					expr = mkFpIsSubnormal(params[0]);
+				}
+				else if (s == "fp.isZero"){
+					assert(params.size() == 1);
+					expr = mkFpIsZero(params[0]);
+				}
+				else if (s == "fp.isInfinite"){
+					assert(params.size() == 1);
+					expr = mkFpIsInf(params[0]);
+				}
+				else if (s == "fp.isNaN"){
+					assert(params.size() == 1);
+					expr = mkFpIsNan(params[0]);
+				}
+				else if (s == "fp.isNegative"){
+					assert(params.size() == 1);
+					expr = mkFpIsNeg(params[0]);
+				}
+				else if (s == "fp.isPositive"){
+					assert(params.size() == 1);
+					expr = mkFpIsPos(params[0]);
+				}
+				else if (s == "select") {
+					assert(params.size() == 2);
+					expr = mkSelect(params[0], params[1]);
+				}
+				else if (s == "store") {
+					assert(params.size() == 3);
+					expr = mkStore(params[0], params[1], params[2]);
+				}
+				else if (s == "str.len") {
+					assert(params.size() == 1);
+					expr = mkStrLen(params[0]);
+				}
+				else if (s == "str.++") {
+					expr = mkStrConcat(params);
+				}
+				else if (s == "str.substr") {
+					assert(params.size() == 3);
+					expr = mkStrSubstr(params[0], params[1], params[2]);
+				}
+				else if (s == "str.prefixof") {
+					assert(params.size() == 2);
+					expr = mkStrPrefixof(params[0], params[1]);
+				}
+				else if (s == "str.suffixof") {
+					assert(params.size() == 2);
+					expr = mkStrSuffixof(params[0], params[1]);
+				}
+				else if (s == "str.indexof") {
+					assert(params.size() == 3);
+					expr = mkStrIndexof(params[0], params[1], params[2]);
+				}
+				else if (s == "str.at") {
+					assert(params.size() == 2);
+					expr = mkStrCharat(params[0], params[1]);
+				}
+				else if (s == "str.update") {
+					assert(params.size() == 3);
+					expr = mkStrUpdate(params[0], params[1], params[2]);
+				}
+				else if (s == "str.replace") {
+					assert(params.size() == 3);
+					expr = mkStrReplace(params[0], params[1], params[2]);
+				}
+				else if (s == "str.replace_all") {
+					assert(params.size() == 3);
+					expr = mkStrReplaceAll(params[0], params[1], params[2]);
+				}
+				else if (s == "str.to_lower") {
+					assert(params.size() == 1);
+					expr = mkStrToLower(params[0]);
+				}
+				else if (s == "str.to_upper") {
+					assert(params.size() == 1);
+					expr = mkStrToUpper(params[0]);
+				}
+				else if (s == "str.rev") {
+					assert(params.size() == 1);
+					expr = mkStrRev(params[0]);
+				}
+				else if (s == "str.split") {
+					assert(params.size() == 2);
+					expr = mkStrSplit(params[0], params[1]);
+				}
+				else if (s == "str.<"){
+					assert(params.size() == 2);
+					expr = mkStrLt(params[0], params[1]);
+				}
+				else if (s == "str.<="){
+					assert(params.size() == 2);
+					expr = mkStrLe(params[0], params[1]);
+				}
+				else if (s == "str.>"){
+					assert(params.size() == 2);
+					expr = mkStrGt(params[0], params[1]);
+				}
+				else if (s == "str.>="){
+					assert(params.size() == 2);
+					expr = mkStrGe(params[0], params[1]);
+				}
+				else if (s == "str.in_re"){
+					assert(params.size() == 2);
+					expr = mkStrInReg(params[0], params[1]);
+				}
+				else if (s == "str.contains"){
+					assert(params.size() == 2);
+					expr = mkStrContains(params[0], params[1]);
+				}
+				else if (s == "str.is_digit"){
+					assert(params.size() == 1);
+					expr = mkStrIsDigit(params[0]);
+				}
+				else if (s == "str.from_int"){
+					assert(params.size() == 1);
+					expr = mkStrFromInt(params[0]);
+				}
+				else if (s == "str.to_int"){
+					assert(params.size() == 1);
+					expr = mkStrToInt(params[0]);
+				}
+				else if (s == "str.to_re"){
+					assert(params.size() == 1);
+					expr = mkStrToReg(params[0]);
+				}
+				else if (s == "str.to_code"){
+					assert(params.size() == 1);
+					expr = mkStrToCode(params[0]);
+				}
+				else if (s == "str.from_code"){
+					assert(params.size() == 1);
+					expr = mkStrFromCode(params[0]);
+				}
+				else if (s == "re.none"){
+					expr = mkRegNone();
+				}
+				else if (s == "re.all"){
+					expr = mkRegAll();
+				}
+				else if (s == "re.allchar"){
+					expr = mkRegAllChar();
+				}
+				else if (s == "re.++") {
+					expr = mkRegConcat(params);
+				}
+				else if (s == "re.union") {
+					expr = mkRegUnion(params);
+				}
+				else if (s == "re.inter") {
+					expr = mkRegInter(params);
+				}
+				else if (s == "re.diff") {
+					expr = mkRegDiff(params);
+				}
+				else if (s == "re.*") {
+					assert(params.size() == 1);
+					expr = mkRegStar(params[0]);
+				}
+				else if (s == "re.+") {
+					assert(params.size() == 1);
+					expr = mkRegPlus(params[0]);
+				}
+				else if (s == "re.?") {
+					assert(params.size() == 1);
+					expr = mkRegOpt(params[0]);
+				}
+				else if (s == "re.range") {
+					assert(params.size() == 2);
+					expr = mkRegRange(params[0], params[1]);
+				}
+				else if (s == "re.repeat") {
+					assert(params.size() == 2);
+					expr = mkRegRepeat(params[0], params[1]);
+				}
+				else if (s == "re.loop") {
+					assert(params.size() == 3);
+					expr = mkRegLoop(params[0], params[1], params[2]);
+				}
+				else if (s == "re.complement") {
+					assert(params.size() == 1);
+					expr = mkRegComplement(params[0]);
+				}
+				else if (fun_key_map.find(s) != fun_key_map.end()) {
+					// function
+					expr = applyFun(fun_key_map[s], params);
+				}
+				else err_unkwn_sym(s, expr_ln);
+
+				// check error
+				if (expr->isErr()) err_all(expr, s, expr_ln);
+			}
+		}
 		parseRpar();
 
 		return expr;
