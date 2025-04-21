@@ -1634,7 +1634,7 @@ namespace SMTLIBParser{
 			std::shared_ptr<Sort> sortT = parseSort();
 			std::string sort_key_name = "ARRAY_" + sortS->toString() + "_" + sortT->toString();
 			if(sort_key_map.find(sort_key_name) != sort_key_map.end()){
-				return sort_key_map[sort_key_name];
+				sort = sort_key_map[sort_key_name];
 			}
 			else{
 				sort = mkArraySort(sortS, sortT);
@@ -1664,7 +1664,7 @@ namespace SMTLIBParser{
 				std::string n = getSymbol();
 				std::string sort_key_name = "BV_" + n;
 				if(sort_key_map.find(sort_key_name) != sort_key_map.end()){
-					return sort_key_map[sort_key_name];
+					sort = sort_key_map[sort_key_name];
 				}
 				else{
 					sort = mkBVSort(std::stoi(n));
@@ -1679,7 +1679,7 @@ namespace SMTLIBParser{
 				std::string s = getSymbol();
 				std::string sort_key_name = "FP_" + e + "_" + s;
 				if(sort_key_map.find(sort_key_name) != sort_key_map.end()){
-					return sort_key_map[sort_key_name];
+					sort = sort_key_map[sort_key_name];
 				}
 				else{
 					sort = mkFPSort(std::stoi(e), std::stoi(s));
