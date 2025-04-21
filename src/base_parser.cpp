@@ -483,7 +483,13 @@ namespace SMTLIBParser{
 			// (declare-fun <symbol> (<sort>*) <sort>)
 			//                       ^
 			parseLpar();
-			std::shared_ptr<Sort> sort = parseSort();
+			std::shared_ptr<Sort> sort = nullptr;
+			if(peek_symbol() == ')'){
+				sort = NULL_SORT;
+			}
+			else{
+				sort = parseSort();
+			}
 			// (declare-fun <symbol> (<sort>*) <sort>)
 			//                               ^
 			parseRpar();
@@ -1599,12 +1605,7 @@ namespace SMTLIBParser{
 
 	// sort ::= <identifier> | (<identifier> <sort>+)
 	std::shared_ptr<Sort> Parser::parseSort(){
-		if(*bufptr == ')'){
-			// indicate it is ()
-			// () is a null sort.
-			return NULL_SORT;
-		}
-		if (*bufptr != '(') {
+		if (peek_symbol() != '(') {
 			// <identifier>
 			size_t expr_ln = line_number;
 			std::string s = getSymbol();
@@ -1630,7 +1631,7 @@ namespace SMTLIBParser{
 		std::string s = getSymbol();
 
 		//parse identifier and get params
-		std::shared_ptr<Sort> sort = nullptr;
+		std::shared_ptr<Sort> sort = NULL_SORT;
 		if (s == "Array") {
 			// (Array S T)
 			// S: sort of index
