@@ -939,30 +939,31 @@ namespace SMTLIBParser{
 			if(s == "_"){
 				// (_ f args): a function with parameters
 				// ((_ f args) param) 
+				std::string f = getSymbol();
 				std::vector<std::shared_ptr<DAGNode>> args = parseParams();
 				parseRpar();
 				std::vector<std::shared_ptr<DAGNode>> params = parseParams();
-				if (s == "extract") {
+				if (f == "extract") {
 					assert(args.size() == 2);
 					assert(params.size() == 1);
 					expr = mkBvExtract(params[0], args[0], args[1]);
 				}
-				else if (s == "repeat") {
+				else if (f == "repeat") {
 					assert(args.size() == 1);
 					assert(params.size() == 1);
 					expr = mkBvRepeat(params[0], args[0]);
 				}
-				else if (s == "zero_extend") {
+				else if (f == "zero_extend") {
 					assert(args.size() == 1);
 					assert(params.size() == 1);
 					expr = mkBvZeroExt(params[0], args[0]);
 				}
-				else if (s == "sign_extend") {
+				else if (f == "sign_extend") {
 					assert(args.size() == 1);
 					assert(params.size() == 1);
 					expr = mkBvSignExt(params[0], args[0]);
 				}
-				else if(s == "int_to_bv") {
+				else if(f == "int_to_bv") {
 					assert(args.size() == 1);
 					assert(params.size() == 1);
 					expr = mkIntToBv(params[0], args[0]);
