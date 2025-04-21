@@ -305,7 +305,6 @@ namespace SMTLIBParser{
     std::string bvMul(const std::string& bv1, const std::string& bv2){
         assert(bv1[0] == '#' && bv1[1] == 'b');
         assert(bv2[0] == '#' && bv2[1] == 'b');
-        std::string res = "";
         std::string bv1_ = bv1.substr(2, bv1.size() - 2);
         std::string bv2_ = bv2.substr(2, bv2.size() - 2);
         std::vector<std::string> partials;
@@ -317,7 +316,11 @@ namespace SMTLIBParser{
                 partials.emplace_back(partial);
             }
         }
-        for(size_t i = 0; i < partials.size(); i++){
+        if(partials.empty()){
+            return "#b" + std::string(bv1.size() - 2, '0');
+        }
+        std::string res = partials[0];
+        for(size_t i = 1; i < partials.size(); i++){
             res = SMTLIBParser::bvAdd(res, partials[i]);
         }
         return res;
