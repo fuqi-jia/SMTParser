@@ -1624,7 +1624,8 @@ namespace SMTLIBParser{
 			else err_unkwn_sym(s, expr_ln);
 		}
 		// (<identifier> <sort>+)
-
+		// (_ <identifier> <param>+)
+		parseLpar();
 		size_t expr_ln = line_number;
 		std::string s = getSymbol();
 
@@ -1645,34 +1646,6 @@ namespace SMTLIBParser{
 				sort_key_map.insert(std::pair<std::string, std::shared_ptr<Sort>>(sort_key_name, sort));
 			}
 		}
-		else if(s == "BitVec"){
-			// (BitVec n)
-			// n: bit-width
-			std::string n = getSymbol();
-			std::string sort_key_name = "BV_" + n;
-			if(sort_key_map.find(sort_key_name) != sort_key_map.end()){
-				return sort_key_map[sort_key_name];
-			}
-			else{
-				sort = mkBVSort(std::stoi(n));
-				sort_key_map.insert(std::pair<std::string, std::shared_ptr<Sort>>(sort_key_name, sort));
-			}
-		}
-		else if(s == "FloatingPoint"){
-			// (FloatingPoint e s)
-			// e: exponent width
-			// s: significand width
-			std::string e = getSymbol();
-			std::string s = getSymbol();
-			std::string sort_key_name = "FP_" + e + "_" + s;
-			if(sort_key_map.find(sort_key_name) != sort_key_map.end()){
-				return sort_key_map[sort_key_name];
-			}
-			else{
-				sort = mkFPSort(std::stoi(e), std::stoi(s));
-				sort_key_map.insert(std::pair<std::string, std::shared_ptr<Sort>>(sort_key_name, sort));
-			}
-		}
 		else if(s == "Datatype"){}
 		else if(s == "Set"){}
 		else if(s == "Relation"){}
@@ -1685,6 +1658,40 @@ namespace SMTLIBParser{
 			// SortS = parseSort();
 			// SortT = parseSort();
 			// return std::make_shared<Sort>(SORT_KIND::SK_UF, "UF", 2, {sortS, sortT});
+		}
+		else if(s == "_"){
+			// (_ <identifier> <param>+)
+			std::string id = getSymbol();
+
+			if(id == "BitVec"){
+				// (_ BitVec n)
+				// n: bit-width
+				std::string n = getSymbol();
+				std::string sort_key_name = "BV_" + n;
+				if(sort_key_map.find(sort_key_name) != sort_key_map.end()){
+					return sort_key_map[sort_key_name];
+				}
+				else{
+					sort = mkBVSort(std::stoi(n));
+					sort_key_map.insert(std::pair<std::string, std::shared_ptr<Sort>>(sort_key_name, sort));
+				}
+			}
+			else if(id == "FloatingPoint"){
+				// (_ FloatingPoint e s)
+				// e: exponent width
+				// s: significand width
+				std::string e = getSymbol();
+				std::string s = getSymbol();
+				std::string sort_key_name = "FP_" + e + "_" + s;
+				if(sort_key_map.find(sort_key_name) != sort_key_map.end()){
+					return sort_key_map[sort_key_name];
+				}
+				else{
+					sort = mkFPSort(std::stoi(e), std::stoi(s));
+					sort_key_map.insert(std::pair<std::string, std::shared_ptr<Sort>>(sort_key_name, sort));
+				}
+			}
+			else err_unkwn_sym(s, expr_ln);
 		}
 		else err_unkwn_sym(s, expr_ln);
 		parseRpar();
