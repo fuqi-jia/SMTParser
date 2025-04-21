@@ -968,6 +968,16 @@ namespace SMTLIBParser{
 					assert(params.size() == 1);
 					expr = mkIntToBv(params[0], args[0]);
 				}
+				else if(f == "rotate_left") {
+					assert(args.size() == 1);
+					assert(params.size() == 1);
+					expr = mkBvRotateLeft(params[0], args[0]);
+				}
+				else if(f == "rotate_right"){
+					assert(args.size() == 1);
+					assert(params.size() == 1);
+					expr = mkBvRotateRight(params[0], args[0]);
+				}
 				else err_unkwn_sym(s, expr_ln);
 			}
 			else err_unkwn_sym(s, expr_ln);
@@ -1314,14 +1324,6 @@ namespace SMTLIBParser{
 				}
 				else if (s == "concat") {
 					expr = mkBvConcat(params);
-				}
-				else if (s == "rotate_left") {
-					assert(params.size() == 2);
-					expr = mkBvRotateLeft(params[0], params[1]);
-				}
-				else if (s == "rotate_right") {
-					assert(params.size() == 2);
-					expr = mkBvRotateRight(params[0], params[1]);
 				}
 				else if (s == "bv2nat") {
 					assert(params.size() == 1);
