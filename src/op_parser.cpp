@@ -2080,14 +2080,13 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkBvConcat(const std::vector<std::shared_ptr<DAGNode>> &params){
         if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
-        std::shared_ptr<Sort> sort = getSort(params);
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
         size_t width = 0;
         for(size_t i=0;i<params.size() - 1;i++){
             if(params[i]->isErr()) return params[i];
             // no need to check equal sort
-            if(sort != nullptr) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(!params[i]->getSort()->isBv()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             width += params[i]->getSort()->getBitWidth();
             new_params.emplace_back(params[i]);
         }
@@ -2101,7 +2100,7 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkBvExtract(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> s){
         if(l->isErr() || r->isErr() || s->isErr()) return l->isErr()?l:r;
-        if(l->getSort()->isBv() || !r->getSort()->isInt() || !s->getSort()->isInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!l->getSort()->isBv() || !r->getSort()->isInt() || !s->getSort()->isInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         if(l->isCBV() && r->isCBV() && s->isCBV()){
             Integer size = (s->toInt() - r->toInt());
@@ -2118,7 +2117,7 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkBvRepeat(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(l->getSort()->isBv() || !r->getSort()->isInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!l->getSort()->isBv() || !r->getSort()->isInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         if(l->isCBV() && r->isCBV()){
             Integer size = l->getSort()->getBitWidth() * r->toInt();
@@ -2135,7 +2134,7 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkBvZeroExt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(l->getSort()->isBv() || !r->getSort()->isInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!l->getSort()->isBv() || !r->getSort()->isInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         if(l->isCBV() && r->isCBV()){
             Integer size = r->toInt();
@@ -2152,7 +2151,7 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkBvSignExt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(l->getSort()->isBv() || !r->getSort()->isInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!l->getSort()->isBv() || !r->getSort()->isInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         if(l->isCBV() && r->isCBV()){
             Integer size = r->toInt();
@@ -2169,7 +2168,7 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkBvRotateLeft(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(l->getSort()->isBv() || !r->getSort()->isInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!l->getSort()->isBv() || !r->getSort()->isInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         if(l->isCBV() && r->isCBV()){
             return mkConstBv(bvRotateLeft(l->toString(), r->toInt()), l->getSort()->getBitWidth());
@@ -2185,7 +2184,7 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkBvRotateRight(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(l->getSort()->isBv() || !r->getSort()->isInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!l->getSort()->isBv() || !r->getSort()->isInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         if(l->isCBV() && r->isCBV()){
             return mkConstBv(bvRotateRight(l->toString(), r->toInt()), l->getSort()->getBitWidth());
@@ -2202,7 +2201,7 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkBvUlt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(l->getSort()->isBv() || r->getSort()->isBv()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!l->getSort()->isBv() || !r->getSort()->isBv()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         if(l->isCBV() && r->isCBV()){
             return bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_ULT) ? mkTrue() : mkFalse();
@@ -2215,7 +2214,7 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkBvUle(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(l->getSort()->isBv() || r->getSort()->isBv()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!l->getSort()->isBv() || !r->getSort()->isBv()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         if(l->isCBV() && r->isCBV()){
             return bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_ULE) ? mkTrue() : mkFalse();
@@ -2228,7 +2227,7 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkBvUgt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(l->getSort()->isBv() || r->getSort()->isBv()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!l->getSort()->isBv() || !r->getSort()->isBv()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         if(l->isCBV() && r->isCBV()){
             return bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_UGT) ? mkTrue() : mkFalse();
@@ -2241,7 +2240,7 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkBvUge(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(l->getSort()->isBv() || r->getSort()->isBv()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!l->getSort()->isBv() || !r->getSort()->isBv()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         if(l->isCBV() && r->isCBV()){
             return bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_UGE) ? mkTrue() : mkFalse();
@@ -2254,7 +2253,7 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkBvSlt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(l->getSort()->isBv() || r->getSort()->isBv()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!l->getSort()->isBv() || !r->getSort()->isBv()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         if(l->isCBV() && r->isCBV()){
             return bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_SLT) ? mkTrue() : mkFalse();
@@ -2267,7 +2266,7 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkBvSle(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(l->getSort()->isBv() || r->getSort()->isBv()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!l->getSort()->isBv() || !r->getSort()->isBv()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         if(l->isCBV() && r->isCBV()){
             return bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_SLE) ? mkTrue() : mkFalse();
@@ -2280,7 +2279,7 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkBvSgt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(l->getSort()->isBv() || r->getSort()->isBv()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!l->getSort()->isBv() || !r->getSort()->isBv()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         if(l->isCBV() && r->isCBV()){
             return bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_SGT) ? mkTrue() : mkFalse();
@@ -2293,7 +2292,7 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkBvSge(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(l->getSort()->isBv() || r->getSort()->isBv()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!l->getSort()->isBv() || !r->getSort()->isBv()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         if(l->isCBV() && r->isCBV()){
             return bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_SGE) ? mkTrue() : mkFalse();
