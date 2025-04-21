@@ -630,17 +630,6 @@ namespace SMTLIBParser{
         new_params.emplace_back(params.back());
 
         return mkOper(BOOL_SORT, NODE_KIND::NT_IMPLIES, new_params);
-
-        // do not transform
-        // // transform imply into or
-        // // (=> a b c d) <=> (or -a -b -c d)
-        // for (size_t i = 0; i < new_params.size() - 1; i++) {
-        //     new_params[i] = mkNot(new_params[i]);
-        //     if(new_params[i]->isErr()) return new_params[i];
-        // }
-
-        // if(new_params.back()->isErr()) return new_params.back();
-        // return mkOr(new_params);
     }
     /*
     (xor Bool Bool+ :left-assoc), return Bool
@@ -1661,13 +1650,17 @@ namespace SMTLIBParser{
 
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
-        for(size_t i=0;i<params.size() - 1;i++){
+        for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
             if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             new_params.emplace_back(params[i]);
         }
 
-        return mkAnd(new_params);
+        if(sort == nullptr){
+            sort = new_params[0]->getSort();
+        }
+
+        return mkOper(sort, NODE_KIND::NT_BV_AND, new_params);
     }
     /*
     (bvor Bv Bv+), return Bv
@@ -1695,7 +1688,7 @@ namespace SMTLIBParser{
 
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
-        for(size_t i=0;i<params.size() - 1;i++){
+        for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
             if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             new_params.emplace_back(params[i]);
@@ -1728,7 +1721,7 @@ namespace SMTLIBParser{
 
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
-        for(size_t i=0;i<params.size() - 1;i++){
+        for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
             if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             new_params.emplace_back(params[i]);
@@ -1763,7 +1756,7 @@ namespace SMTLIBParser{
 
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
-        for(size_t i=0;i<params.size() - 1;i++){
+        for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
             if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             new_params.emplace_back(params[i]);
@@ -1798,7 +1791,7 @@ namespace SMTLIBParser{
 
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
-        for(size_t i=0;i<params.size() - 1;i++){
+        for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
             if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             new_params.emplace_back(params[i]);
@@ -1833,7 +1826,7 @@ namespace SMTLIBParser{
 
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
-        for(size_t i=0;i<params.size() - 1;i++){
+        for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
             if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             new_params.emplace_back(params[i]);
@@ -1890,7 +1883,7 @@ namespace SMTLIBParser{
             return mkBvAdd(params[0], params[1]);
         }
 
-        for(size_t i=0;i<params.size() - 1;i++){
+        for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
             if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             new_params.emplace_back(params[i]);
@@ -1924,7 +1917,7 @@ namespace SMTLIBParser{
             return mkBvSub(params[0], params[1]);
         }
 
-        for(size_t i=0;i<params.size() - 1;i++){
+        for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
             if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             new_params.emplace_back(params[i]);
@@ -1958,7 +1951,7 @@ namespace SMTLIBParser{
             return mkBvMul(params[0], params[1]);
         }
 
-        for(size_t i=0;i<params.size() - 1;i++){
+        for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
             if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             new_params.emplace_back(params[i]);
@@ -2083,7 +2076,7 @@ namespace SMTLIBParser{
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
         size_t width = 0;
-        for(size_t i=0;i<params.size() - 1;i++){
+        for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
             // no need to check equal sort
             if(!params[i]->getSort()->isBv()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
@@ -2367,7 +2360,7 @@ namespace SMTLIBParser{
         std::shared_ptr<Sort> sort = getSort(params);
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
-        for(size_t i=0;i<params.size() - 1;i++){
+        for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
             if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             new_params.emplace_back(params[i]);
@@ -2387,7 +2380,7 @@ namespace SMTLIBParser{
         std::shared_ptr<Sort> sort = getSort(params);
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
-        for(size_t i=0;i<params.size() - 1;i++){
+        for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
             if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             new_params.emplace_back(params[i]);
@@ -2407,7 +2400,7 @@ namespace SMTLIBParser{
         std::shared_ptr<Sort> sort = getSort(params);
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
-        for(size_t i=0;i<params.size() - 1;i++){
+        for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
             if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             new_params.emplace_back(params[i]);
@@ -2427,7 +2420,7 @@ namespace SMTLIBParser{
         std::shared_ptr<Sort> sort = getSort(params);
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
-        for(size_t i=0;i<params.size() - 1;i++){
+        for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
             if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             new_params.emplace_back(params[i]);
@@ -2512,7 +2505,7 @@ namespace SMTLIBParser{
         std::shared_ptr<Sort> sort = getSort(params);
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
-        for(size_t i=0;i<params.size() - 1;i++){
+        for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
             if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             new_params.emplace_back(params[i]);
@@ -2532,7 +2525,7 @@ namespace SMTLIBParser{
         std::shared_ptr<Sort> sort = getSort(params);
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
-        for(size_t i=0;i<params.size() - 1;i++){
+        for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
             if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             new_params.emplace_back(params[i]);
@@ -2740,7 +2733,7 @@ namespace SMTLIBParser{
         if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
-        for(size_t i=0;i<params.size() - 1;i++){
+        for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
             if(!params[i]->getSort()->isStr()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             new_params.emplace_back(params[i]);
@@ -3046,7 +3039,7 @@ namespace SMTLIBParser{
         if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
-        for(size_t i=0;i<params.size() - 1;i++){
+        for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
             if(!params[i]->getSort()->isReg()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             new_params.emplace_back(params[i]);
@@ -3061,7 +3054,7 @@ namespace SMTLIBParser{
         if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
-        for(size_t i=0;i<params.size() - 1;i++){
+        for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
             if(!params[i]->getSort()->isReg()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             new_params.emplace_back(params[i]);
@@ -3076,7 +3069,7 @@ namespace SMTLIBParser{
         if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
-        for(size_t i=0;i<params.size() - 1;i++){
+        for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
             if(!params[i]->getSort()->isReg()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             new_params.emplace_back(params[i]);
