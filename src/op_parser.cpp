@@ -2138,11 +2138,11 @@ namespace SMTLIBParser{
         if(l->getSort()->isBv() || !r->getSort()->isInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         if(l->isCBV() && r->isCBV()){
-            Integer size = l->getSort()->getBitWidth() + r->toInt();
+            Integer size = r->toInt();
             return mkConstBv(bvZeroExtend(l->toString(), r->toInt()), size.get_ui());
         }
 
-        size_t width = l->getSort()->getBitWidth() + r->toInt().get_ui();
+        size_t width = r->toInt().get_ui();
         std::shared_ptr<Sort> new_sort = mkBVSort(width);
 
         return mkOper(new_sort, NODE_KIND::NT_BV_ZERO_EXT, l, r);
@@ -2155,11 +2155,11 @@ namespace SMTLIBParser{
         if(l->getSort()->isBv() || !r->getSort()->isInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         if(l->isCBV() && r->isCBV()){
-            Integer size = l->getSort()->getBitWidth() + r->toInt();
+            Integer size = r->toInt();
             return mkConstBv(bvSignExtend(l->toString(), r->toInt()), size.get_ui());
         }
 
-        size_t width = l->getSort()->getBitWidth() + r->toInt().get_ui();
+        size_t width = r->toInt().get_ui();
         std::shared_ptr<Sort> new_sort = mkBVSort(width);
 
         return mkOper(new_sort, NODE_KIND::NT_BV_SIGN_EXT, l, r);
