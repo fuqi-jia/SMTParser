@@ -537,11 +537,12 @@ namespace SMTLIBParser{
         if(i.size() > 2 && i[0] == '#' && i[1] == 'b'){
             // zero-extend
             std::string res = "#b";
-            if(i.size() < n.get_ui()){
-                res += std::string(n.get_ui() - i.size(), '0') + i;
+            std::string bin = i.substr(2, i.size() - 2);
+            if(bin.size() < n.get_ui()){
+                res += std::string(n.get_ui() - bin.size(), '0') + bin;
             }
             else{
-                res += i.substr(i.size() - n.get_ui(), n.get_ui());
+                res += bin.substr(bin.size() - n.get_ui(), n.get_ui());
             }
             return res;
         }
