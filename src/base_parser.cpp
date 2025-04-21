@@ -486,7 +486,7 @@ namespace SMTLIBParser{
 			// (declare-fun <symbol> (<sort>*) <sort>)
 			//                               ^
 			std::shared_ptr<DAGNode> res = nullptr;
-			if(peekSymbol() == ")"){
+			if(*bufptr == ')'){
 				// (declare-fun <symbol> () <sort>)
 				parseRpar();
 				std::shared_ptr<Sort> out_sort = parseSort();
@@ -495,7 +495,7 @@ namespace SMTLIBParser{
 			else{
 				// (declare-fun <symbol> (<sort>+) <sort>)
 				std::vector<std::shared_ptr<Sort>> params;
-				while(peekSymbol() != ")"){
+				while(*bufptr != ')'){
 					params.emplace_back(parseSort());
 				}
 				parseRpar();
@@ -1599,7 +1599,7 @@ namespace SMTLIBParser{
 
 	// sort ::= <identifier> | (<identifier> <sort>+)
 	std::shared_ptr<Sort> Parser::parseSort(){
-		if (peekSymbol() != "(") {
+		if (*bufptr != '(') {
 			// <identifier>
 			size_t expr_ln = line_number;
 			std::string s = getSymbol();
