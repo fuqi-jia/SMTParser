@@ -2100,7 +2100,7 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkBvExtract(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> s){
         if(l->isErr() || r->isErr() || s->isErr()) return l->isErr()?l:r;
-        if(!l->getSort()->isBv() || !r->getSort()->isInt() || !s->getSort()->isInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!l->getSort()->isBv() || !r->getSort()->isIntOrReal() || !s->getSort()->isIntOrReal()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         if(l->isCBV() && r->isCBV() && s->isCBV()){
             Integer size = (s->toInt() - r->toInt());
@@ -2117,7 +2117,7 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkBvRepeat(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!l->getSort()->isBv() || !r->getSort()->isInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!l->getSort()->isBv() || !r->getSort()->isIntOrReal()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         if(l->isCBV() && r->isCBV()){
             Integer size = l->getSort()->getBitWidth() * r->toInt();
@@ -2134,7 +2134,7 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkBvZeroExt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!l->getSort()->isBv() || !r->getSort()->isInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!l->getSort()->isBv() || !r->getSort()->isIntOrReal()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS); 
 
         if(l->isCBV() && r->isCBV()){
             Integer size = r->toInt();
@@ -2151,7 +2151,7 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkBvSignExt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!l->getSort()->isBv() || !r->getSort()->isInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!l->getSort()->isBv() || !r->getSort()->isIntOrReal()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         if(l->isCBV() && r->isCBV()){
             Integer size = r->toInt();
@@ -2168,7 +2168,7 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkBvRotateLeft(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!l->getSort()->isBv() || !r->getSort()->isInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!l->getSort()->isBv() || !r->getSort()->isIntOrReal()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         if(l->isCBV() && r->isCBV()){
             return mkConstBv(bvRotateLeft(l->toString(), r->toInt()), l->getSort()->getBitWidth());
@@ -2184,7 +2184,7 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkBvRotateRight(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!l->getSort()->isBv() || !r->getSort()->isInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!l->getSort()->isBv() || !r->getSort()->isIntOrReal()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         if(l->isCBV() && r->isCBV()){
             return mkConstBv(bvRotateRight(l->toString(), r->toInt()), l->getSort()->getBitWidth());
@@ -2319,7 +2319,7 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkNatToBv(std::shared_ptr<DAGNode> param, std::shared_ptr<DAGNode> size){
         if(param->isErr() || size->isErr()) return param->isErr()?param:size;
-        if(!param->getSort()->isInt() || !size->getSort()->isInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!param->getSort()->isIntOrReal() || !size->getSort()->isIntOrReal()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         if(param->isCBV() && size->isCBV()){
             return mkConstBv(natToBv(param->toInt(), size->toInt()), size->toInt().get_ui());
@@ -2347,7 +2347,7 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkIntToBv(std::shared_ptr<DAGNode> param, std::shared_ptr<DAGNode> size){
         if(param->isErr() || size->isErr()) return param->isErr()?param:size;
-        if(!param->getSort()->isInt() || !size->getSort()->isInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!param->getSort()->isIntOrReal() || !size->getSort()->isIntOrReal()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         if(param->isCBV() && size->isCBV()){
             return mkConstBv(intToBv(param->toInt(), size->toInt()), size->toInt().get_ui());
@@ -2596,7 +2596,7 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkFpToUbv(std::shared_ptr<DAGNode> param, std::shared_ptr<DAGNode> size){
         if(param->isErr() || size->isErr()) return param->isErr()?param:size;
-        if(!param->getSort()->isFp() || !size->getSort()->isInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!param->getSort()->isFp() || !size->getSort()->isIntOrReal()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         if(param->isCBV() && size->isCBV()){
             return mkConstBv(fpToUbv(param->toString(), size->toInt()), size->toInt().get_ui());
@@ -2608,7 +2608,7 @@ namespace SMTLIBParser{
     }
     std::shared_ptr<DAGNode> Parser::mkFpToSbv(std::shared_ptr<DAGNode> param, std::shared_ptr<DAGNode> size){
         if(param->isErr() || size->isErr()) return param->isErr()?param:size;
-        if(!param->getSort()->isFp() || !size->getSort()->isInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!param->getSort()->isFp() || !size->getSort()->isIntOrReal()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         if(param->isCBV() && size->isCBV()){
             return mkConstBv(fpToSbv(param->toString(), size->toInt()), size->toInt().get_ui());
@@ -2706,7 +2706,7 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkSelect(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!l->getSort()->isArray() || !r->getSort()->isInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!l->getSort()->isArray() || !r->getSort()->isIntOrReal()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         return mkOper(l->getSort()->getElemSort(), NODE_KIND::NT_SELECT, l, r);
     }
@@ -2715,7 +2715,7 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkStore(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> v){
         if(l->isErr() || r->isErr() || v->isErr()) return l->isErr()?l:r;
-        if(!l->getSort()->isArray() || !r->getSort()->isInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!l->getSort()->isArray() || !r->getSort()->isIntOrReal()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         return mkOper(l->getSort(), NODE_KIND::NT_STORE, l, r, v);
     }
@@ -2753,7 +2753,7 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkStrSubstr(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> s){
         if(l->isErr() || r->isErr() || s->isErr()) return l->isErr()?l:r;
-        if(!l->getSort()->isStr() || !r->getSort()->isInt() || !s->getSort()->isInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!l->getSort()->isStr() || !r->getSort()->isIntOrReal() || !s->getSort()->isIntOrReal()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         if(l->isCStr() && r->isCInt() && s->isCInt()){
             return mkConstStr(strSubstr(l->toString(), r->toInt(), s->toInt()));
@@ -2792,7 +2792,7 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkStrIndexof(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> s){
         if(l->isErr() || r->isErr() || s->isErr()) return l->isErr()?l:r;
-        if(!l->getSort()->isStr() || !r->getSort()->isStr() || !s->getSort()->isInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!l->getSort()->isStr() || !r->getSort()->isStr() || !s->getSort()->isIntOrReal()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         if(l->isCStr() && r->isCStr() && s->isCInt()){
             return mkConstInt(strIndexof(l->toString(), r->toString(), s->toInt()));
@@ -2805,7 +2805,7 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkStrCharat(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!l->getSort()->isStr() || !r->getSort()->isInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!l->getSort()->isStr() || !r->getSort()->isIntOrReal()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         if(l->isCStr() && r->isCInt()){
             return mkConstStr(strCharAt(l->toString(), r->toInt()));
@@ -2818,7 +2818,7 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkStrUpdate(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> v){
         if(l->isErr() || r->isErr() || v->isErr()) return l->isErr()?l:r;
-        if(!l->getSort()->isStr() || !r->getSort()->isInt() || !v->getSort()->isStr()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!l->getSort()->isStr() || !r->getSort()->isIntOrReal() || !v->getSort()->isStr()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         if(l->isCStr() && r->isCInt() && v->isCStr()){
             return mkConstStr(strUpdate(l->toString(), r->toInt(), v->toString()));
@@ -2988,7 +2988,7 @@ namespace SMTLIBParser{
     // STRINGS CONVERSION
     std::shared_ptr<DAGNode> Parser::mkStrFromInt(std::shared_ptr<DAGNode> param){
         if(param->isErr()) return param;
-        if(!param->getSort()->isInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!param->getSort()->isIntOrReal()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         return mkOper(STR_SORT, NODE_KIND::NT_STR_FROM_INT, param);
     }
@@ -3024,7 +3024,7 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkStrFromCode(std::shared_ptr<DAGNode> param){
         if(param->isErr()) return param;
-        if(!param->getSort()->isInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!param->getSort()->isIntOrReal()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         return mkOper(STR_SORT, NODE_KIND::NT_STR_FROM_CODE, param);
     }
@@ -3126,7 +3126,7 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkRegRange(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!l->getSort()->isReg() || !r->getSort()->isInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!l->getSort()->isReg() || !r->getSort()->isIntOrReal()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         return mkOper(REG_SORT, NODE_KIND::NT_REG_RANGE, l, r);
     }
@@ -3135,7 +3135,7 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkRegRepeat(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!l->getSort()->isInt() || !r->getSort()->isReg()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!l->getSort()->isIntOrReal() || !r->getSort()->isReg()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         return mkOper(REG_SORT, NODE_KIND::NT_REG_REPEAT, l, r);
     }
@@ -3144,7 +3144,7 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkRegLoop(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> s){
         if(l->isErr() || r->isErr() || s->isErr()) return l->isErr()?l:r;
-        if(!l->getSort()->isReg() || !r->getSort()->isInt() || !s->getSort()->isInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!l->getSort()->isReg() || !r->getSort()->isIntOrReal() || !s->getSort()->isIntOrReal()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         return mkOper(REG_SORT, NODE_KIND::NT_REG_LOOP, l, r, s);
     }
