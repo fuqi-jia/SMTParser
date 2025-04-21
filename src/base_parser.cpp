@@ -153,7 +153,7 @@ namespace SMTLIBParser{
 				}
 				else if (*bufptr == ';' || *bufptr == '|' || *bufptr == '"' || *bufptr == '(' || *bufptr == ')') {
 
-					// out of symbol mode bu ';', '|', '(', and ')'
+					// out of symbol mode by ';', '|', '(', and ')'
 					std::string tmp_s(beg, bufptr - beg);
 					return tmp_s;
 
@@ -1711,61 +1711,151 @@ namespace SMTLIBParser{
 
 	}
 
+	// struct for let context
+	struct LetContext {
+		std::vector<std::shared_ptr<DAGNode>> params;
+		std::vector<std::string> key_list;
+		int nesting_level;
+		bool is_complete;
+		
+		LetContext(int level = 0) : nesting_level(level), is_complete(false) {}
+	};
 	/*
 	keybinding ::= (<symbol> expr)
 	(let (<keybinding>+) expr), return expr
 	*/
 	std::shared_ptr<DAGNode> Parser::parseLet() {
-
+		// This function uses an iterative approach instead of recursion to handle nested let expressions
+		
+		// Create a stack to store parsing states and contexts
+		std::vector<LetContext> stateStack;
+		
+		// Push initial state onto the stack
+		stateStack.push_back(LetContext(0));
+		
+		// Enter the initial "("
 		parseLpar();
-
-		// 2021.08.29: function like parser.
-		// let -> children[0]: expr, children[1, ..., k]: keybinding[1, ..., k].
-		std::vector<std::shared_ptr<DAGNode>> params;
-		// parse key bindings
-		std::vector<std::string> key_list;
-		while (*bufptr != ')') {
-
-			//(<symbol> expr)
-			parseLpar();
-
-			size_t name_ln = line_number;
-			std::string name = getSymbol();
-			// TODO! now we use an variable to represent the let 
-			std::shared_ptr<DAGNode> expr = parseExpr();
-			// e.g. ?v_0 -> children[0] = (+ 1 x)
-			if(let_key_map.find(name) != let_key_map.end()){
-				// multiple key bindings
-				return mkErr(ERROR_TYPE::ERR_MUL_DECL);
+		
+		// Main loop to handle all nested let expressions
+		while (!stateStack.empty()) {
+			auto &currentState = stateStack.back();
+			auto &params = currentState.params;
+			auto &key_list = currentState.key_list;
+			
+			if(!currentState.is_complete){
+				// Parse the current let bindings
+				while (*bufptr != ')') {
+					// Process binding expression (<symbol> expr)
+					parseLpar();
+					
+					size_t name_ln = line_number;
+					std::string name = getSymbol();
+					
+					// Check for duplicate key bindings
+					if (let_key_map.find(name) != let_key_map.end()) {
+						// Clean up all variable bindings in the state stack
+						for (auto &state : stateStack) {
+							for (const auto &key : state.key_list) {
+								let_key_map.erase(key);
+							}
+						}
+						return mkErr(ERROR_TYPE::ERR_MUL_DECL);
+					}
+					
+					// Parse the expression value (this won't trigger recursive let parsing)
+					std::shared_ptr<DAGNode> expr = parseExpr();
+					
+					if (expr->isErr()) {
+						// Clean up all variable bindings in the state stack
+						for (auto &state : stateStack) {
+							for (const auto &key : state.key_list) {
+								let_key_map.erase(key);
+							}
+						}
+						err_all(expr, name, name_ln);
+					}
+					
+					// Add the binding
+					let_key_map.insert(std::pair<std::string, std::shared_ptr<DAGNode>>(name, expr));
+					params.emplace_back(expr);
+					key_list.emplace_back(name);
+					
+					parseRpar();
+				}
+				
+				// Finished parsing all bindings for the current let, handle the closing parenthesis
+				parseRpar();
+			}
+			
+			// Process the body of the let expression
+			if (*bufptr == '(' && peek_symbol() == "let") {
+				// If the body is another let expression, we don't recursively call parseLet
+				// Instead, push it as a new state onto the stack
+				parseLpar();  // Consume '('
+				std::string let_key = getSymbol();  // Consume "let"
+				assert(let_key == "let");
+				parseLpar();  // Consume the second let expression's starting '('
+				
+				stateStack.push_back(LetContext(currentState.nesting_level + 1));
 			}
 			else{
-				let_key_map.insert(std::pair<std::string, std::shared_ptr<DAGNode>>(name, expr));
+				std::shared_ptr<DAGNode> res = nullptr;
+				if(*bufptr == ')'){
+					res = std::make_shared<DAGNode>(params[0]->getSort(), NODE_KIND::NT_LET, "let", params);
+				}
+				else{
+					std::shared_ptr<DAGNode> expr = parseExpr();
+					params.insert(params.begin(), expr);
+					res = std::make_shared<DAGNode>(expr->getSort(), NODE_KIND::NT_LET, "let", params);
+				}
+
+				// Remove all variable bindings for the current state
+				for (const auto &key : key_list) {
+					let_key_map.erase(key);
+				}
+
+				// State processing complete, pop from stack
+				stateStack.pop_back();
+
+				// If stack is empty, return the result; otherwise, use the result as the body of the parent let
+				if (stateStack.empty()) {
+					return res;
+				}
+				else{
+					// Consume the closing parenthesis
+					parseRpar();
+					// Use the result as the body of the parent let
+					stateStack.back().params.insert(stateStack.back().params.begin(), res);
+					stateStack.back().is_complete = true;
+				}
 			}
-			params.emplace_back(expr);
-			if (expr->isErr()) err_all(expr, name, name_ln);
-
-			parseRpar();
-
-			//new key
-			key_list.emplace_back(name);
 		}
+		
+		// Should not reach here, but added for safety
+		return mkErr(ERROR_TYPE::ERR_UNEXP_EOF);
+	}
 
-		parseRpar();
-
-		//parse let right expression
-		std::shared_ptr<DAGNode> expr = parseExpr();
-
-		// it will insert into params's front.
-		params.insert(params.begin(), expr);
-		std::shared_ptr<DAGNode> res = std::make_shared<DAGNode>(expr->getSort(), NODE_KIND::NT_LET, "let", params);
-
-		//remove key bindings: for let uses local variables. 
-		while (key_list.size() > 0) {
-			let_key_map.erase(key_list.back());
-			key_list.pop_back();
+	// Helper function to preview the next symbol without consuming input
+	std::string Parser::peek_symbol() {
+		char *save_bufptr = bufptr;
+		SCAN_MODE save_mode = scan_mode;
+		size_t save_line = line_number;
+		
+		std::string symbol;
+		if (*bufptr == '(') {
+			bufptr++;
+			scanToNextSymbol();
+			symbol = getSymbol();
+		} else {
+			symbol = getSymbol();
 		}
-
-		return res;
+		
+		// Restore state
+		bufptr = save_bufptr;
+		scan_mode = save_mode;
+		line_number = save_line;
+		
+		return symbol;
 	}
 
 	std::shared_ptr<DAGNode> Parser::applyFun(std::shared_ptr<DAGNode> fun, const std::vector<std::shared_ptr<DAGNode>> & params){

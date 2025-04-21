@@ -132,7 +132,15 @@ namespace SMTLIBParser{
         uint64_t bitLength; // Total bit length of input
     
         // SHA-256 constants (first 32 bits of the fractional parts of the square roots of the first 64 primes)
-        static const uint32_t k[64];
+        static constexpr uint32_t k[64] = {
+            0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+            0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+            0xe49b69c1, 0x3192c4fd, 0x2b8e1e4d, 0x7f2a7c67, 0x94f82a4d, 0x37533f4f, 0x5f8a1e10, 0x43172f60,
+            0x8e44a3f8, 0x88d7e7ed, 0xd0c8c12d, 0x35da6c31, 0x6e37a0df, 0x6071b9b1, 0xa62e53bc, 0x37b156f3,
+            0x8ff8ed2b, 0xa6e472e2, 0xa3c68864, 0x3be12e2e, 0x9d6c71fe, 0x3f775f6b, 0xa852adf7, 0x5b2266a7,
+            0xe1be9d35, 0x3da7096d, 0xf8c7032a, 0x2b4b9c0c, 0x438156fd, 0x2d35b6b9, 0x3ff58e3f, 0x94a15ec5,
+            0x4d27c0ee, 0x5a15a079, 0x771b6d91, 0x437f394f, 0x69e2a63f, 0x711c312f, 0x5b9d674f, 0x8e88c877
+        };
     
         // Constructor, initializing the hash values (state)
         SHA256() {
@@ -157,6 +165,16 @@ namespace SMTLIBParser{
     
         // Function to process the input string and return the hash
         std::string process(const std::string &input) {
+            // Handle empty input
+            if (input.empty()) {
+                // Process a single block with just padding
+                std::vector<uint8_t> data(64, 0);
+                data[0] = 0x80; // Append 1 bit
+                data[63] = 0;   // Message length is 0
+                processBlock(data.data());
+                return toHexString();
+            }
+
             // Step 1: Padding the input
             std::vector<uint8_t> data = padInput(input);
     

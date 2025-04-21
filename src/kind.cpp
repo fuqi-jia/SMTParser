@@ -88,13 +88,13 @@ namespace SMTLIBParser{
         case NODE_KIND::NT_SUB:
             return "-";
         case NODE_KIND::NT_NEG:
-            return "neg";
+            return "-";
         case NODE_KIND::NT_DIV_INT:
             return "div";
         case NODE_KIND::NT_DIV_REAL:
             return "/";
         case NODE_KIND::NT_MOD:
-            return "mod";
+            return "%";
         case NODE_KIND::NT_ABS:
             return "abs";
         case NODE_KIND::NT_SQRT:

@@ -54,17 +54,35 @@ namespace SMTLIBParser{
         std::string		                        name;
         std::vector<std::shared_ptr<DAGNode>>   children;
 
+        std::string                             children_hash;
+
     public:
-        DAGNode(std::shared_ptr<Sort> sort, NODE_KIND kind, std::string name, std::vector<std::shared_ptr<DAGNode>> children): sort(sort), kind(kind), name(name), children(children) {}
-        DAGNode(std::shared_ptr<Sort> sort, NODE_KIND kind, std::string name): sort(sort), kind(kind), name(name) {}
-        DAGNode(std::shared_ptr<Sort> sort, NODE_KIND kind): sort(sort), kind(kind), name("") {}
-        DAGNode(std::shared_ptr<Sort> sort): sort(sort), kind(NODE_KIND::NT_UNKNOWN), name("") {}
-        DAGNode(): sort(NULL_SORT), kind(NODE_KIND::NT_UNKNOWN), name("") {}
-        DAGNode(const DAGNode& other): sort(other.sort), kind(other.kind), name(other.name), children(other.children) {}
+        DAGNode(std::shared_ptr<Sort> sort, NODE_KIND kind, std::string name, std::vector<std::shared_ptr<DAGNode>> children): sort(sort), kind(kind), name(name), children(children) {
+            children_hash = "";
+            for(auto& child : children){
+                children_hash += child->hashString() + "__";
+            }
+            children_hash = sha256(children_hash);
+        }
+        DAGNode(std::shared_ptr<Sort> sort, NODE_KIND kind, std::string name): sort(sort), kind(kind), name(name) {
+            children_hash = "";
+        }
+        DAGNode(std::shared_ptr<Sort> sort, NODE_KIND kind): sort(sort), kind(kind), name("") {
+            children_hash = "";
+        }
+        DAGNode(std::shared_ptr<Sort> sort): sort(sort), kind(NODE_KIND::NT_UNKNOWN), name("") {
+            children_hash = "";
+        }
+        DAGNode(): sort(NULL_SORT), kind(NODE_KIND::NT_UNKNOWN), name(""), children_hash("") {}
+        DAGNode(const DAGNode& other): sort(other.sort), kind(other.kind), name(other.name), children(other.children), children_hash(other.children_hash) {}
 
         // other initialization
-        DAGNode(NODE_KIND kind, std::string name): sort(NULL_SORT), kind(kind), name(name) {}
-        DAGNode(NODE_KIND kind): sort(NULL_SORT), kind(kind), name("") {}
+        DAGNode(NODE_KIND kind, std::string name): sort(NULL_SORT), kind(kind), name(name) {
+            children_hash = "";
+        }
+        DAGNode(NODE_KIND kind): sort(NULL_SORT), kind(kind), name("") {
+            children_hash = "";
+        }
         // only constant
         DAGNode(const std::string& n) {
             if (n == "true") {
@@ -114,11 +132,12 @@ namespace SMTLIBParser{
                 kind = NODE_KIND::NT_ERROR;
             }
             name = name;
+            children_hash = "";
         }
         
         bool operator==(const DAGNode elem)
         {
-            return (sort == elem.sort && kind == elem.kind && name == elem.name && children == elem.children);
+            return (sort == elem.sort && kind == elem.kind && name == elem.name && children_hash == elem.children_hash);
         }
         
         bool isLeaf() 				const { return children.empty(); };
@@ -512,13 +531,6 @@ namespace SMTLIBParser{
         }
 
         std::string hashString() const {
-            std::string children_hash = "__";
-            for(auto& child : children){    
-                children_hash += child->hashString() + "__";
-            }
-            if(children.size() == 0){
-                children_hash = "";
-            }
             return sha256(sort->toString() + "__" + kindToString(kind) + "__" + name + "__" + std::to_string(children.size()) + "__" + children_hash);
         }
 
