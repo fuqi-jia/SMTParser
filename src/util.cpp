@@ -306,11 +306,13 @@ namespace SMTLIBParser{
         assert(bv1[0] == '#' && bv1[1] == 'b');
         assert(bv2[0] == '#' && bv2[1] == 'b');
         std::string res = "";
+        std::string bv1_ = bv1.substr(2, bv1.size() - 2);
+        std::string bv2_ = bv2.substr(2, bv2.size() - 2);
         std::vector<std::string> partials;
-        for(size_t i = bv2.size() - 1; i >= 2; i--){
-            if(bv2[i] == '1'){
-                std::string partial = bv1.substr(bv2.size() - i - 2, bv1.size() - bv2.size() + i + 2);
-                partial = partial + std::string(bv2.size() - i - 2, '0');
+        for(int i = bv2_.size() - 1; i >= 0; i--){
+            if(bv2_[i] == '1'){
+                std::string partial = bv1_.substr(0, bv2_.size() - i);
+                partial = partial + std::string(i - 1, '0');
                 partial = "b#" + partial;
                 partials.emplace_back(partial);
             }
