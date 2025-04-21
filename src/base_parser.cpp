@@ -484,7 +484,7 @@ namespace SMTLIBParser{
 			//                       ^
 			parseLpar();
 			std::shared_ptr<Sort> sort = nullptr;
-			if(peek_symbol() == ')'){
+			if(peekSymbol() == ")"){
 				sort = NULL_SORT;
 			}
 			else{
@@ -1605,7 +1605,7 @@ namespace SMTLIBParser{
 
 	// sort ::= <identifier> | (<identifier> <sort>+)
 	std::shared_ptr<Sort> Parser::parseSort(){
-		if (peek_symbol() != '(') {
+		if (peekSymbol() != "(") {
 			// <identifier>
 			size_t expr_ln = line_number;
 			std::string s = getSymbol();
@@ -1789,7 +1789,7 @@ namespace SMTLIBParser{
 			}
 			
 			// Process the body of the let expression
-			if (*bufptr == '(' && peek_symbol() == "let") {
+			if (*bufptr == '(' && peekSymbol() == "let") {
 				// If the body is another let expression, we don't recursively call parseLet
 				// Instead, push it as a new state onto the stack
 				parseLpar();  // Consume '('
@@ -1837,7 +1837,7 @@ namespace SMTLIBParser{
 	}
 
 	// Helper function to preview the next symbol without consuming input
-	std::string Parser::peek_symbol() {
+	std::string Parser::peekSymbol() {
 		char *save_bufptr = bufptr;
 		SCAN_MODE save_mode = scan_mode;
 		size_t save_line = line_number;
