@@ -256,7 +256,7 @@ namespace SMTLIBParser{
                 res += carry ? '0' : '1';
             }
         }
-        res += "b#";
+        res += "#b";
         return std::string(res.rbegin(), res.rend());
     }
 
@@ -278,7 +278,7 @@ namespace SMTLIBParser{
                 res += carry ? '0' : '1';
             }
         }
-        res += "b#";
+        res += "#b";
         return std::string(res.rbegin(), res.rend());
     }
     std::string bvSub(const std::string& bv1, const std::string& bv2){
@@ -299,7 +299,7 @@ namespace SMTLIBParser{
                 res += borrow ? '1' : '0';
             }
         }
-        res += "b#";
+        res += "#b";
         return std::string(res.rbegin(), res.rend());
     }
     std::string bvMul(const std::string& bv1, const std::string& bv2){
@@ -313,7 +313,7 @@ namespace SMTLIBParser{
             if(bv2_[i] == '1'){
                 std::string partial = bv1_.substr(0, bv2_.size() - i);
                 partial = partial + std::string(i - 1, '0');
-                partial = "b#" + partial;
+                partial = "#b" + partial;
                 partials.emplace_back(partial);
             }
         }
@@ -358,7 +358,7 @@ namespace SMTLIBParser{
                 }
             }
         }
-        res = "b#" + quotient;
+        res = "#b" + quotient;
         return res;
     }
     std::string bvUrem(const std::string& bv1, const std::string& bv2){
@@ -367,7 +367,7 @@ namespace SMTLIBParser{
         std::string dividend = bv1.substr(2, bv1.size() - 2);
         std::string divisor = bv2.substr(2, bv2.size() - 2);
         std::string quotient = SMTLIBParser::bvUdiv(bv1, bv2).substr(2, bv1.size() - 2);
-        std::string res = "b#" + SMTLIBParser::bvSub(dividend, SMTLIBParser::bvMul("b#" + quotient, bv2)).substr(2, dividend.size());
+        std::string res = "#b" + SMTLIBParser::bvSub(dividend, SMTLIBParser::bvMul("#b" + quotient, bv2)).substr(2, dividend.size());
         return res;
     }
     std::string bvSdiv(const std::string& bv1, const std::string& bv2){
@@ -377,8 +377,8 @@ namespace SMTLIBParser{
         bool isNeg2 = bv2[2] == '1';
         std::string res = SMTLIBParser::bvUdiv(bv1, bv2);
         if(isNeg1 ^ isNeg2){
-            res = "b#" + SMTLIBParser::bvNot(res.substr(2, res.size() - 2));
-            res = SMTLIBParser::bvAdd(res, "b#01").substr(2, res.size());
+            res = "#b" + SMTLIBParser::bvNot(res.substr(2, res.size() - 2));
+            res = SMTLIBParser::bvAdd(res, "#b01").substr(2, res.size());
         }
         return res;
     }
@@ -388,8 +388,8 @@ namespace SMTLIBParser{
         bool isNeg1 = bv1[2] == '1';
         std::string res = SMTLIBParser::bvUrem(bv1, bv2);
         if(isNeg1){
-            res = "b#" + SMTLIBParser::bvNot(res.substr(2, res.size() - 2));
-            res = SMTLIBParser::bvAdd(res, "b#01").substr(2, res.size());
+            res = "#b" + SMTLIBParser::bvNot(res.substr(2, res.size() - 2));
+            res = SMTLIBParser::bvAdd(res, "#b01").substr(2, res.size());
         }
         return res;
     }
@@ -399,8 +399,8 @@ namespace SMTLIBParser{
         bool isNeg1 = bv1[2] == '1';
         std::string res = SMTLIBParser::bvSrem(bv1, bv2);
         if(isNeg1){
-            res = "b#" + SMTLIBParser::bvNot(res.substr(2, res.size() - 2));
-            res = SMTLIBParser::bvAdd(res, "b#01").substr(2, res.size());
+            res = "#b" + SMTLIBParser::bvNot(res.substr(2, res.size() - 2));
+            res = SMTLIBParser::bvAdd(res, "#b01").substr(2, res.size());
         }
         return res;
     }
@@ -411,10 +411,10 @@ namespace SMTLIBParser{
         assert(n[0] == '#' && n[1] == 'b');
         size_t shift = Integer(n.substr(2, n.size() - 2)).get_ui();
         if(shift >= bv.size() - 2){
-            return "b#0" + std::string(shift - bv.size() + 2, '0');
+            return "#b0" + std::string(shift - bv.size() + 2, '0');
         }
         else{
-            return "b#" + bv.substr(2, bv.size() - 2 - shift) + std::string(shift, '0');
+            return "#b" + bv.substr(2, bv.size() - 2 - shift) + std::string(shift, '0');
         }
     }
     std::string bvLshr(const std::string& bv, const std::string& n){
@@ -423,10 +423,10 @@ namespace SMTLIBParser{
         assert(n[0] == '#' && n[1] == 'b');
         size_t shift = Integer(n.substr(2, n.size() - 2)).get_ui();
         if(shift >= bv.size() - 2){
-            return "b#0" + std::string(shift - bv.size() + 2, '0');
+            return "#b0" + std::string(shift - bv.size() + 2, '0');
         }
         else{
-            return "b#" + std::string(shift, '0') + bv.substr(2, bv.size() - 2 - shift);
+            return "#b" + std::string(shift, '0') + bv.substr(2, bv.size() - 2 - shift);
         }
     }
     std::string bvAshr(const std::string& bv, const std::string& n){
@@ -435,22 +435,22 @@ namespace SMTLIBParser{
         assert(n[0] == '#' && n[1] == 'b');
         size_t shift = Integer(n.substr(2, n.size() - 2)).get_ui();
         if(shift >= bv.size() - 2){
-            return "b#" + std::string(bv.size() - 2, bv[2]);
+            return "#b" + std::string(bv.size() - 2, bv[2]);
         }
         else{
-            return "b#" + std::string(shift, bv[2]) + bv.substr(2, bv.size() - 2 - shift);
+            return "#b" + std::string(shift, bv[2]) + bv.substr(2, bv.size() - 2 - shift);
         }
     }
 
     std::string bvConcat(const std::string& bv1, const std::string& bv2){
         assert(bv1[0] == '#' && bv1[1] == 'b');
         assert(bv2[0] == '#' && bv2[1] == 'b');
-        return "b#" + bv1.substr(2, bv1.size() - 2) + bv2.substr(2, bv2.size() - 2);
+        return "#b" + bv1.substr(2, bv1.size() - 2) + bv2.substr(2, bv2.size() - 2);
     }
     std::string bvExtract(const std::string& bv, const Integer& i, const Integer& j){
         assert(bv[0] == '#' && bv[1] == 'b');
         assert(i <= j);
-        return "b#" + bv.substr(2 + bv.size() - 2 - j.get_ui(), j.get_ui() - i.get_ui() + 1);
+        return "#b" + bv.substr(2 + bv.size() - 2 - j.get_ui(), j.get_ui() - i.get_ui() + 1);
     }
     std::string bvRepeat(const std::string& bv, const Integer& n){
         assert(bv[0] == '#' && bv[1] == 'b');
@@ -458,26 +458,26 @@ namespace SMTLIBParser{
         for(size_t i = 0; i < n.get_ui(); i++){
             res += bv.substr(2, bv.size() - 2);
         }
-        return "b#" + res;
+        return "#b" + res;
     }
     std::string bvZeroExtend(const std::string& bv, const Integer& n){
         assert(bv[0] == '#' && bv[1] == 'b');
-        return "b#" + std::string(n.get_ui(), '0') + bv.substr(2, bv.size() - 2);
+        return "#b" + std::string(n.get_ui(), '0') + bv.substr(2, bv.size() - 2);
     }
     std::string bvSignExtend(const std::string& bv, const Integer& n){
         assert(bv[0] == '#' && bv[1] == 'b');
-        return "b#" + std::string(n.get_ui(), bv[2]) + bv.substr(2, bv.size() - 2);
+        return "#b" + std::string(n.get_ui(), bv[2]) + bv.substr(2, bv.size() - 2);
     }
 
     std::string bvRotateLeft(const std::string& bv, const Integer& n){
         assert(bv[0] == '#' && bv[1] == 'b');
         Integer real_n = n % (bv.size() - 2);
-        return "b#" + bv.substr(2 + n.get_ui(), bv.size() - 2 - n.get_ui()) + bv.substr(2, n.get_ui());
+        return "#b" + bv.substr(2 + n.get_ui(), bv.size() - 2 - n.get_ui()) + bv.substr(2, n.get_ui());
     }
     std::string bvRotateRight(const std::string& bv, const Integer& n){
         assert(bv[0] == '#' && bv[1] == 'b');
         Integer real_n = n % (bv.size() - 2);
-        return "b#" + bv.substr(2 + bv.size() - 2 - n.get_ui(), n.get_ui()) + bv.substr(2, bv.size() - 2 - n.get_ui());
+        return "#b" + bv.substr(2 + bv.size() - 2 - n.get_ui(), n.get_ui()) + bv.substr(2, bv.size() - 2 - n.get_ui());
     }
 
     bool bvComp(const std::string& bv1, const std::string& bv2, const NODE_KIND& kind){
