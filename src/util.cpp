@@ -263,23 +263,25 @@ namespace SMTLIBParser{
     std::string bvAdd(const std::string& bv1, const std::string& bv2){
         assert(bv1[0] == '#' && bv1[1] == 'b');
         assert(bv2[0] == '#' && bv2[1] == 'b');
-        if(bv1.size() != bv2.size()){
+        std::string bv1_ = bv1.substr(2, bv1.size() - 2);
+        std::string bv2_ = bv2.substr(2, bv2.size() - 2);
+        if(bv1_.size() != bv2_.size()){
             // add prefix 0 to the shorter one
-            if(bv1.size() < bv2.size()){
-                bv1 = "#b" + std::string(bv2.size() - bv1.size(), '0') + bv1.substr(2, bv1.size() - 2);
+            if(bv1_.size() < bv2_.size()){
+                bv1_ = "#b" + std::string(bv2_.size() - bv1_.size(), '0') + bv1_;
             }
             else{
-                bv2 = "#b" + std::string(bv1.size() - bv2.size(), '0') + bv2.substr(2, bv2.size() - 2);
+                bv2_ = "#b" + std::string(bv1_.size() - bv2_.size(), '0') + bv2_;
             }
         }
         std::string res = "";
         bool carry = false;
-        for(size_t i = bv1.size() - 1; i >= 2; i--){
-            if(bv1[i] == '0' && bv2[i] == '0'){
+        for(size_t i = bv1_.size() - 1; i >= 2; i--){
+            if(bv1_[i] == '0' && bv2_[i] == '0'){
                 res += carry ? '1' : '0';
                 carry = false;
             }
-            else if(bv1[i] == '1' && bv2[i] == '1'){
+            else if(bv1_[i] == '1' && bv2_[i] == '1'){
                 res += carry ? '1' : '0';
                 carry = true;
             }
