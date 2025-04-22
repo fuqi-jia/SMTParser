@@ -256,8 +256,9 @@ namespace SMTLIBParser{
                 res += carry ? '0' : '1';
             }
         }
-        res += "#b";
-        return std::string(res.rbegin(), res.rend());
+        res = std::string(res.rbegin(), res.rend());
+        res = "#b" + res;
+        return res;
     }
 
     std::string bvAdd(const std::string& bv1, const std::string& bv2){
@@ -312,8 +313,9 @@ namespace SMTLIBParser{
                 res += borrow ? '1' : '0';
             }
         }
-        res += "#b";
-        return std::string(res.rbegin(), res.rend());
+        res = std::string(res.rbegin(), res.rend());
+        res = "#b" + res;
+        return res;
     }
     std::string bvMul(const std::string& bv1, const std::string& bv2){
         assert(bv1[0] == '#' && bv1[1] == 'b');
