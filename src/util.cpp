@@ -182,8 +182,8 @@ namespace SMTLIBParser{
     std::string bvNot(const std::string& bv){
         assert(bv[0] == '#' && bv[1] == 'b');
         std::string res = "#b";
-        for(char c : bv){
-            res += c == '0' ? '1' : '0';
+        for(size_t i = 2; i < bv.size(); i++){
+            res += bv[i] == '0' ? '1' : '0';
         }
         return res;
     }
@@ -263,6 +263,15 @@ namespace SMTLIBParser{
     std::string bvAdd(const std::string& bv1, const std::string& bv2){
         assert(bv1[0] == '#' && bv1[1] == 'b');
         assert(bv2[0] == '#' && bv2[1] == 'b');
+        if(bv1.size() != bv2.size()){
+            // add prefix 0 to the shorter one
+            if(bv1.size() < bv2.size()){
+                bv1 = "#b" + std::string(bv2.size() - bv1.size(), '0') + bv1.substr(2, bv1.size() - 2);
+            }
+            else{
+                bv2 = "#b" + std::string(bv1.size() - bv2.size(), '0') + bv2.substr(2, bv2.size() - 2);
+            }
+        }
         std::string res = "";
         bool carry = false;
         for(size_t i = bv1.size() - 1; i >= 2; i--){
@@ -278,8 +287,10 @@ namespace SMTLIBParser{
                 res += carry ? '0' : '1';
             }
         }
-        res += "#b";
-        return std::string(res.rbegin(), res.rend());
+        // add #b prefix and reverse
+        res = std::string(res.rbegin(), res.rend());
+        res = "#b" + res;
+        return res;
     }
     std::string bvSub(const std::string& bv1, const std::string& bv2){
         assert(bv1[0] == '#' && bv1[1] == 'b');
@@ -417,8 +428,8 @@ namespace SMTLIBParser{
         bool isNeg2 = bv2[2] == '1';
         std::string res = SMTLIBParser::bvUdiv(bv1, bv2);
         if(isNeg1 ^ isNeg2){
-            res = "#b" + SMTLIBParser::bvNot(res.substr(2, res.size() - 2));
-            res = SMTLIBParser::bvAdd(res, "#b01").substr(2, res.size());
+            res = SMTLIBParser::bvNot(res);
+            res = SMTLIBParser::bvAdd(res, "#b01");
         }
         return res;
     }
@@ -428,8 +439,8 @@ namespace SMTLIBParser{
         bool isNeg1 = bv1[2] == '1';
         std::string res = SMTLIBParser::bvUrem(bv1, bv2);
         if(isNeg1){
-            res = "#b" + SMTLIBParser::bvNot(res.substr(2, res.size() - 2));
-            res = SMTLIBParser::bvAdd(res, "#b01").substr(2, res.size());
+            res = SMTLIBParser::bvNot(res);
+            res = SMTLIBParser::bvAdd(res, "#b01");
         }
         return res;
     }
@@ -439,8 +450,8 @@ namespace SMTLIBParser{
         bool isNeg1 = bv1[2] == '1';
         std::string res = SMTLIBParser::bvSrem(bv1, bv2);
         if(isNeg1){
-            res = "#b" + SMTLIBParser::bvNot(res.substr(2, res.size() - 2));
-            res = SMTLIBParser::bvAdd(res, "#b01").substr(2, res.size());
+            res = SMTLIBParser::bvNot(res);
+            res = SMTLIBParser::bvAdd(res, "#b01");
         }
         return res;
     }
