@@ -892,7 +892,7 @@ namespace SMTLIBParser{
 				expr = mkConstReal(s);
 			}
 			else if(isBVUtil(s)){
-				expr = mkConstBv(s);
+				expr = mkConstBv(s, s.size() - 2);
 			}
 			// else if(isFPUtil(s)){
 			// 	expr = mkConstFP(s);
