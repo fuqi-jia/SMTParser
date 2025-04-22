@@ -277,6 +277,10 @@ namespace SMTLIBParser{
                 bv1_ = "#b" + bv1_;
             }
         }
+        else{
+            bv1_ = "#b" + bv1_;
+            bv2_ = "#b" + bv2_;
+        }   
         std::string res = "";
         bool carry = false;
         for(size_t i = bv1_.size() - 1; i >= 2; i--){
@@ -313,6 +317,10 @@ namespace SMTLIBParser{
                 bv1_ = "#b" + bv1_;
             }
         }
+        else{
+            bv1_ = "#b" + bv1_;
+            bv2_ = "#b" + bv2_;
+        }
         std::string res = "";
         bool borrow = false;
         for(size_t i = bv1_.size() - 1; i >= 2; i--){
@@ -347,6 +355,10 @@ namespace SMTLIBParser{
                 bv2_ = "#b" + std::string(bv1_.size() - bv2_.size(), '0') + bv2_;
                 bv1_ = "#b" + bv1_;
             }
+        }
+        else{
+            bv1_ = "#b" + bv1_;
+            bv2_ = "#b" + bv2_;
         }
         std::vector<std::string> partials;
         for(int i = bv2_.size() - 1; i >= 0; i--){
@@ -383,6 +395,10 @@ namespace SMTLIBParser{
                 bv2_ = "#b" + std::string(bv1_.size() - bv2_.size(), '0') + bv2_;
                 bv1_ = "#b" + bv1_;
             }
+        }
+        else{
+            bv1_ = "#b" + bv1_;
+            bv2_ = "#b" + bv2_;
         }
         // 特殊情况处理：除以0
         bool isZero = true;
