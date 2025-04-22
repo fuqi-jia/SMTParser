@@ -270,9 +270,11 @@ namespace SMTLIBParser{
             // add prefix 0 to the shorter one
             if(bv1_.size() < bv2_.size()){
                 bv1_ = "#b" + std::string(bv2_.size() - bv1_.size(), '0') + bv1_;
+                bv2_ = "#b" + bv2_;
             }
             else{
                 bv2_ = "#b" + std::string(bv1_.size() - bv2_.size(), '0') + bv2_;
+                bv1_ = "#b" + bv1_;
             }
         }
         std::string res = "";
@@ -298,14 +300,27 @@ namespace SMTLIBParser{
     std::string bvSub(const std::string& bv1, const std::string& bv2){
         assert(bv1[0] == '#' && bv1[1] == 'b');
         assert(bv2[0] == '#' && bv2[1] == 'b');
+        std::string bv1_ = bv1.substr(2, bv1.size() - 2);
+        std::string bv2_ = bv2.substr(2, bv2.size() - 2);
+        if(bv1_.size() != bv2_.size()){
+            // add prefix 0 to the shorter one
+            if(bv1_.size() < bv2_.size()){
+                bv1_ = "#b" + std::string(bv2_.size() - bv1_.size(), '0') + bv1_;
+                bv2_ = "#b" + bv2_;
+            }
+            else{
+                bv2_ = "#b" + std::string(bv1_.size() - bv2_.size(), '0') + bv2_;
+                bv1_ = "#b" + bv1_;
+            }
+        }
         std::string res = "";
         bool borrow = false;
-        for(size_t i = bv1.size() - 1; i >= 2; i--){
-            if(bv1[i] == '0' && bv2[i] == '0'){
+        for(size_t i = bv1_.size() - 1; i >= 2; i--){
+            if(bv1_[i] == '0' && bv2_[i] == '0'){
                 res += borrow ? '1' : '0';
                 borrow = false;
             }
-            else if(bv1[i] == '1' && bv2[i] == '1'){
+            else if(bv1_[i] == '1' && bv2_[i] == '1'){
                 res += borrow ? '0' : '1';
                 borrow = true;
             }
@@ -322,6 +337,17 @@ namespace SMTLIBParser{
         assert(bv2[0] == '#' && bv2[1] == 'b');
         std::string bv1_ = bv1.substr(2, bv1.size() - 2);
         std::string bv2_ = bv2.substr(2, bv2.size() - 2);
+        if(bv1_.size() != bv2_.size()){
+            // add prefix 0 to the shorter one
+            if(bv1_.size() < bv2_.size()){
+                bv1_ = "#b" + std::string(bv2_.size() - bv1_.size(), '0') + bv1_;
+                bv2_ = "#b" + bv2_;
+            }
+            else{
+                bv2_ = "#b" + std::string(bv1_.size() - bv2_.size(), '0') + bv2_;
+                bv1_ = "#b" + bv1_;
+            }
+        }
         std::vector<std::string> partials;
         for(int i = bv2_.size() - 1; i >= 0; i--){
             if(bv2_[i] == '1'){
@@ -332,7 +358,7 @@ namespace SMTLIBParser{
             }
         }
         if(partials.empty()){
-            return "#b" + std::string(bv1.size() - 2, '0');
+            return "#b" + std::string(bv1_.size() - 2, '0');
         }
         std::string res = partials[0];
         for(size_t i = 1; i < partials.size(); i++){
@@ -345,11 +371,23 @@ namespace SMTLIBParser{
     std::string bvUdiv(const std::string& bv1, const std::string& bv2){
         assert(bv1[0] == '#' && bv1[1] == 'b');
         assert(bv2[0] == '#' && bv2[1] == 'b');
-        
+        std::string bv1_ = bv1.substr(2, bv1.size() - 2);
+        std::string bv2_ = bv2.substr(2, bv2.size() - 2);
+        if(bv1_.size() != bv2_.size()){
+            // add prefix 0 to the shorter one
+            if(bv1_.size() < bv2_.size()){
+                bv1_ = "#b" + std::string(bv2_.size() - bv1_.size(), '0') + bv1_;
+                bv2_ = "#b" + bv2_;
+            }
+            else{
+                bv2_ = "#b" + std::string(bv1_.size() - bv2_.size(), '0') + bv2_;
+                bv1_ = "#b" + bv1_;
+            }
+        }
         // 特殊情况处理：除以0
         bool isZero = true;
-        for(size_t i = 2; i < bv2.size(); i++){
-            if(bv2[i] == '1'){
+        for(size_t i = 2; i < bv2_.size(); i++){
+            if(bv2_[i] == '1'){
                 isZero = false;
                 break;
             }
@@ -360,8 +398,8 @@ namespace SMTLIBParser{
         }
         
         // 提取纯二进制位（不含#b前缀）
-        std::string dividend_bits = bv1.substr(2);
-        std::string divisor_bits = bv2.substr(2);
+        std::string dividend_bits = bv1_.substr(2);
+        std::string divisor_bits = bv2_.substr(2);
         
         std::string quotient_bits;
         std::string remainder = "";
