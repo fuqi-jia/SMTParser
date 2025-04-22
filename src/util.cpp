@@ -330,47 +330,84 @@ namespace SMTLIBParser{
     std::string bvUdiv(const std::string& bv1, const std::string& bv2){
         assert(bv1[0] == '#' && bv1[1] == 'b');
         assert(bv2[0] == '#' && bv2[1] == 'b');
-        std::string res = "";
-        std::string dividend = bv1.substr(2, bv1.size() - 2);
-        std::string divisor = bv2.substr(2, bv2.size() - 2);
-        std::string quotient = "";
-        std::string remainder = "";
-        for(size_t i = 0; i < dividend.size(); i++){
-            remainder += dividend[i];
-            if(remainder.size() < divisor.size()){
-                quotient += '0';
+        
+        // 特殊情况处理：除以0
+        bool isZero = true;
+        for(size_t i = 2; i < bv2.size(); i++){
+            if(bv2[i] == '1'){
+                isZero = false;
+                break;
             }
-            else if(remainder.size() == divisor.size()){
-                if(remainder >= divisor){
-                    quotient += '1';
-                    remainder = SMTLIBParser::bvSub(remainder, divisor).substr(2, remainder.size() - divisor.size());
-                }
-                else{
-                    quotient += '0';
-                }
+        }
+        if(isZero){
+            // 除以0，返回全1
+            return "#b" + std::string(bv1.size() - 2, '1');
+        }
+        
+        // 提取纯二进制位（不含#b前缀）
+        std::string dividend_bits = bv1.substr(2);
+        std::string divisor_bits = bv2.substr(2);
+        
+        std::string quotient_bits;
+        std::string remainder = "";
+        
+        // 长除法
+        for(char bit : dividend_bits){
+            // 将当前位添加到余数中
+            remainder.push_back(bit);
+            
+            // 尝试除法
+            if(remainder.length() < divisor_bits.length()){
+                // 余数长度不够，添加0到商
+                quotient_bits.push_back('0');
             }
             else{
-                std::string tmp = remainder.substr(0, divisor.size());
-                if(tmp >= divisor){
-                    quotient += '1';
-                    remainder = SMTLIBParser::bvSub(tmp, divisor).substr(2, tmp.size() - divisor.size()) + remainder.substr(divisor.size(), remainder.size() - divisor.size());
+                // 比较余数与除数（需添加#b前缀进行比较）
+                std::string remainder_bv = "#b" + remainder;
+                std::string divisor_bv = "#b" + divisor_bits;
+                
+                // 二进制字符串比较
+                bool geq = true;
+                if(remainder.length() != divisor_bits.length()){
+                    geq = remainder.length() > divisor_bits.length();
                 }
                 else{
-                    quotient += '0';
-                    remainder = tmp + remainder.substr(divisor.size(), remainder.size() - divisor.size());
+                    for(size_t i = 0; i < remainder.length(); i++){
+                        if(remainder[i] < divisor_bits[i]){
+                            geq = false;
+                            break;
+                        }
+                        else if(remainder[i] > divisor_bits[i]){
+                            break;
+                        }
+                    }
+                }
+                
+                if(geq){
+                    // 余数大于等于除数，将1添加到商
+                    quotient_bits.push_back('1');
+                    
+                    // 从余数中减去除数
+                    std::string diff = SMTLIBParser::bvSub(remainder_bv, divisor_bv);
+                    remainder = diff.substr(2); // 去掉#b前缀
+                }
+                else{
+                    // 余数小于除数，将0添加到商
+                    quotient_bits.push_back('0');
                 }
             }
         }
-        res = "#b" + quotient;
-        return res;
+        
+        // 返回带前缀的结果
+        return "#b" + quotient_bits;
     }
     std::string bvUrem(const std::string& bv1, const std::string& bv2){
         assert(bv1[0] == '#' && bv1[1] == 'b');
         assert(bv2[0] == '#' && bv2[1] == 'b');
-        std::string dividend = bv1.substr(2, bv1.size() - 2);
-        std::string divisor = bv2.substr(2, bv2.size() - 2);
-        std::string quotient = SMTLIBParser::bvUdiv(bv1, bv2).substr(2, bv1.size() - 2);
-        std::string res = "#b" + SMTLIBParser::bvSub(dividend, SMTLIBParser::bvMul("#b" + quotient, bv2)).substr(2, dividend.size());
+        std::string dividend = bv1;
+        std::string divisor = bv2;
+        std::string quotient = SMTLIBParser::bvUdiv(bv1, bv2);
+        std::string res = SMTLIBParser::bvSub(dividend, SMTLIBParser::bvMul(quotient, bv2));
         return res;
     }
     std::string bvSdiv(const std::string& bv1, const std::string& bv2){
