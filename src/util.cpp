@@ -821,15 +821,11 @@ namespace SMTLIBParser{
         }
         else if(i.size() > 2 && i[0] == '#' && i[1] == 'x'){
             // #x -> #b
-            std::string res = "#b";
-            res += hexToBv(i.substr(2, i.size() - 2));
-            return res;
+            return hexToBv(i.substr(2, i.size() - 2));
         }
         else if(i.size() > 2 && i[0] == '#' && i[1] == 'd'){
             // #d -> #b
-            std::string res = "#b";
-            res += decToBv(i.substr(2, i.size() - 2));
-            return res;
+            return decToBv(i.substr(2, i.size() - 2));
         }
         else{
             return natToBv(Integer(i), n);
