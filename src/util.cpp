@@ -383,6 +383,19 @@ namespace SMTLIBParser{
     std::string bvUdiv(const std::string& bv1, const std::string& bv2){
         assert(bv1[0] == '#' && bv1[1] == 'b');
         assert(bv2[0] == '#' && bv2[1] == 'b');
+
+        // div 0, return all ones
+        bool isBv2Zero = true;
+        for(size_t i = 2; i < bv2.size(); i++){
+            if(bv2[i] == '1'){
+                isBv2Zero = false;
+                break;
+            }
+        }
+        if(isBv2Zero){
+            return "#b" + std::string(bv1.size() - 2, '1');
+        }
+
         std::string bv1_ = bv1.substr(2, bv1.size() - 2);
         std::string bv2_ = bv2.substr(2, bv2.size() - 2);
         if(bv1_.size() != bv2_.size()){
@@ -473,6 +486,17 @@ namespace SMTLIBParser{
     std::string bvUrem(const std::string& bv1, const std::string& bv2){
         assert(bv1[0] == '#' && bv1[1] == 'b');
         assert(bv2[0] == '#' && bv2[1] == 'b');
+        // div 0, return first operand
+        bool isZero = true;
+        for(size_t i = 2; i < bv2.size(); i++){
+            if(bv2[i] == '1'){
+                isZero = false;
+                break;
+            }
+        }
+        if(isZero){
+            return bv1;
+        }
         std::string dividend = bv1;
         std::string divisor = bv2;
         std::string quotient = SMTLIBParser::bvUdiv(bv1, bv2);
@@ -484,6 +508,22 @@ namespace SMTLIBParser{
         assert(bv2[0] == '#' && bv2[1] == 'b');
         bool isNeg1 = bv1[2] == '1';
         bool isNeg2 = bv2[2] == '1';
+        // div 0, return first operand if positive, otherwise 1
+        bool isZero = true;
+        for(size_t i = 2; i < bv2.size(); i++){
+            if(bv2[i] == '1'){
+                isZero = false;
+                break;
+            }
+        }
+        if(isZero){
+            if(isNeg1){
+                return "#b" + std::string(bv1.size() - 3, '0') + "1";
+            }
+            else{
+                return bv1;
+            }
+        }
         std::string res = SMTLIBParser::bvUdiv(bv1, bv2);
         if(isNeg1 ^ isNeg2){
             res = SMTLIBParser::bvNot(res);
@@ -494,6 +534,17 @@ namespace SMTLIBParser{
     std::string bvSrem(const std::string& bv1, const std::string& bv2){
         assert(bv1[0] == '#' && bv1[1] == 'b');
         assert(bv2[0] == '#' && bv2[1] == 'b');
+        // rem 0, return first operand
+        bool isZero = true;
+        for(size_t i = 2; i < bv2.size(); i++){
+            if(bv2[i] == '1'){
+                isZero = false;
+                break;
+            }
+        }
+        if(isZero){
+            return bv1;
+        }
         bool isNeg1 = bv1[2] == '1';
         std::string res = SMTLIBParser::bvUrem(bv1, bv2);
         if(isNeg1){
