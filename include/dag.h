@@ -495,6 +495,9 @@ namespace SMTLIBParser{
             else if(isCRat()){
                 return toRat() == 0;
             }
+            else if(isCBV()){
+                return Integer(bvToNat(name)) == 0;
+            }
             return false;
         }
 
