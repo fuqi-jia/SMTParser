@@ -922,6 +922,15 @@ namespace SMTLIBParser{
 					// variable name
 					expr = node_list[var_names[s]];
 				}
+				// following Common Lisp’s conventions, enclosing
+				// a simple symbol in vertical bars does not produce a new symbol.
+				else if(s.size() > 1 && 
+						s[0] == '|'  && 
+						s[s.size() - 1] == '|' &&
+						var_names.find(s.substr(1, s.size() - 2)) != var_names.end()){
+					// string
+					expr = node_list[var_names[s.substr(1, s.size() - 2)]];
+				}
 				else err_unkwn_sym(s, expr_ln);
 			}
 			return expr;
