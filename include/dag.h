@@ -430,6 +430,8 @@ namespace SMTLIBParser{
 
         std::string toString()      const { return name; };
         std::string dumpSMTLIB2()   const;
+        std::string dumpFuncDef()   const;
+        std::string dumpFuncDec()   const;
     
 
         // other functions

@@ -484,23 +484,10 @@ namespace SMTLIBParser{
             return name;
         // FUNC
         case NODE_KIND::NT_FUNC_DEC:{
-            std::string res = "(declare-fun " + name + " (";
-            for(size_t i=1;i<children.size();i++){
-                if(i==1) res += children[i]->getSort()->toString();
-                else res += " " + children[i]->getSort()->toString();
-            }
-            res += ") " + children[0]->getSort()->toString() + ")";
-            return res;
+            return name;
         }; break;
         case NODE_KIND::NT_FUNC_DEF:{
-            std::string res = "(define-fun " + name + " (";
-            for(size_t i=1;i<children.size();i++){
-                if(i==1) res += "(" + children[i]->name +" " + children[i]->getSort()->toString() +")";
-                else res += " (" + children[i]->name +" " + children[i]->getSort()->toString() +")";
-            }
-            res += ") " + children[0]->getSort()->toString() + " ";
-            res += children[0]->dumpSMTLIB2() +  ")";
-            return res;
+            return name;
         }; break;
         case NODE_KIND::NT_FUNC_PARAM:
             return name;
@@ -515,6 +502,26 @@ namespace SMTLIBParser{
         default:
             return "UNKNOWN_KIND";
         }
+        return res;
+    }
+    
+    std::string DAGNode::dumpFuncDef()   const{
+        std::string res = "(define-fun " + name + " (";
+        for(size_t i=1;i<children.size();i++){
+            if(i==1) res += "(" + children[i]->name +" " + children[i]->getSort()->toString() +")";
+            else res += " (" + children[i]->name +" " + children[i]->getSort()->toString() +")";
+        }
+        res += ") " + children[0]->getSort()->toString() + " ";
+        res += children[0]->dumpSMTLIB2() +  ")";
+        return res;
+    }
+    std::string DAGNode::dumpFuncDec()   const{
+        std::string res = "(declare-fun " + name + " (";
+        for(size_t i=1;i<children.size();i++){
+            if(i==1) res += children[i]->getSort()->toString();
+            else res += " " + children[i]->getSort()->toString();
+        }
+        res += ") " + children[0]->getSort()->toString() + ")";
         return res;
     }
 }
