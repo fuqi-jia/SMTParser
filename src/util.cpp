@@ -64,27 +64,38 @@ namespace SMTLIBParser{
         if (str[1] != 'b' && str[1] != 'x' && str[1] != 'd' &&
             str[1] != 'B' && str[1] != 'X' && str[1] != 'D') return false;
         for (size_t i = 2; i < str.size(); i++){
-            if (str[1] == 'b' && (str[i] != '0' && str[i] != '1')) return false;
-            if (str[1] == 'x' && 
-                    (str[i] != '0' && 
-                    str[i] != '1' && 
-                    str[i] != '2' && 
-                    str[i] != '3' && 
-                    str[i] != '4' && 
-                    str[i] != '5' && 
-                    str[i] != '6' && 
-                    str[i] != '7' && 
-                    str[i] != '8' && 
-                    str[i] != '9' && 
-                    str[i] != 'a' && 
-                    str[i] != 'A' && 
-                    str[i] != 'b' && 
-                    str[i] != 'B' && 
-                    str[i] != 'c' && 
-                    str[i] != 'C' && 
-                    str[i] != 'd' && 
-                    str[i] != 'D') return false;
-            if(str[1] == 'd' && (str[i] != '0' && str[i] != '1' && str[i] != '2' && str[i] != '3' && str[i] != '4' && str[i] != '5' && str[i] != '6' && str[i] != '7' && str[i] != '8' && str[i] != '9')) return false;
+            if ((str[1] == 'b' || str[1] == 'B') && 
+                (str[i] != '0' && str[i] != '1')) return false;
+            if ((str[1] == 'x' || str[1] == 'X') &&
+                (str[i] != '0' && 
+                str[i] != '1' && 
+                str[i] != '2' && 
+                str[i] != '3' && 
+                str[i] != '4' && 
+                str[i] != '5' && 
+                str[i] != '6' && 
+                str[i] != '7' && 
+                str[i] != '8' && 
+                str[i] != '9' && 
+                str[i] != 'a' && 
+                str[i] != 'A' && 
+                str[i] != 'b' && 
+                str[i] != 'B' && 
+                str[i] != 'c' && 
+                str[i] != 'C' && 
+                str[i] != 'd' && 
+                str[i] != 'D')) return false;
+            if ((str[1] == 'd' || str[1] == 'D') && 
+                (str[i] != '0' && 
+                str[i] != '1' && 
+                str[i] != '2' && 
+                str[i] != '3' && 
+                str[i] != '4' && 
+                str[i] != '5' && 
+                str[i] != '6' && 
+                str[i] != '7' && 
+                str[i] != '8' && 
+                str[i] != '9')) return false;
         }
         return true;
     }
