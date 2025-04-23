@@ -1625,7 +1625,7 @@ namespace SMTLIBParser{
         if(param->isCBV()){
             return mkConstBv(bvNot(param->toString()), param->getSort()->getBitWidth());
         }
-        return mkOper(param->getSort(), NODE_KIND::NT_NOT, param);
+        return mkOper(param->getSort(), NODE_KIND::NT_BV_NOT, param);
     }
     /*
     (bvand Bv Bv+), return Bv
