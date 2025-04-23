@@ -112,7 +112,13 @@ namespace SMTLIBParser{
 		}
 		return vars;
 	}
-
+	std::vector<std::shared_ptr<DAGNode>> Parser::getFunctions() const{
+		std::vector<std::shared_ptr<DAGNode>> funs;
+		for(auto& fun : fun_key_map){
+			funs.emplace_back(fun.second);
+		}
+		return funs;
+	}
 	// parse smt-lib2 file
 	std::string Parser::getSymbol() {
 

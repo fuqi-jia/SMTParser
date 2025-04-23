@@ -171,6 +171,7 @@ namespace SMTLIBParser{
         std::vector<std::shared_ptr<Objective>> getObjectives() const;
         std::shared_ptr<GlobalOptions> getOptions() const;
         std::vector<std::shared_ptr<DAGNode>> getVariables() const;
+        std::vector<std::shared_ptr<DAGNode>> getFunctions() const;
 
         // get sort
         std::shared_ptr<Sort> getSort(const std::vector<std::shared_ptr<DAGNode>>& params);
