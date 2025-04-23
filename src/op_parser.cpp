@@ -1969,9 +1969,9 @@ namespace SMTLIBParser{
     std::shared_ptr<DAGNode> Parser::mkBvUdiv(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(l->isErr() || r->isErr()) return l->isErr()?l:r;
         if(!l->getSort()->isEqTo(r->getSort())) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
-        // remainder by zero evaluates to the first operand.
+        // division by zero evaluates to all ones.
         if(r->isCBV() && r->isZero()){
-            return l;
+            return mkConstBv("#b" + std::string(l->getSort()->getBitWidth(), '1'), l->getSort()->getBitWidth());
         }
 
         if(l->isCBV() && r->isCBV()){
@@ -2003,7 +2003,7 @@ namespace SMTLIBParser{
     std::shared_ptr<DAGNode> Parser::mkBvSdiv(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(l->isErr() || r->isErr()) return l->isErr()?l:r;
         if(!l->getSort()->isEqTo(r->getSort())) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
-        // remainder by zero evaluates to the first operand if positive, otherwise evaluates to 1.
+        // bvsdiv by zero evaluates to first operand if it's positive, otherwise 1.
         if(r->isCBV() && r->isZero()){
             if(l->isCBV() && Integer(bvToInt(l->toString())) >= 0){
                 return l;
@@ -2059,7 +2059,7 @@ namespace SMTLIBParser{
     std::shared_ptr<DAGNode> Parser::mkBvShl(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(l->isErr() || r->isErr()) return l->isErr()?l:r;
         if(!l->getSort()->isEqTo(r->getSort())) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
-        // shift amount is negative evaluates to the first operand.
+        // shift amount is zero evaluates to the first operand.
         if(r->isCBV() && r->isZero()){
             return l;
         }
@@ -2077,7 +2077,7 @@ namespace SMTLIBParser{
     std::shared_ptr<DAGNode> Parser::mkBvLshr(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(l->isErr() || r->isErr()) return l->isErr()?l:r;
         if(!l->getSort()->isEqTo(r->getSort())) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
-        // shift amount is negative evaluates to the first operand.
+        // shift amount is zero evaluates to the first operand.
         if(r->isCBV() && r->isZero()){
             return l;
         }
@@ -2094,7 +2094,7 @@ namespace SMTLIBParser{
     std::shared_ptr<DAGNode> Parser::mkBvAshr(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(l->isErr() || r->isErr()) return l->isErr()?l:r;
         if(!l->getSort()->isEqTo(r->getSort())) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
-        // shift amount is negative evaluates to the first operand.
+        // shift amount is zero evaluates to the first operand.
         if(r->isCBV() && r->isZero()){
             return l;
         }
