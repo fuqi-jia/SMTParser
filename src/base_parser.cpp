@@ -114,8 +114,8 @@ namespace SMTLIBParser{
 	}
 	std::vector<std::shared_ptr<DAGNode>> Parser::getFunctions() const{
 		std::vector<std::shared_ptr<DAGNode>> funs;
-		for(auto& fun : fun_key_map){
-			funs.emplace_back(fun.second);
+		for(auto fun : function_names){
+			funs.emplace_back(fun_key_map.at(fun));
 		}
 		return funs;
 	}
@@ -547,6 +547,8 @@ namespace SMTLIBParser{
 				}
 				return CMD_TYPE::CT_DEFINE_FUN;
 			}
+			// keep the function name with the same order
+			function_names.emplace_back(name);
 
 			// parse ((x Int))
 			//       ^
@@ -928,7 +930,7 @@ namespace SMTLIBParser{
 					// variable name
 					expr = node_list[var_names[s]];
 				}
-				// following Common Lisp’s conventions, enclosing
+				// following Common Lisp's conventions, enclosing
 				// a simple symbol in vertical bars does not produce a new symbol.
 				else if(s.size() > 1 && 
 						s[0] == '|'  && 

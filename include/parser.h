@@ -132,6 +132,7 @@ namespace SMTLIBParser{
         boost::unordered_map<std::string, size_t>       var_names;
         // const node
         boost::unordered_map<std::string, size_t>       constants;
+        std::vector<std::string>                        function_names;
         // global options
         std::shared_ptr<GlobalOptions>                  options;
         // hash value list
@@ -505,12 +506,12 @@ namespace SMTLIBParser{
 
     private:
         // parse smt-lib2 file
-        std::string	                    getSymbol();
-        void 		                    scanToNextSymbol();
-        void		                    parseLpar();
-        void 		                    parseRpar();
-        void		                    skipToRpar();
-        std::string                     peekSymbol();
+        std::string	                        getSymbol();
+        void 		                        scanToNextSymbol();
+        void		                        parseLpar();
+        void 		                        parseRpar();
+        void		                        skipToRpar();
+        std::string                         peekSymbol();
 
 
         CMD_TYPE	                            parseCommand();
