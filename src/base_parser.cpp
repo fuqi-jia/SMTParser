@@ -2018,10 +2018,7 @@ namespace SMTLIBParser{
 			return params[expr->getName()];
 		}
 		else if(expr->isConst() || 
-				expr->isFuncParam() || 
-				expr->isFuncApply() ||
-				expr->isFuncDec() ||
-				expr->isFuncDef()){
+				expr->isFuncParam()){
 			return expr;
 		}
 		else{
