@@ -60,9 +60,10 @@ namespace SMTLIBParser{
     bool isBVUtil(const std::string& str){
         if (str.empty()) return false;
         if (str.size() < 3) return false;
-        if (str[0] != '#' || str[1] != 'b') return false;
+        if (str[0] != '#') return false;
+        if (str[1] != 'b' && str[1] != 'x' && str[1] != 'd') return false;
         for (size_t i = 2; i < str.size(); i++){
-            if (str[i] != '0' && str[i] != '1') return false;
+            if (str[i] != '0' && str[i] != '1' && str[i] != 'x' && str[i] != 'X') return false;
         }
         return true;
     }
@@ -690,6 +691,71 @@ namespace SMTLIBParser{
         }
         return res;
     }
+    std::string hexToBv(const std::string& hex){
+        std::string res = "#b";
+        for(size_t i = 0; i < hex.size(); i++){
+            switch(hex[i]){
+                case '0':
+                    res += "0000";
+                    break;
+                case '1':
+                    res += "0001";
+                    break;
+                case '2':
+                    res += "0010";
+                    break;
+                case '3':
+                    res += "0011";
+                    break;
+                case '4':
+                    res += "0100";
+                    break;
+                case '5':
+                    res += "0101";
+                    break;
+                case '6':
+                    res += "0110";
+                    break;
+                case '7':
+                    res += "0111";
+                    break;
+                case '8':
+                    res += "1000";
+                    break;
+                case '9':
+                    res += "1001";
+                    break;
+                case 'a':
+                    res += "1010";
+                    break;
+                case 'b':
+                    res += "1011";
+                    break;
+                case 'c':
+                    res += "1100";
+                    break;
+                case 'd':
+                    res += "1101";
+                    break;
+                case 'e':
+                    res += "1110";
+                    break;
+                case 'f':
+                    res += "1111";
+                    break;
+                default:
+                    assert(false);
+            }
+        }
+        return res;
+    }
+    std::string decToBv(const std::string& dec){
+        std::string res = "#b";
+        Integer i = Integer(dec);
+        std::string bin = i.get_str(2);
+        return res + bin;
+    }
+    
     std::string natToBv(const std::string& i, const Integer& n){
         if(i.size() > 2 && i[0] == '#' && i[1] == 'b'){
             // zero-extend
@@ -701,6 +767,18 @@ namespace SMTLIBParser{
             else{
                 res += bin.substr(bin.size() - n.get_ui(), n.get_ui());
             }
+            return res;
+        }
+        else if(i.size() > 2 && i[0] == '#' && i[1] == 'x'){
+            // #x -> #b
+            std::string res = "#b";
+            res += hexToBv(i.substr(2, i.size() - 2));
+            return res;
+        }
+        else if(i.size() > 2 && i[0] == '#' && i[1] == 'd'){
+            // #d -> #b
+            std::string res = "#b";
+            res += decToBv(i.substr(2, i.size() - 2));
             return res;
         }
         else{
