@@ -2017,7 +2017,11 @@ namespace SMTLIBParser{
 		if(expr->isVar() && params.find(expr->getName()) != params.end()){
 			return params[expr->getName()];
 		}
-		else if(expr->isConst() || expr->isFuncParam()){
+		else if(expr->isConst() || 
+				expr->isFuncParam() || 
+				expr->isFuncApply() ||
+				expr->isFuncDec() ||
+				expr->isFuncDef()){
 			return expr;
 		}
 		else{

@@ -483,12 +483,10 @@ namespace SMTLIBParser{
         case NODE_KIND::NT_QUANT_VAR:
             return name;
         // FUNC
-        case NODE_KIND::NT_FUNC_DEC:{
+        case NODE_KIND::NT_FUNC_DEC:
             return name;
-        }; break;
-        case NODE_KIND::NT_FUNC_DEF:{
+        case NODE_KIND::NT_FUNC_DEF:
             return name;
-        }; break;
         case NODE_KIND::NT_FUNC_PARAM:
             return name;
         case NODE_KIND::NT_FUNC_APPLY:{
