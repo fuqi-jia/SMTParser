@@ -63,7 +63,16 @@ namespace SMTLIBParser{
         if (str[0] != '#') return false;
         if (str[1] != 'b' && str[1] != 'x' && str[1] != 'd') return false;
         for (size_t i = 2; i < str.size(); i++){
-            if (str[i] != '0' && str[i] != '1' && str[i] != 'x' && str[i] != 'X') return false;
+            if (str[i] != '0' && 
+                str[i] != '1' && 
+                str[i] != 'a' && 
+                str[i] != 'A' && 
+                str[i] != 'b' && 
+                str[i] != 'B' && 
+                str[i] != 'c' && 
+                str[i] != 'C' && 
+                str[i] != 'd' && 
+                str[i] != 'D') return false;
         }
         return true;
     }
@@ -728,19 +737,37 @@ namespace SMTLIBParser{
                 case 'a':
                     res += "1010";
                     break;
+                case 'A':
+                    res += "1010";
+                    break;
                 case 'b':
+                    res += "1011";
+                    break;
+                case 'B':
                     res += "1011";
                     break;
                 case 'c':
                     res += "1100";
                     break;
+                case 'C':
+                    res += "1100";
+                    break;
                 case 'd':
+                    res += "1101";
+                    break;
+                case 'D':
                     res += "1101";
                     break;
                 case 'e':
                     res += "1110";
                     break;
+                case 'E':
+                    res += "1110";
+                    break;
                 case 'f':
+                    res += "1111";
+                    break;
+                case 'F':
                     res += "1111";
                     break;
                 default:
