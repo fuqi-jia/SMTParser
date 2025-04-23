@@ -2003,13 +2003,13 @@ namespace SMTLIBParser{
     std::shared_ptr<DAGNode> Parser::mkBvSdiv(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(l->isErr() || r->isErr()) return l->isErr()?l:r;
         if(!l->getSort()->isEqTo(r->getSort())) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
-        // bvsdiv by zero evaluates to first operand if it's positive, otherwise 1.
+        // bvsdiv by zero evaluates to all ones if it's positive, otherwise 1.
         if(r->isCBV() && r->isZero()){
             if(l->isCBV() && Integer(bvToInt(l->toString())) >= 0){
-                return l;
+                return mkConstBv("#b" + std::string(l->getSort()->getBitWidth(), '1'), l->getSort()->getBitWidth());
             }
             else{
-                return mkConstBv("1", l->getSort()->getBitWidth());
+                return mkConstBv("#b" + std::string(l->getSort()->getBitWidth() - 1, '0') + "1", l->getSort()->getBitWidth());
             }
         }
 
