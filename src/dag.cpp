@@ -520,21 +520,34 @@ namespace SMTLIBParser{
 
     // dump the node to the ofstream
     void dumpSingleOp(const NODE_KIND& kind, const std::shared_ptr<DAGNode>& p, boost::unordered_map<std::shared_ptr<DAGNode>, std::string>& visited, std::ofstream& ofs){
-        ofs << "(" + kindToString(kind) + " " + dumpSMTLIB2(p, visited, ofs) + ")";
+        ofs << "(" + kindToString(kind) + " ";
+        dumpSMTLIB2(p, visited, ofs);
+        ofs << ")";
     }
 
     void dumpDoubleOp(const NODE_KIND& kind, const std::shared_ptr<DAGNode>& l, const std::shared_ptr<DAGNode>& r, boost::unordered_map<std::shared_ptr<DAGNode>, std::string>& visited, std::ofstream& ofs){
-        ofs << "(" + kindToString(kind) + " " + dumpSMTLIB2(l, visited, ofs) + " " + dumpSMTLIB2(r, visited, ofs) + ")";
+        ofs << "(" + kindToString(kind) + " ";
+        dumpSMTLIB2(l, visited, ofs);
+        ofs << " ";
+        dumpSMTLIB2(r, visited, ofs);
+        ofs << ")";
     }
 
     void dumpTripleOp(const NODE_KIND& kind, const std::shared_ptr<DAGNode>& l, const std::shared_ptr<DAGNode>& m, const std::shared_ptr<DAGNode>& r, boost::unordered_map<std::shared_ptr<DAGNode>, std::string>& visited, std::ofstream& ofs){
-        ofs << "(" + kindToString(kind) + " " + dumpSMTLIB2(l, visited, ofs) + " " + dumpSMTLIB2(m, visited, ofs) + " " + dumpSMTLIB2(r, visited, ofs) + ")";
+        ofs << "(" + kindToString(kind) + " ";
+        dumpSMTLIB2(l, visited, ofs);
+        ofs << " ";
+        dumpSMTLIB2(m, visited, ofs);
+        ofs << " ";
+        dumpSMTLIB2(r, visited, ofs);
+        ofs << ")";
     }
 
     void dumpChainOp(const NODE_KIND& kind, const std::vector<std::shared_ptr<DAGNode>>& p, boost::unordered_map<std::shared_ptr<DAGNode>, std::string>& visited, std::ofstream& ofs){
         ofs << "(" + kindToString(kind);
         for (auto& node : p){
-            ofs << " " + dumpSMTLIB2(node, visited, ofs);
+            ofs << " ";
+            dumpSMTLIB2(node, visited, ofs);
         }
         ofs << ")";
     }
@@ -542,15 +555,23 @@ namespace SMTLIBParser{
     void dumpQuantOp(const NODE_KIND& kind, const std::vector<std::shared_ptr<DAGNode>>& p, boost::unordered_map<std::shared_ptr<DAGNode>, std::string>& visited, std::ofstream& ofs){
         ofs << "(" + kindToString(kind) + " (";
         for(size_t i=1;i<p.size();i++){
-            if(i==1) ofs << "(" + dumpSMTLIB2(p[i], visited, ofs) + " " + p[i]->getSort()->toString() + ")";
-            else ofs << " (" + dumpSMTLIB2(p[i], visited, ofs) + " " + p[i]->getSort()->toString() + ")";
+            if(i==1){
+                ofs << "(";
+                dumpSMTLIB2(p[i], visited, ofs);
+                ofs << " " + p[i]->getSort()->toString() + ")";
+            } 
+            else {
+                ofs << " (";
+                dumpSMTLIB2(p[i], visited, ofs);
+                ofs << " " + p[i]->getSort()->toString() + ")";
+            }
         }
         ofs << ") ";
-        ofs << dumpSMTLIB2(p[0], visited, ofs);
+        dumpSMTLIB2(p[0], visited, ofs);
         ofs << ")";
     }
 
-    std::string dumpSMTLIB2(const std::shared_ptr<DAGNode>& node, boost::unordered_map<std::shared_ptr<DAGNode>, std::string>& visited, std::ofstream& ofs){
+    void dumpSMTLIB2(const std::shared_ptr<DAGNode>& node, boost::unordered_map<std::shared_ptr<DAGNode>, std::string>& visited, std::ofstream& ofs){
 
         // switch on the kind of the node
         auto kind = node->getKind();
@@ -778,14 +799,24 @@ namespace SMTLIBParser{
             dumpChainOp(kind, node->getChildren(), visited, ofs);
             break;
         case NODE_KIND::NT_BV_EXTRACT:
-            ofs << "((_ extract " + dumpSMTLIB2(node->getChild(1), visited, ofs) + " " + dumpSMTLIB2(node->getChild(2), visited, ofs) + ") " + dumpSMTLIB2(node->getChild(0), visited, ofs) + ")";
+            ofs << "((_ extract ";
+            dumpSMTLIB2(node->getChild(1), visited, ofs);
+            ofs << " ";
+            dumpSMTLIB2(node->getChild(2), visited, ofs);
+            ofs << ") ";
+            dumpSMTLIB2(node->getChild(0), visited, ofs);
+            ofs << ")";
             break;
         case NODE_KIND::NT_BV_REPEAT:
         case NODE_KIND::NT_BV_ZERO_EXT:
         case NODE_KIND::NT_BV_SIGN_EXT:
         case NODE_KIND::NT_BV_ROTATE_LEFT:
         case NODE_KIND::NT_BV_ROTATE_RIGHT:
-            ofs << "((_ " + kindToString(kind) + " " + dumpSMTLIB2(node->getChild(1), visited, ofs) + ") " + dumpSMTLIB2(node->getChild(0), visited, ofs) + ")";
+            ofs << "((_ " + kindToString(kind) + " ";
+            dumpSMTLIB2(node->getChild(1), visited, ofs);
+            ofs << ") ";
+            dumpSMTLIB2(node->getChild(0), visited, ofs);
+            ofs << ")";
             break;
         // BITVECTOR COMP
         case NODE_KIND::NT_BV_ULT:
@@ -987,7 +1018,8 @@ namespace SMTLIBParser{
         case NODE_KIND::NT_FUNC_APPLY:{
             ofs << "(" + node->getName();
             for(size_t i=1;i<node->getChildrenSize();i++){
-                ofs << " " + dumpSMTLIB2(node->getChild(i), visited, ofs);
+                ofs << " ";
+                dumpSMTLIB2(node->getChild(i), visited, ofs);
             }
             ofs << ")";
             break;
@@ -999,7 +1031,7 @@ namespace SMTLIBParser{
     
     void dumpSMTLIB2(const std::shared_ptr<DAGNode>& root, std::ofstream& ofs) {
         boost::unordered_map<std::shared_ptr<DAGNode>, std::string> visited;
-        return dumpSMTLIB2(root, visited, ofs);
+        dumpSMTLIB2(root, visited, ofs);
     }
 
     void dumpSMTLIB2(const std::vector<std::shared_ptr<DAGNode>>& assertions, std::ofstream& ofs) {
