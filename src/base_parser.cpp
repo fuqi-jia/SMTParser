@@ -2026,7 +2026,9 @@ namespace SMTLIBParser{
 			for(size_t i=0;i<expr->getChildrenSize();i++){
 				record.emplace_back(substitute(expr->getChild(i), params, visited));
 			}
-			return mkOper(expr->getSort(), expr->getKind(), record);
+			std::shared_ptr<DAGNode> res = mkOper(expr->getSort(), expr->getKind(), record);
+			visited[expr] = res;
+			return res;
 		}
 	}
 
