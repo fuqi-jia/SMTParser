@@ -562,5 +562,9 @@ namespace SMTLIBParser{
     std::string dumpFuncDef(const std::shared_ptr<DAGNode>& node);
     std::string dumpFuncDec(const std::shared_ptr<DAGNode>& node);
     std::string dumpSMTLIB2(const std::vector<std::shared_ptr<DAGNode>>& assertions);
+    void dumpSMTLIB2(const std::shared_ptr<DAGNode>& node, std::ofstream& ofs);
+    void dumpSMTLIB2(const std::vector<std::shared_ptr<DAGNode>>& assertions, std::ofstream& ofs);
+    void dumpFuncDef(const std::shared_ptr<DAGNode>& node, std::ofstream& ofs);
+    void dumpFuncDec(const std::shared_ptr<DAGNode>& node, std::ofstream& ofs);
 }
 #endif
