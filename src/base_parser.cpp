@@ -1841,12 +1841,12 @@ namespace SMTLIBParser{
 			else{
 				std::shared_ptr<DAGNode> res = nullptr;
 				if(*bufptr == ')'){
-					res = std::make_shared<DAGNode>(params[0]->getSort(), NODE_KIND::NT_LET, "let", params);
+					res = mkOper(params[0]->getSort(), params[0]->getKind(), params);
 				}
 				else{
 					std::shared_ptr<DAGNode> expr = parseExpr();
 					params.insert(params.begin(), expr);
-					res = std::make_shared<DAGNode>(expr->getSort(), NODE_KIND::NT_LET, "let", params);
+					res = mkOper(params[0]->getSort(), params[0]->getKind(), params);
 				}
 
 				// Remove all variable bindings for the current state
@@ -1859,6 +1859,8 @@ namespace SMTLIBParser{
 
 				// If stack is empty, return the result; otherwise, use the result as the body of the parent let
 				if (stateStack.empty()) {
+					// return res;
+					res = mkOper(res->getSort(), NODE_KIND::NT_LET, {res});
 					return res;
 				}
 				else{
