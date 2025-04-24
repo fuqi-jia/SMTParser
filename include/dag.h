@@ -45,6 +45,9 @@
 #include <memory>
 #include <functional> // for std::hash
 
+#include <boost/unordered_map.hpp>
+
+
 namespace SMTLIBParser{
     class DAGNode {
     // <sort, kind, name> --- <sort, node_kind, name>
@@ -429,10 +432,6 @@ namespace SMTLIBParser{
         bool isFuncApply()          const { return (kind == NODE_KIND::NT_FUNC_APPLY); };
 
         std::string toString()      const { return name; };
-        std::string dumpSMTLIB2()   const;
-        std::string dumpFuncDef()   const;
-        std::string dumpFuncDec()   const;
-    
 
         // other functions
         std::shared_ptr<Sort> getSort()
@@ -547,8 +546,6 @@ namespace SMTLIBParser{
     inline const std::shared_ptr<DAGNode> NULL_NODE = std::make_shared<DAGNode>(NODE_KIND::NT_NULL);
 
 
-    std::string dumpSMTLIB2(const std::vector<DAGNode>& assertions);
-
     struct NodeHash {
         size_t operator()(const std::shared_ptr<DAGNode>& node) const {
             return std::hash<std::string>{}(node->hashString());
@@ -560,5 +557,12 @@ namespace SMTLIBParser{
             return node1->isEquivalentTo(*node2);
         }
     };
+
+    std::string dumpSMTLIB2(const std::shared_ptr<DAGNode>& node, boost::unordered_map<std::shared_ptr<DAGNode>, std::string>& visited);
+    std::string dumpSMTLIB2(const std::shared_ptr<DAGNode>& node);
+    std::string dumpFuncDef(const std::shared_ptr<DAGNode>& node);
+    std::string dumpFuncDec(const std::shared_ptr<DAGNode>& node);
+    std::string dumpSMTLIB2(const std::vector<DAGNode>& assertions);
+    
 }
 #endif
