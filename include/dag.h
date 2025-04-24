@@ -558,11 +558,9 @@ namespace SMTLIBParser{
         }
     };
 
-    std::string dumpSMTLIB2(const std::shared_ptr<DAGNode>& node, boost::unordered_map<std::shared_ptr<DAGNode>, std::string>& visited);
     std::string dumpSMTLIB2(const std::shared_ptr<DAGNode>& node);
     std::string dumpFuncDef(const std::shared_ptr<DAGNode>& node);
     std::string dumpFuncDec(const std::shared_ptr<DAGNode>& node);
     std::string dumpSMTLIB2(const std::vector<std::shared_ptr<DAGNode>>& assertions);
-    
 }
 #endif
