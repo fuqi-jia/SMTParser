@@ -1839,15 +1839,11 @@ namespace SMTLIBParser{
 				stateStack.push_back(LetContext(currentState.nesting_level + 1));
 			}
 			else{
-				std::shared_ptr<DAGNode> res = nullptr;
-				if(*bufptr == ')'){
-					res = mkOper(res->getSort(), NODE_KIND::NT_LET, params);
-				}
-				else{
+				if(*bufptr != ')'){
 					std::shared_ptr<DAGNode> expr = parseExpr();
 					params.insert(params.begin(), expr);
-					res = mkOper(res->getSort(), NODE_KIND::NT_LET, params);
 				}
+				std::shared_ptr<DAGNode> res = mkOper(params[0]->getSort(), NODE_KIND::NT_LET, params);
 
 				// Remove all variable bindings for the current state
 				for (const auto &key : key_list) {
@@ -2074,7 +2070,6 @@ namespace SMTLIBParser{
 	std::shared_ptr<DAGNode> Parser::mkErr(const ERROR_TYPE t){
 		return std::make_shared<DAGNode>(NULL_SORT, (NODE_KIND)t);
 	}
-	
 	void Parser::err_all(const ERROR_TYPE e, const std::string s, const size_t ln) const {
 		switch (e) {
 		case ERROR_TYPE::ERR_UNEXP_EOF:
