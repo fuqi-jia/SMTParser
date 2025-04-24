@@ -1903,6 +1903,7 @@ namespace SMTLIBParser{
 		if(fun->getFuncBody()->isErr()){
 			return fun->getFuncBody();
 		}
+		
 		// variable map for local variables
 		boost::unordered_map<std::string, std::shared_ptr<DAGNode>> new_params_map;
 		for (size_t i = 1; i < fun->getChildrenSize(); i++) {
@@ -1911,36 +1912,86 @@ namespace SMTLIBParser{
 			}
 			new_params_map.insert(std::pair<std::string, std::shared_ptr<DAGNode>>(fun->getChild(i)->getName(), params[i - 1]));
 		}
+		
 		// function content
 		std::shared_ptr<DAGNode> formula = fun->getFuncBody();
 
-		
-		// debug: 2021.11.01, must make a new DAGNode.
-		std::vector<std::shared_ptr<DAGNode>> record;
-		return applyFunPostOrder(formula, record, new_params_map);
+		// Iterative implementation to replace recursive applyFunPostOrder
+		return applyFunPostOrder(formula, new_params_map);
 	}
 
-	// debug: 2021-11-08, post order traverse.
-	std::shared_ptr<DAGNode> Parser::applyFunPostOrder(std::shared_ptr<DAGNode> fun, std::vector<std::shared_ptr<DAGNode>>& record, boost::unordered_map<std::string, std::shared_ptr<DAGNode>> & params){
-		for(size_t i=0;i<fun->getChildrenSize();i++){
-			if(fun->getChild(i)->isFuncParam()){
-				// must isfunp first, otherwiswe op will match it.
-				record.emplace_back(params[fun->getChild(i)->getName()]);
+	// Iterative version of post-order traversal function application
+	std::shared_ptr<DAGNode> Parser::applyFunPostOrder(std::shared_ptr<DAGNode> node, boost::unordered_map<std::string, std::shared_ptr<DAGNode>> & params){
+		if (!node) return nullptr;
+		
+		// Stack to track nodes to process
+		std::stack<std::pair<std::shared_ptr<DAGNode>, bool>> todo;
+		
+		// Map to store processed results for each node
+		boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> results;
+		
+		// Push initial node to stack
+		todo.push(std::make_pair(node, false));
+		
+		while (!todo.empty()) {
+			std::shared_ptr<DAGNode> current = todo.top().first;
+			bool processed = todo.top().second;
+			todo.pop();
+			
+			if (processed) {
+				// Node is being revisited after processing its children
+				std::vector<std::shared_ptr<DAGNode>> childResults;
+				
+				// Collect results from all children
+				for (size_t i = 0; i < current->getChildrenSize(); i++) {
+					childResults.push_back(results[current->getChild(i)]);
+				}
+				
+				// Create a new node with processed children
+				std::shared_ptr<DAGNode> result = mkOper(current->getSort(), current->getKind(), childResults);
+				results[current] = result;
+			} else {
+				// First visit to this node
+				if (current->isFuncParam()) {
+					// Function parameter - replace with actual parameter
+					auto it = params.find(current->getName());
+					if (it != params.end()) {
+						results[current] = it->second;
+					} else {
+						// Parameter not found, this should not happen if applyFun is called correctly
+						results[current] = mkErr(ERROR_TYPE::ERR_FUN_LOCAL_VAR);
+					}
+				} else if (current->isConst()) {
+					// Constants remain unchanged
+					results[current] = current;
+				} else if (current->isFuncApply()) {
+					// Function application node
+					std::vector<std::shared_ptr<DAGNode>> funcParams;
+					
+					// First, mark the node for revisit after processing children
+					todo.push(std::make_pair(current, true));
+					
+					// Process the function body and parameters
+					for (size_t i = 1; i < current->getChildrenSize(); i++) {
+						todo.push(std::make_pair(current->getChild(i), false));
+						funcParams.push_back(current->getChild(i));
+					}
+					
+					// Apply the function to its parameters
+					results[current] = applyFun(current->getFuncBody(), funcParams);
+				} else {
+					// Operator node - process all children first
+					todo.push(std::make_pair(current, true));
+					
+					// Push all children onto the stack in reverse order
+					for (int i = current->getChildrenSize() - 1; i >= 0; i--) {
+						todo.push(std::make_pair(current->getChild(i), false));
+					}
+				}
 			}
-			else if(fun->getChild(i)->isConst()){
-				record.emplace_back(fun->getChild(i));
-			}
-			else{
-				// is operator
-				std::vector<std::shared_ptr<DAGNode>> tmp;
-				record.emplace_back(applyFunPostOrder(fun->getChild(i), tmp, params));
-			}
-			// else{
-			//     return mkErr(ERROR_TYPE::ERR_FUN_LOCAL_VAR); // local variable in function, never happen.
-			// }
 		}
-
-		return mkOper(fun->getSort(), fun->getKind(), record);
+		
+		return results[node];
 	}
 	
 	std::shared_ptr<DAGNode> Parser::mkApplyFunc(std::shared_ptr<DAGNode> fun, const std::vector<std::shared_ptr<DAGNode>> &params){
