@@ -1053,7 +1053,7 @@ namespace SMTLIBParser{
         }
         ofs << ") " << node->getChild(0)->getSort()->toString() << " ";
         dumpSMTLIB2(node->getChild(0), ofs);
-        ofs << ")";
+        ofs << ")\n";
     }
 
     void dumpFuncDec(const std::shared_ptr<DAGNode>& node, std::ofstream& ofs) {
