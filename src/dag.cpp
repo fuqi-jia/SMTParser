@@ -27,8 +27,7 @@
 
 #include "../include/dag.h"
 #include <stack>
-#include <boost/unordered_map.hpp>
-#include <boost/unordered_set.hpp>
+
 namespace SMTLIBParser{
 
     void DAGNode::updateFuncDef(std::shared_ptr<Sort> out_sort, std::shared_ptr<DAGNode> body, const std::vector<std::shared_ptr<DAGNode>> &params){
@@ -1034,7 +1033,7 @@ namespace SMTLIBParser{
     }
     
     void dumpSMTLIB2(const std::shared_ptr<DAGNode>& root, std::ofstream& ofs) {
-        boost::unordered_map<std::shared_ptr<DAGNode>, std::string> visited;
+        boost::unordered_set<std::shared_ptr<DAGNode>> visited;
         dumpSMTLIB2(root, visited, ofs);
     }
 

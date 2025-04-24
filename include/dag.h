@@ -46,6 +46,7 @@
 #include <functional> // for std::hash
 
 #include <boost/unordered_map.hpp>
+#include <boost/unordered_set.hpp>
 
 
 namespace SMTLIBParser{
