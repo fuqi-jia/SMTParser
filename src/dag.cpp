@@ -609,11 +609,10 @@ namespace SMTLIBParser{
         return res;
     }
     std::string dumpSMTLIB2(const std::vector<std::shared_ptr<DAGNode>>& assertions){
-        std::string res = "(assert ";
+        std::string res = "";
         for(size_t i=0;i<assertions.size();i++){
-            res += dumpSMTLIB2(assertions[i]);
+            res += "(assert " + dumpSMTLIB2(assertions[i]) + ")\n";
         }
-        res += ")";
         return res;
     }
 }
