@@ -1128,21 +1128,21 @@ namespace SMTLIBParser{
 					assert(params.size() == 1);
 					expr = mkTan(params[0]);
 				}
-				else if (s == "asin") {
+				else if (s == "asin" || s == "arcsin") {
 					assert(params.size() == 1);
 					expr = mkAsin(params[0]);
 				}
-				else if (s == "acos") {
+				else if (s == "acos" || s == "arccos") {
 					assert(params.size() == 1);
 					expr = mkAcos(params[0]);
 				}
-				else if (s == "atan") {
+				else if (s == "atan" || s == "arctan") {
 					assert(params.size() == 1);
 					expr = mkAtan(params[0]);
 				}
-				else if (s == "atan2") {
-					assert(params.size() == 1);
-					expr = mkAtan(params[0]);
+				else if (s == "atan2" || s == "arctan2") {
+					assert(params.size() == 2);
+					expr = mkAtan2(params[0], params[1]);
 				}
 				else if (s == "sinh") {
 					assert(params.size() == 1);

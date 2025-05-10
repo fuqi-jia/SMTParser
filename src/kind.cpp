@@ -162,6 +162,8 @@ namespace SMTLIBParser{
             return "acsch";
         case NODE_KIND::NT_ACOTH:
             return "acoth";
+        case NODE_KIND::NT_ATAN2:
+            return "atan2";
         case NODE_KIND::NT_LE:
             return "<=";
         case NODE_KIND::NT_LT:

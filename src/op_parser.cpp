@@ -1337,6 +1337,13 @@ namespace SMTLIBParser{
         if(param->isErr()) return param;
         return mkOper(REAL_SORT, NODE_KIND::NT_ACOTH, param);
     }
+    /*
+    (atan2 Real Real), return Real
+    */
+    std::shared_ptr<DAGNode> Parser::mkAtan2(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
+        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
+        return mkOper(REAL_SORT, NODE_KIND::NT_ATAN2, l, r);
+    }
     // ARITHMATIC COMP
     /*
     (<= rt rt+), return rt
