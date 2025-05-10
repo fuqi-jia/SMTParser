@@ -42,6 +42,8 @@ namespace SMTLIBParser{
     bool isBVUtil(const std::string& str);
     bool isFPUtil(const std::string& str);
     bool isStrUtil(const std::string& str);
+    bool isScientificNotationUtil(const std::string& str);
+    std::string parseScientificNotation(const std::string& str);
 
     Integer pow(const Integer& base, const Integer& exp);
     Integer gcd(const Integer& a, const Integer& b);

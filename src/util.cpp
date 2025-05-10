@@ -28,6 +28,10 @@
 #include "../include/util.h"
 #include <vector>
 #include <sstream>
+#include <cmath>
+#include <iomanip>
+#include <algorithm>
+#include <string>
 namespace SMTLIBParser{
 
     // SHA-256 hash function
@@ -57,6 +61,140 @@ namespace SMTLIBParser{
         }
         return true;
     }
+
+    bool isScientificNotationUtil(const std::string& str){
+        if (str.empty()) return false;
+        
+        // 寻找 'E' 或 'e' 字符
+        size_t e_pos = str.find_first_of("Ee");
+        if (e_pos == std::string::npos || e_pos == 0) 
+            return false;
+            
+        // 检查 E 前面的部分是否为有效的实数
+        std::string mantissa = str.substr(0, e_pos);
+        if (!isRealUtil(mantissa)) 
+            return false;
+        
+        // 提取 E 后面的部分
+        std::string exponent = str.substr(e_pos + 1);
+        
+        // 如果指数部分为空，不是有效的科学计数法
+        if (exponent.empty())
+            return false;
+        
+        // 创建一个没有空格的副本用于检查
+        std::string exponent_no_spaces = exponent;
+        exponent_no_spaces.erase(std::remove_if(exponent_no_spaces.begin(), exponent_no_spaces.end(), 
+                                     [](unsigned char c) { return std::isspace(c); }), 
+                      exponent_no_spaces.end());
+        
+        // 如果去除空格后指数部分为空，不是有效的科学计数法
+        if (exponent_no_spaces.empty())
+            return false;
+        
+        // 处理可能的括号
+        if (exponent_no_spaces[0] == '(') {
+            // 查找右括号
+            size_t close_pos = exponent_no_spaces.find(')');
+            if (close_pos != std::string::npos) {
+                // 提取括号内的内容
+                exponent_no_spaces = exponent_no_spaces.substr(1, close_pos - 1);
+            } else {
+                // 没有找到右括号，可能是不完整的表达式
+                exponent_no_spaces = exponent_no_spaces.substr(1);
+            }
+        }
+        
+        // 如果处理括号后指数部分为空，不是有效的科学计数法
+        if (exponent_no_spaces.empty())
+            return false;
+        
+        // 检查指数部分是否为整数
+        if (exponent_no_spaces[0] == '+' || exponent_no_spaces[0] == '-') {
+            // 如果是 "E-" 或 "E+" 后面必须有数字
+            if (exponent_no_spaces.size() == 1) 
+                return false;
+            // 检查符号后面的部分是否全为数字
+            for (size_t i = 1; i < exponent_no_spaces.size(); i++) {
+                if (!isdigit(exponent_no_spaces[i])) 
+                    return false;
+            }
+        } else {
+            // 如果没有符号，则整个指数部分必须全为数字
+            for (char c : exponent_no_spaces) {
+                if (!isdigit(c)) 
+                    return false;
+            }
+        }
+        
+        return true;
+    }
+
+    std::string parseScientificNotation(const std::string& str){
+        // 寻找 'E' 或 'e' 字符
+        size_t e_pos = str.find_first_of("Ee");
+        if (e_pos == std::string::npos) 
+            return str;
+            
+        try {
+            // 提取底数部分
+            std::string mantissa = str.substr(0, e_pos);
+            
+            // 检查底数部分是否为有效的实数
+            if (!isRealUtil(mantissa))
+                return str;
+            
+            // 提取指数部分
+            std::string exponent = str.substr(e_pos + 1);
+            
+            // 如果指数部分为空，返回原始字符串
+            if (exponent.empty())
+                return str;
+            
+            // 创建一个没有空格的副本用于处理
+            std::string exponent_no_spaces = exponent;
+            exponent_no_spaces.erase(std::remove_if(exponent_no_spaces.begin(), exponent_no_spaces.end(), 
+                                         [](unsigned char c) { return std::isspace(c); }), 
+                          exponent_no_spaces.end());
+            
+            // 如果去除空格后指数部分为空，返回原始字符串
+            if (exponent_no_spaces.empty())
+                return str;
+            
+            // 处理可能的括号
+            if (exponent_no_spaces[0] == '(') {
+                // 查找右括号
+                size_t close_pos = exponent_no_spaces.find(')');
+                if (close_pos != std::string::npos) {
+                    // 提取括号内的内容
+                    exponent_no_spaces = exponent_no_spaces.substr(1, close_pos - 1);
+                } else {
+                    // 没有找到右括号，可能是不完整的表达式
+                    exponent_no_spaces = exponent_no_spaces.substr(1);
+                }
+            }
+            
+            // 如果处理括号后指数部分为空，返回原始字符串
+            if (exponent_no_spaces.empty())
+                return str;
+            
+            // 将科学计数法转换为普通实数
+            double mantissa_val = std::stod(mantissa);
+            int exponent_val = std::stoi(exponent_no_spaces);
+            
+            // 计算结果
+            double result = mantissa_val * std::pow(10.0, exponent_val);
+            
+            // 转换为字符串
+            std::ostringstream oss;
+            oss << std::setprecision(16) << result;
+            return oss.str();
+        } catch (const std::exception& e) {
+            // 转换失败，返回原始字符串
+            return str;
+        }
+    }
+
     bool isBVUtil(const std::string& str){
         if (str.empty()) return false;
         if (str.size() < 3) return false;
