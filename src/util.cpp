@@ -262,17 +262,83 @@ namespace SMTLIBParser{
                 exponent_no_spaces = inner_exponent;
             }
             
-            // Convert scientific notation to regular real number
-            double mantissa_val = std::stod(mantissa);
-            int exponent_val = std::stoi(exponent_no_spaces);
+            // 使用字符串操作移动小数点的方式处理科学计数法
             
-            // Calculate the result
-            double result = mantissa_val * std::pow(10.0, exponent_val);
+            // 解析尾数部分，去除可能存在的正负号
+            bool is_negative = false;
+            std::string abs_mantissa = mantissa;
+            if (!mantissa.empty() && (mantissa[0] == '-' || mantissa[0] == '+')) {
+                is_negative = (mantissa[0] == '-');
+                abs_mantissa = mantissa.substr(1);
+            }
             
-            // Convert to string
-            std::ostringstream oss;
-            oss << std::setprecision(16) << result;
-            return oss.str();
+            // 解析指数部分
+            bool exp_negative = false;
+            std::string abs_exponent = exponent_no_spaces;
+            if (!exponent_no_spaces.empty() && (exponent_no_spaces[0] == '-' || exponent_no_spaces[0] == '+')) {
+                exp_negative = (exponent_no_spaces[0] == '-');
+                abs_exponent = exponent_no_spaces.substr(1);
+            }
+            
+            // 将指数转换为整数
+            int exp_value = 0;
+            try {
+                exp_value = std::stoi(abs_exponent);
+                if (exp_negative) {
+                    exp_value = -exp_value;
+                }
+            } catch (...) {
+                return str; // 指数解析失败，返回原始字符串
+            }
+            
+            // 找到尾数小数点的位置，如果没有小数点则添加
+            size_t dot_pos = abs_mantissa.find('.');
+            std::string digits;
+            int original_dot_position;
+            
+            if (dot_pos != std::string::npos) {
+                // 有小数点，提取所有数字
+                digits = abs_mantissa.substr(0, dot_pos) + abs_mantissa.substr(dot_pos + 1);
+                original_dot_position = dot_pos;
+            } else {
+                // 没有小数点，所有字符都是数字
+                digits = abs_mantissa;
+                original_dot_position = abs_mantissa.length();
+            }
+            
+            // 处理前导零和尾部零
+            // 移除前导零
+            size_t first_non_zero = digits.find_first_not_of('0');
+            if (first_non_zero != std::string::npos) {
+                digits = digits.substr(first_non_zero);
+                original_dot_position -= first_non_zero;
+            } else {
+                // 所有数字都是0
+                return (is_negative ? "-0.0" : "0.0");
+            }
+            
+            // 计算新的小数点位置
+            int new_dot_position = original_dot_position + exp_value;
+            
+            std::string result;
+            
+            if (new_dot_position <= 0) {
+                // 小数点需要左移到整个数字前面，添加前导零
+                result = "0." + std::string(-new_dot_position, '0') + digits;
+            } else if (new_dot_position >= static_cast<int>(digits.length())) {
+                // 小数点需要右移到整个数字后面，添加尾部零
+                result = digits + std::string(new_dot_position - digits.length(), '0') + ".0";
+            } else {
+                // 小数点在数字中间
+                result = digits.substr(0, new_dot_position) + "." + digits.substr(new_dot_position);
+            }
+            
+            // 添加负号（如果需要）
+            if (is_negative) {
+                result = "-" + result;
+            }
+            
+            return result;
         } catch (const std::exception& e) {
             // Conversion failed, return the original string
             return str;
