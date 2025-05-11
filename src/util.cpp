@@ -179,15 +179,16 @@ namespace SMTLIBParser{
                 return str;
             
             // convert scientific notation to normal real number
-            double mantissa_val = std::stod(mantissa);
-            int exponent_val = std::stoi(exponent_no_spaces);
+            // TODO!!
+            Real mantissa_val = Real(mantissa);
+            Real exponent_val = Real(exponent_no_spaces);
             
             // calculate the result
-            double result = mantissa_val * std::pow(10.0, exponent_val);
+            Real result = mantissa_val * pow(Real(10.0), exponent_val);
             
             // convert to string
             std::ostringstream oss;
-            oss << std::setprecision(16) << result;
+            oss << std::setprecision(16) << toString(result);
             return oss.str();
         } catch (const std::exception& e) {
             // conversion failed, return the original string
@@ -261,6 +262,31 @@ namespace SMTLIBParser{
         }
         return result;
     }
+    Real pow(const Real& base, const Real& exp){
+        // GMP does not support floating-point power operations directly, so we need to convert to double using std::pow
+        // Note: This may result in precision loss
+        
+        // special cases
+        if(exp == 0) return Real(1.0);
+        if(base == 1) return Real(1.0);
+        if(base == 0) return Real(0.0);
+        
+        // for integer power, use integer pow method
+        if(exp.get_d() == std::floor(exp.get_d()) && exp.get_d() > 0 && exp.get_d() < 1000) {
+            Real result = base;
+            for(int i = 1; i < (int)exp.get_d(); i++) {
+                result *= base;
+            }
+            return result;
+        }
+        
+        // for general case, convert to double calculation, then convert back to Real
+        double base_d = base.get_d();
+        double exp_d = exp.get_d();
+        double result_d = std::pow(base_d, exp_d);
+        
+        return Real(result_d);
+    }
 
     Integer gcd(const Integer& a, const Integer& b){
         if(b == 0) return a;
@@ -278,6 +304,24 @@ namespace SMTLIBParser{
         return res;
     }
     Real sqrt(const Real& r){
+        Real res;
+        mpf_sqrt(res.get_mpf_t(), r.get_mpf_t());
+        return res;
+    }
+    Real safesqrt(const Integer& i){
+        if(i < 0){
+            return Real(0);
+        }
+        Real res;
+        Real tmp(i);
+        mpf_sqrt(res.get_mpf_t(), tmp.get_mpf_t());
+        return res;
+    }
+    
+    Real safesqrt(const Real& r){
+        if(r < 0){
+            return Real(0);
+        }
         Real res;
         mpf_sqrt(res.get_mpf_t(), r.get_mpf_t());
         return res;

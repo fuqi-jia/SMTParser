@@ -355,6 +355,12 @@ namespace SMTLIBParser{
         if(constants.find(v)!=constants.end()){
             return node_list[constants[v]];
         }
+        else if(v == "e" || v == "pi"){
+            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(sort, v== "e" ? NODE_KIND::NT_CONST_E : NODE_KIND::NT_CONST_PI, v);
+            constants.insert(std::pair<std::string, size_t>(v, node_list.size()));
+            node_list.emplace_back(newconst);
+            return newconst;
+        }
         else{
             std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(sort, NODE_KIND::NT_CONST, v);
             constants.insert(std::pair<std::string, size_t>(v, node_list.size()));
@@ -963,6 +969,20 @@ namespace SMTLIBParser{
         return mkOper(REAL_SORT, NODE_KIND::NT_SQRT, param);
     }
     /*
+    (safesqrt Real), return Real
+    (safesqrt Int), return Real
+    */
+    std::shared_ptr<DAGNode> Parser::mkSafeSqrt(std::shared_ptr<DAGNode> param){
+        if(param->isErr()) return param;
+        if(param->isCInt()){
+            return mkConstReal(safesqrt(param->toInt()));
+        }
+        else if(param->isCReal()){
+            return mkConstReal(safesqrt(param->toReal()));
+        }
+        return mkOper(REAL_SORT, NODE_KIND::NT_SAFESQRT, param);
+    }
+    /*
     (ceil Real), return Int
     */
     std::shared_ptr<DAGNode> Parser::mkCeil(std::shared_ptr<DAGNode> param){
@@ -1567,10 +1587,10 @@ namespace SMTLIBParser{
     }
     // ARITHMATIC CONSTANTS
     std::shared_ptr<DAGNode> Parser::mkPi(){
-        return mkConst(REAL_SORT, "PI");
+        return mkConst(REAL_SORT, "pi");
     }
     std::shared_ptr<DAGNode> Parser::mkE(){
-        return mkConst(REAL_SORT, "E");
+        return mkConst(REAL_SORT, "e");
     }
     std::shared_ptr<DAGNode> Parser::mkInfinity(){
         return mkConst(EXT_SORT, "INF");

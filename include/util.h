@@ -45,18 +45,21 @@ namespace SMTLIBParser{
     bool isScientificNotationUtil(const std::string& str);
     std::string parseScientificNotation(const std::string& str);
 
-    Integer pow(const Integer& base, const Integer& exp);
-    Integer gcd(const Integer& a, const Integer& b);
-    Integer lcm(const Integer& a, const Integer& b);
-    Real sqrt(const Integer& i);
-    Real sqrt(const Real& r);
-    Integer ceil(const Real& r);
-    Integer floor(const Real& r);
-    Integer round(const Real& r);
+    Integer     pow(const Integer& base, const Integer& exp);
+    Real        pow(const Real& base, const Real& exp);
+    Integer     gcd(const Integer& a, const Integer& b);
+    Integer     lcm(const Integer& a, const Integer& b);
+    Real        sqrt(const Integer& i);
+    Real        sqrt(const Real& r);
+    Real        safesqrt(const Integer& i);
+    Real        safesqrt(const Real& r);
+    Integer     ceil(const Real& r);
+    Integer     floor(const Real& r);
+    Integer     round(const Real& r);
 
-    bool isPrime(const Integer& n);
-    bool isEven(const Integer& n);
-    bool isOdd(const Integer& n);
+    bool        isPrime(const Integer& n);
+    bool        isEven(const Integer& n);
+    bool        isOdd(const Integer& n);
 
     Integer factorial(const Integer& n);
 

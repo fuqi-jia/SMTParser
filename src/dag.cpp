@@ -174,12 +174,14 @@ namespace SMTLIBParser{
                 case NODE_KIND::NT_NEG:
                 case NODE_KIND::NT_ABS:
                 case NODE_KIND::NT_SQRT:
+                case NODE_KIND::NT_SAFESQRT:
                 case NODE_KIND::NT_CEIL:
                 case NODE_KIND::NT_FLOOR:
                 case NODE_KIND::NT_ROUND:
                 case NODE_KIND::NT_EXP:
                 case NODE_KIND::NT_LN:
                 case NODE_KIND::NT_LG:
+                case NODE_KIND::NT_LB:
                 case NODE_KIND::NT_SIN:
                 case NODE_KIND::NT_COS:
                 case NODE_KIND::NT_SEC:
@@ -386,10 +388,10 @@ namespace SMTLIBParser{
                     break;
                     
                 // Constant
-                case NODE_KIND::NT_PI:
+                case NODE_KIND::NT_CONST_PI:
                     res = "pi";
                     break;
-                case NODE_KIND::NT_E:
+                case NODE_KIND::NT_CONST_E:
                     res = "e";
                     break;
                 case NODE_KIND::NT_INFINITY:
@@ -656,6 +658,7 @@ namespace SMTLIBParser{
             break;
         case NODE_KIND::NT_ABS:
         case NODE_KIND::NT_SQRT:
+        case NODE_KIND::NT_SAFESQRT:
         case NODE_KIND::NT_CEIL:
         case NODE_KIND::NT_FLOOR:
         case NODE_KIND::NT_ROUND:
@@ -670,6 +673,7 @@ namespace SMTLIBParser{
             break;
         case NODE_KIND::NT_LN:
         case NODE_KIND::NT_LG:
+        case NODE_KIND::NT_LB:
         case NODE_KIND::NT_SIN:
         case NODE_KIND::NT_COS:
         case NODE_KIND::NT_SEC:
@@ -720,10 +724,10 @@ namespace SMTLIBParser{
             dumpSingleOp(kind, node->getChild(0), visited, ofs);
             break;
         // ARITHMATIC CONSTANTS
-        case NODE_KIND::NT_PI:
+        case NODE_KIND::NT_CONST_PI:
             ofs << "pi";
             break;
-        case NODE_KIND::NT_E:
+        case NODE_KIND::NT_CONST_E:
             ofs << "e";
             break;
         case NODE_KIND::NT_INFINITY:

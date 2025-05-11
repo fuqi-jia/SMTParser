@@ -246,6 +246,7 @@ namespace SMTLIBParser{
         std::shared_ptr<DAGNode> mkMod(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l % r
         std::shared_ptr<DAGNode> mkAbs(std::shared_ptr<DAGNode> param); // |param|
         std::shared_ptr<DAGNode> mkSqrt(std::shared_ptr<DAGNode> param); // sqrt(param)
+        std::shared_ptr<DAGNode> mkSafeSqrt(std::shared_ptr<DAGNode> param); // safesqrt(param)
         std::shared_ptr<DAGNode> mkCeil(std::shared_ptr<DAGNode> param); // ceil(param)
         std::shared_ptr<DAGNode> mkFloor(std::shared_ptr<DAGNode> param); // floor(param)
         std::shared_ptr<DAGNode> mkRound(std::shared_ptr<DAGNode> param); // round(param)
@@ -253,6 +254,7 @@ namespace SMTLIBParser{
         std::shared_ptr<DAGNode> mkExp(std::shared_ptr<DAGNode> param); // exp(param)
         std::shared_ptr<DAGNode> mkLn(std::shared_ptr<DAGNode> param); // ln(param)
         std::shared_ptr<DAGNode> mkLg(std::shared_ptr<DAGNode> param); // lg(param)
+        std::shared_ptr<DAGNode> mkLb(std::shared_ptr<DAGNode> param); // lb(param)
         std::shared_ptr<DAGNode> mkLog(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // log_l(r)
         std::shared_ptr<DAGNode> mkSin(std::shared_ptr<DAGNode> param); // sin(param)
         std::shared_ptr<DAGNode> mkCos(std::shared_ptr<DAGNode> param); // cos(param)

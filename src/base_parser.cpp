@@ -1130,6 +1130,10 @@ namespace SMTLIBParser{
 					assert(params.size() == 1);
 					expr = mkSqrt(params[0]);
 				}
+				else if (s == "safesqrt") {
+					assert(params.size() == 1);
+					expr = mkSafeSqrt(params[0]);
+				}
 				else if (s == "ceil") {
 					assert(params.size() == 1);
 					expr = mkCeil(params[0]);
@@ -1155,8 +1159,15 @@ namespace SMTLIBParser{
 					expr = mkLg(params[0]);
 				}
 				else if (s == "log") {
-					assert(params.size() == 2);
-					expr = mkLog(params[0], params[1]);
+					if(params.size() == 1){
+						// ln(param)
+						expr = mkLn(params[0]);
+					}
+					else if(params.size() == 2){
+						// log(param1, param2)
+						expr = mkLog(params[0], params[1]);
+					}
+					else err_param_mis("log", expr_ln);
 				}
 				else if (s == "sin") {
 					assert(params.size() == 1);

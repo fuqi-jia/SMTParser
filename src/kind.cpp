@@ -99,6 +99,8 @@ namespace SMTLIBParser{
             return "abs";
         case NODE_KIND::NT_SQRT:
             return "sqrt";
+        case NODE_KIND::NT_SAFESQRT:
+            return "safesqrt";
         case NODE_KIND::NT_CEIL:
             return "ceil";
         case NODE_KIND::NT_FLOOR:
@@ -189,16 +191,16 @@ namespace SMTLIBParser{
         case NODE_KIND::NT_IS_ODD:
             return "is_odd";
         // ARITHMATIC CONSTANTS
-        case NODE_KIND::NT_PI:
-            return "PI";
-        case NODE_KIND::NT_E:
-            return "E";
+        case NODE_KIND::NT_CONST_PI:
+            return "pi";
+        case NODE_KIND::NT_CONST_E:
+            return "e";
         case NODE_KIND::NT_INFINITY:
-            return "INF";
+            return "inf";
         case NODE_KIND::NT_NAN:
             return "NaN";
         case NODE_KIND::NT_EPSILON:
-            return "EPSILON";
+            return "epsilon";
         // ARITHMATIC FUNCTIONS
         // case NODE_KIND::NT_SUM:
         //     return "sum";
