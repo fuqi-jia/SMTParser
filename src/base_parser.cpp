@@ -904,6 +904,38 @@ namespace SMTLIBParser{
 	// expr ::= const | func | (<identifier> <expr>+)
 	std::shared_ptr<DAGNode> Parser::parseExpr() {
 
+		// Handle nested parentheses cases, such as ((A)), (((A))), etc.
+		// In these cases, we remove the outermost parentheses and directly return the inner expression
+		if (*bufptr == '(') {
+			// Save current position for backtracking
+			char *save_bufptr = bufptr;
+			SCAN_MODE save_mode = scan_mode;
+			size_t save_line = line_number;
+			
+			// Parse left parenthesis
+			parseLpar();
+			
+			// Check if it's a nested parentheses expression
+			if (*bufptr == '(') {
+				// Recursively parse the inner expression
+				std::shared_ptr<DAGNode> inner_expr = parseExpr();
+				
+				// Check if the inner expression was parsed successfully
+				if (inner_expr && !inner_expr->isErr()) {
+					// After successfully parsing the inner expression, we should encounter a right parenthesis
+					if (*bufptr == ')') {
+						parseRpar(); // Consume the right parenthesis
+						return inner_expr; // Directly return the inner expression, skipping one level of parentheses
+					}
+				}
+			}
+			
+			// If it's not a nested parentheses expression or parsing failed, restore state and continue normal parsing
+			bufptr = save_bufptr;
+			scan_mode = save_mode;
+			line_number = save_line;
+		}
+
 		// const | func
 		if (*bufptr != '(') {
 			//const | func

@@ -92,35 +92,81 @@ namespace SMTLIBParser{
         if (exponent_no_spaces.empty())
             return false;
         
-        // Handle possible parentheses
+        // Handle nested parentheses cases, such as (3) or ((3))
         if (exponent_no_spaces[0] == '(') {
-            // Look for closing parenthesis
-            size_t close_pos = exponent_no_spaces.find(')');
-            if (close_pos != std::string::npos) {
-                // Extract content inside parentheses
-                exponent_no_spaces = exponent_no_spaces.substr(1, close_pos - 1);
-            } else {
-                // No closing parenthesis found, might be an incomplete expression
-                exponent_no_spaces = exponent_no_spaces.substr(1);
+            // Count the parentheses level
+            int bracket_level = 1;
+            size_t pos = 1;
+            std::string inner_exponent;
+            
+            // Scan and parse the content inside the parentheses
+            while (pos < exponent_no_spaces.size() && bracket_level > 0) {
+                if (exponent_no_spaces[pos] == '(') {
+                    bracket_level++;
+                } else if (exponent_no_spaces[pos] == ')') {
+                    bracket_level--;
+                    // When the outermost right parenthesis is found, extract the number inside
+                    if (bracket_level == 0) {
+                        inner_exponent = exponent_no_spaces.substr(1, pos - 1);
+                        // If there are still parentheses inside, recursively check the inner expression
+                        if (inner_exponent.find('(') != std::string::npos) {
+                            // First remove all inner parentheses, then check if it's a valid exponent
+                            std::string processed_exponent;
+                            bracket_level = 0;
+                            
+                            for (char c : inner_exponent) {
+                                if (c == '(') {
+                                    bracket_level++;
+                                } else if (c == ')') {
+                                    bracket_level--;
+                                } else if (bracket_level == 0) {
+                                    // Only keep characters not within parentheses
+                                    processed_exponent += c;
+                                }
+                            }
+                            
+                            // Exponent can only contain digits and possibly a sign
+                            if (processed_exponent.empty()) return false;
+                            
+                            // Check the processed exponent part
+                            if (processed_exponent[0] == '+' || processed_exponent[0] == '-') {
+                                if (processed_exponent.size() == 1) return false;
+                                for (size_t i = 1; i < processed_exponent.size(); i++) {
+                                    if (!isdigit(processed_exponent[i])) return false;
+                                }
+                            } else {
+                                for (char c : processed_exponent) {
+                                    if (!isdigit(c)) return false;
+                                }
+                            }
+                            
+                            return true;
+                        }
+                    }
+                }
+                pos++;
             }
+            
+            // No matching right parenthesis found or parentheses parsing failed
+            if (bracket_level != 0 || inner_exponent.empty()) 
+                return false;
+                
+            // Update exponent_no_spaces for further checks
+            exponent_no_spaces = inner_exponent;
         }
-        
-        // If the exponent part is empty after handling parentheses, it's not a valid scientific notation
-        if (exponent_no_spaces.empty())
-            return false;
         
         // Check if the exponent part is an integer
         if (exponent_no_spaces[0] == '+' || exponent_no_spaces[0] == '-') {
-            // If it's "E-" or "E+", there must be numbers after
+            // If it's "E-" or "E+", there must be digits after
             if (exponent_no_spaces.size() == 1) 
                 return false;
-            // Check if the part after the sign consists only of digits
+            // Check if the part after the sign contains only digits
             for (size_t i = 1; i < exponent_no_spaces.size(); i++) {
                 if (!isdigit(exponent_no_spaces[i])) 
                     return false;
             }
         } else {
-            // If there's no sign, the entire exponent part must consist only of digits
+            // If there's no sign, the entire exponent part must contain only digits
             for (char c : exponent_no_spaces) {
                 if (!isdigit(c)) 
                     return false;
@@ -161,22 +207,60 @@ namespace SMTLIBParser{
             if (exponent_no_spaces.empty())
                 return str;
             
-            // Handle possible parentheses
+            // Handle nested parentheses cases, such as (3) or ((3))
             if (exponent_no_spaces[0] == '(') {
-                // Look for closing parenthesis
-                size_t close_pos = exponent_no_spaces.find(')');
-                if (close_pos != std::string::npos) {
-                    // Extract content inside parentheses
-                    exponent_no_spaces = exponent_no_spaces.substr(1, close_pos - 1);
-                } else {
-                    // No closing parenthesis found, might be an incomplete expression
-                    exponent_no_spaces = exponent_no_spaces.substr(1);
+                // Count parentheses levels and find the matching right parenthesis
+                int bracket_level = 1;
+                size_t pos = 1;
+                std::string inner_exponent;
+                
+                // Scan and parse the content inside the parentheses
+                while (pos < exponent_no_spaces.size() && bracket_level > 0) {
+                    if (exponent_no_spaces[pos] == '(') {
+                        bracket_level++;
+                    } else if (exponent_no_spaces[pos] == ')') {
+                        bracket_level--;
+                        // When the outermost right parenthesis is found, extract the number inside
+                        if (bracket_level == 0) {
+                            inner_exponent = exponent_no_spaces.substr(1, pos - 1);
+                            break;
+                        }
+                    }
+                    pos++;
                 }
+                
+                // No matching right parenthesis found or parentheses parsing failed
+                if (bracket_level != 0) 
+                    return str;
+                
+                // If there are still parentheses inside, recursively process
+                if (inner_exponent.find('(') != std::string::npos) {
+                    // Remove all parentheses layer by layer until we get pure numbers
+                    int nest_level = 0;
+                    std::string processed_exponent;
+                    
+                    for (size_t i = 0; i < inner_exponent.size(); i++) {
+                        if (inner_exponent[i] == '(') {
+                            nest_level++;
+                        } else if (inner_exponent[i] == ')') {
+                            nest_level--;
+                        } else if (nest_level == 0) {
+                            // Only keep characters not within parentheses
+                            processed_exponent += inner_exponent[i];
+                        }
+                    }
+                    
+                    // The processed exponent part cannot be empty
+                    if (processed_exponent.empty())
+                        return str;
+                    
+                    // Update inner exponent
+                    inner_exponent = processed_exponent;
+                }
+                
+                // Update exponent_no_spaces for conversion
+                exponent_no_spaces = inner_exponent;
             }
-            
-            // If the exponent part is empty after handling parentheses, return the original string
-            if (exponent_no_spaces.empty())
-                return str;
             
             // Convert scientific notation to regular real number
             double mantissa_val = std::stod(mantissa);
