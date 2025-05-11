@@ -65,29 +65,30 @@ namespace SMTLIBParser{
     bool isScientificNotationUtil(const std::string& str){
         if (str.empty()) return false;
         
-        // Look for 'E' or 'e' character
+        // find 'E' or 'e' character
         size_t e_pos = str.find_first_of("Ee");
         if (e_pos == std::string::npos || e_pos == 0) 
             return false;
             
-        // Check if the part before E is a valid real number
+        // check if the part before E is a valid real number
         std::string mantissa = str.substr(0, e_pos);
         if (!isRealUtil(mantissa)) 
             return false;
         
-        // Extract the part after E
+        // extract the part after E
         std::string exponent = str.substr(e_pos + 1);
         
-        // If the exponent part is empty, it's not a valid scientific notation
+        // if the exponent part is empty, not a valid scientific notation
         if (exponent.empty())
             return false;
         
-        // Create a copy without spaces for checking
+        // create a copy without spaces for checking
         std::string exponent_no_spaces = exponent;
         exponent_no_spaces.erase(std::remove_if(exponent_no_spaces.begin(), exponent_no_spaces.end(), 
                                      [](unsigned char c) { return std::isspace(c); }), 
                       exponent_no_spaces.end());
         
+
         // If the exponent part is empty after removing spaces, it's not a valid scientific notation
         if (exponent_no_spaces.empty())
             return false;
@@ -145,6 +146,7 @@ namespace SMTLIBParser{
                     }
                 }
                 pos++;
+
             }
             
             // No matching right parenthesis found or parentheses parsing failed
@@ -161,12 +163,15 @@ namespace SMTLIBParser{
             if (exponent_no_spaces.size() == 1) 
                 return false;
             // Check if the part after the sign contains only digits
+
             for (size_t i = 1; i < exponent_no_spaces.size(); i++) {
                 if (!isdigit(exponent_no_spaces[i])) 
                     return false;
             }
         } else {
+
             // If there's no sign, the entire exponent part must contain only digits
+
             for (char c : exponent_no_spaces) {
                 if (!isdigit(c)) 
                     return false;
@@ -198,6 +203,7 @@ namespace SMTLIBParser{
                 return str;
             
             // Create a copy without spaces for processing
+
             std::string exponent_no_spaces = exponent;
             exponent_no_spaces.erase(std::remove_if(exponent_no_spaces.begin(), exponent_no_spaces.end(), 
                                          [](unsigned char c) { return std::isspace(c); }), 
@@ -411,6 +417,31 @@ namespace SMTLIBParser{
         }
         return result;
     }
+    Real pow(const Real& base, const Real& exp){
+        // GMP does not support floating-point power operations directly, so we need to convert to double using std::pow
+        // Note: This may result in precision loss
+        
+        // special cases
+        if(exp == 0) return Real(1.0);
+        if(base == 1) return Real(1.0);
+        if(base == 0) return Real(0.0);
+        
+        // for integer power, use integer pow method
+        if(exp.get_d() == std::floor(exp.get_d()) && exp.get_d() > 0 && exp.get_d() < 1000) {
+            Real result = base;
+            for(int i = 1; i < (int)exp.get_d(); i++) {
+                result *= base;
+            }
+            return result;
+        }
+        
+        // for general case, convert to double calculation, then convert back to Real
+        double base_d = base.get_d();
+        double exp_d = exp.get_d();
+        double result_d = std::pow(base_d, exp_d);
+        
+        return Real(result_d);
+    }
 
     Integer gcd(const Integer& a, const Integer& b){
         if(b == 0) return a;
@@ -428,6 +459,24 @@ namespace SMTLIBParser{
         return res;
     }
     Real sqrt(const Real& r){
+        Real res;
+        mpf_sqrt(res.get_mpf_t(), r.get_mpf_t());
+        return res;
+    }
+    Real safesqrt(const Integer& i){
+        if(i < 0){
+            return Real(0);
+        }
+        Real res;
+        Real tmp(i);
+        mpf_sqrt(res.get_mpf_t(), tmp.get_mpf_t());
+        return res;
+    }
+    
+    Real safesqrt(const Real& r){
+        if(r < 0){
+            return Real(0);
+        }
         Real res;
         mpf_sqrt(res.get_mpf_t(), r.get_mpf_t());
         return res;
@@ -734,7 +783,7 @@ namespace SMTLIBParser{
             bv1_ = "#b" + bv1_;
             bv2_ = "#b" + bv2_;
         }
-        // Special case: division by zero
+        // special case: divide by 0
         bool isZero = true;
         for(size_t i = 2; i < bv2_.size(); i++){
             if(bv2_[i] == '1'){
@@ -754,22 +803,22 @@ namespace SMTLIBParser{
         std::string quotient_bits;
         std::string remainder = "";
         
-        // Long division
+        // long division
         for(char bit : dividend_bits){
-            // Add current bit to remainder
+            // add current bit to remainder
             remainder.push_back(bit);
             
-            // Try division
+            // try division
             if(remainder.length() < divisor_bits.length()){
-                // Remainder length not enough, add 0 to quotient
+                // remainder length not enough, add 0 to quotient
                 quotient_bits.push_back('0');
             }
             else{
-                // Compare remainder with divisor (need to add #b prefix for comparison)
+                // compare remainder with divisor (need to add #b prefix for comparison)
                 std::string remainder_bv = "#b" + remainder;
                 std::string divisor_bv = "#b" + divisor_bits;
                 
-                // Binary string comparison
+                // binary string comparison
                 bool geq = true;
                 if(remainder.length() != divisor_bits.length()){
                     geq = remainder.length() > divisor_bits.length();
@@ -787,21 +836,21 @@ namespace SMTLIBParser{
                 }
                 
                 if(geq){
-                    // Remainder greater than or equal to divisor, add 1 to quotient
+                    // remainder greater than or equal to divisor, add 1 to quotient
                     quotient_bits.push_back('1');
                     
-                    // Subtract divisor from remainder
+                    // subtract divisor from remainder
                     std::string diff = SMTLIBParser::bvSub(remainder_bv, divisor_bv);
-                    remainder = diff.substr(2); // Remove #b prefix
+                    remainder = diff.substr(2); // remove #b prefix
                 }
                 else{
-                    // Remainder less than divisor, add 0 to quotient
+                    // remainder less than divisor, add 0 to quotient
                     quotient_bits.push_back('0');
                 }
             }
         }
         
-        // Return the result with prefix
+        // return result with prefix
         return "#b" + quotient_bits;
     }
     std::string bvUrem(const std::string& bv1, const std::string& bv2){

@@ -97,10 +97,10 @@ namespace SMTLIBParser{
                 kind = NODE_KIND::NT_CONST_FALSE;
             } else if (n == "pi") {
                 sort = REAL_SORT;
-                kind = NODE_KIND::NT_PI;
+                kind = NODE_KIND::NT_CONST_PI;
             } else if (n == "e") {
                 sort = REAL_SORT;
-                kind = NODE_KIND::NT_E;
+                kind = NODE_KIND::NT_CONST_E;
             } else if (n == "inf") {
                 sort = REAL_SORT;
                 kind = NODE_KIND::NT_INFINITY;
@@ -157,10 +157,12 @@ namespace SMTLIBParser{
         bool isCBool() 				const { return (kind == NODE_KIND::NT_CONST_TRUE || kind == NODE_KIND::NT_CONST_FALSE) && sort->isBool(); }; 
         bool isTrue() 				const { return kind == NODE_KIND::NT_CONST_TRUE && sort->isBool(); };
         bool isFalse() 			    const { return kind == NODE_KIND::NT_CONST_FALSE && sort->isBool(); };
-        bool isConst() 				const { return kind == NODE_KIND::NT_CONST || kind == NODE_KIND::NT_CONST_TRUE || kind == NODE_KIND::NT_CONST_FALSE; };
+        bool isConst() 				const { return  kind == NODE_KIND::NT_CONST || 
+                                                    kind == NODE_KIND::NT_CONST_TRUE || kind == NODE_KIND::NT_CONST_FALSE ||
+                                                    kind == NODE_KIND::NT_CONST_PI || kind == NODE_KIND::NT_CONST_E; };
         bool isCInt()       		const { return isConst() && (sort->isInt() || sort->isIntOrReal()); };
         bool isCRat()               const { return isConst() && (sort->isRat() || sort->isIntOrReal()); };
-        bool isCReal()      		const { return isConst() && !isPi() && !isE() && (sort->isReal() || sort->isRat() || sort->isIntOrReal()); };
+        bool isCReal()      		const { return isConst() && (sort->isReal() || sort->isRat() || sort->isIntOrReal()); };
         bool isCBV()        		const { return isConst() && sort->isBv(); };
         bool isCFP()        		const { return isConst() && sort->isFp(); };
         bool isCStr()       		const { return isConst() && sort->isStr(); };
@@ -217,9 +219,13 @@ namespace SMTLIBParser{
         bool isPow2() 				const { return (kind == NODE_KIND::NT_POW2); };
         bool isPow() 				const { return (kind == NODE_KIND::NT_POW); };
         bool isSqrt() 				const { return (kind == NODE_KIND::NT_SQRT); };
-        bool isRealNonlinearOp() 	const { return (isIAnd() || isPow2() || isPow() || isSqrt()); };
+        bool isSafeSqrt() 			const { return (kind == NODE_KIND::NT_SAFESQRT); };
+        bool isRealNonlinearOp() 	const { return (isIAnd() || isPow2() || isPow() || isSqrt() || isSafeSqrt()); };
         bool isExp() 				const { return (kind == NODE_KIND::NT_EXP); };
         bool isLog() 				const { return (kind == NODE_KIND::NT_LOG); };
+        bool isLn() 				const { return (kind == NODE_KIND::NT_LN); };
+        bool isLb() 				const { return (kind == NODE_KIND::NT_LB); };
+        bool isLg() 				const { return (kind == NODE_KIND::NT_LG); };
         bool isSin() 				const { return (kind == NODE_KIND::NT_SIN); };
         bool isCos() 				const { return (kind == NODE_KIND::NT_COS); };
         bool isSec() 				const { return (kind == NODE_KIND::NT_SEC); };
@@ -268,8 +274,8 @@ namespace SMTLIBParser{
         bool isArithProp() 			const { return (isInt() || isDivisible() || isPrime() || isEven() || isOdd()); };
 
         // check arithmetic constants
-        bool isPi() 				const { return (kind == NODE_KIND::NT_PI); };
-        bool isE() 					const { return (kind == NODE_KIND::NT_E); };
+        bool isPi() 				const { return (kind == NODE_KIND::NT_CONST_PI); };
+        bool isE() 					const { return (kind == NODE_KIND::NT_CONST_E); };
         bool isInfinity() 			const { return (kind == NODE_KIND::NT_INFINITY); };
         bool isNan() 				const { return (kind == NODE_KIND::NT_NAN); };
         bool isEpsilon() 			const { return (kind == NODE_KIND::NT_EPSILON); };

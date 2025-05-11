@@ -1,22 +1,24 @@
 cmake_minimum_required(VERSION 3.10)
 project(SMTParser VERSION 1.0.0 LANGUAGES CXX)
 
-# 设置C++标准
+# set C++ standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# 添加选项：BUILD_SHARED_LIBS
+# add option: BUILD_SHARED_LIBS
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
+# add option: BUILD_BOTH_LIBS
+option(BUILD_BOTH_LIBS "Build both static and shared libraries" ON)
 
-# 查找依赖包
+# find dependencies
 find_package(Boost REQUIRED COMPONENTS system)
 
-# 查找GMP库
+# find GMP library
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GMP REQUIRED gmp)
 
 if(NOT GMP_FOUND)
-    # 如果pkg-config找不到，尝试使用环境变量
+    # if pkg-config not found, try using environment variable
     if(DEFINED ENV{GMP_DIR})
         set(GMP_INCLUDE_DIRS $ENV{GMP_DIR}/include)
         set(GMP_LIBRARY_DIRS $ENV{GMP_DIR}/lib)
@@ -29,10 +31,10 @@ if(NOT GMP_FOUND)
     endif()
 endif()
 
-# 设置库名称
+# set library name
 set(LIB_NAME "smtlibparser")
 
-# 添加源文件
+# add source files
 set(SOURCES
     src/base_parser.cpp
     src/op_parser.cpp
@@ -44,7 +46,7 @@ set(SOURCES
     src/sort.cpp
 )
 
-# 定义公共头文件
+# define public headers
 set(PUBLIC_HEADERS
     include/parser.h
     include/dag.h
@@ -55,15 +57,15 @@ set(PUBLIC_HEADERS
     include/options.h
 )
 
-# 创建include目录
+# create include directory
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include)
 
-# 复制头文件到构建目录
+# copy headers to build directory
 foreach(header ${PUBLIC_HEADERS})
     file(COPY ${header} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/include)
 endforeach()
 
-# 添加头文件目录
+# add header file directories
 set(INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_BINARY_DIR}/include
@@ -71,47 +73,92 @@ set(INCLUDE_DIRS
     ${GMP_INCLUDE_DIRS}
 )
 
-# 创建库
-add_library(${LIB_NAME} ${SOURCES})
+# create library
+if(BUILD_BOTH_LIBS)
+    # create static library
+    add_library(${LIB_NAME}_static STATIC ${SOURCES})
+    set_target_properties(${LIB_NAME}_static PROPERTIES 
+        OUTPUT_NAME ${LIB_NAME}
+        VERSION ${PROJECT_VERSION}
+        PUBLIC_HEADER "${PUBLIC_HEADERS}"
+        CXX_VISIBILITY_PRESET hidden
+        VISIBILITY_INLINES_HIDDEN YES
+    )
+    target_include_directories(${LIB_NAME}_static PUBLIC ${INCLUDE_DIRS})
+    target_link_libraries(${LIB_NAME}_static PUBLIC ${Boost_LIBRARIES} ${GMP_LIBRARIES})
 
-# 设置库的属性
-set_target_properties(${LIB_NAME} PROPERTIES
-    VERSION ${PROJECT_VERSION}
-    SOVERSION ${PROJECT_VERSION_MAJOR}
-    PUBLIC_HEADER ${PUBLIC_HEADERS}
-    CXX_VISIBILITY_PRESET hidden
-    VISIBILITY_INLINES_HIDDEN YES
-)
+    # create dynamic library
+    add_library(${LIB_NAME}_shared SHARED ${SOURCES})
+    set_target_properties(${LIB_NAME}_shared PROPERTIES 
+        OUTPUT_NAME ${LIB_NAME}
+        VERSION ${PROJECT_VERSION}
+        SOVERSION ${PROJECT_VERSION_MAJOR}
+        PUBLIC_HEADER "${PUBLIC_HEADERS}"
+        CXX_VISIBILITY_PRESET hidden
+        VISIBILITY_INLINES_HIDDEN YES
+    )
+    target_include_directories(${LIB_NAME}_shared PUBLIC ${INCLUDE_DIRS})
+    target_link_libraries(${LIB_NAME}_shared PUBLIC ${Boost_LIBRARIES} ${GMP_LIBRARIES})
 
-# 设置包含目录
-target_include_directories(${LIB_NAME}
-    PUBLIC
-        ${INCLUDE_DIRS}
-)
+    # add compile options
+    if(MSVC)
+        target_compile_options(${LIB_NAME}_static PRIVATE /W4)
+        target_compile_options(${LIB_NAME}_shared PRIVATE /W4)
+    else()
+        target_compile_options(${LIB_NAME}_static PRIVATE -Wall -Wextra -Wpedantic)
+        target_compile_options(${LIB_NAME}_shared PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
 
-# 链接依赖库
-target_link_libraries(${LIB_NAME}
-    PUBLIC
-        ${Boost_LIBRARIES}
-        ${GMP_LIBRARIES}
-)
-
-# 安装规则
-install(TARGETS ${LIB_NAME}
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-    RUNTIME DESTINATION bin
-    PUBLIC_HEADER DESTINATION include
-)
-
-# 添加编译选项
-if(MSVC)
-    target_compile_options(${LIB_NAME} PRIVATE /W4)
+    # install rules
+    install(TARGETS ${LIB_NAME}_static ${LIB_NAME}_shared
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        RUNTIME DESTINATION bin
+        PUBLIC_HEADER DESTINATION include
+    )
 else()
-    target_compile_options(${LIB_NAME} PRIVATE -Wall -Wextra -Wpedantic)
+    # create single library (static or dynamic depending on BUILD_SHARED_LIBS option)
+    add_library(${LIB_NAME} ${SOURCES})
+
+    # set library properties
+    set_target_properties(${LIB_NAME} PROPERTIES
+        VERSION ${PROJECT_VERSION}
+        SOVERSION ${PROJECT_VERSION_MAJOR}
+        PUBLIC_HEADER "${PUBLIC_HEADERS}"
+        CXX_VISIBILITY_PRESET hidden
+        VISIBILITY_INLINES_HIDDEN YES
+    )
+
+    # set include directories
+    target_include_directories(${LIB_NAME}
+        PUBLIC
+            ${INCLUDE_DIRS}
+    )
+
+    # link dependencies
+    target_link_libraries(${LIB_NAME}
+        PUBLIC
+            ${Boost_LIBRARIES}
+            ${GMP_LIBRARIES}
+    )
+
+    # install rules
+    install(TARGETS ${LIB_NAME}
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        RUNTIME DESTINATION bin
+        PUBLIC_HEADER DESTINATION include
+    )
+
+    # add compile options
+    if(MSVC)
+        target_compile_options(${LIB_NAME} PRIVATE /W4)
+    else()
+        target_compile_options(${LIB_NAME} PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
 endif()
 
-# 设置输出目录
+# set output directories
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib) 

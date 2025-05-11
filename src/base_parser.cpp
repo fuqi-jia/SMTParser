@@ -135,35 +135,35 @@ namespace SMTLIBParser{
 
 			switch (scan_mode) {
 			case SCAN_MODE::SM_SYMBOL:
-				// Check if in scientific notation mode
+				// check if in scientific notation mode
 				if (!in_scientific_notation) {
-					// Check if current symbol might be the start of scientific notation
+					// check if current symbol is the start of scientific notation
 					std::string current(beg, bufptr - beg);
 					size_t e_pos = current.find_first_of("Ee");
 					if (e_pos != std::string::npos && e_pos > 0 && e_pos == current.size() - 1) {
-						// Check if the part before E is a valid real number
+						// check if the part before E is a valid real number
 						std::string mantissa = current.substr(0, e_pos);
 						if (isRealUtil(mantissa)) {
-							// Confirm it's the start of scientific notation
+							// confirm the start of scientific notation
 							in_scientific_notation = true;
 						}
 					}
 				}
 
-				// If in scientific notation mode
+				// if in scientific notation mode
 				if (in_scientific_notation) {
-					// Handle left parenthesis
+					// handle left parenthesis
 					if (*bufptr == '(') {
 						has_open_bracket = true;
 						bracket_level++;
 						bufptr++;
 						continue;
 					}
-					// Handle right parenthesis
+					// handle right parenthesis
 					else if (*bufptr == ')' && has_open_bracket) {
 						bracket_level--;
 						if (bracket_level == 0) {
-							// Right parenthesis matching completed, scientific notation ends
+							// right parenthesis matched, end scientific notation
 							bufptr++;
 							std::string tmp_s(beg, bufptr - beg);
 							scanToNextSymbol();
@@ -172,21 +172,21 @@ namespace SMTLIBParser{
 						bufptr++;
 						continue;
 					}
-					// Handle spaces, spaces are allowed in scientific notation mode
+					// handle space, allow space in scientific notation mode
 					else if (isblank(*bufptr)) {
 						bufptr++;
 						continue;
 					}
-					// If a newline or other special character is encountered, end scientific notation mode
+					// if encounter newline or other special characters, end scientific notation mode
 					else if (*bufptr == '\n' || *bufptr == '\r' || *bufptr == '\v' || *bufptr == '\f' ||
 							 *bufptr == ';' || *bufptr == '|' || *bufptr == '"') {
 						in_scientific_notation = false;
-						// Return the part that has been parsed
+						// return the parsed part
 						std::string tmp_s(beg, bufptr - beg);
 						return tmp_s;
 					}
 				}
-				// Normal symbol parsing
+				// normal symbol parsing
 				else {
 					if (isblank(*bufptr)) {
 						// out of symbol mode by ' ' and \t
@@ -1162,6 +1162,10 @@ namespace SMTLIBParser{
 					assert(params.size() == 1);
 					expr = mkSqrt(params[0]);
 				}
+				else if (s == "safesqrt") {
+					assert(params.size() == 1);
+					expr = mkSafeSqrt(params[0]);
+				}
 				else if (s == "ceil") {
 					assert(params.size() == 1);
 					expr = mkCeil(params[0]);
@@ -1187,8 +1191,15 @@ namespace SMTLIBParser{
 					expr = mkLg(params[0]);
 				}
 				else if (s == "log") {
-					assert(params.size() == 2);
-					expr = mkLog(params[0], params[1]);
+					if(params.size() == 1){
+						// ln(param)
+						expr = mkLn(params[0]);
+					}
+					else if(params.size() == 2){
+						// log(param1, param2)
+						expr = mkLog(params[0], params[1]);
+					}
+					else err_param_mis("log", expr_ln);
 				}
 				else if (s == "sin") {
 					assert(params.size() == 1);
