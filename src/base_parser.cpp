@@ -123,6 +123,9 @@ namespace SMTLIBParser{
 	std::string Parser::getSymbol() {
 
 		char *beg = bufptr;
+		bool in_scientific_notation = false;
+		bool has_open_bracket = false;
+		int bracket_level = 0;
 
 		// first char was already scanned
 		bufptr++;
@@ -132,75 +135,109 @@ namespace SMTLIBParser{
 
 			switch (scan_mode) {
 			case SCAN_MODE::SM_SYMBOL:
-				if (isblank(*bufptr)) {
-
-					// out of symbol mode by ' ' and \t
-					std::string tmp_s(beg, bufptr - beg);
-
-					// skip space
-					bufptr++;
-					scanToNextSymbol();
-
-					return tmp_s;
-
+				// 检查是否在科学计数法模式中
+				if (!in_scientific_notation) {
+					// 检查当前符号是否可能是科学计数法的开始
+					std::string current(beg, bufptr - beg);
+					size_t e_pos = current.find_first_of("Ee");
+					if (e_pos != std::string::npos && e_pos > 0 && e_pos == current.size() - 1) {
+						// 检查E前面的部分是否为有效的实数
+						std::string mantissa = current.substr(0, e_pos);
+						if (isRealUtil(mantissa)) {
+							// 确认是科学计数法的开始
+							in_scientific_notation = true;
+						}
+					}
 				}
-				else if (*bufptr == '\n' || *bufptr == '\r' || *bufptr == '\v' || *bufptr == '\f') {
-					line_number++;
 
-					// out of symbol mode by '\n', '\r', '\v' and '\f'
-					std::string tmp_s(beg, bufptr - beg);
-
-					// skip space
-					bufptr++;
-					scanToNextSymbol();
-
-					return tmp_s;
-
+				// 如果在科学计数法模式中
+				if (in_scientific_notation) {
+					// 处理左括号
+					if (*bufptr == '(') {
+						has_open_bracket = true;
+						bracket_level++;
+						bufptr++;
+						continue;
+					}
+					// 处理右括号
+					else if (*bufptr == ')' && has_open_bracket) {
+						bracket_level--;
+						if (bracket_level == 0) {
+							// 右括号匹配完成，科学计数法结束
+							bufptr++;
+							std::string tmp_s(beg, bufptr - beg);
+							scanToNextSymbol();
+							return tmp_s;
+						}
+						bufptr++;
+						continue;
+					}
+					// 处理空格，在科学计数法模式中允许空格
+					else if (isblank(*bufptr)) {
+						bufptr++;
+						continue;
+					}
+					// 如果遇到换行符或其他特殊字符，结束科学计数法模式
+					else if (*bufptr == '\n' || *bufptr == '\r' || *bufptr == '\v' || *bufptr == '\f' ||
+							 *bufptr == ';' || *bufptr == '|' || *bufptr == '"') {
+						in_scientific_notation = false;
+						// 返回当前已解析的部分
+						std::string tmp_s(beg, bufptr - beg);
+						return tmp_s;
+					}
 				}
-				else if (*bufptr == ';' || *bufptr == '|' || *bufptr == '"' || *bufptr == '(' || *bufptr == ')') {
-
-					// out of symbol mode by ';', '|', '(', and ')'
-					std::string tmp_s(beg, bufptr - beg);
-					return tmp_s;
-
+				// 正常的符号解析
+				else {
+					if (isblank(*bufptr)) {
+						// out of symbol mode by ' ' and \t
+						std::string tmp_s(beg, bufptr - beg);
+						// skip space
+						bufptr++;
+						scanToNextSymbol();
+						return tmp_s;
+					}
+					else if (*bufptr == '\n' || *bufptr == '\r' || *bufptr == '\v' || *bufptr == '\f') {
+						line_number++;
+						// out of symbol mode by '\n', '\r', '\v' and '\f'
+						std::string tmp_s(beg, bufptr - beg);
+						// skip space
+						bufptr++;
+						scanToNextSymbol();
+						return tmp_s;
+					}
+					else if (*bufptr == ';' || *bufptr == '|' || *bufptr == '"' || *bufptr == '(' || *bufptr == ')') {
+						// out of symbol mode by ';', '|', '"', '(' and ')'
+						std::string tmp_s(beg, bufptr - beg);
+						return tmp_s;
+					}
 				}
 				break;
 
 			case SCAN_MODE::SM_COMP_SYM:
-
 				if (*bufptr == '\n' || *bufptr == '\r' || *bufptr == '\v' || *bufptr == '\f') {
 					line_number++;
 				}
 				else if (*bufptr == '|') {
-
 					// out of complicated symbol mode
 					bufptr++;
 					std::string tmp_s(beg, bufptr - beg);
-
 					// skip space
 					scanToNextSymbol();
-
 					return tmp_s;
-
 				}
 				break;
 
 			case SCAN_MODE::SM_STRING:
-
 				if (*bufptr == '\n' || *bufptr == '\r' || *bufptr == '\v' || *bufptr == '\f') {
 					line_number++;
 				}
 				else if (*bufptr == '"') {
-
 					// out of std::string mode
 					bufptr++;
 					std::string tmp_s(beg, bufptr - beg);
-
 					// skip space
 					scanToNextSymbol();
-
 					return tmp_s;
-
 				}
 				break;
 
@@ -899,6 +936,11 @@ namespace SMTLIBParser{
 			else if(isRealUtil(s)){
 				expr = mkConstReal(s);
 			}
+			else if(isScientificNotationUtil(s)){
+				// 解析科学计数法并转换为普通实数
+				std::string parsed = parseScientificNotation(s);
+				expr = mkConstReal(parsed);
+			}
 			else if(isBVUtil(s)){
 				expr = mkConstBv(s, s.size() - 2);
 			}
@@ -1128,21 +1170,21 @@ namespace SMTLIBParser{
 					assert(params.size() == 1);
 					expr = mkTan(params[0]);
 				}
-				else if (s == "asin") {
+				else if (s == "asin" || s == "arcsin") {
 					assert(params.size() == 1);
 					expr = mkAsin(params[0]);
 				}
-				else if (s == "acos") {
+				else if (s == "acos" || s == "arccos") {
 					assert(params.size() == 1);
 					expr = mkAcos(params[0]);
 				}
-				else if (s == "atan") {
+				else if (s == "atan" || s == "arctan") {
 					assert(params.size() == 1);
 					expr = mkAtan(params[0]);
 				}
-				else if (s == "atan2") {
-					assert(params.size() == 1);
-					expr = mkAtan(params[0]);
+				else if (s == "atan2" || s == "arctan2") {
+					assert(params.size() == 2);
+					expr = mkAtan2(params[0], params[1]);
 				}
 				else if (s == "sinh") {
 					assert(params.size() == 1);
