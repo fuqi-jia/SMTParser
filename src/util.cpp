@@ -65,62 +65,62 @@ namespace SMTLIBParser{
     bool isScientificNotationUtil(const std::string& str){
         if (str.empty()) return false;
         
-        // 寻找 'E' 或 'e' 字符
+        // find 'E' or 'e' character
         size_t e_pos = str.find_first_of("Ee");
         if (e_pos == std::string::npos || e_pos == 0) 
             return false;
             
-        // 检查 E 前面的部分是否为有效的实数
+        // check if the part before E is a valid real number
         std::string mantissa = str.substr(0, e_pos);
         if (!isRealUtil(mantissa)) 
             return false;
         
-        // 提取 E 后面的部分
+        // extract the part after E
         std::string exponent = str.substr(e_pos + 1);
         
-        // 如果指数部分为空，不是有效的科学计数法
+        // if the exponent part is empty, not a valid scientific notation
         if (exponent.empty())
             return false;
         
-        // 创建一个没有空格的副本用于检查
+        // create a copy without spaces for checking
         std::string exponent_no_spaces = exponent;
         exponent_no_spaces.erase(std::remove_if(exponent_no_spaces.begin(), exponent_no_spaces.end(), 
                                      [](unsigned char c) { return std::isspace(c); }), 
                       exponent_no_spaces.end());
         
-        // 如果去除空格后指数部分为空，不是有效的科学计数法
+        // if the exponent part is empty after removing spaces, not a valid scientific notation
         if (exponent_no_spaces.empty())
             return false;
         
-        // 处理可能的括号
+        // handle possible parentheses
         if (exponent_no_spaces[0] == '(') {
-            // 查找右括号
+            // find right parenthesis
             size_t close_pos = exponent_no_spaces.find(')');
             if (close_pos != std::string::npos) {
-                // 提取括号内的内容
+                // extract the content inside parentheses
                 exponent_no_spaces = exponent_no_spaces.substr(1, close_pos - 1);
             } else {
-                // 没有找到右括号，可能是不完整的表达式
+                // no right parenthesis found, possibly incomplete expression
                 exponent_no_spaces = exponent_no_spaces.substr(1);
             }
         }
         
-        // 如果处理括号后指数部分为空，不是有效的科学计数法
+        // if the exponent part is empty after handling parentheses, not a valid scientific notation
         if (exponent_no_spaces.empty())
             return false;
         
-        // 检查指数部分是否为整数
+        // check if the exponent part is a valid integer
         if (exponent_no_spaces[0] == '+' || exponent_no_spaces[0] == '-') {
-            // 如果是 "E-" 或 "E+" 后面必须有数字
+            // if "E-" or "E+", there must be a digit after it
             if (exponent_no_spaces.size() == 1) 
                 return false;
-            // 检查符号后面的部分是否全为数字
+            // check if the part after "E-" or "E+" is all digits
             for (size_t i = 1; i < exponent_no_spaces.size(); i++) {
                 if (!isdigit(exponent_no_spaces[i])) 
                     return false;
             }
         } else {
-            // 如果没有符号，则整个指数部分必须全为数字
+            // if there is no sign, the whole exponent part must be all digits
             for (char c : exponent_no_spaces) {
                 if (!isdigit(c)) 
                     return false;
@@ -131,66 +131,66 @@ namespace SMTLIBParser{
     }
 
     std::string parseScientificNotation(const std::string& str){
-        // 寻找 'E' 或 'e' 字符
+        // find 'E' or 'e' character
         size_t e_pos = str.find_first_of("Ee");
         if (e_pos == std::string::npos) 
             return str;
             
         try {
-            // 提取底数部分
+            // extract the mantissa part
             std::string mantissa = str.substr(0, e_pos);
             
-            // 检查底数部分是否为有效的实数
+            // check if the mantissa part is a valid real number
             if (!isRealUtil(mantissa))
                 return str;
             
-            // 提取指数部分
+            // extract the exponent part
             std::string exponent = str.substr(e_pos + 1);
             
-            // 如果指数部分为空，返回原始字符串
+            // if the exponent part is empty, return the original string
             if (exponent.empty())
                 return str;
             
-            // 创建一个没有空格的副本用于处理
+            // create a copy without spaces for processing
             std::string exponent_no_spaces = exponent;
             exponent_no_spaces.erase(std::remove_if(exponent_no_spaces.begin(), exponent_no_spaces.end(), 
                                          [](unsigned char c) { return std::isspace(c); }), 
                           exponent_no_spaces.end());
             
-            // 如果去除空格后指数部分为空，返回原始字符串
+            // if the exponent part is empty after removing spaces, return the original string
             if (exponent_no_spaces.empty())
                 return str;
             
-            // 处理可能的括号
+            // handle possible parentheses
             if (exponent_no_spaces[0] == '(') {
-                // 查找右括号
+                // find right parenthesis
                 size_t close_pos = exponent_no_spaces.find(')');
                 if (close_pos != std::string::npos) {
-                    // 提取括号内的内容
+                    // extract the content inside parentheses
                     exponent_no_spaces = exponent_no_spaces.substr(1, close_pos - 1);
                 } else {
-                    // 没有找到右括号，可能是不完整的表达式
+                    // no right parenthesis found, possibly incomplete expression
                     exponent_no_spaces = exponent_no_spaces.substr(1);
                 }
             }
             
-            // 如果处理括号后指数部分为空，返回原始字符串
+            // if the exponent part is empty after handling parentheses, return the original string
             if (exponent_no_spaces.empty())
                 return str;
             
-            // 将科学计数法转换为普通实数
+            // convert scientific notation to normal real number
             double mantissa_val = std::stod(mantissa);
             int exponent_val = std::stoi(exponent_no_spaces);
             
-            // 计算结果
+            // calculate the result
             double result = mantissa_val * std::pow(10.0, exponent_val);
             
-            // 转换为字符串
+            // convert to string
             std::ostringstream oss;
             oss << std::setprecision(16) << result;
             return oss.str();
         } catch (const std::exception& e) {
-            // 转换失败，返回原始字符串
+            // conversion failed, return the original string
             return str;
         }
     }
@@ -584,7 +584,7 @@ namespace SMTLIBParser{
             bv1_ = "#b" + bv1_;
             bv2_ = "#b" + bv2_;
         }
-        // 特殊情况处理：除以0
+        // special case: divide by 0
         bool isZero = true;
         for(size_t i = 2; i < bv2_.size(); i++){
             if(bv2_[i] == '1'){
@@ -593,33 +593,33 @@ namespace SMTLIBParser{
             }
         }
         if(isZero){
-            // 除以0，返回全1
+            // divide by 0, return all ones
             return "#b" + std::string(bv1.size() - 2, '1');
         }
         
-        // 提取纯二进制位（不含#b前缀）
+        // extract pure binary bits (without #b prefix)
         std::string dividend_bits = bv1_.substr(2);
         std::string divisor_bits = bv2_.substr(2);
         
         std::string quotient_bits;
         std::string remainder = "";
         
-        // 长除法
+        // long division
         for(char bit : dividend_bits){
-            // 将当前位添加到余数中
+            // add current bit to remainder
             remainder.push_back(bit);
             
-            // 尝试除法
+            // try division
             if(remainder.length() < divisor_bits.length()){
-                // 余数长度不够，添加0到商
+                // remainder length not enough, add 0 to quotient
                 quotient_bits.push_back('0');
             }
             else{
-                // 比较余数与除数（需添加#b前缀进行比较）
+                // compare remainder with divisor (need to add #b prefix for comparison)
                 std::string remainder_bv = "#b" + remainder;
                 std::string divisor_bv = "#b" + divisor_bits;
                 
-                // 二进制字符串比较
+                // binary string comparison
                 bool geq = true;
                 if(remainder.length() != divisor_bits.length()){
                     geq = remainder.length() > divisor_bits.length();
@@ -637,21 +637,21 @@ namespace SMTLIBParser{
                 }
                 
                 if(geq){
-                    // 余数大于等于除数，将1添加到商
+                    // remainder greater than or equal to divisor, add 1 to quotient
                     quotient_bits.push_back('1');
                     
-                    // 从余数中减去除数
+                    // subtract divisor from remainder
                     std::string diff = SMTLIBParser::bvSub(remainder_bv, divisor_bv);
-                    remainder = diff.substr(2); // 去掉#b前缀
+                    remainder = diff.substr(2); // remove #b prefix
                 }
                 else{
-                    // 余数小于除数，将0添加到商
+                    // remainder less than divisor, add 0 to quotient
                     quotient_bits.push_back('0');
                 }
             }
         }
         
-        // 返回带前缀的结果
+        // return result with prefix
         return "#b" + quotient_bits;
     }
     std::string bvUrem(const std::string& bv1, const std::string& bv2){

@@ -135,35 +135,35 @@ namespace SMTLIBParser{
 
 			switch (scan_mode) {
 			case SCAN_MODE::SM_SYMBOL:
-				// 检查是否在科学计数法模式中
+				// check if in scientific notation mode
 				if (!in_scientific_notation) {
-					// 检查当前符号是否可能是科学计数法的开始
+					// check if current symbol is the start of scientific notation
 					std::string current(beg, bufptr - beg);
 					size_t e_pos = current.find_first_of("Ee");
 					if (e_pos != std::string::npos && e_pos > 0 && e_pos == current.size() - 1) {
-						// 检查E前面的部分是否为有效的实数
+						// check if the part before E is a valid real number
 						std::string mantissa = current.substr(0, e_pos);
 						if (isRealUtil(mantissa)) {
-							// 确认是科学计数法的开始
+							// confirm the start of scientific notation
 							in_scientific_notation = true;
 						}
 					}
 				}
 
-				// 如果在科学计数法模式中
+				// if in scientific notation mode
 				if (in_scientific_notation) {
-					// 处理左括号
+					// handle left parenthesis
 					if (*bufptr == '(') {
 						has_open_bracket = true;
 						bracket_level++;
 						bufptr++;
 						continue;
 					}
-					// 处理右括号
+					// handle right parenthesis
 					else if (*bufptr == ')' && has_open_bracket) {
 						bracket_level--;
 						if (bracket_level == 0) {
-							// 右括号匹配完成，科学计数法结束
+							// right parenthesis matched, end scientific notation
 							bufptr++;
 							std::string tmp_s(beg, bufptr - beg);
 							scanToNextSymbol();
@@ -172,21 +172,21 @@ namespace SMTLIBParser{
 						bufptr++;
 						continue;
 					}
-					// 处理空格，在科学计数法模式中允许空格
+					// handle space, allow space in scientific notation mode
 					else if (isblank(*bufptr)) {
 						bufptr++;
 						continue;
 					}
-					// 如果遇到换行符或其他特殊字符，结束科学计数法模式
+					// if encounter newline or other special characters, end scientific notation mode
 					else if (*bufptr == '\n' || *bufptr == '\r' || *bufptr == '\v' || *bufptr == '\f' ||
 							 *bufptr == ';' || *bufptr == '|' || *bufptr == '"') {
 						in_scientific_notation = false;
-						// 返回当前已解析的部分
+						// return the parsed part
 						std::string tmp_s(beg, bufptr - beg);
 						return tmp_s;
 					}
 				}
-				// 正常的符号解析
+				// normal symbol parsing
 				else {
 					if (isblank(*bufptr)) {
 						// out of symbol mode by ' ' and \t
