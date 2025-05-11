@@ -135,35 +135,35 @@ namespace SMTLIBParser{
 
 			switch (scan_mode) {
 			case SCAN_MODE::SM_SYMBOL:
-				// 检查是否在科学计数法模式中
+				// Check if in scientific notation mode
 				if (!in_scientific_notation) {
-					// 检查当前符号是否可能是科学计数法的开始
+					// Check if current symbol might be the start of scientific notation
 					std::string current(beg, bufptr - beg);
 					size_t e_pos = current.find_first_of("Ee");
 					if (e_pos != std::string::npos && e_pos > 0 && e_pos == current.size() - 1) {
-						// 检查E前面的部分是否为有效的实数
+						// Check if the part before E is a valid real number
 						std::string mantissa = current.substr(0, e_pos);
 						if (isRealUtil(mantissa)) {
-							// 确认是科学计数法的开始
+							// Confirm it's the start of scientific notation
 							in_scientific_notation = true;
 						}
 					}
 				}
 
-				// 如果在科学计数法模式中
+				// If in scientific notation mode
 				if (in_scientific_notation) {
-					// 处理左括号
+					// Handle left parenthesis
 					if (*bufptr == '(') {
 						has_open_bracket = true;
 						bracket_level++;
 						bufptr++;
 						continue;
 					}
-					// 处理右括号
+					// Handle right parenthesis
 					else if (*bufptr == ')' && has_open_bracket) {
 						bracket_level--;
 						if (bracket_level == 0) {
-							// 右括号匹配完成，科学计数法结束
+							// Right parenthesis matching completed, scientific notation ends
 							bufptr++;
 							std::string tmp_s(beg, bufptr - beg);
 							scanToNextSymbol();
@@ -172,21 +172,21 @@ namespace SMTLIBParser{
 						bufptr++;
 						continue;
 					}
-					// 处理空格，在科学计数法模式中允许空格
+					// Handle spaces, spaces are allowed in scientific notation mode
 					else if (isblank(*bufptr)) {
 						bufptr++;
 						continue;
 					}
-					// 如果遇到换行符或其他特殊字符，结束科学计数法模式
+					// If a newline or other special character is encountered, end scientific notation mode
 					else if (*bufptr == '\n' || *bufptr == '\r' || *bufptr == '\v' || *bufptr == '\f' ||
 							 *bufptr == ';' || *bufptr == '|' || *bufptr == '"') {
 						in_scientific_notation = false;
-						// 返回当前已解析的部分
+						// Return the part that has been parsed
 						std::string tmp_s(beg, bufptr - beg);
 						return tmp_s;
 					}
 				}
-				// 正常的符号解析
+				// Normal symbol parsing
 				else {
 					if (isblank(*bufptr)) {
 						// out of symbol mode by ' ' and \t
@@ -937,7 +937,7 @@ namespace SMTLIBParser{
 				expr = mkConstReal(s);
 			}
 			else if(isScientificNotationUtil(s)){
-				// 解析科学计数法并转换为普通实数
+				// Parse scientific notation and convert to regular real number
 				std::string parsed = parseScientificNotation(s);
 				expr = mkConstReal(parsed);
 			}

@@ -183,9 +183,9 @@ namespace SMTLIBParser{
         bool isNot() 				const { return (kind == NODE_KIND::NT_NOT); };
         bool isImpl() 				const { return (kind == NODE_KIND::NT_IMPLIES); };
         bool isXor() 				const { return (kind == NODE_KIND::NT_XOR); };
-        // bool isIteBool() 			const { return (kind == NODE_KIND::NT_ITE_BOOL); }; // 后面统一定义ite
+        // bool isIteBool() 			const { return (kind == NODE_KIND::NT_ITE_BOOL); }; // Define ite uniformly later
         // bool isBoolOp() 			const { return (isAnd() || isOr() || isNot() || isImpl() || isXor() || isIteBool()); };
-        // 其他操作也可以做得到bool op
+        // Other operations can also produce bool op
         
         // check comparison
         bool isEqBool()             const { return (kind == NODE_KIND::NT_EQ_BOOL); };
@@ -252,7 +252,7 @@ namespace SMTLIBParser{
         bool isGe() 				const { return (kind == NODE_KIND::NT_GE); };
         bool isGt() 				const { return (kind == NODE_KIND::NT_GT); };
         // bool isArithComp() 			const { return (isEq() || isDistinct() || isLe() || isLt() || isGe() || isGt()); };
-        // eq不一定是算术比较
+        // eq is not necessarily an arithmetic comparison
 
         // check arithmetic covertion
         bool isToReal() 			const { return (kind == NODE_KIND::NT_TO_REAL); };
