@@ -194,10 +194,10 @@ namespace SMTLIBParser{
         // check comparison
         bool isEqBool()             const { return (kind == NODE_KIND::NT_EQ_BOOL); };
         bool isEqOther()            const { return (kind == NODE_KIND::NT_EQ_OTHER); };
-        bool isEq() 				const { return (isEqBool() || isEqOther()); };
+        bool isEq() 				const { return (kind == NODE_KIND::NT_EQ || isEqBool() || isEqOther()); };
         bool isDistinctBool()       const { return (kind == NODE_KIND::NT_DISTINCT_BOOL); };
         bool isDistinctOther()      const { return (kind == NODE_KIND::NT_DISTINCT_OTHER); };
-        bool isDistinct() 			const { return (isDistinctBool() || isDistinctOther()); };
+        bool isDistinct() 			const { return (kind == NODE_KIND::NT_DISTINCT || isDistinctBool() || isDistinctOther()); };
 
         // check UF
         bool isApplyUF() 			const { return (kind == NODE_KIND::NT_APPLY_UF); };
