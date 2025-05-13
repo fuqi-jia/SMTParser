@@ -48,6 +48,8 @@
 #include <boost/unordered_map.hpp>
 #include <boost/unordered_set.hpp>
 
+const double CONST_PI = 3.14159265358979323846;
+const double CONST_E = 2.71828182845904523536;
 
 namespace SMTLIBParser{
     class DAGNode {
@@ -484,6 +486,13 @@ namespace SMTLIBParser{
             if(isCRat()){
                 return Real(toRat());
             }
+            if(name == "pi"){
+                return Real(CONST_PI);
+            }
+            if(name == "e"){
+                return Real(CONST_E);
+            }
+
             return Real(name);
         }
         // convert to rational
