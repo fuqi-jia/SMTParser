@@ -1175,6 +1175,31 @@ namespace SMTLIBParser{
         if(str == ""){
             return "0.0";
         }
+        
+        // 处理小数点位置
+        bool is_negative = false;
+        if(str[0] == '-') {
+            is_negative = true;
+            str = str.substr(1);  // 移除负号以便处理
+        }
+        
+        // 根据指数值插入小数点
+        if(expo <= 0) {
+            // 如果指数为负或零，需要在前面添加"0."并可能添加额外的零
+            str = "0." + std::string(-expo, '0') + str;
+        } else if(expo < (mp_exp_t)str.length()) {
+            // 如果指数小于字符串长度，在适当位置插入小数点
+            str.insert(expo, ".");
+        } else {
+            // 如果指数大于或等于字符串长度，在后面添加零
+            str = str + std::string(expo - str.length(), '0');
+        }
+        
+        // 如果原始数字是负数，添加负号
+        if(is_negative) {
+            str = "-" + str;
+        }
+        
         return str;
     }
 }
