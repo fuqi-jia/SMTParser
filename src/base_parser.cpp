@@ -1084,7 +1084,7 @@ namespace SMTLIBParser{
 				else if (s == "=") {
 					expr = mkEq(params);
 				}
-				else if (s == "distinct") {
+				else if (s == "distinct" || s == "!=") {
 					expr = mkDistinct(params);
 				}
 				else if (s == "ite") {
