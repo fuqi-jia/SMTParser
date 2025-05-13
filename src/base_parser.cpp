@@ -1106,7 +1106,7 @@ namespace SMTLIBParser{
 					assert(params.size() == 1);
 					expr = mkPow2(params[0]);
 				}
-				else if (s == "pow") {
+				else if (s == "pow" || s == "**" || s == "^") {
 					assert(params.size() == 2);
 					expr = mkPow(params[0], params[1]);
 				}
