@@ -135,10 +135,13 @@ namespace SMTLIBParser{
         
         // logic checking
         bool isIntTheory() const {
-            return logic.find("I") != std::string::npos;
+            return logic.find("I") != std::string::npos && logic.find("R") == std::string::npos;
         }
         bool isRealTheory() const {
             return logic.find("R") != std::string::npos;
+        }
+        bool isIntRealTheory() const {
+            return logic.find("I") != std::string::npos && logic.find("R") != std::string::npos;
         }
         
     };
