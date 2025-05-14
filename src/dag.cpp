@@ -80,7 +80,7 @@ namespace SMTLIBParser{
                 return "(/ (- " + num + ") " + den + ")";
             }
             else{
-                return "(/ " + num + " " + den + ")";
+            return "(/ " + num + " " + den + ")";
             }
         }
         else if(sort->isInt()){
