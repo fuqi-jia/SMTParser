@@ -1082,6 +1082,10 @@ namespace SMTLIBParser{
 			assert(params.size() == 1);
 			return mkBvRotateRight(params[0], args[0]);
 		}
+		else if (f == "re.loop") {
+			assert(params.size() == 3);
+			return mkRegLoop(params[0], args[0], args[1]);
+		}
 		else return mkErr(ERROR_TYPE::ERR_UNKWN_SYM);
 	}
 
@@ -1691,10 +1695,6 @@ namespace SMTLIBParser{
 		else if (s == "re.repeat") {
 			assert(params.size() == 2);
 			return mkRegRepeat(params[0], params[1]);
-		}
-		else if (s == "re.loop") {
-			assert(params.size() == 3);
-			return mkRegLoop(params[0], params[1], params[2]);
 		}
 		else if (s == "re.complement") {
 			assert(params.size() == 1);
