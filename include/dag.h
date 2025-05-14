@@ -488,7 +488,7 @@ namespace SMTLIBParser{
 
         // convert to integer
         Integer toInt() const {
-            assert(isCInt() && isIntUtil(name));
+            assert(isCInt());
             return Integer(name);
         }
         // convert to real
