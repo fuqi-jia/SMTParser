@@ -1083,7 +1083,8 @@ namespace SMTLIBParser{
 			return mkBvRotateRight(params[0], args[0]);
 		}
 		else if (f == "re.loop") {
-			assert(params.size() == 3);
+			assert(params.size() == 1);
+			assert(args.size() == 2);
 			return mkRegLoop(params[0], args[0], args[1]);
 		}
 		else return mkErr(ERROR_TYPE::ERR_UNKWN_SYM);
