@@ -67,7 +67,8 @@ namespace SMTLIBParser{
         bool isNull() const { return kind == SORT_KIND::SK_NULL; }
         bool isUnknown() const { return kind == SORT_KIND::SK_UNKNOWN; }
         bool isBool() const { return kind == SORT_KIND::SK_BOOL; }
-        bool isIntOrReal() const { return kind == SORT_KIND::SK_INTOREAL || kind == SORT_KIND::SK_INT || kind == SORT_KIND::SK_REAL; }
+        // it is an integer but can also be a real
+        bool isIntOrReal() const { return kind == SORT_KIND::SK_INTOREAL; }
         bool isInt() const { return kind == SORT_KIND::SK_INT; }
         bool isReal() const { return kind == SORT_KIND::SK_REAL; }
         bool isBv() const { return kind == SORT_KIND::SK_BV; }
