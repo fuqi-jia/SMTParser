@@ -493,7 +493,10 @@ namespace SMTLIBParser{
         }
         // convert to real
         Real toReal() const {
-            assert(isCReal());
+            assert(isCIntOrReal());
+            if(isCInt()){
+                return Real(toInt());
+            }
             if(isCRat()){
                 return Real(toRat());
             }

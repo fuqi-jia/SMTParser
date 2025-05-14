@@ -922,7 +922,10 @@ namespace SMTLIBParser{
         if(!l->getSort()->isEqTo(r->getSort())) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         if(l->isCInt() && r->isCInt()){
-            return mkConstRat(l->toInt(), r->toInt());
+            return mkConstReal(l->toReal() / r->toReal());
+        }
+        else if(l->isCReal() && r->isCReal()){
+            return mkConstReal(l->toReal() / r->toReal());
         }
 
         return mkOper(REAL_SORT, NODE_KIND::NT_DIV_REAL, l, r);
