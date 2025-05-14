@@ -921,10 +921,7 @@ namespace SMTLIBParser{
         if(l->isErr() || r->isErr()) return l->isErr()?l:r;
         if(!l->getSort()->isEqTo(r->getSort())) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
-        if(l->isCInt() && r->isCInt()){
-            return mkConstReal(l->toReal() / r->toReal());
-        }
-        else if(l->isCReal() && r->isCReal()){
+        if(l->isCIntOrReal() && r->isCIntOrReal()){
             return mkConstReal(l->toReal() / r->toReal());
         }
 
