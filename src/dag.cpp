@@ -153,25 +153,20 @@ namespace SMTLIBParser{
                     std::cerr << "Encountered null kind node" << std::endl;
                     assert(false);
                     res = "NULL";
-                    results[current] = res;
                     break;
                 case NODE_KIND::NT_CONST_TRUE:
                     res = "true";
-                    results[current] = res;
                     break;
                 case NODE_KIND::NT_CONST_FALSE:
                     res = "false";
-                    results[current] = res;
                     break;
                 
                 // Constant and variable
                 case NODE_KIND::NT_CONST:
                     res = dumpConst(current->getName(), current->getSort());
-                    results[current] = res;
                     break;
                 case NODE_KIND::NT_VAR:
                     res = current->getName();
-                    results[current] = res;
                     break;
                     
                 // Unary operation - accepts one parameter
