@@ -162,7 +162,7 @@ namespace SMTLIBParser{
         bool isConst() 				const { return  kind == NODE_KIND::NT_CONST || 
                                                     kind == NODE_KIND::NT_CONST_TRUE || kind == NODE_KIND::NT_CONST_FALSE ||
                                                     kind == NODE_KIND::NT_CONST_PI || kind == NODE_KIND::NT_CONST_E; };
-        bool isCInt()       		const { return isConst() && (sort->isInt() || sort->isIntOrReal()); };
+        bool isCInt()       		const { return isConst() && (sort->isInt()); };
         bool isCRat()               const { return isConst() && (sort->isRat() || sort->isIntOrReal()); };
         bool isCReal()      		const { return isConst() && (sort->isReal() || sort->isRat() || sort->isIntOrReal()); };
         bool isCIntOrReal()      	const { return isConst() && (sort->isIntOrReal()); };
@@ -494,12 +494,6 @@ namespace SMTLIBParser{
         // convert to real
         Real toReal() const {
             assert(isCIntOrReal());
-            if(isCInt()){
-                return Real(toInt());
-            }
-            if(isCRat()){
-                return Real(toRat());
-            }
             if(name == "pi"){
                 return Real(CONST_PI);
             }
