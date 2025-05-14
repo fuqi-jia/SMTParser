@@ -1209,27 +1209,27 @@ namespace SMTLIBParser{
 					assert(params.size() == 1);
 					expr = mkTanh(params[0]);
 				}
-				else if (s == "asinh") {
+				else if (s == "asinh" || s == "arcsinh") {
 					assert(params.size() == 1);
 					expr = mkAsinh(params[0]);
 				}
-				else if (s == "acosh") {
+				else if (s == "acosh" || s == "arccosh") {
 					assert(params.size() == 1);
 					expr = mkAcosh(params[0]);
 				}
-				else if (s == "atanh") {
+				else if (s == "atanh" || s == "arctanh") {
 					assert(params.size() == 1);
 					expr = mkAtanh(params[0]);
 				}
-				else if (s == "asech") {
+				else if (s == "asech" || s == "arcsec") {
 					assert(params.size() == 1);
 					expr = mkAsech(params[0]);
 				}
-				else if (s == "acsch") {
+				else if (s == "acsch" || s == "arccsch") {
 					assert(params.size() == 1);
 					expr = mkAcsch(params[0]);
 				}
-				else if (s == "acoth") {
+				else if (s == "acoth" || s == "arccoth") {
 					assert(params.size() == 1);
 					expr = mkAcoth(params[0]);
 				}
