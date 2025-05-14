@@ -506,6 +506,8 @@ namespace SMTLIBParser{
         // apply function
         std::shared_ptr<DAGNode>	        applyFun(std::shared_ptr<DAGNode> fun, const std::vector<std::shared_ptr<DAGNode>> & params);
         std::shared_ptr<DAGNode>	        applyFunPostOrder(std::shared_ptr<DAGNode> node, boost::unordered_map<std::string, std::shared_ptr<DAGNode>> &params);
+        // negate an atom
+        std::shared_ptr<DAGNode>	        negateAtom(std::shared_ptr<DAGNode> atom);
 
     private:
         // parse smt-lib2 file

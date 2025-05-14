@@ -259,8 +259,12 @@ namespace SMTLIBParser{
         bool isLt() 				const { return (kind == NODE_KIND::NT_LT); };
         bool isGe() 				const { return (kind == NODE_KIND::NT_GE); };
         bool isGt() 				const { return (kind == NODE_KIND::NT_GT); };
-        // bool isArithComp() 			const { return (isEq() || isDistinct() || isLe() || isLt() || isGe() || isGt()); };
-        // eq不一定是算术比较
+        bool isArithTerm() 			const { return (isArithOp() || isArithConv() || isTranscendentalOp() || 
+                                                    (isVar() && (isVInt() || isVReal())) ||
+                                                    (isConst() && (isCInt() || isCRat() || isCReal()))); };
+        bool isArithAtom() 			const { return ((isEq() && getChild(0)->isArithTerm() && getChild(1)->isArithTerm())|| 
+                                                    (isDistinct() && getChild(0)->isArithTerm() && getChild(1)->isArithTerm()) || 
+                                                    isLe() || isLt() || isGe() || isGt()); };
 
         // check arithmetic covertion
         bool isToReal() 			const { return (kind == NODE_KIND::NT_TO_REAL); };
@@ -337,11 +341,17 @@ namespace SMTLIBParser{
         bool isBVUle() 	    		const { return (kind == NODE_KIND::NT_BV_ULE); };
         bool isBVUgt() 	    		const { return (kind == NODE_KIND::NT_BV_UGT); };
         bool isBVUge() 	    		const { return (kind == NODE_KIND::NT_BV_UGE); };
-        bool isBVSLt() 	    		const { return (kind == NODE_KIND::NT_BV_SLT); };
-        bool isBVSLe() 	    		const { return (kind == NODE_KIND::NT_BV_SLE); };
-        bool isBVSGt() 	    		const { return (kind == NODE_KIND::NT_BV_SGT); };
-        bool isBVSGe() 	    		const { return (kind == NODE_KIND::NT_BV_SGE); };
-        bool isBVCompOp()     		const { return (isBVUlt() || isBVUle() || isBVUgt() || isBVUge() || isBVSLt() || isBVSLe() || isBVSGt() || isBVSGe()); };
+        bool isBVSlt() 	    		const { return (kind == NODE_KIND::NT_BV_SLT); };
+        bool isBVSle() 	    		const { return (kind == NODE_KIND::NT_BV_SLE); };
+        bool isBVSgt() 	    		const { return (kind == NODE_KIND::NT_BV_SGT); };
+        bool isBVSge() 	    		const { return (kind == NODE_KIND::NT_BV_SGE); };
+        bool isBVTerm()    		    const { return (isBVOp() ||
+                                                    (isVar() && isVBV()) ||
+                                                    (isConst() && isCBV())); };
+        bool isBVCompOp()     		const { return ((isEq() && getChild(0)->isBVTerm() && getChild(1)->isBVTerm()) ||
+                                                    (isDistinct() && getChild(0)->isBVTerm() && getChild(1)->isBVTerm()) ||
+                                                    isBVUlt() || isBVUle() || isBVUgt() || isBVUge() || isBVSlt() || isBVSle() || isBVSgt() || isBVSge()); };
+        bool isBvAtom()             const { return isBVCompOp(); }; 
 
         // check bitvector conversion
         bool isBVToNat() 			const { return (kind == NODE_KIND::NT_BV_TO_NAT); };

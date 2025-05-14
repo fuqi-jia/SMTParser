@@ -3242,4 +3242,69 @@ namespace SMTLIBParser{
 
         return mkOper(INT_SORT, NODE_KIND::NT_INDEXOF_REG, l, r);
     }
+
+    // negate an atom
+    std::shared_ptr<DAGNode> Parser::negateAtom(std::shared_ptr<DAGNode> atom){
+        if(atom->isErr()) return atom;
+
+        if(atom->isEq()){
+            return mkDistinct(atom->getChildren());
+        }
+        else if(atom->isDistinct()){
+            return mkEq(atom->getChildren());
+        }
+
+        // negate an arithmetic atom
+        if(atom->isArithAtom()){
+            // less than
+            if(atom->isLt()){
+                return mkGe(atom->getChild(0), atom->getChild(1));
+            }
+            // less than or equal
+            else if(atom->isLe()){
+                return mkGt(atom->getChild(0), atom->getChild(1));
+            }
+            // greater than
+            else if(atom->isGt()){
+                return mkLe(atom->getChild(0), atom->getChild(1));
+            }
+            // greater than or equal
+            else if(atom->isGe()){
+                return mkLt(atom->getChild(0), atom->getChild(1));
+            }
+        }
+
+        // negate a bitvector atom
+        if(atom->isBvAtom()){
+            if(atom->isBVUlt()){
+                return mkBvUge(atom->getChild(0), atom->getChild(1));
+            }
+            else if(atom->isBVUle()){
+                return mkBvUgt(atom->getChild(0), atom->getChild(1));
+            }
+            else if(atom->isBVUgt()){
+                return mkBvUle(atom->getChild(0), atom->getChild(1));
+            }
+            else if(atom->isBVUge()){
+                return mkBvUlt(atom->getChild(0), atom->getChild(1));
+            }
+            else if(atom->isBVSlt()){
+                return mkBvSge(atom->getChild(0), atom->getChild(1));
+            }
+            else if(atom->isBVSle()){
+                return mkBvSgt(atom->getChild(0), atom->getChild(1));
+            }
+            else if(atom->isBVSgt()){
+                return mkBvSle(atom->getChild(0), atom->getChild(1));
+            }
+            else if(atom->isBVSge()){
+                return mkBvSlt(atom->getChild(0), atom->getChild(1));
+            }
+        }
+
+        // TODO: fp, string, reg in the future
+
+        // for other types of atoms, use the general negation operation
+        return mkNot(atom);
+    }
 }
