@@ -1619,10 +1619,16 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkIsInt(std::shared_ptr<DAGNode> param){
         if(param->isErr()) return param;
+        if(param->isCInt()){
+            return mkTrue();
+        }
+        else if(param->isCReal()){
+            return param->toReal() == floor(param->toReal()) ? mkTrue() : mkFalse();
+        }
         return mkOper(BOOL_SORT, NODE_KIND::NT_IS_INT, param);
     }
     /*
-    (is_divisible Int), return Bool
+    (is_divisible Int Int), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkIsDivisible(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(l->isErr() || r->isErr()) return l->isErr()?l:r;
