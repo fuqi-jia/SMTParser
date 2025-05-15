@@ -260,6 +260,7 @@ namespace SMTLIBParser{
                 case NODE_KIND::NT_DIV_REAL:
                 case NODE_KIND::NT_MOD:
                 case NODE_KIND::NT_LOG:
+                case NODE_KIND::NT_ATAN2:
                 case NODE_KIND::NT_LE:
                 case NODE_KIND::NT_LT:
                 case NODE_KIND::NT_GE:
