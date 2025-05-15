@@ -2189,6 +2189,15 @@ namespace SMTLIBParser{
 		}
 	}
 
+	
+	std::string Parser::printModel(boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> &model){
+		std::stringstream ss;
+		for(auto it = model.begin(); it != model.end(); it++){
+			ss << "(define-fun " << it->first->getName() << " () " << it->first->getSort()->toString() << " " << dumpSMTLIB2(it->second) << ")" << std::endl;
+		}
+		return ss.str();
+	}
+
 	// error operations
 	std::shared_ptr<DAGNode> Parser::mkErr(const ERROR_TYPE t){
 		return std::make_shared<DAGNode>(NULL_SORT, (NODE_KIND)t);
