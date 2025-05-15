@@ -98,8 +98,8 @@ int main() {
     auto assertions = parser.getAssertions();
 
     // Output the formula representation
-    for(auto formula: assertions){
-        std::cout<<dumpSMTLIB2(formula)<<std::endl;
+    for(auto constraint: assertions){
+        std::cout<<dumpSMTLIB2(constraint)<<std::endl;
     }
 
     return 0;
