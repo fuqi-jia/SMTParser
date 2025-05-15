@@ -89,16 +89,18 @@ int main() {
     SMTLIBParser::Parser parser;
 
     // Parse an SMT-LIB2 file
-    if (!parser.parseFile("formula.smt2")) {
+    if (!parser.parse("formula.smt2")) {
         std::cerr << "Error parsing file" << std::endl;
         return 1;
     }
 
     // Retrieve the parsed formula
-    auto formula = parser.getFormula();
+    auto assertions = parser.getAssertions();
 
     // Output the formula representation
-    std::cout << formula->toString() << std::endl;
+    for(auto formula: assertions){
+        std::cout<<dumpSMTLIB2(formula)<<std::endl;
+    }
 
     return 0;
 }
