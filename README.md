@@ -135,7 +135,7 @@ int main() {
     
     // Evaluate expressions using the model
     auto expr = parser->mkAdd({x, y});
-    auto result = parser->evaluate(expr);
+    auto result = parser->evaluate(expr, model);
     
     std::cout << "x + y = " << dumpSMTLIB2(expr) << std::endl;
     
