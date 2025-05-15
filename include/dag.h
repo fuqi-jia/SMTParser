@@ -137,7 +137,7 @@ namespace SMTLIBParser{
                 sort = NULL_SORT;
                 kind = NODE_KIND::NT_ERROR;
             }
-            name = name;
+            name = n;
             children_hash = "";
         }
         
