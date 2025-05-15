@@ -25,7 +25,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "../include/sort.h"
+#include "sort.h"
 
 namespace SMTLIBParser{
 

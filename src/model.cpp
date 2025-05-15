@@ -56,14 +56,14 @@ namespace SMTLIBParser{
         if(model_name_index.find(node->getName()) != model_name_index.end()){
             return model_values[model_name_index[node->getName()]];
         }
-        return nullptr;
+        return UNKNOWN_NODE;
     }
 
     std::shared_ptr<DAGNode> Model::get(const std::string &name){
         if(model_name_index.find(name) != model_name_index.end()){
             return model_values[model_name_index[name]];
         }
-        return nullptr;
+        return UNKNOWN_NODE;
     }
 
     void Model::addVar(const std::shared_ptr<DAGNode> &node){
@@ -72,16 +72,54 @@ namespace SMTLIBParser{
         }
         model_name_index[node->getName()] = model_vars.size();
         model_vars.push_back(node);
-        model_values.push_back(NULL_NODE);
+        model_values.push_back(UNKNOWN_NODE);
     }
 
     bool Model::isFull() const{
         for(size_t i = 0; i < model_vars.size(); i++){
-            if(model_values[i]->isNull()){
+            if(model_values[i]->isUnknown()){
                 return false;
             }
         }
         return true;
+    }
+
+    bool Model::isEmpty() const{
+        if(model_vars.size() == 0){
+            return true;
+        }
+        for(size_t i = 0; i < model_vars.size(); i++){
+            if(model_values[i]->isUnknown()){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    void Model::clear(){
+        model_vars.clear();
+        model_values.clear();
+        model_name_index.clear();
+    }
+
+    size_t Model::size() const{
+        return model_vars.size();
+    }
+
+    std::vector<std::shared_ptr<DAGNode>> Model::getVars() const{
+        return model_vars;
+    }
+
+    std::vector<std::shared_ptr<DAGNode>> Model::getValues() const{
+        return model_values;
+    }
+
+    std::vector<std::pair<std::string, std::shared_ptr<DAGNode>>> Model::getPairs() const{
+        std::vector<std::pair<std::string, std::shared_ptr<DAGNode>>> pairs;
+        for(size_t i = 0; i < model_vars.size(); i++){
+            pairs.push_back(std::make_pair(model_vars[i]->getName(), model_values[i]));
+        }
+        return pairs;
     }
 
     std::string Model::toString(){

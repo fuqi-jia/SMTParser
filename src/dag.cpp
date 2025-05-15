@@ -25,7 +25,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "../include/dag.h"
+#include "dag.h"
 #include <stack>
 
 namespace SMTLIBParser{
@@ -247,6 +247,8 @@ namespace SMTLIBParser{
                 case NODE_KIND::NT_REG_COMPLEMENT:
                 case NODE_KIND::NT_BV_TO_NAT:
                 case NODE_KIND::NT_NAT_TO_BV:
+                case NODE_KIND::NT_BV_TO_INT:
+                case NODE_KIND::NT_INT_TO_BV:
                 case NODE_KIND::NT_POW2:
                     res = "(" + kindToString(kind) + " " + results[current->getChild(0)] + ")";
                     break;
@@ -843,6 +845,8 @@ namespace SMTLIBParser{
         // BITVECTOR CONVERSION
         case NODE_KIND::NT_BV_TO_NAT:
         case NODE_KIND::NT_NAT_TO_BV:
+        case NODE_KIND::NT_BV_TO_INT:
+        case NODE_KIND::NT_INT_TO_BV:
             dumpSingleOp(kind, node->getChild(0), visited, ofs);
             break;
         // FLOATING POINT COMMON OPERATORS

@@ -25,7 +25,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "../include/parser.h"
+#include "parser.h"
 #include <queue>
 #include <stack>
 
@@ -38,16 +38,13 @@ namespace SMTLIBParser{
 		line_number = 0;
 		scan_mode = SCAN_MODE::SM_COMMON;
 
-		err_node = std::make_shared<DAGNode>(UNKNOWN_SORT, NODE_KIND::NT_ERROR, "error");
-		constants.insert(std::pair<std::string, size_t>("error", node_list.size()));
-		node_list.emplace_back(err_node);
-		false_node = std::make_shared<DAGNode>(BOOL_SORT, NODE_KIND::NT_CONST_FALSE, "false");
 		constants.insert(std::pair<std::string, size_t>("false", node_list.size()));
-		node_list.emplace_back(false_node);
-		true_node = std::make_shared<DAGNode>(BOOL_SORT, NODE_KIND::NT_CONST_TRUE, "true");
+		node_list.emplace_back(FALSE_NODE);
 		constants.insert(std::pair<std::string, size_t>("true", node_list.size()));
-		node_list.emplace_back(true_node);
-		
+		node_list.emplace_back(TRUE_NODE);
+		constants.insert(std::pair<std::string, size_t>("unknown", node_list.size()));
+		node_list.emplace_back(UNKNOWN_NODE);
+
 		options = std::make_shared<GlobalOptions>();
 	}
 
@@ -63,15 +60,12 @@ namespace SMTLIBParser{
 		line_number = 0;
 		scan_mode = SCAN_MODE::SM_COMMON;
 
-		err_node = std::make_shared<DAGNode>(UNKNOWN_SORT, NODE_KIND::NT_ERROR, "error");
-		constants.insert(std::pair<std::string, size_t>("error", node_list.size()));
-		node_list.emplace_back(err_node);
-		false_node = std::make_shared<DAGNode>(BOOL_SORT, NODE_KIND::NT_CONST_FALSE, "false");
 		constants.insert(std::pair<std::string, size_t>("false", node_list.size()));
-		node_list.emplace_back(false_node);
-		true_node = std::make_shared<DAGNode>(BOOL_SORT, NODE_KIND::NT_CONST_TRUE, "true");
+		node_list.emplace_back(FALSE_NODE);
 		constants.insert(std::pair<std::string, size_t>("true", node_list.size()));
-		node_list.emplace_back(true_node);
+		node_list.emplace_back(TRUE_NODE);
+		constants.insert(std::pair<std::string, size_t>("unknown", node_list.size()));
+		node_list.emplace_back(UNKNOWN_NODE);
 		
 		options = std::make_shared<GlobalOptions>();
 
@@ -1183,6 +1177,10 @@ namespace SMTLIBParser{
 		else if (s == "lg") {
 			assert(params.size() == 1);
 			return mkLg(params[0]);
+		}
+		else if (s == "lb"){
+			assert(params.size() == 1);
+			return mkLb(params[0]);
 		}
 		else if (s == "log") {
 			if(params.size() == 1){

@@ -84,6 +84,7 @@ namespace SMTLIBParser{
 
     std::string bvUdiv(const std::string& bv1, const std::string& bv2);
     std::string bvUrem(const std::string& bv1, const std::string& bv2);
+    std::string bvUmod(const std::string& bv1, const std::string& bv2);
     std::string bvSdiv(const std::string& bv1, const std::string& bv2);
     std::string bvSrem(const std::string& bv1, const std::string& bv2);
     std::string bvSmod(const std::string& bv1, const std::string& bv2);

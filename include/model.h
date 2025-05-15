@@ -41,6 +41,12 @@ namespace SMTLIBParser{
             std::shared_ptr<DAGNode> get(const std::shared_ptr<DAGNode> &node);
             std::shared_ptr<DAGNode> get(const std::string &name);
             bool isFull() const;
+            bool isEmpty() const;
+            void clear();
+            size_t size() const;
+            std::vector<std::shared_ptr<DAGNode>> getVars() const;
+            std::vector<std::shared_ptr<DAGNode>> getValues() const;
+            std::vector<std::pair<std::string, std::shared_ptr<DAGNode>>> getPairs() const;
             
             std::string toString();
         private:

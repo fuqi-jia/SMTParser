@@ -37,6 +37,7 @@ set(LIB_NAME "smtlibparser")
 # add source files
 set(SOURCES
     src/base_parser.cpp
+    src/eval_parser.cpp
     src/op_parser.cpp
     src/opt_parser.cpp
     src/dag.cpp

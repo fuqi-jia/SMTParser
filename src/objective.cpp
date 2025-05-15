@@ -25,7 +25,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "../include/objective.h"
+#include "objective.h"
 
 namespace SMTLIBParser{
 
@@ -96,7 +96,7 @@ namespace SMTLIBParser{
     }
 
     
-    COMP_KIND getOppOperator(COMP_KIND comp){
+    COMP_KIND getOppositeOperator(COMP_KIND comp){
         // get the opposite operator
         switch (comp)
         {

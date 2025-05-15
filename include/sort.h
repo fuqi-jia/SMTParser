@@ -42,6 +42,8 @@ namespace SMTLIBParser{
         SK_EXT, // extended real
         SK_RAT, // rational number
         SK_NAT, // natural number
+        SK_ALGEBRAIC, // algebraic number
+        SK_TRANSCENDENTAL, // transcendental number
         SK_RAND, // random number
         SK_INTOREAL, // int or real, for constant
         SK_DEC, // declare-sort 
@@ -71,6 +73,8 @@ namespace SMTLIBParser{
         bool isIntOrReal() const { return kind == SORT_KIND::SK_INTOREAL; }
         bool isInt() const { return kind == SORT_KIND::SK_INT; }
         bool isReal() const { return kind == SORT_KIND::SK_REAL; }
+        bool isAlgebraic() const { return kind == SORT_KIND::SK_ALGEBRAIC; }
+        bool isTranscendental() const { return kind == SORT_KIND::SK_TRANSCENDENTAL; }
         bool isBv() const { return kind == SORT_KIND::SK_BV; }
         bool isFp() const { return kind == SORT_KIND::SK_FP; }
         bool isStr() const { return kind == SORT_KIND::SK_STR; }
@@ -91,7 +95,7 @@ namespace SMTLIBParser{
 
         // compare two sorts
         bool operator==(const Sort& other) const {
-            if(((isInt() || isReal()) && other.isIntOrReal()) || (isIntOrReal() && (other.isInt() || other.isReal()))){
+            if((isInt() && other.isIntOrReal()) || (isIntOrReal() && other.isInt())){
                 return true;
             }
             else if((isReal() && other.isRat()) || (isRat() && other.isReal())){
@@ -127,6 +131,8 @@ namespace SMTLIBParser{
                 case SORT_KIND::SK_NAT: return "Natural";
                 case SORT_KIND::SK_RAND: return "Random";
                 case SORT_KIND::SK_INTOREAL: return "IntOrReal";
+                case SORT_KIND::SK_ALGEBRAIC: return "Algebraic";
+                case SORT_KIND::SK_TRANSCENDENTAL: return "Transcendental";
                 default: return "Unknown";
             }
         }
@@ -170,6 +176,8 @@ namespace SMTLIBParser{
     inline const std::shared_ptr<Sort> BOOL_SORT = std::make_shared<Sort>(SORT_KIND::SK_BOOL, "Bool", 0);
     inline const std::shared_ptr<Sort> INT_SORT = std::make_shared<Sort>(SORT_KIND::SK_INT, "Int", 0);
     inline const std::shared_ptr<Sort> REAL_SORT = std::make_shared<Sort>(SORT_KIND::SK_REAL, "Real", 0);
+    inline const std::shared_ptr<Sort> ALGEBRAIC_SORT = std::make_shared<Sort>(SORT_KIND::SK_ALGEBRAIC, "Algebraic", 0);
+    inline const std::shared_ptr<Sort> TRANSCENDENTAL_SORT = std::make_shared<Sort>(SORT_KIND::SK_TRANSCENDENTAL, "Transcendental", 0);
     inline const std::shared_ptr<Sort> STR_SORT = std::make_shared<Sort>(SORT_KIND::SK_STR, "String", 0);
     inline const std::shared_ptr<Sort> REG_SORT = std::make_shared<Sort>(SORT_KIND::SK_REG, "Reg", 0);
     inline const std::shared_ptr<Sort> EXT_SORT = std::make_shared<Sort>(SORT_KIND::SK_EXT, "ExtReal", 0);

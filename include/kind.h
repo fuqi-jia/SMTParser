@@ -130,6 +130,7 @@ namespace SMTLIBParser{
     };
 
     std::string kindToString(const NODE_KIND& nk);
+    NODE_KIND getOppositeKind(const NODE_KIND& nk);
 }
 
 #endif

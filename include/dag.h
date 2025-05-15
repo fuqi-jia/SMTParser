@@ -155,6 +155,9 @@ namespace SMTLIBParser{
         // check error
         bool isErr() 				const { return (kind == NODE_KIND::NT_ERROR); };
 
+        // check unknown
+        bool isUnknown() 			const { return kind == NODE_KIND::NT_UNKNOWN; };
+
         // check const
         bool isCBool() 				const { return (kind == NODE_KIND::NT_CONST_TRUE || kind == NODE_KIND::NT_CONST_FALSE) && sort->isBool(); }; 
         bool isTrue() 				const { return kind == NODE_KIND::NT_CONST_TRUE && sort->isBool(); };
@@ -187,9 +190,6 @@ namespace SMTLIBParser{
         bool isNot() 				const { return (kind == NODE_KIND::NT_NOT); };
         bool isImpl() 				const { return (kind == NODE_KIND::NT_IMPLIES); };
         bool isXor() 				const { return (kind == NODE_KIND::NT_XOR); };
-        // bool isIteBool() 			const { return (kind == NODE_KIND::NT_ITE_BOOL); }; // 后面统一定义ite
-        // bool isBoolOp() 			const { return (isAnd() || isOr() || isNot() || isImpl() || isXor() || isIteBool()); };
-        // 其他操作也可以做得到bool op
         
         // check comparison
         bool isEqBool()             const { return (kind == NODE_KIND::NT_EQ_BOOL); };
@@ -308,10 +308,10 @@ namespace SMTLIBParser{
         bool isBVMul() 				const { return (kind == NODE_KIND::NT_BV_MUL); };
         bool isBVUDiv() 			const { return (kind == NODE_KIND::NT_BV_UDIV); };
         bool isBVURem() 			const { return (kind == NODE_KIND::NT_BV_UREM); };
-        bool isBVSdiv() 			const { return (kind == NODE_KIND::NT_BV_SDIV); };
-        bool isBVSrem() 			const { return (kind == NODE_KIND::NT_BV_SREM); };
-        bool isBVUmod() 			const { return (kind == NODE_KIND::NT_BV_UMOD); };
-        bool isBVSmod() 			const { return (kind == NODE_KIND::NT_BV_SMOD); };
+        bool isBVSDiv() 			const { return (kind == NODE_KIND::NT_BV_SDIV); };
+        bool isBVSRem() 			const { return (kind == NODE_KIND::NT_BV_SREM); };
+        bool isBVUMod() 			const { return (kind == NODE_KIND::NT_BV_UMOD); };
+        bool isBVSMod() 			const { return (kind == NODE_KIND::NT_BV_SMOD); };
         // Arithmetic operations with overflow
         bool isBVNegO() 			const { return (kind == NODE_KIND::NT_BV_NEGO); };
         bool isBVUAddO() 			const { return (kind == NODE_KIND::NT_BV_UADDO); };
@@ -321,13 +321,13 @@ namespace SMTLIBParser{
         bool isBVUDivO() 			const { return (kind == NODE_KIND::NT_BV_UDIVO); };
         bool isBVSDivO() 			const { return (kind == NODE_KIND::NT_BV_SDIVO); };
         bool isBVURemO() 			const { return (kind == NODE_KIND::NT_BV_UREMO); };
-        bool isBVSremO() 			const { return (kind == NODE_KIND::NT_BV_SREMO); };
+        bool isBVSRemO() 			const { return (kind == NODE_KIND::NT_BV_SREMO); };
         bool isBVUModO() 			const { return (kind == NODE_KIND::NT_BV_UMODO); };
-        bool isBVSmodO() 			const { return (kind == NODE_KIND::NT_BV_SMODO); };
+        bool isBVSModO() 			const { return (kind == NODE_KIND::NT_BV_SMODO); };
         // Shift operations
         bool isBVShl() 				const { return (kind == NODE_KIND::NT_BV_SHL); };
         bool isBVLSHR() 			const { return (kind == NODE_KIND::NT_BV_LSHR); };
-        bool isBVAShr() 			const { return (kind == NODE_KIND::NT_BV_ASHR); };
+        bool isBVASHR() 			const { return (kind == NODE_KIND::NT_BV_ASHR); };
         bool isBVConcat() 			const { return (kind == NODE_KIND::NT_BV_CONCAT); };
         bool isBVExtract() 			const { return (kind == NODE_KIND::NT_BV_EXTRACT); };
         bool isBVRepeat() 			const { return (kind == NODE_KIND::NT_BV_REPEAT); };
@@ -335,7 +335,7 @@ namespace SMTLIBParser{
         bool isBVSignExt() 			const { return (kind == NODE_KIND::NT_BV_SIGN_EXT); };
         bool isBVRotLeft() 			const { return (kind == NODE_KIND::NT_BV_ROTATE_LEFT); };
         bool isBVRotRight() 		const { return (kind == NODE_KIND::NT_BV_ROTATE_RIGHT); };
-        bool isBVOp() 	    		const { return (isBVNot() || isBVAnd() || isBVOr() || isBVXor() || isBVNand() || isBVNor() || isBVXnor() || isBVAdd() || isBVSub() || isBVMul() || isBVUDiv() || isBVURem() || isBVSdiv() || isBVSrem() || isBVSmod() || isBVShl() || isBVLSHR() || isBVAShr() || isBVConcat() || isBVExtract() || isBVRepeat() || isBVZeroExt() || isBVSignExt() || isBVRotLeft() || isBVRotRight()); };
+        bool isBVOp() 	    		const { return (isBVNot() || isBVAnd() || isBVOr() || isBVXor() || isBVNand() || isBVNor() || isBVXnor() || isBVAdd() || isBVSub() || isBVMul() || isBVUDiv() || isBVURem() || isBVSDiv() || isBVSRem() || isBVSMod() || isBVShl() || isBVLSHR() || isBVASHR() || isBVConcat() || isBVExtract() || isBVRepeat() || isBVZeroExt() || isBVSignExt() || isBVRotLeft() || isBVRotRight()); };
 
         // check bitvector comparison
         bool isBVUlt() 	    		const { return (kind == NODE_KIND::NT_BV_ULT); };
@@ -357,7 +357,9 @@ namespace SMTLIBParser{
         // check bitvector conversion
         bool isBVToNat() 			const { return (kind == NODE_KIND::NT_BV_TO_NAT); };
         bool isNatToBV() 			const { return (kind == NODE_KIND::NT_NAT_TO_BV); };
-        bool isBVConv() 			const { return (isBVToNat() || isNatToBV()); };
+        bool isBVToInt() 			const { return (kind == NODE_KIND::NT_BV_TO_INT); };
+        bool isIntToBV() 			const { return (kind == NODE_KIND::NT_INT_TO_BV); };
+        bool isBVConv() 			const { return (isBVToNat() || isNatToBV() || isBVToInt() || isIntToBV()); };
 
         // check floating point common operators
         bool isFPAdd() 				const { return (kind == NODE_KIND::NT_FP_ADD); };
@@ -369,6 +371,7 @@ namespace SMTLIBParser{
         bool isFPRem() 				const { return (kind == NODE_KIND::NT_FP_REM); };
         bool isFPFMA() 				const { return (kind == NODE_KIND::NT_FP_FMA); };
         bool isFPSqrt() 			const { return (kind == NODE_KIND::NT_FP_SQRT); };
+        bool isFPRoundToIntegral()  const { return (kind == NODE_KIND::NT_FP_ROUND_TO_INTEGRAL); };
         bool isFPRoToInt()  		const { return (kind == NODE_KIND::NT_FP_ROUND_TO_INTEGRAL); };
         bool isFPMin() 				const { return (kind == NODE_KIND::NT_FP_MIN); };
         bool isFPMax() 				const { return (kind == NODE_KIND::NT_FP_MAX); };
@@ -379,6 +382,7 @@ namespace SMTLIBParser{
         bool isFPLt() 				const { return (kind == NODE_KIND::NT_FP_LT); };
         bool isFPGe() 				const { return (kind == NODE_KIND::NT_FP_GE); };
         bool isFPGt() 				const { return (kind == NODE_KIND::NT_FP_GT); };
+        bool isFPEq() 				const { return (kind == NODE_KIND::NT_FP_EQ); };
         bool isFPComp() 			const { return (isFPLe() || isFPLt() || isFPGe() || isFPGt()); };
 
         // check floating point conversion
@@ -438,6 +442,23 @@ namespace SMTLIBParser{
         bool isStrToCode() 			const { return (kind == NODE_KIND::NT_STR_TO_CODE); };
         bool isStrFromCode() 		const { return (kind == NODE_KIND::NT_STR_FROM_CODE); };
         bool isStrConv() 			const { return (isStrFromInt() || isStrToInt() || isStrToReg() || isStrToCode() || isStrFromCode()); };
+
+        // reg
+        bool isRegNone() 			const { return (kind == NODE_KIND::NT_REG_NONE); };
+        bool isRegAll() 			const { return (kind == NODE_KIND::NT_REG_ALL); };
+        bool isRegAllChar() 		const { return (kind == NODE_KIND::NT_REG_ALLCHAR); };
+        bool isRegConcat() 		    const { return (kind == NODE_KIND::NT_REG_CONCAT); };
+        bool isRegUnion() 			const { return (kind == NODE_KIND::NT_REG_UNION); };
+        bool isRegInter() 			const { return (kind == NODE_KIND::NT_REG_INTER); };
+        bool isRegDiff() 			const { return (kind == NODE_KIND::NT_REG_DIFF); };
+        bool isRegStar() 			const { return (kind == NODE_KIND::NT_REG_STAR); }; 
+        bool isRegPlus() 			const { return (kind == NODE_KIND::NT_REG_PLUS); };
+        bool isRegOpt() 			const { return (kind == NODE_KIND::NT_REG_OPT); };
+        bool isRegRange() 			const { return (kind == NODE_KIND::NT_REG_RANGE); };
+        bool isRegRepeat() 		    const { return (kind == NODE_KIND::NT_REG_REPEAT); };
+        bool isRegLoop() 			const { return (kind == NODE_KIND::NT_REG_LOOP); };
+        bool isRegComplement() 		const { return (kind == NODE_KIND::NT_REG_COMPLEMENT); };
+
 
         // check let
         bool isLet()				const { return kind == NODE_KIND::NT_LET; };
@@ -567,7 +588,10 @@ namespace SMTLIBParser{
         }
     };
 
-    inline const std::shared_ptr<DAGNode> NULL_NODE = std::make_shared<DAGNode>(NODE_KIND::NT_NULL);
+    inline const std::shared_ptr<DAGNode> NULL_NODE = std::make_shared<DAGNode>(NULL_SORT, NODE_KIND::NT_NULL, "null");
+    inline const std::shared_ptr<DAGNode> UNKNOWN_NODE = std::make_shared<DAGNode>(UNKNOWN_SORT, NODE_KIND::NT_UNKNOWN, "unknown");
+    inline const std::shared_ptr<DAGNode> TRUE_NODE = std::make_shared<DAGNode>(BOOL_SORT, NODE_KIND::NT_CONST_TRUE, "true");
+    inline const std::shared_ptr<DAGNode> FALSE_NODE = std::make_shared<DAGNode>(BOOL_SORT, NODE_KIND::NT_CONST_FALSE, "false");
 
 
     struct NodeHash {
@@ -594,5 +618,6 @@ namespace SMTLIBParser{
 
     // smart pointer
     typedef std::shared_ptr<DAGNode> NodePtr;
+
 }
 #endif

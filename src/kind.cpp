@@ -25,7 +25,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "../include/kind.h"
+#include "kind.h"
 
 namespace SMTLIBParser{
 
@@ -498,6 +498,93 @@ namespace SMTLIBParser{
             return "func_apply";
         default:
             return "UNKNOWN_KIND";
+        }
+    }
+    NODE_KIND getOppositeKind(const NODE_KIND& nk){
+        switch (nk)
+        {
+            case NODE_KIND::NT_EQ:
+                return NODE_KIND::NT_DISTINCT;
+            case NODE_KIND::NT_DISTINCT:
+                return NODE_KIND::NT_EQ;
+            case NODE_KIND::NT_EQ_BOOL:
+                return NODE_KIND::NT_DISTINCT_BOOL;
+            case NODE_KIND::NT_DISTINCT_BOOL:
+                return NODE_KIND::NT_EQ_BOOL;
+            case NODE_KIND::NT_EQ_OTHER:
+                return NODE_KIND::NT_DISTINCT_OTHER;
+            case NODE_KIND::NT_DISTINCT_OTHER:
+                return NODE_KIND::NT_EQ_OTHER;
+            case NODE_KIND::NT_LE:
+                return NODE_KIND::NT_GT;
+            case NODE_KIND::NT_LT:
+                return NODE_KIND::NT_GE;
+            case NODE_KIND::NT_GE:
+                return NODE_KIND::NT_LE;
+            case NODE_KIND::NT_GT:
+                return NODE_KIND::NT_LT;
+            case NODE_KIND::NT_ADD:
+                return NODE_KIND::NT_SUB;
+            case NODE_KIND::NT_SUB:
+                return NODE_KIND::NT_ADD;
+            case NODE_KIND::NT_DIV_INT:
+                return NODE_KIND::NT_MUL;
+            case NODE_KIND::NT_DIV_REAL:
+                return NODE_KIND::NT_MUL;
+            case NODE_KIND::NT_BV_SUB:
+                return NODE_KIND::NT_BV_ADD;
+            case NODE_KIND::NT_BV_ADD:
+                return NODE_KIND::NT_BV_SUB;
+            case NODE_KIND::NT_BV_UDIV:
+                return NODE_KIND::NT_BV_MUL;
+            case NODE_KIND::NT_BV_SDIV:
+                return NODE_KIND::NT_BV_MUL;
+            case NODE_KIND::NT_BV_ULT:
+                return NODE_KIND::NT_BV_UGE;
+            case NODE_KIND::NT_BV_UGT:
+                return NODE_KIND::NT_BV_ULE;
+            case NODE_KIND::NT_BV_ULE:
+                return NODE_KIND::NT_BV_UGT;
+            case NODE_KIND::NT_BV_UGE:
+                return NODE_KIND::NT_BV_ULT;
+            case NODE_KIND::NT_BV_SLT:
+                return NODE_KIND::NT_BV_SGE;
+            case NODE_KIND::NT_BV_SGT:
+                return NODE_KIND::NT_BV_SLE;
+            case NODE_KIND::NT_BV_SLE:
+                return NODE_KIND::NT_BV_SGT;
+            case NODE_KIND::NT_BV_SGE:
+                return NODE_KIND::NT_BV_SLT;
+            case NODE_KIND::NT_FP_ADD:
+                return NODE_KIND::NT_FP_SUB;
+            case NODE_KIND::NT_FP_SUB:
+                return NODE_KIND::NT_FP_ADD;
+            case NODE_KIND::NT_FP_MUL:
+                return NODE_KIND::NT_FP_DIV;
+            case NODE_KIND::NT_FP_DIV:
+                return NODE_KIND::NT_FP_MUL;
+            case NODE_KIND::NT_FP_MIN:
+                return NODE_KIND::NT_FP_MAX;
+            case NODE_KIND::NT_FP_MAX:
+                return NODE_KIND::NT_FP_MIN;
+            case NODE_KIND::NT_FP_LE:
+                return NODE_KIND::NT_FP_GT;
+            case NODE_KIND::NT_FP_LT:
+                return NODE_KIND::NT_FP_GE;
+            case NODE_KIND::NT_FP_GE:
+                return NODE_KIND::NT_FP_LT;
+            case NODE_KIND::NT_FP_GT:
+                return NODE_KIND::NT_FP_LE;
+            case NODE_KIND::NT_STR_LT:
+                return NODE_KIND::NT_STR_GE;
+            case NODE_KIND::NT_STR_GT:
+                return NODE_KIND::NT_STR_LE;
+            case NODE_KIND::NT_STR_LE:
+                return NODE_KIND::NT_STR_GT;
+            case NODE_KIND::NT_STR_GE:
+                return NODE_KIND::NT_STR_LT;
+            default:
+                return NODE_KIND::NT_UNKNOWN;
         }
     }
 }
