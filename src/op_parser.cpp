@@ -761,10 +761,10 @@ namespace SMTLIBParser{
                 }
             }
             if(new_params.size() == 2){
-                if(sort->isInt() && new_params[0]->isCInt() && new_params[1]->isCInt()){
+                if(new_params[0]->isCInt() && new_params[1]->isCInt()){
                     return mkConstInt(new_params[0]->toInt() + new_params[1]->toInt());
                 }
-                else if(sort->isReal() && new_params[0]->isCReal() && new_params[1]->isCReal()){
+                else if(new_params[0]->isCReal() && new_params[1]->isCReal()){
                     return mkConstReal(new_params[0]->toReal() + new_params[1]->toReal());
                 }
             }
@@ -831,10 +831,10 @@ namespace SMTLIBParser{
                 }
             }
             if(new_params.size() == 2){
-                if(sort->isInt() && new_params[0]->isCInt() && new_params[1]->isCInt()){
+                if(new_params[0]->isCInt() && new_params[1]->isCInt()){
                     return mkConstInt(new_params[0]->toInt() * new_params[1]->toInt());
                 }
-                else if(sort->isReal() && new_params[0]->isCReal() && new_params[1]->isCReal()){
+                else if(new_params[0]->isCReal() && new_params[1]->isCReal()){
                     return mkConstReal(new_params[0]->toReal() * new_params[1]->toReal());
                 }
             }
@@ -872,7 +872,7 @@ namespace SMTLIBParser{
             }
         }
         if(new_params.size() == 2){
-            if(sort->isInt() && new_params[0]->isCInt() && new_params[1]->isCInt()){
+            if(new_params[0]->isCInt() && new_params[1]->isCInt()){
                 return mkConstInt(new_params[0]->toInt() & new_params[1]->toInt());
             }
         }

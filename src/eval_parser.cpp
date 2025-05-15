@@ -679,30 +679,8 @@ namespace SMTLIBParser{
                 result = mkOper(expr->getSort(), op, {l, r, s});
                 return true;
             }
-            // unimplemented: iand
-            case NODE_KIND::NT_IAND:
-            {
-                std::vector<std::shared_ptr<DAGNode>> children;
-                for(auto child : expr->getChildren()){
-                    std::shared_ptr<DAGNode> eval = NULL_NODE;
-                    changed |= evaluate(child, model, eval);
-                    children.emplace_back(eval);
-                }
-                if(!changed){
-                    result = expr;
-                    return false;
-                }
-                assert(changed);
-                assert(!children.empty());
-                if(children.size() == 1){
-                    result = children[0];
-                }
-                else{
-                    result = mkOper(expr->getSort(), op, children);
-                }
-                return true;
-            }
             // simplify using binary operations
+            case NODE_KIND::NT_IAND:
             case NODE_KIND::NT_ADD:
             case NODE_KIND::NT_MUL:
             case NODE_KIND::NT_BV_AND:
@@ -748,7 +726,12 @@ namespace SMTLIBParser{
                         result = mkOper(expr->getSort(), op, result, const_children[i]);
                     }
                     non_const_children.emplace_back(result);
-                    result = mkOper(expr->getSort(), op, non_const_children);
+                    if(non_const_children.size() == 1){
+                        result = non_const_children[0];
+                    }
+                    else{
+                        result = mkOper(expr->getSort(), op, non_const_children);
+                    }
                 }
                 return true; 
             }
