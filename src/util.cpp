@@ -718,6 +718,12 @@ namespace SMTLIBParser{
         std::string res = SMTLIBParser::bvSub(dividend, SMTLIBParser::bvMul(quotient, bv2));
         return res;
     }
+    std::string bvUmod(const std::string& bv1, const std::string& bv2){
+        assert(bv1[0] == '#' && bv1[1] == 'b');
+        assert(bv2[0] == '#' && bv2[1] == 'b');
+        std::string res = SMTLIBParser::bvUrem(bv1, bv2);
+        return res;
+    }
     std::string bvSdiv(const std::string& bv1, const std::string& bv2){
         assert(bv1[0] == '#' && bv1[1] == 'b');
         assert(bv2[0] == '#' && bv2[1] == 'b');

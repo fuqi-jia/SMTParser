@@ -34,6 +34,10 @@ std::shared_ptr<DAGNode> Parser::parseOper(const std::string& s, const std::vect
         std::cerr << "Precision warning: " << op << " will use double precision" << std::endl;
     }
 
+    void not_implemented_warning(const std::string& op){
+        std::cerr << "Not implemented warning: " << op << " is not implemented" << std::endl;
+    }
+
     std::shared_ptr<DAGNode> Parser::evaluate(std::shared_ptr<DAGNode> expr, const std::shared_ptr<Model> &model){
         std::shared_ptr<DAGNode> result = NULL_NODE;
         evaluate(expr, model, result);
@@ -499,15 +503,6 @@ std::shared_ptr<DAGNode> Parser::parseOper(const std::string& s, const std::vect
         else if(expr->isStrFromCode()){
             return evaluateStrFromCode(expr, model, result);
         }
-        else if(expr->isRegNone()){
-            return evaluateRegNone(expr, model, result);
-        }
-        else if(expr->isRegAll()){
-            return evaluateRegAll(expr, model, result);
-        }
-        else if(expr->isRegAllChar()){
-            return evaluateRegAllChar(expr, model, result);
-        }
         else if(expr->isRegConcat()){
             return evaluateRegConcat(expr, model, result);
         }
@@ -545,9 +540,10 @@ std::shared_ptr<DAGNode> Parser::parseOper(const std::string& s, const std::vect
         return UNKNOWN_NODE;
     }
 
-    bool evaluateSingleOp(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result, NODE_KIND op){
+    bool Parser::evaluateSimpleOp(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result, NODE_KIND op){
         bool changed = false;
         switch(op){
+            // unary operations
             case NODE_KIND::NT_NOT:
             case NODE_KIND::NT_ABS:
             case NODE_KIND::NT_SQRT:
@@ -586,6 +582,20 @@ std::shared_ptr<DAGNode> Parser::parseOper(const std::string& s, const std::vect
             case NODE_KIND::NT_FACT:
             case NODE_KIND::NT_BV_NOT:
             case NODE_KIND::NT_BV_NEG:
+            case NODE_KIND::NT_BV_TO_NAT:
+            case NODE_KIND::NT_BV_NAT_TO_BV:
+            case NODE_KIND::NT_BV_TO_INT:
+            case NODE_KIND::NT_INT_TO_BV:
+            case NODE_KIND::NT_STR_LEN:
+            case NODE_KIND::NT_STR_TO_LOWER:
+            case NODE_KIND::NT_STR_TO_UPPER:
+            case NODE_KIND::NT_STR_REV:
+            case NODE_KIND::NT_STR_IS_DIGIT:
+            case NODE_KIND::NT_STR_FROM_INT:
+            case NODE_KIND::NT_STR_TO_INT:
+            case NODE_KIND::NT_STR_TO_REG:
+            case NODE_KIND::NT_STR_TO_CODE:
+            case NODE_KIND::NT_STR_FROM_CODE:
             {
                 std::shared_ptr<DAGNode> child = NULL_NODE;
                 changed |= evaluate(expr->getChildren()[0], model, child);
@@ -597,6 +607,7 @@ std::shared_ptr<DAGNode> Parser::parseOper(const std::string& s, const std::vect
                 result = mkOper(expr->getSort(), op, child);
                 return true;
             }
+            // binary operations
             case NODE_KIND::NT_IMPLIES:
             case NODE_KIND::NT_ATAN2:
             case NODE_KIND::NT_LE:
@@ -605,6 +616,14 @@ std::shared_ptr<DAGNode> Parser::parseOper(const std::string& s, const std::vect
             case NODE_KIND::NT_GT:
             case NODE_KIND::NT_GCD:
             case NODE_KIND::NT_LCM:
+            case NODE_KIND::NT_BV_COMP:
+            case NODE_KIND::NT_BV_UREM:
+            case NODE_KIND::NT_BV_SREM:
+            case NODE_KIND::NT_BV_UMOD:
+            case NODE_KIND::NT_BV_SMOD:
+            case NODE_KIND::NT_BV_SHL:
+            case NODE_KIND::NT_BV_LSHR:
+            case NODE_KIND::NT_BV_ASHR:
             case NODE_KIND::NT_BV_ULT:
             case NODE_KIND::NT_BV_ULE:
             case NODE_KIND::NT_BV_UGT:
@@ -612,7 +631,18 @@ std::shared_ptr<DAGNode> Parser::parseOper(const std::string& s, const std::vect
             case NODE_KIND::NT_BV_SLT:
             case NODE_KIND::NT_BV_SGT:
             case NODE_KIND::NT_BV_SLE:
-            case NODE_KIND::NT_BV_SGE:{
+            case NODE_KIND::NT_BV_SGE:
+            case NODE_KIND::NT_STR_PREFIXOF:
+            case NODE_KIND::NT_STR_SUFFIXOF:
+            case NODE_KIND::NT_STR_CONTAINS:
+            case NODE_KIND::NT_STR_CHARAT:
+            case NODE_KIND::NT_STR_LT:
+            case NODE_KIND::NT_STR_LE:
+            case NODE_KIND::NT_STR_GT:
+            case NODE_KIND::NT_STR_GE:
+            case NODE_KIND::NT_STR_IN_REG:
+            case NODE_KIND::NT_STR_CONTAINS:
+            {
                 std::shared_ptr<DAGNode> l = NULL_NODE;
                 std::shared_ptr<DAGNode> r = NULL_NODE;
                 changed |= evaluate(expr->getChildren()[0], model, l);
@@ -625,27 +655,212 @@ std::shared_ptr<DAGNode> Parser::parseOper(const std::string& s, const std::vect
                 result = mkOper(expr->getSort(), op, l, r);
                 return true;
             }
-            case NODE_KIND::NT_IAND:{
-                    std::vector<std::shared_ptr<DAGNode>> children;
-                    for(auto child : expr->getChildren()){
-                        std::shared_ptr<DAGNode> eval = NULL_NODE;
-                        changed |= evaluate(child, model, eval);
-                        children.emplace_back(eval);
-                    }
-                    if(!changed){
-                        result = expr;
-                        return false;
-                    }
-                    assert(changed);
-                    assert(!children.empty());
-                    if(children.size() == 1){
-                        result = children[0];
+            // triple operations
+            case NODE_KIND::NT_STR_SUBSTR:
+            case NODE_KIND::NT_STR_INDEXOF:
+            case NODE_KIND::NT_STR_UPDATE:
+            case NODE_KIND::NT_STR_REPLACE:
+            case NODE_KIND::NT_STR_REPLACE_ALL:
+            {
+                bool changed = false;
+                std::shared_ptr<DAGNode> l = NULL_NODE;
+                std::shared_ptr<DAGNode> r = NULL_NODE;
+                std::shared_ptr<DAGNode> s = NULL_NODE;
+                changed |= evaluate(expr->getChildren()[0], model, l);
+                changed |= evaluate(expr->getChildren()[1], model, r);
+                changed |= evaluate(expr->getChildren()[2], model, s);
+                if(!changed){
+                    result = expr;
+                    return false;
+                }
+                assert(changed);
+                result = mkOper(expr->getSort(), op, {l, r, s});
+                return true;
+            }
+            // unimplemented: iand
+            case NODE_KIND::NT_IAND:
+            {
+                std::vector<std::shared_ptr<DAGNode>> children;
+                for(auto child : expr->getChildren()){
+                    std::shared_ptr<DAGNode> eval = NULL_NODE;
+                    changed |= evaluate(child, model, eval);
+                    children.emplace_back(eval);
+                }
+                if(!changed){
+                    result = expr;
+                    return false;
+                }
+                assert(changed);
+                assert(!children.empty());
+                if(children.size() == 1){
+                    result = children[0];
+                }
+                else{
+                    result = mkOper(expr->getSort(), op, children);
+                }
+                return true;
+            }
+            // simplify using binary operations
+            case NODE_KIND::NT_ADD:
+            case NODE_KIND::NT_MUL:
+            case NODE_KIND::NT_BV_AND:
+            case NODE_KIND::NT_BV_OR:
+            case NODE_KIND::NT_BV_XOR:
+            case NODE_KIND::NT_BV_NAND:
+            case NODE_KIND::NT_BV_NOR:
+            case NODE_KIND::NT_BV_XNOR:
+            case NODE_KIND::NT_BV_ADD:
+            case NODE_KIND::NT_BV_MUL:
+            {
+                changed = false;
+                std::vector<std::shared_ptr<DAGNode>> children;
+                for(auto child : expr->getChildren()){
+                    std::shared_ptr<DAGNode> eval = NULL_NODE;
+                    changed |= evaluate(child, model, eval);
+                    children.emplace_back(eval);
+                }
+                if(!changed){
+                    result = expr;
+                    return false;
+                }
+                assert(changed);
+                assert(!children.empty());
+                // compute the sum of the children that are constant
+                std::vector<std::shared_ptr<DAGNode>> const_children;
+                std::vector<std::shared_ptr<DAGNode>> non_const_children;
+                for(auto child : children){
+                    if(child->isConst()){
+                        const_children.emplace_back(child);
                     }
                     else{
-                        result = mkOper(expr->getSort(), op, children);
+                        non_const_children.emplace_back(child);
                     }
-                    return true;
                 }
+                if(const_children.empty()){
+                    result = mkOper(expr->getSort(), op, non_const_children);
+                }
+                else{
+                    // compute the and of the constant children
+                    result = const_children[0];
+                    for(size_t i = 1; i < const_children.size(); ++i){
+                        result = mkBvAnd(result, const_children[i]);
+                    }
+                    non_const_children.emplace_back(result);
+                    result = mkOper(expr->getSort(), op, non_const_children);
+                }
+                return true; 
+            }
+            // simplify using binary operations but the first child is special
+            case NODE_KIND::NT_SUB:
+            case NODE_KIND::NT_DIV_REAL:
+            case NODE_KIND::NT_BV_SUB:
+            case NODE_KIND::NT_BV_UDIV:
+            case NODE_KIND::NT_BV_SDIV:
+            case NODE_KIND::NT_FP_SUB:
+            {
+                changed = false;
+                std::vector<std::shared_ptr<DAGNode>> children;
+                for(auto child : expr->getChildren()){
+                    std::shared_ptr<DAGNode> eval = NULL_NODE;
+                    changed |= evaluate(child, model, eval);
+                    children.emplace_back(eval);
+                }
+                if(!changed){
+                    result = expr;
+                    return false;
+                }
+                assert(changed);
+                assert(!children.empty());
+                // compute the difference of the children that are constant
+                bool first_child_is_const = children[0]->isConst();
+                std::vector<std::shared_ptr<DAGNode>> const_children;
+                std::vector<std::shared_ptr<DAGNode>> non_const_children;
+                for(auto child : children){
+                    if(child->isConst()){
+                        const_children.emplace_back(child);
+                    }
+                    else{
+                        non_const_children.emplace_back(child);
+                    }
+                }
+                if(const_children.empty()){
+                    result = mkSub(non_const_children);
+                }
+                else{
+                    if(first_child_is_const){
+                        result = const_children[0];
+                        for(size_t i = 1; i < const_children.size(); ++i){
+                            result = mkOper(expr->getSort(), op, result, const_children[i]);
+                        }
+                        non_const_children.insert(non_const_children.begin(), result);
+                        result = mkOper(expr->getSort(), op, non_const_children);
+                    }
+                    else{
+                        auto opposite_op = getOppositeKind(op);
+                        for(auto child : const_children){
+                            result = mkOper(expr->getSort(), opposite_op, result, child);
+                        }
+                        non_const_children.emplace_back(result);
+                        result = mkOper(expr->getSort(), op, non_const_children);
+                    }
+                }
+                return true;
+            }
+            // concat
+            case NODE_KIND::NT_BV_CONCAT:
+            case NODE_KIND::NT_STR_CONCAT:
+            {
+                changed = false;
+                // sequential evaluation
+                std::vector<std::shared_ptr<DAGNode>> children;
+                size_t i = 0;
+                while(i < expr->getChildren().size()){
+                    // concat until the last constant child
+                    std::shared_ptr<DAGNode> child = NULL_NODE;
+                    changed |= evaluate(expr->getChildren()[i], model, child);
+                    if(child->isConst()){
+                        // go on until the child is not constant
+                        std::shared_ptr<DAGNode> child_ = NULL_NODE;
+                        while(i < expr->getChildren().size()){
+                            changed |= evaluate(expr->getChildren()[i], model, child_);
+                            if(!child_->isConst()) break;
+                            child = mkOper(expr->getSort(), op, child, child_);
+                            i++;
+                        }
+                        if(i == expr->getChildren().size()){
+                            // all remaining children are constant
+                            children.push_back(child);
+                            break;
+                        }
+                        else if(child_->isNull()){
+                            // child_ is null -> only child is constant
+                            children.push_back(child);
+                        }
+                        else{
+                            assert(!child->isConst());
+                            children.push_back(child);
+                        }
+                    }
+                    else{
+                        children.emplace_back(child);
+                    }
+                    i++;
+                }
+                if(!changed){
+                    result = expr;
+                    return false;
+                }
+                assert(changed);
+                assert(!children.empty());
+                if(children.size() == 1){
+                    result = children.back();
+                    return false;
+                }
+                else{
+                    result = mkOper(expr->getSort(), op, children);
+                }
+                return true;
+            }
             default:
                 assert(false);
                 result = expr;
@@ -719,10 +934,10 @@ std::shared_ptr<DAGNode> Parser::parseOper(const std::string& s, const std::vect
         return true;
     }
     bool Parser::evaluateNot(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode>& result) {
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_NOT);
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_NOT);
     }
     bool Parser::evaluateImpl(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode>& result) {
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_IMPLIES);
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_IMPLIES);
     }
     bool Parser::evaluateXor(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode>& result) {
         bool changed = false;
@@ -875,164 +1090,16 @@ std::shared_ptr<DAGNode> Parser::parseOper(const std::string& s, const std::vect
         }
         return true;
     }
-    
-    bool evaluateAdd(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        bool changed = false;
-        std::vector<std::shared_ptr<DAGNode>> children;
-        for(auto child : expr->getChildren()){
-            std::shared_ptr<DAGNode> eval = NULL_NODE;
-            changed |= evaluate(child, model, eval);
-            children.emplace_back(eval);
-        }
-        if(!changed){
-            result = expr;
-            return false;
-        }
-        assert(changed);
-        assert(!children.empty());
-        // compute the sum of the children that are constant
-        std::vector<std::shared_ptr<DAGNode>> const_children;
-        std::vector<std::shared_ptr<DAGNode>> non_const_children;
-        for(auto child : children){
-            if(child->isConst()){
-                const_children.emplace_back(child);
-            }
-            else{
-                non_const_children.emplace_back(child);
-            }
-        }
-        if(const_children.empty()){
-            result = mkAdd(non_const_children);
-        }
-        else{
-            // compute the sum of the constant children
-            if(expr->isInt()){
-                result = mkInt(0);
-                for(auto child : const_children){
-                    result = mkAdd(result, child);
-                }
-            }
-            else{
-                result = mkReal(0);
-                for(auto child : const_children){
-                    result = mkAdd(result, child);
-                }
-            }
-            // add the non-constant children to the result
-            non_const_children.emplace_back(result);
-            result = mkAdd(non_const_children);
-        }
-        return true; 
+    bool Parser::evaluateAdd(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_ADD);
     }
-    bool evaluateSub(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        bool changed = false;
-        std::vector<std::shared_ptr<DAGNode>> children;
-        for(auto child : expr->getChildren()){
-            std::shared_ptr<DAGNode> eval = NULL_NODE;
-            changed |= evaluate(child, model, eval);
-            children.emplace_back(eval);
-        }
-        if(!changed){
-            result = expr;
-            return false;
-        }
-        assert(changed);
-        assert(!children.empty());
-        // compute the difference of the children that are constant
-        bool first_child_is_const = children[0]->isConst();
-        std::vector<std::shared_ptr<DAGNode>> const_children;
-        std::vector<std::shared_ptr<DAGNode>> non_const_children;
-        for(auto child : children){
-            if(child->isConst()){
-                const_children.emplace_back(child);
-            }
-            else{
-                non_const_children.emplace_back(child);
-            }
-        }
-        if(const_children.empty()){
-            result = mkSub(non_const_children);
-        }
-        else{
-            if(expr->isInt()){
-                result = mkInt(0);
-                for(auto child : const_children){
-                    result = mkSub(result, child);
-                }
-            }
-            else{
-                result = mkReal(0);
-                for(auto child : const_children){
-                    result = mkSub(result, child);
-                }
-            }
-            if(first_child_is_const){
-                // add the result to the front of the non_const_children
-                non_const_children.insert(non_const_children.begin(), result);
-            }
-            else{
-                // add the result to the back of the const_children
-                const_children.emplace_back(result);
-            }
-            result = mkSub(non_const_children);
-        }
-        return true;
+    bool Parser::evaluateSub(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_SUB);
 	}
-    bool evaluateMul(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        bool changed = false;
-        std::vector<std::shared_ptr<DAGNode>> children;
-        for(auto child : expr->getChildren()){
-            std::shared_ptr<DAGNode> eval = NULL_NODE;
-            changed |= evaluate(child, model, eval);
-            children.emplace_back(eval);
-        }
-        if(!changed){
-            result = expr;
-            return false;
-        }
-        assert(changed);
-        assert(!children.empty());
-        // compute the product of the children that are constant
-        std::vector<std::shared_ptr<DAGNode>> const_children;
-        std::vector<std::shared_ptr<DAGNode>> non_const_children;
-        for(auto child : children){
-            if(child->isConst()){
-                const_children.emplace_back(child);
-            }
-            else{
-                non_const_children.emplace_back(child);
-            }
-        }
-        if(const_children.empty()){
-            result = mkMul(non_const_children);
-        }
-        else{
-            if(expr->isInt()){
-                result = mkInt(1);
-                for(auto child : const_children){
-                    result = mkMul(result, child);
-                }
-                if(result->isZero()){
-                    result = mkInt(0);
-                    return true;
-                }
-            }
-            else{
-                result = mkReal(1);
-                for(auto child : const_children){
-                    result = mkMul(result, child);
-                }
-                if(result->isZero()){
-                    result = mkReal(0);
-                    return true;
-                }
-            }
-            non_const_children.emplace_back(result);
-            result = mkMul(non_const_children);
-        }
-        return true;
+    bool Parser::evaluateMul(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_MUL);
 	}
-    bool evaluateDivInt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateDivInt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
         bool changed = false;
         std::vector<std::shared_ptr<DAGNode>> children;
         for(auto child : expr->getChildren()){
@@ -1089,400 +1156,521 @@ std::shared_ptr<DAGNode> Parser::parseOper(const std::string& s, const std::vect
         }
         return true;
 	}
-    bool evaluateDivReal(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        bool changed = false;
-        std::vector<std::shared_ptr<DAGNode>> children;
-        for(auto child : expr->getChildren()){
-            std::shared_ptr<DAGNode> eval = NULL_NODE;
-            changed |= evaluate(child, model, eval);
-            children.emplace_back(eval);
-        }
-        if(!changed){
-            result = expr;
-            return false;
-        }
-        assert(changed);
-        assert(!children.empty());
-        // compute the quotient of the children that are constant
-        bool first_child_is_const = children[0]->isConst();
-        std::vector<std::shared_ptr<DAGNode>> const_children;
-        std::vector<std::shared_ptr<DAGNode>> non_const_children;
-        for(auto child : children){
-            if(child->isConst()){
-                const_children.emplace_back(child);
-            }
-            else{
-                non_const_children.emplace_back(child);
-            }
-        }
-        if(const_children.empty()){
-            result = mkDiv(non_const_children);
-        }
-        else{
-            if(first_child_is_const){
-                auto res = mkReal(1);
-                for(size_t i = 1; i < const_children.size(); ++i){
-                    res = mkMul(res, const_children[i]);
-                }
-                auto div = mkDivReal(const_children[0], res);
-                non_const_children.insert(non_const_children.begin(), div);
-            }
-            else{
-                auto res = mkReal(1);
-                for(size_t i = 0; i < const_children.size(); ++i){
-                    res = mkMul(res, const_children[i]);
-                }
-                non_const_children.emplace_back(res);
-                result = mkDiv(non_const_children);
-            }
-        }
-        return true;
+    bool Parser::evaluateDivReal(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_DIV_REAL);
 	}   
-    bool evaluateMod(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_MOD);
+    bool Parser::evaluateMod(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_MOD);
 	}
-    bool evaluatePow(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_POW);
+    bool Parser::evaluatePow(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_POW);
     }
-    bool evaluatePow2(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_POW2);
+    bool Parser::evaluatePow2(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_POW2);
 	}
-    bool evaluateIand(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_IAND);
+    bool Parser::evaluateIand(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_IAND);
     }
-    bool evaluateAbs(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_ABS);
+    bool Parser::evaluateAbs(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_ABS);
 	}
-    bool evaluateSqrt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_SQRT);
+    bool Parser::evaluateSqrt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_SQRT);
 	}
-    bool evaluateSafeSqrt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_SAFESQRT);
+    bool Parser::evaluateSafeSqrt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_SAFESQRT);
 	}
-    bool evaluateCeil(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_CEIL);
+    bool Parser::evaluateCeil(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_CEIL);
 	}
-    bool evaluateFloor(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_FLOOR);
+    bool Parser::evaluateFloor(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_FLOOR);
 	}
-    bool evaluateRound(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_ROUND);
+    bool Parser::evaluateRound(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_ROUND);
 	}
-    bool evaluateExp(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_EXP);
+    bool Parser::evaluateExp(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_EXP);
 	}
-    bool evaluateLn(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_LN);
+    bool Parser::evaluateLn(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_LN);
 	}
-    bool evaluateLg(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_LG);
+    bool Parser::evaluateLg(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_LG);
 	}
-    bool evaluateSin(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_SIN);
+    bool Parser::evaluateSin(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_SIN);
 	}
-    bool evaluateCos(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_COS);
+    bool Parser::evaluateCos(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_COS);
 	}
-    bool evaluateTan(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_TAN);
+    bool Parser::evaluateTan(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_TAN);
 	}
-    bool evaluateAsin(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_ASIN);
+    bool Parser::evaluateAsin(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_ASIN);
 	}
-    bool evaluateAcos(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_ACOS);
+    bool Parser::evaluateAcos(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_ACOS);
 	}
-    bool evaluateAtan(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_ATAN);
+    bool Parser::evaluateAtan(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_ATAN);
 	}
-    bool evaluateSinh(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_SINH);
+    bool Parser::evaluateSinh(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_SINH);
 	}
-    bool evaluateCosh(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_COSH);
+    bool Parser::evaluateCosh(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_COSH);
 	}
-    bool evaluateTanh(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_TANH);
+    bool Parser::evaluateTanh(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_TANH);
 	}
-    bool evaluateAsinh(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_ASINH);
+    bool Parser::evaluateAsinh(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_ASINH);
 	}
-    bool evaluateAcosh(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_ACOSH);
+    bool Parser::evaluateAcosh(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_ACOSH);
 	}
-    bool evaluateAtanh(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_ATANH);
+    bool Parser::evaluateAtanh(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_ATANH);
 	}
-    bool evaluateAsech(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_ASECH);
+    bool Parser::evaluateAsech(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_ASECH);
 	}
-    bool evaluateAcsch(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_ACSCH);
+    bool Parser::evaluateAcsch(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_ACSCH);
 	}
-    bool evaluateAcoth(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_ACOTH);
+    bool Parser::evaluateAcoth(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_ACOTH);
 	}
-    bool evaluateAtan2(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_ATAN2);
+    bool Parser::evaluateAtan2(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_ATAN2);
 	}
-    bool evaluateLe(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_LE);
+    bool Parser::evaluateLe(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_LE);
 	}
-    bool evaluateLt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_LT);
+    bool Parser::evaluateLt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_LT);
 	}
-    bool evaluateGe(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_GE);
+    bool Parser::evaluateGe(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_GE);
 	}
-    bool evaluateGt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_GT);
+    bool Parser::evaluateGt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_GT);
 	}
-    bool evaluateToReal(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_TO_REAL);
+    bool Parser::evaluateToReal(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_TO_REAL);
 	}
-    bool evaluateToInt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_TO_INT);
+    bool Parser::evaluateToInt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_TO_INT);
 	}
-    bool evaluateIsInt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_IS_INT);
+    bool Parser::evaluateIsInt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_IS_INT);
 	}
-    bool evaluateIsDivisible(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_IS_DIVISIBLE);
+    bool Parser::evaluateIsDivisible(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_IS_DIVISIBLE);
 	}
-    bool evaluateIsPrime(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_IS_PRIME);
+    bool Parser::evaluateIsPrime(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_IS_PRIME);
 	}
-    bool evaluateIsEven(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_IS_EVEN);
+    bool Parser::evaluateIsEven(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_IS_EVEN);
 	}
-    bool evaluateIsOdd(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_IS_ODD);
+    bool Parser::evaluateIsOdd(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_IS_ODD);
 	}
-    bool evaluateGcd(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_GCD);
+    bool Parser::evaluateGcd(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_GCD);
 	}
-    bool evaluateLcm(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_LCM);
+    bool Parser::evaluateLcm(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_LCM);
 	}
-    bool evaluateFact(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_FACT);
+    bool Parser::evaluateFact(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_FACT);
 	}
-    bool evaluateBvNot(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_BV_NOT);
+    bool Parser::evaluateBvNot(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_BV_NOT);
 	}
-    bool evaluateBvNeg(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_BV_NEG);
+    bool Parser::evaluateBvNeg(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_BV_NEG);
 	}
-    bool evaluateBvAnd(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_BV_AND);
+    bool Parser::evaluateBvAnd(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_BV_AND);
 	}
-    bool evaluateBvOr(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_BV_OR);
+    bool Parser::evaluateBvOr(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_BV_OR);
 	}
-    bool evaluateBvXor(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_BV_XOR);
+    bool Parser::evaluateBvXor(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_BV_XOR);
 	}
-    bool evaluateBvNand(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_BV_NAND);
+    bool Parser::evaluateBvNand(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_BV_NAND);
 	}
-    bool evaluateBvNor(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_BV_NOR);
+    bool Parser::evaluateBvNor(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_BV_NOR);
 	}
-    bool evaluateBvXnor(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_BV_XNOR);
+    bool Parser::evaluateBvXnor(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_BV_XNOR);
 	}
-    bool evaluateBvComp(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_BV_COMP);
+    bool Parser::evaluateBvComp(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_BV_COMP);
 	}
-    bool evaluateBvAdd(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_BV_ADD);
+    bool Parser::evaluateBvAdd(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_BV_ADD);
 	}
-    bool evaluateBvSub(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSingleOp(expr, model, result, NODE_KIND::NT_BV_SUB);
+    bool Parser::evaluateBvSub(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_BV_SUB);
 	}
-    bool evaluateBvMul(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateBvMul(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_BV_MUL);
 	}
-    bool evaluateBvUdiv(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateBvUdiv(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_BV_UDIV);
 	}
-    bool evaluateBvUrem(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateBvUrem(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_BV_UREM);
 	}
-    bool evaluateBvSdiv(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateBvSdiv(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_BV_SDIV);
 	}
-    bool evaluateBvSrem(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateBvSrem(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_BV_SREM);
 	}
-    bool evaluateBvSmod(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateBvSmod(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_BV_SMOD);
 	}
-    bool evaluateBvShl(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateBvShl(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_BV_SHL);
 	}
-    bool evaluateBvLshr(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateBvLshr(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_BV_LSHR);
 	}
-    bool evaluateBvAshr(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateBvAshr(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_BV_ASHR);
 	}
-    bool evaluateBvUlt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateBvUlt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_BV_ULT);
 	}
-    bool evaluateBvUle(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateBvUle(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_BV_ULE);
 	}
-    bool evaluateBvUgt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateBvUgt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_BV_UGT);
 	}
-    bool evaluateBvUge(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateBvUge(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_BV_UGE);
 	}
-    bool evaluateBvSlt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateBvSlt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_BV_SLT);
 	}
-    bool evaluateBvSle(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateBvSle(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_BV_SLE);
 	}
-    bool evaluateBvSgt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateBvSgt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_BV_SGT);
 	}
-    bool evaluateBvSge(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateBvSge(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_BV_SGE);
 	}
-    bool evaluateBvConcat(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateBvConcat(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_BV_CONCAT);
+    }
+    bool Parser::evaluateBvToNat(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_BV_TO_NAT);
 	}
-    bool evaluateBvToNat(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateBvNatToBv(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_BV_NAT_TO_BV);
 	}
-    bool evaluateBvNatToBv(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateBvIntToBv(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_BV_TO_INT);
 	}
-    bool evaluateBvIntToBv(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateBvToInt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_BV_NAT_TO_BV);
 	}
-    bool evaluateBvToInt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateFpAbs(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("fp.abs");
+        result = expr;
+        return false;
 	}
-    bool evaluateFpAbs(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateFpNeg(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("fp.neg");
+        result = expr;
+        return false;
 	}
-    bool evaluateFpNeg(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateFpAdd(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("fp.add");
+        result = expr;
+        return false;
 	}
-    bool evaluateFpAdd(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateFpSub(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("fp.sub");
+        result = expr;
+        return false;
 	}
-    bool evaluateFpSub(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateFpMul(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("fp.mul");
+        result = expr;
+        return false;
 	}
-    bool evaluateFpMul(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateFpDiv(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("fp.div");
+        result = expr;
+        return false;
 	}
-    bool evaluateFpDiv(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateFpFma(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("fp.fma");
+        result = expr;
+        return false;
 	}
-    bool evaluateFpFma(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateFpSqrt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("fp.sqrt");
+        result = expr;
+        return false;
 	}
-    bool evaluateFpSqrt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateFpRem(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("fp.rem");
+        result = expr;
+        return false;
 	}
-    bool evaluateFpRem(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateFpRoundToIntegral(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("fp.roundToIntegral");
+        result = expr;
+        return false;
+	}
+    bool Parser::evaluateFpMin(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("fp.min");
+        result = expr;
+        return false;
+	}
+    bool Parser::evaluateFpMax(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("fp.max");
+        result = expr;
+        return false;
+	}
+    bool Parser::evaluateFpLe(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("fp.le");
+        result = expr;
+        return false;
+	}
+    bool Parser::evaluateFpLt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("fp.lt");
+        result = expr;
+        return false;
+	}
+    bool Parser::evaluateFpGe(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("fp.ge");
+        result = expr;
+        return false;
 	}
-    bool evaluateFpRoundToIntegral(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateFpGt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("fp.gt");
+        result = expr;
+        return false;
 	}
-    bool evaluateFpMin(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateFpEq(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("fp.eq");
+        result = expr;
+        return false;
 	}
-    bool evaluateFpMax(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateFpToUbv(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("fp.toUbv");
+        result = expr;
+        return false;
 	}
-    bool evaluateFpLe(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateFpToSbv(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("fp.toSbv");
+        result = expr;
+        return false;
 	}
-    bool evaluateFpLt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateFpToReal(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("fp.toReal");
+        result = expr;
+        return false;
+	}   
+    bool Parser::evaluateToFp(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("fp.toFp");
+        result = expr;
+        return false;
 	}
-    bool evaluateFpGe(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateFpIsNormal(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("fp.isNormal");
+        result = expr;
+        return false;
 	}
-    bool evaluateFpGt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateFpIsSubnormal(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("fp.isSubnormal");
+        result = expr;
+        return false;
 	}
-    bool evaluateFpEq(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateFpIsZero(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("fp.isZero");
+        result = expr;
+        return false;
 	}
-    bool evaluateFpToUbv(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateFpIsInf(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("fp.isInf");
+        result = expr;
+        return false;
 	}
-    bool evaluateFpToSbv(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateFpIsNan(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("fp.isNan");
+        result = expr;
+        return false;
 	}
-    bool evaluateFpToReal(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateFpIsNeg(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("fp.isNeg");
+        result = expr;
+        return false;
 	}
-    bool evaluateToFp(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateFpIsPos(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("fp.isPos");
+        result = expr;
+        return false;
 	}
-    bool evaluateFpIsNormal(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateSelect(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("select");
+        result = expr;
+        return false;
 	}
-    bool evaluateFpIsSubnormal(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateStore(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("store");
+        result = expr;
+        return false;
 	}
-    bool evaluateFpIsZero(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateStrLen(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_STR_LEN);
+    }
+    bool Parser::evaluateStrConcat(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_STR_CONCAT);
+    }
+    bool Parser::evaluateStrSubstr(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_STR_SUBSTR);
 	}
-    bool evaluateFpIsInf(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateStrPrefixof(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_STR_PREFIXOF);
 	}
-    bool evaluateFpIsNan(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateStrSuffixof(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_STR_SUFFIXOF);
 	}
-    bool evaluateFpIsNeg(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateStrIndexof(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_STR_INDEXOF);
 	}
-    bool evaluateFpIsPos(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateStrCharat(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_STR_CHARAT);
 	}
-    bool evaluateSelect(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateStrUpdate(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_STR_UPDATE);
+	}
+    bool Parser::evaluateStrReplace(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_STR_REPLACE);
 	}
-    bool evaluateStore(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateStrLen(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateStrConcat(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateStrSubstr(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateStrPrefixof(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateStrSuffixof(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateStrIndexof(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateStrCharat(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateStrUpdate(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateStrReplace(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateStrReplaceAll(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateStrToLower(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateStrToUpper(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateStrRev(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateStrSplit(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateStrLt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateStrLe(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateStrGt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateStrGe(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateStrInReg(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateStrContains(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateStrIsDigit(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateStrFromInt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateStrToInt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateStrToReg(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateStrToCode(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateStrFromCode(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateRegNone(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateRegAll(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateRegAllChar(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateRegConcat(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateRegUnion(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateRegInter(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateRegDiff(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateRegStar(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateRegPlus(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateRegOpt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateRegRange(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateRegRepeat(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateRegComplement(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-	}
-    bool evaluateApplyFun(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateStrReplaceAll(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_STR_REPLACE_ALL);
+	}
+    bool Parser::evaluateStrToLower(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_STR_TO_LOWER);
+	}
+    bool Parser::evaluateStrToUpper(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_STR_TO_UPPER);
+	}
+    bool Parser::evaluateStrRev(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_STR_REV);
+	}
+    bool Parser::evaluateStrSplit(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("str.split");
+        result = expr;
+        return false;
+	}
+    bool Parser::evaluateStrLt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_STR_LT);
+	}   
+    bool Parser::evaluateStrLe(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_STR_LE);
+	}
+    bool Parser::evaluateStrGt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_STR_GT);
+	}
+    bool Parser::evaluateStrGe(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_STR_GE);
+	}
+    bool Parser::evaluateStrInReg(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_STR_IN_REG);
+	}
+    bool Parser::evaluateStrContains(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_STR_CONTAINS);
+	}
+    bool Parser::evaluateStrIsDigit(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_STR_IS_DIGIT);
+	}
+    bool Parser::evaluateStrFromInt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_STR_FROM_INT);
+	}
+    bool Parser::evaluateStrToInt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_STR_TO_INT);
+	}
+    bool Parser::evaluateStrToReg(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_STR_TO_REG);
+	}
+    bool Parser::evaluateStrToCode(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_STR_TO_CODE);
+	}
+    bool Parser::evaluateStrFromCode(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_STR_FROM_CODE);
+	}
+    bool Parser::evaluateRegConcat(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("reg.concat");
+        result = expr;
+        return false;
+    }
+    bool Parser::evaluateRegUnion(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("reg.union");
+        result = expr;
+        return false;
+	}
+    bool Parser::evaluateRegInter(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("reg.inter");
+        result = expr;
+        return false;
+	}
+    bool Parser::evaluateRegDiff(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("reg.diff");
+        result = expr;
+        return false;
+	}
+    bool Parser::evaluateRegStar(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("reg.star");
+        result = expr;
+        return false;
+	}
+    bool Parser::evaluateRegPlus(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("reg.plus");
+        result = expr;
+        return false;
+	}
+    bool Parser::evaluateRegOpt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("reg.opt");
+        result = expr;
+        return false;
+	}
+    bool Parser::evaluateRegRange(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("reg.range");
+        result = expr;
+        return false;
+	}
+    bool Parser::evaluateRegRepeat(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("reg.repeat");
+        result = expr;
+        return false;
+	}
+    bool Parser::evaluateRegComplement(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("reg.complement");
+        result = expr;
+        return false;
+	}
+    bool Parser::evaluateApplyFun(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        not_implemented_warning("apply");
+        result = expr;
+        return false;
 	}
 }
 

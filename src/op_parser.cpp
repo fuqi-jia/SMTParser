@@ -2115,6 +2115,18 @@ namespace SMTLIBParser{
         return mkOper(l->getSort(), NODE_KIND::NT_BV_UREM, l, r);
     }
     /*
+    (bvumod Bv Bv), return Bv
+    */
+    std::shared_ptr<DAGNode> Parser::mkBvUmod(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
+        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
+        if(!l->getSort()->isEqTo(r->getSort())) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(l->isCBV() && r->isCBV()){
+            return mkConstBv(bvUmod(l->toString(), r->toString()), l->getSort()->getBitWidth());
+        }
+
+        return mkOper(l->getSort(), NODE_KIND::NT_BV_UMOD, l, r);
+    }
+    /*
     (bvsdiv Bv Bv), return Bv
     */
     std::shared_ptr<DAGNode> Parser::mkBvSdiv(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
@@ -2236,6 +2248,10 @@ namespace SMTLIBParser{
             if(!params[i]->getSort()->isBv()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
             width += params[i]->getSort()->getBitWidth();
             new_params.emplace_back(params[i]);
+        }
+
+        if(new_params.size() == 2){
+            return mkConstBv(bvConcat(new_params[0]->toString(), new_params[1]->toString()), width);
         }
 
         std::shared_ptr<Sort> new_sort = mkBVSort(width);
@@ -2893,6 +2909,11 @@ namespace SMTLIBParser{
             new_params.emplace_back(params[i]);
         }
 
+        if(new_params.size() == 0) return mkConstStr("");
+        if(new_params.size() == 1) return new_params[0];
+        if(new_params.size() == 2 && new_params[0]->isCStr() && new_params[1]->isCStr()){
+            return mkConstStr(new_params[0]->toString() +new_params[1]->toString());
+        }
         return mkOper(STR_SORT, NODE_KIND::NT_STR_CONCAT, new_params);
     }
     /*
