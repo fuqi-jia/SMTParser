@@ -760,6 +760,14 @@ namespace SMTLIBParser{
                     return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
                 }
             }
+            if(new_params.size() == 2){
+                if(sort->isInt() && new_params[0]->isCInt() && new_params[1]->isCInt()){
+                    return mkConstInt(new_params[0]->toInt() + new_params[1]->toInt());
+                }
+                else if(sort->isReal() && new_params[0]->isCReal() && new_params[1]->isCReal()){
+                    return mkConstReal(new_params[0]->toReal() + new_params[1]->toReal());
+                }
+            }
             return mkOper(sort, NODE_KIND::NT_ADD, new_params);
         }
     }
@@ -822,6 +830,14 @@ namespace SMTLIBParser{
                     return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
                 }
             }
+            if(new_params.size() == 2){
+                if(sort->isInt() && new_params[0]->isCInt() && new_params[1]->isCInt()){
+                    return mkConstInt(new_params[0]->toInt() * new_params[1]->toInt());
+                }
+                else if(sort->isReal() && new_params[0]->isCReal() && new_params[1]->isCReal()){
+                    return mkConstReal(new_params[0]->toReal() * new_params[1]->toReal());
+                }
+            }
             return mkOper(sort, NODE_KIND::NT_MUL, new_params);
         }
     }
@@ -853,6 +869,11 @@ namespace SMTLIBParser{
             }
             else{
                 return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            }
+        }
+        if(new_params.size() == 2){
+            if(sort->isInt() && new_params[0]->isCInt() && new_params[1]->isCInt()){
+                return mkConstInt(new_params[0]->toInt() & new_params[1]->toInt());
             }
         }
 
@@ -901,6 +922,14 @@ namespace SMTLIBParser{
             }
             else{
                 return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            }
+        }
+        if(new_params.size() == 2){
+            if(sort->isInt() && new_params[0]->isCInt() && new_params[1]->isCInt()){
+                return mkConstInt(new_params[0]->toInt() - new_params[1]->toInt());
+            }
+            else if(sort->isReal() && new_params[0]->isCReal() && new_params[1]->isCReal()){
+                return mkConstReal(new_params[0]->toReal() - new_params[1]->toReal());
             }
         }
         return mkOper(sort, NODE_KIND::NT_SUB, new_params);
