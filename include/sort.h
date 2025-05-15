@@ -181,5 +181,8 @@ namespace SMTLIBParser{
     std::shared_ptr<Sort> mkBVSort(size_t width);
     std::shared_ptr<Sort> mkFPSort(size_t exp, size_t sig);
     std::shared_ptr<Sort> mkArraySort(std::shared_ptr<Sort> index, std::shared_ptr<Sort> elem);
+
+    // smart pointer
+    typedef std::shared_ptr<Sort> SortPtr;
 }
 #endif

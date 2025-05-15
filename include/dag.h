@@ -591,5 +591,8 @@ namespace SMTLIBParser{
     void dumpSMTLIB2(const std::vector<std::shared_ptr<DAGNode>>& assertions, std::ofstream& ofs);
     void dumpFuncDef(const std::shared_ptr<DAGNode>& node, std::ofstream& ofs);
     void dumpFuncDec(const std::shared_ptr<DAGNode>& node, std::ofstream& ofs);
+
+    // smart pointer
+    typedef std::shared_ptr<DAGNode> NodePtr;
 }
 #endif

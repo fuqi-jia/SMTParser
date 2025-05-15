@@ -32,8 +32,11 @@
 #include "util.h"
 #include "options.h"
 #include "objective.h"
+#include "model.h"
 
 #include <boost/unordered_set.hpp>
+
+
 
 namespace SMTLIBParser{
     enum class SCAN_MODE {
@@ -565,5 +568,11 @@ namespace SMTLIBParser{
 
 
     };
+
+
+    // smart pointer
+    typedef std::shared_ptr<Parser> ParserPtr;
+    ParserPtr newParser();
+    ParserPtr newParser(const std::string& filename);
 }
 #endif

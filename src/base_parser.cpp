@@ -2362,4 +2362,12 @@ namespace SMTLIBParser{
 	void Parser::warn_cmd_nsup(const std::string nm, const size_t ln) const {
 		std::cout << "warning: \"" << nm << "\" command is safely ignored in line " << ln << "." << std::endl;
 	}
+
+	ParserPtr newParser(){
+		return std::make_shared<Parser>();
+	}
+
+	ParserPtr newParser(const std::string& filename){
+		return std::make_shared<Parser>(filename);
+	}
 }

@@ -232,6 +232,11 @@ namespace SMTLIBParser{
     };
 
     OPT_KIND getOptKind(const std::string& symbol);
+
+    // smart pointers
+    typedef std::shared_ptr<MetaObjective> MetaObjectivePtr;
+    typedef std::shared_ptr<SingleObjective> SingleObjectivePtr;
+    typedef std::shared_ptr<Objective> ObjectivePtr;
 }
 
 #endif // _OBJECTIVE_H

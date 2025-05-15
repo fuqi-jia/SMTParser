@@ -17,7 +17,9 @@ A high-performance C++ library for parsing, manipulating, and processing SMT-LIB
 - **DAG-Based Formula Representation** - Efficient memory usage and manipulation through shared subexpressions
 - **Programmatic Expression Builder** - Comprehensive API for constructing and transforming expressions
 - **Optimization Modulo Theories (OMT)** - Extended functionality for handling optimization objectives
-- **Thread-Safe Implementation** - Safe for use in multi-threaded applications
+<!-- - **Model Generation and Manipulation** - Create and manipulate models representing variable assignments
+- **Smart Pointer Integration** - All major components use std::shared_ptr for safe memory management
+- **Thread-Safe Implementation** - Safe for use in multi-threaded applications -->
 
 ## System Requirements
 
@@ -94,14 +96,49 @@ int main() {
         return 1;
     }
 
-    // Retrieve the parsed formula
+    // Retrieve the parsed assertions
     auto assertions = parser.getAssertions();
 
-    // Output the formula representation
+    // Output the assertions
     for(auto constraint: assertions){
-        std::cout<<dumpSMTLIB2(constraint)<<std::endl;
+        std::cout << dumpSMTLIB2(constraint) << std::endl;
     }
 
+    return 0;
+}
+```
+
+### Using Smart Pointers and Factory Methods
+
+```cpp
+#include "parser.h"
+#include "model.h"
+#include <iostream>
+
+int main() {
+    // Create a parser using factory method
+    auto parser = SMTLIBParser::newParser();
+    
+    // Alternative: create a parser with file in one step
+    auto fileParser = SMTLIBParser::newParser("formula.smt2");
+    
+    // Create a model
+    auto model = SMTLIBParser::newModel();
+    
+    // Create and manipulate variables
+    auto x = parser->mkVarInt("x");
+    auto y = parser->mkVarInt("y");
+    
+    // Add assignments to model
+    model->add(x, parser->mkConstInt(10));
+    model->add(y, parser->mkConstInt(20));
+    
+    // Evaluate expressions using the model
+    auto expr = parser->mkAdd({x, y});
+    auto result = model->evaluate(expr);
+    
+    std::cout << "x + y = " << result->toString() << std::endl;
+    
     return 0;
 }
 ```
@@ -143,14 +180,25 @@ g++ -std=c++17 -o application main.cpp -lsmtlibparser -lgmp
 
 ## API Reference
 
-### Core Components
+### Core Components and Smart Pointer Types
 
-| Component | Description |
-|-----------|-------------|
-| `Parser` | Main class for parsing SMT-LIB2 files and managing expressions |
-| `DAGNode` | Represents expressions as nodes in a directed acyclic graph |
-| `Sort` | Encapsulates SMT-LIB2 type system |
-| `Objective` | Represents optimization objectives for OMT problems |
+| Component | Smart Pointer Type | Description |
+|-----------|-------------------|-------------|
+| `Parser` | `ParserPtr` | Main class for parsing SMT-LIB2 files and managing expressions |
+| `DAGNode` | `NodePtr` | Represents expressions as nodes in a directed acyclic graph |
+| `Sort` | `SortPtr` | Encapsulates SMT-LIB2 type system |
+| `Objective` | `ObjectivePtr` | Represents optimization objectives for OMT problems |
+| `SingleObjective` | `SingleObjectivePtr` | Represents a single optimization objective |
+| `MetaObjective` | `MetaObjectivePtr` | Represents a meta-optimization objective |
+| `Model` | `ModelPtr` | Represents a model with variable assignments |
+
+### Factory Methods
+
+| Method | Description |
+|--------|-------------|
+| `newParser()` | Creates a new parser instance |
+| `newParser(const std::string& filename)` | Creates a new parser and parses the specified file |
+| `newModel()` | Creates a new model instance |
 
 ### Primary API Functions
 
@@ -166,6 +214,30 @@ g++ -std=c++17 -o application main.cpp -lsmtlibparser -lgmp
 | Regular Expression Operations | `mkStrToReg`, `mkRegUnion`, `mkRegStar`, `...` |
 | Array Operations | `mkSelect`, `mkStore` |
 | Floating Point Operations | `mkFpAdd`, `mkFpMul`, `mkFpDiv`, `mkFpEq`, `...` |
+| Model Operations | `evaluate`, `add`, `get`, `...` |
+
+## Model Usage
+
+The Model class provides functionality to:
+
+1. **Create variable assignments** - Assign values to variables
+2. **Evaluate expressions** - Compute expression values based on variable assignments
+3. **Serialize and deserialize** - Save and load models
+4. **Validate against constraints** - Check if a model satisfies constraints
+
+Example model usage:
+
+```cpp
+// Create and populate a model
+auto model = SMTLIBParser::newModel();
+model->add(x, parser->mkConstInt(5));
+
+// Check if an expression is satisfied by the model
+bool isSatisfied = model->evaluate(constraint)->isTrue();
+
+// Get the value of a variable in the model
+auto x_value = model->evaluate(x);
+```
 
 ## Supported Theories
 

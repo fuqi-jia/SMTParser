@@ -52,14 +52,14 @@ namespace SMTLIBParser{
         model_values[model_name_index[name]] = value;
     }
 
-    std::shared_ptr<DAGNode> Model::getValue(const std::shared_ptr<DAGNode> &node){
+    std::shared_ptr<DAGNode> Model::get(const std::shared_ptr<DAGNode> &node){
         if(model_name_index.find(node->getName()) != model_name_index.end()){
             return model_values[model_name_index[node->getName()]];
         }
         return nullptr;
     }
 
-    std::shared_ptr<DAGNode> Model::getValue(const std::string &name){
+    std::shared_ptr<DAGNode> Model::get(const std::string &name){
         if(model_name_index.find(name) != model_name_index.end()){
             return model_values[model_name_index[name]];
         }
@@ -90,5 +90,9 @@ namespace SMTLIBParser{
             ss << "(define-fun " << model_vars[i]->getName() << " () " << model_vars[i]->getSort()->toString() << " " << dumpSMTLIB2(model_values[i]) << ")" << std::endl;
         }
         return ss.str();
+    }
+
+    ModelPtr newModel(){
+        return std::make_shared<Model>();
     }
 }

@@ -38,8 +38,8 @@ namespace SMTLIBParser{
             void add(const std::shared_ptr<DAGNode> &node, const std::shared_ptr<DAGNode> &value);
             void add(const std::string &name, const std::shared_ptr<DAGNode> &value);
             void addVar(const std::shared_ptr<DAGNode> &node);
-            std::shared_ptr<DAGNode> getValue(const std::shared_ptr<DAGNode> &node);
-            std::shared_ptr<DAGNode> getValue(const std::string &name);
+            std::shared_ptr<DAGNode> get(const std::shared_ptr<DAGNode> &node);
+            std::shared_ptr<DAGNode> get(const std::string &name);
             bool isFull() const;
             
             std::string toString();
@@ -48,6 +48,10 @@ namespace SMTLIBParser{
             std::vector<std::shared_ptr<DAGNode>> model_vars;
             std::vector<std::shared_ptr<DAGNode>> model_values;
     };
+
+    // smart pointer
+    typedef std::shared_ptr<Model> ModelPtr;
+    ModelPtr newModel();
 }
 
 #endif
