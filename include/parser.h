@@ -461,7 +461,6 @@ namespace SMTLIBParser{
         bool 	                 parseSmtlib2File(const std::string filename);
         // // // parse model file
         // void 	            parseModel(std::string filename, boost::unordered_map<std::string, vType>& recs);
-        std::string             printModel(boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> &model);
 
         std::shared_ptr<Sort> mkSort(); // mk unique sort, TODO!!!! for example, bv, fp, and array
 

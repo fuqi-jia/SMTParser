@@ -44,6 +44,7 @@ set(SOURCES
     src/objective.cpp
     src/kind.cpp
     src/sort.cpp
+    src/model.cpp
 )
 
 # define public headers
@@ -55,6 +56,7 @@ set(PUBLIC_HEADERS
     include/kind.h
     include/sort.h
     include/options.h
+    include/model.h
 )
 
 # create include directory
