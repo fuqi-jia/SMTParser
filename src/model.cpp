@@ -89,7 +89,7 @@ namespace SMTLIBParser{
             return true;
         }
         for(size_t i = 0; i < model_vars.size(); i++){
-            if(model_values[i]->isUnknown()){
+            if(!model_values[i]->isUnknown()){
                 return false;
             }
         }
