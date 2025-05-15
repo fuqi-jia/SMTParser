@@ -1219,10 +1219,6 @@ namespace SMTLIBParser{
 			assert(params.size() == 1);
 			return mkAtan(params[0]);
 		}
-		else if (s == "atan2" || s == "arctan2") {
-			assert(params.size() == 2);
-			return mkAtan2(params[0], params[1]);
-		}
 		else if (s == "sinh") {
 			assert(params.size() == 1);
 			return mkSinh(params[0]);
@@ -1258,6 +1254,10 @@ namespace SMTLIBParser{
 		else if (s == "acoth" || s == "arccoth") {
 			assert(params.size() == 1);
 			return mkAcoth(params[0]);
+		}
+		else if (s == "atan2" || s == "arctan2") {
+			assert(params.size() == 2);
+			return mkAtan2(params[0], params[1]);
 		}
 		else if (s == "<=") {
 			assert(params.size() == 2);
