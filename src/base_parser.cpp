@@ -1178,6 +1178,10 @@ namespace SMTLIBParser{
 			assert(params.size() == 1);
 			return mkLg(params[0]);
 		}
+		else if (s == "lb"){
+			assert(params.size() == 1);
+			return mkLb(params[0]);
+		}
 		else if (s == "log") {
 			if(params.size() == 1){
 				// ln(param)
