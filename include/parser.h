@@ -507,11 +507,12 @@ namespace SMTLIBParser{
         // negate an atom
         std::shared_ptr<DAGNode>	        negateAtom(std::shared_ptr<DAGNode> atom);
 
-        // evaluate
+        // evaluate: return true if the evaluation has changed the expression
         std::shared_ptr<DAGNode>            evaluate(std::shared_ptr<DAGNode> expr, const std::shared_ptr<Model> &model);
-        std::shared_ptr<DAGNode>            evaluateXor(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model);
-        std::shared_ptr<DAGNode>            evaluateEq(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model);
-        std::shared_ptr<DAGNode>            evaluateDistinct(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model);
+        bool                                evaluate(std::shared_ptr<DAGNode> expr, const std::shared_ptr<Model> &model, std::shared_ptr<DAGNode> &result);
+        bool                                evaluateXor(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
+        bool                                evaluateEq(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
+        bool                                evaluateDistinct(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
 
     private:
         // parse smt-lib2 file
