@@ -80,7 +80,7 @@ namespace SMTLIBParser{
                 return "(/ (- " + num + ") " + den + ")";
             }
             else{
-                return "(/ " + num + " " + den + ")";
+            return "(/ " + num + " " + den + ")";
             }
         }
         else if(sort->isInt()){
@@ -142,15 +142,15 @@ namespace SMTLIBParser{
                 switch (kind) {
                 // Basic type and constant processing
                 case NODE_KIND::NT_UNKNOWN:
-                    std::cerr << "遇到未知类型节点" << std::endl;
+                    std::cerr << "Unknown kind: " << kindToString(kind) << std::endl;
                     assert(false);
                     break;
                 case NODE_KIND::NT_ERROR:
-                    std::cerr << "遇到错误类型节点" << std::endl;
+                    std::cerr << "Encountered error kind node" << std::endl;
                     assert(false);
                     break;
                 case NODE_KIND::NT_NULL:
-                    std::cerr << "遇到空类型节点" << std::endl;
+                    std::cerr << "Encountered null kind node" << std::endl;
                     assert(false);
                     res = "NULL";
                     break;
@@ -462,7 +462,7 @@ namespace SMTLIBParser{
                     break;
                     
                 default:
-                    std::cerr << "未知操作符类型：" << static_cast<int>(kind) << std::endl;
+                    std::cerr << "Unknown kind: " << kindToString(kind) << std::endl;
                     res = "UNKNOWN_KIND";
                 }
                 

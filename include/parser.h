@@ -523,6 +523,9 @@ namespace SMTLIBParser{
         KEYWORD                                 parseKeyword();
         std::shared_ptr<Sort>	                parseSort();
         std::shared_ptr<DAGNode>		        parseExpr();
+        std::shared_ptr<DAGNode>		        parseConstFunc(const std::string& s);
+        std::shared_ptr<DAGNode>		        parseParamFunc(const std::string& f, const std::vector<std::shared_ptr<DAGNode>> &args, const std::vector<std::shared_ptr<DAGNode>> &params);
+        std::shared_ptr<DAGNode>		        parseOper(const std::string& s, const std::vector<std::shared_ptr<DAGNode>> &params);
         std::vector<std::shared_ptr<DAGNode>>	parseParams();
         std::shared_ptr<DAGNode>		        parseLet();
         std::string                             parseGroup();
