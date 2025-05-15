@@ -2114,8 +2114,13 @@ namespace SMTLIBParser{
 		if( visited.find(expr) != visited.end()){
 			return visited[expr];
 		}
-		if(expr->isVar() && params.find(expr->getName()) != params.end()){
-			return params[expr->getName()];
+		if(expr->isVar()){
+			if(params.find(expr->getName()) != params.end()){
+				return params[expr->getName()];
+			}
+			else{
+				return expr;
+			}
 		}
 		else if(expr->isConst() || 
 				expr->isFuncParam()){
