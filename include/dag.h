@@ -155,6 +155,9 @@ namespace SMTLIBParser{
         // check error
         bool isErr() 				const { return (kind == NODE_KIND::NT_ERROR); };
 
+        // check unknown
+        bool isUnknown() 			const { return kind == NODE_KIND::NT_UNKNOWN; };
+
         // check const
         bool isCBool() 				const { return (kind == NODE_KIND::NT_CONST_TRUE || kind == NODE_KIND::NT_CONST_FALSE) && sort->isBool(); }; 
         bool isTrue() 				const { return kind == NODE_KIND::NT_CONST_TRUE && sort->isBool(); };
@@ -567,7 +570,10 @@ namespace SMTLIBParser{
         }
     };
 
-    inline const std::shared_ptr<DAGNode> NULL_NODE = std::make_shared<DAGNode>(NODE_KIND::NT_NULL);
+    inline const std::shared_ptr<DAGNode> NULL_NODE = std::make_shared<DAGNode>(NULL_SORT, NODE_KIND::NT_NULL, "null");
+    inline const std::shared_ptr<DAGNode> UNKNOWN_NODE = std::make_shared<DAGNode>(UNKNOWN_SORT, NODE_KIND::NT_UNKNOWN, "unknown");
+    inline const std::shared_ptr<DAGNode> TRUE_NODE = std::make_shared<DAGNode>(BOOL_SORT, NODE_KIND::NT_CONST_TRUE, "true");
+    inline const std::shared_ptr<DAGNode> FALSE_NODE = std::make_shared<DAGNode>(BOOL_SORT, NODE_KIND::NT_CONST_FALSE, "false");
 
 
     struct NodeHash {
@@ -594,5 +600,6 @@ namespace SMTLIBParser{
 
     // smart pointer
     typedef std::shared_ptr<DAGNode> NodePtr;
+
 }
 #endif

@@ -25,15 +25,16 @@
 * DEALINGS IN THE SOFTWARE.
 */
 
-#include "../include/parser.h"
+#include "parser.h"
 #include <queue>
 #include <stack>
 
 namespace SMTLIBParser{
 
     // mk operations
-    std::shared_ptr<DAGNode> Parser::mkTrue() { return true_node; }
-    std::shared_ptr<DAGNode> Parser::mkFalse() { return false_node; }
+    std::shared_ptr<DAGNode> Parser::mkTrue() { return TRUE_NODE; }
+    std::shared_ptr<DAGNode> Parser::mkFalse() { return FALSE_NODE; }
+    std::shared_ptr<DAGNode> Parser::mkUnknown() { return UNKNOWN_NODE; }
     // mk oper 
     bool isCommutative(const NODE_KIND t){
         switch(t){
@@ -1071,6 +1072,89 @@ namespace SMTLIBParser{
             }
         }
         return mkOper(REAL_SORT, NODE_KIND::NT_LN, param);
+    }
+    /*
+    (lb Real), return Real
+    */
+    std::shared_ptr<DAGNode> Parser::mkLb(std::shared_ptr<DAGNode> param){
+        if(param->isErr()) return param;
+        if(param->isCInt()){
+            if(param->toInt() <= 0){
+                return mkErr(ERROR_TYPE::ERR_NEG_PARAM);
+            }
+            else if(param->toInt() == 1){
+                return mkConstReal(0.0);
+            }
+            else if(param->toInt() == 2){
+                return mkConstReal(1.0);
+            }
+            else if(param->toInt() == 4){
+                return mkConstReal(2.0);
+            }
+            else if(param->toInt() == 8){
+                return mkConstReal(3.0);
+            }
+            else if(param->toInt() == 16){
+                return mkConstReal(4.0);
+            }
+            else if(param->toInt() == 32){
+                return mkConstReal(5.0);
+            }
+            else if(param->toInt() == 64){
+                return mkConstReal(6.0);
+            }
+            else if(param->toInt() == 128){
+                return mkConstReal(7.0);
+            }
+            else if(param->toInt() == 256){
+                return mkConstReal(8.0);
+            }
+            else if(param->toInt() == 512){
+                return mkConstReal(9.0);
+            }
+            else if(param->toInt() == 1024){
+                return mkConstReal(10.0);
+            }
+        }
+        else if(param->isCReal()){
+            if(param->toReal() <= 0.0){
+                return mkErr(ERROR_TYPE::ERR_NEG_PARAM);
+            }
+            else if(param->toReal() == 1.0){
+                return mkConstReal(0.0);
+            }
+            else if(param->toReal() == 2.0){
+                return mkConstReal(1.0);
+            }
+            else if(param->toReal() == 4.0){
+                return mkConstReal(2.0);
+            }
+            else if(param->toReal() == 8.0){
+                return mkConstReal(3.0);
+            }
+            else if(param->toReal() == 16.0){
+                return mkConstReal(4.0);
+            }
+            else if(param->toReal() == 32.0){
+                return mkConstReal(5.0);
+            }
+            else if(param->toReal() == 64.0){
+                return mkConstReal(6.0);
+            }
+            else if(param->toReal() == 128.0){
+                return mkConstReal(7.0);
+            }
+            else if(param->toReal() == 256.0){
+                return mkConstReal(8.0);
+            }
+            else if(param->toReal() == 512.0){
+                return mkConstReal(9.0);
+            }
+            else if(param->toReal() == 1024.0){
+                return mkConstReal(10.0);
+            }
+        }
+        return mkOper(REAL_SORT, NODE_KIND::NT_LB, param);
     }
     /*
     (lg Real), return Real

@@ -25,7 +25,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "../include/parser.h"
+#include "parser.h"
 
 namespace SMTLIBParser{
     

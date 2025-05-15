@@ -25,7 +25,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "../include/objective.h"
+#include "objective.h"
 
 namespace SMTLIBParser{
 

@@ -25,7 +25,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "../include/dag.h"
+#include "dag.h"
 #include <stack>
 
 namespace SMTLIBParser{

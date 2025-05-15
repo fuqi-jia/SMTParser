@@ -123,12 +123,6 @@ namespace SMTLIBParser{
 
         // FOL binding
 
-        // error node
-        std::shared_ptr<DAGNode>	                    err_node;
-        // false node
-        std::shared_ptr<DAGNode>			            false_node;
-        // true node
-        std::shared_ptr<DAGNode>			            true_node;
         // node list
         std::vector<std::shared_ptr<DAGNode>>           node_list;
         // variable name list
@@ -196,6 +190,7 @@ namespace SMTLIBParser{
         // mk true/false
         std::shared_ptr<DAGNode>	mkTrue(); // true
         std::shared_ptr<DAGNode>	mkFalse(); // false
+        std::shared_ptr<DAGNode>    mkUnknown(); // unknown
         // CORE OPERATORS
         std::shared_ptr<DAGNode> mkEq(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l = r
         std::shared_ptr<DAGNode> mkEq(const std::vector<std::shared_ptr<DAGNode>>& params); // l = r = ... 
@@ -465,16 +460,15 @@ namespace SMTLIBParser{
         // // // parse model file
         // void 	            parseModel(std::string filename, boost::unordered_map<std::string, vType>& recs);
 
-        std::shared_ptr<Sort> mkSort(); // mk unique sort, TODO!!!! for example, bv, fp, and array
+        std::shared_ptr<Sort>    mkSort(); // mk unique sort, TODO!!!! for example, bv, fp, and array
 
         // aux functions
         NODE_KIND getAddOp(std::shared_ptr<Sort> sort); // mk unique add 
-        std::shared_ptr<DAGNode> getZero(std::shared_ptr<Sort> sort); // mk unique zero
+        std::shared_ptr<DAGNode>  getZero(std::shared_ptr<Sort> sort); // mk unique zero
 
         // parse optimization
         // single_opt = (maximize <expr> [:comp <symbol>] [:epsilon <symbol>] [:M <symbol>] [:id <symbol>]) 
         //            | (minimize <expr> [:comp <symbol>] [:epsilon <symbol>] [:M <symbol>] [:id <symbol>])
-
         void                             parseAssertSoft();
         // (maximize <expr> [:comp <symbol>] [:epsilon <symbol>] [:M <symbol>] [:id <symbol>])
         std::shared_ptr<Objective>       parseMaximize();
@@ -506,11 +500,18 @@ namespace SMTLIBParser{
         // additional functions
         std::shared_ptr<DAGNode>            substitute(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::string, std::shared_ptr<DAGNode>> &params);
         std::shared_ptr<DAGNode>            substitute(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::string, std::shared_ptr<DAGNode>> &params, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> & visited);
+        
         // apply function
         std::shared_ptr<DAGNode>	        applyFun(std::shared_ptr<DAGNode> fun, const std::vector<std::shared_ptr<DAGNode>> & params);
         std::shared_ptr<DAGNode>	        applyFunPostOrder(std::shared_ptr<DAGNode> node, boost::unordered_map<std::string, std::shared_ptr<DAGNode>> &params);
         // negate an atom
         std::shared_ptr<DAGNode>	        negateAtom(std::shared_ptr<DAGNode> atom);
+
+        // evaluate
+        std::shared_ptr<DAGNode>            evaluate(std::shared_ptr<DAGNode> expr, const std::shared_ptr<Model> &model);
+        std::shared_ptr<DAGNode>            evaluateXor(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model);
+        std::shared_ptr<DAGNode>            evaluateEq(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model);
+        std::shared_ptr<DAGNode>            evaluateDistinct(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model);
 
     private:
         // parse smt-lib2 file

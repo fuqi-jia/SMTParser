@@ -25,7 +25,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "../include/util.h"
+#include "util.h"
 #include <vector>
 #include <sstream>
 #include <cmath>
