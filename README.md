@@ -156,16 +156,16 @@ g++ -std=c++17 -o application main.cpp -lsmtlibparser -lgmp
 
 | Category | Function Examples |
 |----------|------------------|
-| Variable Creation | `mkVar`, `mkVarInt`, `mkVarReal`, `mkVarBool`, ... |
-| Constant Creation | `mkConst`, `mkConstInt`, `mkConstReal`, `mkTrue`, `mkFalse`, ... |
-| Expression Building | `mkOper`, `mkEq`, `mkDistinct`, `mkNot`, `mkAnd`, `mkOr`, ... |
-| Arithmetic Operations | `mkAdd`, `mkSub`, `mkMul`, `mkDiv`, `mkPow`, ... |
-| Comparison Operations | `mkLt`, `mkLe`, `mkGt`, `mkGe`, ... |
-| Bitvector Operations | `mkBvAnd`, `mkBvOr`, `mkBvXor`, `mkBvAdd`, `mkBvShl`, ... |
-| String Operations | `mkStrLen`, `mkStrConcat`, `mkStrSubstr`, `mkStrIndexof`, ... |
-| Regular Expression Operations | `mkStrToReg`, `mkRegUnion`, `mkRegStar`, ... |
-| Array Operations | `mkSelect`, `mkStore`, ... |
-| Floating Point Operations | `mkFpAdd`, `mkFpMul`, `mkFpDiv`, `mkFpEq`, ... |
+| Variable Creation | `mkVar`, `mkVarInt`, `mkVarReal`, `mkVarBool`, `...` |
+| Constant Creation | `mkConst`, `mkConstInt`, `mkConstReal`, `mkTrue`, `mkFalse`, `...` |
+| Expression Building | `mkOper`, `mkEq`, `mkDistinct`, `mkNot`, `mkAnd`, `mkOr`, `...` |
+| Arithmetic Operations | `mkAdd`, `mkSub`, `mkMul`, `mkDiv`, `mkPow`, `...` |
+| Comparison Operations | `mkLt`, `mkLe`, `mkGt`, `mkGe`, `...` |
+| Bitvector Operations | `mkBvAnd`, `mkBvOr`, `mkBvXor`, `mkBvAdd`, `mkBvShl`, `...` |
+| String Operations | `mkStrLen`, `mkStrConcat`, `mkStrSubstr`, `mkStrIndexof`, `...` |
+| Regular Expression Operations | `mkStrToReg`, `mkRegUnion`, `mkRegStar`, `...` |
+| Array Operations | `mkSelect`, `mkStore`, `...` |
+| Floating Point Operations | `mkFpAdd`, `mkFpMul`, `mkFpDiv`, `mkFpEq`, `...` |
 
 ## Supported Theories
 
