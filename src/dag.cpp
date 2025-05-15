@@ -698,8 +698,10 @@ namespace SMTLIBParser{
         case NODE_KIND::NT_ASECH:
         case NODE_KIND::NT_ACSCH:
         case NODE_KIND::NT_ACOTH:
-        case NODE_KIND::NT_ATAN2:
             dumpSingleOp(kind, node->getChild(0), visited, ofs);
+            break;
+        case NODE_KIND::NT_ATAN2:
+            dumpDoubleOp(kind, node->getChild(0), node->getChild(1), visited, ofs);
             break;
         case NODE_KIND::NT_LE:
         case NODE_KIND::NT_LT:
