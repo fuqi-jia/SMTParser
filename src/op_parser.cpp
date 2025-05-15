@@ -372,11 +372,20 @@ namespace SMTLIBParser{
     std::shared_ptr<DAGNode> Parser::mkConstBool(const std::string &v){
         return mkConst(BOOL_SORT, v);
     }
+    std::shared_ptr<DAGNode> Parser::mkConstBool(const bool &v){
+        return mkConst(BOOL_SORT, v ? "true" : "false");
+    }
+    std::shared_ptr<DAGNode> Parser::mkConstBool(const int& v){
+        return mkConst(BOOL_SORT, v == 0 ? "false" : "true");
+    }
     std::shared_ptr<DAGNode> Parser::mkConstInt(const Integer &v){
         return mkConst(INTOREAL_SORT, toString(v));
     }
     std::shared_ptr<DAGNode> Parser::mkConstInt(const std::string &v){
         return mkConst(INTOREAL_SORT, v);
+    }
+    std::shared_ptr<DAGNode> Parser::mkConstInt(const int& v){
+        return mkConst(INTOREAL_SORT, std::to_string(v));
     }
     std::shared_ptr<DAGNode> Parser::mkConstRat(const Rational &v){
         return mkConst(RAT_SORT, v.get_str());
@@ -384,6 +393,9 @@ namespace SMTLIBParser{
     std::shared_ptr<DAGNode> Parser::mkConstRat(const Rational &l, const Rational &r){
         Rational v = l/r;
         return mkConst(RAT_SORT, v.get_str()); 
+    }
+    std::shared_ptr<DAGNode> Parser::mkConstRat(const double &v){
+        return mkConst(RAT_SORT, std::to_string(v));
     }
     std::shared_ptr<DAGNode> Parser::mkConstRat(const Integer &l, const Integer &r){
         Rational v = Rational(l)/Rational(r);
@@ -394,6 +406,9 @@ namespace SMTLIBParser{
     }
     std::shared_ptr<DAGNode> Parser::mkConstReal(const Real &v){
         return mkConst(REAL_SORT, toString(v));
+    }
+    std::shared_ptr<DAGNode> Parser::mkConstReal(const double &v){
+        return mkConst(REAL_SORT, std::to_string(v));
     }
     std::shared_ptr<DAGNode> Parser::mkConstStr(const std::string &v){
         return mkConst(STR_SORT, v);
@@ -915,6 +930,16 @@ namespace SMTLIBParser{
         }
         return mkOper(INT_SORT, NODE_KIND::NT_DIV_INT, l, r);
     }
+    std::shared_ptr<DAGNode> Parser::mkDivInt(const std::vector<std::shared_ptr<DAGNode>> &params){
+        if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(params.size() == 1){
+            return params[0];
+        }
+        if(params.size() == 2){
+            return mkDivInt(params[0], params[1]);
+        }
+        return mkOper(INT_SORT, NODE_KIND::NT_DIV_INT, params);
+    }
     /*
     (/ Real Real), return Real
     */
@@ -927,6 +952,16 @@ namespace SMTLIBParser{
         }
 
         return mkOper(REAL_SORT, NODE_KIND::NT_DIV_REAL, l, r);
+    }
+    std::shared_ptr<DAGNode> Parser::mkDivReal(const std::vector<std::shared_ptr<DAGNode>> &params){
+        if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(params.size() == 1){
+            return params[0];
+        }
+        if(params.size() == 2){
+            return mkDivReal(params[0], params[1]);
+        }
+        return mkOper(REAL_SORT, NODE_KIND::NT_DIV_REAL, params);
     }
     /*
     (mod Int Int), return Int

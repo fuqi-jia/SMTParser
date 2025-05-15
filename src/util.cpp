@@ -184,7 +184,7 @@ namespace SMTLIBParser{
             Real exponent_val = Real(exponent_no_spaces);
             
             // calculate the result
-            Real result = mantissa_val * pow(Real(10.0), exponent_val);
+            Real result = mantissa_val * SMTLIBParser::pow(Real(10.0), exponent_val);
             
             // convert to string
             std::ostringstream oss;
@@ -1182,28 +1182,33 @@ namespace SMTLIBParser{
             return "0.0";
         }
         
-        // 处理小数点位置
+        // handle decimal point position
         bool is_negative = false;
         if(str[0] == '-') {
             is_negative = true;
-            str = str.substr(1);  // 移除负号以便处理
+            str = str.substr(1);  // remove negative sign for processing
         }
         
-        // 根据指数值插入小数点
+        // insert decimal point based on exponent value
         if(expo <= 0) {
-            // 如果指数为负或零，需要在前面添加"0."并可能添加额外的零
+            // if exponent is negative or zero, add "0." and possibly additional zeros
             str = "0." + std::string(-expo, '0') + str;
         } else if(expo < (mp_exp_t)str.length()) {
-            // 如果指数小于字符串长度，在适当位置插入小数点
+            // if exponent is less than string length, insert decimal point at appropriate position
             str.insert(expo, ".");
         } else {
-            // 如果指数大于或等于字符串长度，在后面添加零
+            // if exponent is greater than or equal to string length, add zeros at the end
             str = str + std::string(expo - str.length(), '0');
         }
         
-        // 如果原始数字是负数，添加负号
+        // if original number is negative, add negative sign
         if(is_negative) {
             str = "-" + str;
+        }
+        
+        // ensure there is a decimal point
+        if(str.find('.') == std::string::npos) {
+            str += ".0";
         }
         
         return str;

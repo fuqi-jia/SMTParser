@@ -198,14 +198,20 @@ namespace SMTLIBParser{
         std::shared_ptr<DAGNode> mkDistinct(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l != r
         // CONST
         std::shared_ptr<DAGNode> mkConst(const std::shared_ptr<Sort>& sort, const std::string &v); // CONST
+        std::shared_ptr<DAGNode> mkConstBool(const bool &v); // CONST_BOOL
+        std::shared_ptr<DAGNode> mkConstBool(const int& v); // CONST_BOOL
         std::shared_ptr<DAGNode> mkConstBool(const std::string &v); // CONST_BOOL
+        std::shared_ptr<DAGNode> mkConstBool(const double &v); // CONST_BOOL
         std::shared_ptr<DAGNode> mkConstRat(const Rational &v); // CONST_RAN
         std::shared_ptr<DAGNode> mkConstRat(const Rational &l, const Rational &r); // CONST_RAN
         std::shared_ptr<DAGNode> mkConstRat(const Integer &l, const Integer &r); // CONST_RAN
+        std::shared_ptr<DAGNode> mkConstRat(const double &v); // CONST_RAN
         std::shared_ptr<DAGNode> mkConstInt(const std::string &v); // CONST_INT
+        std::shared_ptr<DAGNode> mkConstInt(const int& v); // CONST_INT
         std::shared_ptr<DAGNode> mkConstInt(const Integer &v); // CONST_INT
         std::shared_ptr<DAGNode> mkConstReal(const std::string &v); // CONST_REAL
         std::shared_ptr<DAGNode> mkConstReal(const Real &v); // CONST_REAL
+        std::shared_ptr<DAGNode> mkConstReal(const double &v); // CONST_REAL
         std::shared_ptr<DAGNode> mkConstStr(const std::string &v); // CONST_Str
         std::shared_ptr<DAGNode> mkConstBv(const std::string &v, const size_t& width); // CONST_BV
         std::shared_ptr<DAGNode> mkConstFp(const std::string &v, const size_t& e, const size_t& s); // CONST_FP
@@ -240,7 +246,9 @@ namespace SMTLIBParser{
         std::shared_ptr<DAGNode> mkSub(const std::vector<std::shared_ptr<DAGNode>> &params);
         std::shared_ptr<DAGNode> mkNeg(std::shared_ptr<DAGNode> param); // -param
         std::shared_ptr<DAGNode> mkDivInt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l / r
+        std::shared_ptr<DAGNode> mkDivInt(const std::vector<std::shared_ptr<DAGNode>> &params); // l / r / ...
         std::shared_ptr<DAGNode> mkDivReal(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l / r
+        std::shared_ptr<DAGNode> mkDivReal(const std::vector<std::shared_ptr<DAGNode>> &params); // l / r / ...
         std::shared_ptr<DAGNode> mkMod(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l % r
         std::shared_ptr<DAGNode> mkAbs(std::shared_ptr<DAGNode> param); // |param|
         std::shared_ptr<DAGNode> mkSqrt(std::shared_ptr<DAGNode> param); // sqrt(param)
@@ -595,6 +603,8 @@ namespace SMTLIBParser{
         bool		evaluateExp(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
         bool		evaluateLn(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
         bool		evaluateLg(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
+        bool		evaluateLog(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
+        bool		evaluateLb(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
         bool		evaluateSin(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
         bool		evaluateCos(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
         bool		evaluateTan(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);

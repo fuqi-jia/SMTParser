@@ -28,8 +28,6 @@
 #include "parser.h"
 
 namespace SMTLIBParser{
-std::shared_ptr<DAGNode> Parser::parseOper(const std::string& s, const std::vector<std::shared_ptr<DAGNode>> &params){;
-
     void precision_warning(const std::string& op){
         std::cerr << "Precision warning: " << op << " will use double precision" << std::endl;
     }
@@ -51,7 +49,7 @@ std::shared_ptr<DAGNode> Parser::parseOper(const std::string& s, const std::vect
         if(expr->isUnknown()){
             return false;
         }
-        else if(expr->isError()){
+        else if(expr->isErr()){
             return false;
         }
         else if(expr->isConst()){
@@ -110,7 +108,7 @@ std::shared_ptr<DAGNode> Parser::parseOper(const std::string& s, const std::vect
         else if(expr->isPow2()){
             return evaluatePow2(expr, model, result);
         }
-        else if(expr->isIand()){
+        else if(expr->isIAnd()){
             return evaluateIand(expr, model, result);
         }
         else if(expr->isAbs()){
@@ -145,6 +143,9 @@ std::shared_ptr<DAGNode> Parser::parseOper(const std::string& s, const std::vect
         }
         else if(expr->isLog()){
             return evaluateLog(expr, model, result);
+        }
+        else if(expr->isLb()){
+            return evaluateLb(expr, model, result);
         }
         else if(expr->isSin()){
             return evaluateSin(expr, model, result);
@@ -212,19 +213,19 @@ std::shared_ptr<DAGNode> Parser::parseOper(const std::string& s, const std::vect
         else if(expr->isToInt()){
             return evaluateToInt(expr, model, result);
         }
-        else if(expr->isIsInt()){
+        else if(expr->isInt()){
             return evaluateIsInt(expr, model, result);
         }
-        else if(expr->isIsDivisible()){
+        else if(expr->isDivisible()){
             return evaluateIsDivisible(expr, model, result);
         }
-        else if(expr->isIsPrime()){
+        else if(expr->isPrime()){
             return evaluateIsPrime(expr, model, result);
         }
-        else if(expr->isIsEven()){
+        else if(expr->isEven()){
             return evaluateIsEven(expr, model, result);
         }
-        else if(expr->isIsOdd()){
+        else if(expr->isOdd()){
             return evaluateIsOdd(expr, model, result);
         }
         else if(expr->isGcd()){
@@ -236,187 +237,187 @@ std::shared_ptr<DAGNode> Parser::parseOper(const std::string& s, const std::vect
         else if(expr->isFact()){
             return evaluateFact(expr, model, result);
         }
-        else if(expr->isBvNot()){
+        else if(expr->isBVNot()){
             return evaluateBvNot(expr, model, result);
         }
-        else if(expr->isBvNeg()){
+        else if(expr->isBVNeg()){
             return evaluateBvNeg(expr, model, result);
         }
-        else if(expr->isBvAnd()){
+        else if(expr->isBVAnd()){
             return evaluateBvAnd(expr, model, result);
         }
-        else if(expr->isBvOr()){
+        else if(expr->isBVOr()){
             return evaluateBvOr(expr, model, result);
         }
-        else if(expr->isBvXor()){
+        else if(expr->isBVXor()){
             return evaluateBvXor(expr, model, result);
         }
-        else if(expr->isBvNand()){
+        else if(expr->isBVNand()){
             return evaluateBvNand(expr, model, result);
         }
-        else if(expr->isBvNor()){
+        else if(expr->isBVNor()){
             return evaluateBvNor(expr, model, result);
         }
-        else if(expr->isBvXnor()){
+        else if(expr->isBVXnor()){
             return evaluateBvXnor(expr, model, result);
         }
-        else if(expr->isBvComp()){
+        else if(expr->isBVComp()){
             return evaluateBvComp(expr, model, result);
         }
-        else if(expr->isBvAdd()){
+        else if(expr->isBVAdd()){
             return evaluateBvAdd(expr, model, result);
         }
-        else if(expr->isBvSub()){
+        else if(expr->isBVSub()){
             return evaluateBvSub(expr, model, result);
         }
-        else if(expr->isBvMul()){
+        else if(expr->isBVMul()){
             return evaluateBvMul(expr, model, result);
         }
-        else if(expr->isBvUdiv()){
+        else if(expr->isBVUDiv()){
             return evaluateBvUdiv(expr, model, result);
         }
-        else if(expr->isBvUrem()){
+        else if(expr->isBVURem()){
             return evaluateBvUrem(expr, model, result);
         }
-        else if(expr->isBvSdiv()){
+        else if(expr->isBVSDiv()){
             return evaluateBvSdiv(expr, model, result);
         }
-        else if(expr->isBvSrem()){
+        else if(expr->isBVSRem()){
             return evaluateBvSrem(expr, model, result);
         }
-        else if(expr->isBvSmod()){
+        else if(expr->isBVSMod()){
             return evaluateBvSmod(expr, model, result);
         }
-        else if(expr->isBvShl()){
+        else if(expr->isBVShl()){
             return evaluateBvShl(expr, model, result);
         }
-        else if(expr->isBvLshr()){
+        else if(expr->isBVLSHR()){
             return evaluateBvLshr(expr, model, result);
         }
-        else if(expr->isBvAshr()){
+        else if(expr->isBVASHR()){
             return evaluateBvAshr(expr, model, result);
         }
-        else if(expr->isBvUlt()){
+        else if(expr->isBVUlt()){
             return evaluateBvUlt(expr, model, result);
         }
-        else if(expr->isBvUle()){
+        else if(expr->isBVUle()){
             return evaluateBvUle(expr, model, result);
         }
-        else if(expr->isBvUgt()){
+        else if(expr->isBVUgt()){
             return evaluateBvUgt(expr, model, result);
         }
-        else if(expr->isBvUge()){
+        else if(expr->isBVUge()){
             return evaluateBvUge(expr, model, result);
         }
-        else if(expr->isBvSlt()){
+        else if(expr->isBVSlt()){
             return evaluateBvSlt(expr, model, result);
         }
-        else if(expr->isBvSle()){
+        else if(expr->isBVSle()){
             return evaluateBvSle(expr, model, result);
         }
-        else if(expr->isBvSgt()){
+        else if(expr->isBVSgt()){
             return evaluateBvSgt(expr, model, result);
         }
-        else if(expr->isBvSge()){
+        else if(expr->isBVSge()){
             return evaluateBvSge(expr, model, result);
         }
-        else if(expr->isBvConcat()){
+        else if(expr->isBVConcat()){
             return evaluateBvConcat(expr, model, result);
         }
-        else if(expr->isBvToNat()){
+        else if(expr->isBVToNat()){
             return evaluateBvToNat(expr, model, result);
         }
-        else if(expr->isNatToBv()){
-            return evaluateNatToBv(expr, model, result);
+        else if(expr->isNatToBV()){
+            return evaluateBvNatToBv(expr, model, result);
         }
-        else if(expr->isIntToBv()){
-            return evaluateIntToBv(expr, model, result);
+        else if(expr->isIntToBV()){
+            return evaluateBvIntToBv(expr, model, result);
         }
-        else if(expr->isBvToInt()){
+        else if(expr->isBVToInt()){
             return evaluateBvToInt(expr, model, result);
         }
-        else if(expr->isFpAbs()){
+        else if(expr->isFPAbs()){
             return evaluateFpAbs(expr, model, result);
         }
-        else if(expr->isFpNeg()){
+        else if(expr->isFPNeg()){
             return evaluateFpNeg(expr, model, result);
         }
-        else if(expr->isFpAdd()){
+        else if(expr->isFPAdd()){
             return evaluateFpAdd(expr, model, result);
         }
-        else if(expr->isFpSub()){
+        else if(expr->isFPSub()){
             return evaluateFpSub(expr, model, result);
         }
-        else if(expr->isFpMul()){
+        else if(expr->isFPMul()){
             return evaluateFpMul(expr, model, result);
         }
-        else if(expr->isFpDiv()){
+        else if(expr->isFPDiv()){
             return evaluateFpDiv(expr, model, result);
         }
-        else if(expr->isFpFma()){
+        else if(expr->isFPFMA()){
             return evaluateFpFma(expr, model, result);
         }
-        else if(expr->isFpSqrt()){
+        else if(expr->isFPSqrt()){
             return evaluateFpSqrt(expr, model, result);
         }
-        else if(expr->isFpRem()){
+        else if(expr->isFPRem()){
             return evaluateFpRem(expr, model, result);
         }
-        else if(expr->isFpRoundToIntegral()){
+        else if(expr->isFPRoundToIntegral()){
             return evaluateFpRoundToIntegral(expr, model, result);
         }
-        else if(expr->isFpMin()){
+        else if(expr->isFPMin()){
             return evaluateFpMin(expr, model, result);
         }
-        else if(expr->isFpMax()){
+        else if(expr->isFPMax()){
             return evaluateFpMax(expr, model, result);
         }
-        else if(expr->isFpLe()){
+        else if(expr->isFPLe()){
             return evaluateFpLe(expr, model, result);
         }
-        else if(expr->isFpLt()){
+        else if(expr->isFPLt()){
             return evaluateFpLt(expr, model, result);
         }
-        else if(expr->isFpGe()){
+        else if(expr->isFPGe()){
             return evaluateFpGe(expr, model, result);
         }
-        else if(expr->isFpGt()){
+        else if(expr->isFPGt()){
             return evaluateFpGt(expr, model, result);
         }
-        else if(expr->isFpEq()){
+        else if(expr->isFPEq()){
             return evaluateFpEq(expr, model, result);
         }
-        else if(expr->isFpToUbv()){
+        else if(expr->isFPToUBV()){
             return evaluateFpToUbv(expr, model, result);
         }
-        else if(expr->isFpToSbv()){
+        else if(expr->isFPToSBV()){
             return evaluateFpToSbv(expr, model, result);
         }
-        else if(expr->isFpToReal()){
+        else if(expr->isFPToReal()){
             return evaluateFpToReal(expr, model, result);
         }
-        else if(expr->isToFp()){
+        else if(expr->isToFP()){
             return evaluateToFp(expr, model, result);
         }
-        else if(expr->isFpIsNormal()){
+        else if(expr->isFPIsNormal()){
             return evaluateFpIsNormal(expr, model, result);
         }
-        else if(expr->isFpIsSubnormal()){
+        else if(expr->isFPIsSubnormal()){
             return evaluateFpIsSubnormal(expr, model, result);
         }
-        else if(expr->isFpIsZero()){
+        else if(expr->isFPIsZero()){
             return evaluateFpIsZero(expr, model, result);
         }
-        else if(expr->isFpIsInf()){
+        else if(expr->isFPIsInf()){
             return evaluateFpIsInf(expr, model, result);
         }
-        else if(expr->isFpIsNan()){
+        else if(expr->isFPIsNan()){
             return evaluateFpIsNan(expr, model, result);
         }
-        else if(expr->isFpIsNeg()){
+        else if(expr->isFPIsNeg()){
             return evaluateFpIsNeg(expr, model, result);
         }
-        else if(expr->isFpIsPos()){
+        else if(expr->isFPIsPos()){
             return evaluateFpIsPos(expr, model, result);
         }
         else if(expr->isSelect()){
@@ -534,10 +535,10 @@ std::shared_ptr<DAGNode> Parser::parseOper(const std::string& s, const std::vect
             return evaluateRegComplement(expr, model, result);
         }
         else if(expr->isFuncApply()){
-            return evaluateFuncApply(expr, model, result);
+            return evaluateApplyFun(expr, model, result);
         }
-
-        return UNKNOWN_NODE;
+        result = expr;
+        return false;
     }
 
     bool Parser::evaluateSimpleOp(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result, NODE_KIND op){
@@ -554,6 +555,7 @@ std::shared_ptr<DAGNode> Parser::parseOper(const std::string& s, const std::vect
             case NODE_KIND::NT_EXP:
             case NODE_KIND::NT_LN:
             case NODE_KIND::NT_LG:
+            case NODE_KIND::NT_LB:
             case NODE_KIND::NT_SIN:
             case NODE_KIND::NT_COS:
             case NODE_KIND::NT_TAN:
@@ -583,7 +585,7 @@ std::shared_ptr<DAGNode> Parser::parseOper(const std::string& s, const std::vect
             case NODE_KIND::NT_BV_NOT:
             case NODE_KIND::NT_BV_NEG:
             case NODE_KIND::NT_BV_TO_NAT:
-            case NODE_KIND::NT_BV_NAT_TO_BV:
+            case NODE_KIND::NT_NAT_TO_BV:
             case NODE_KIND::NT_BV_TO_INT:
             case NODE_KIND::NT_INT_TO_BV:
             case NODE_KIND::NT_STR_LEN:
@@ -609,6 +611,7 @@ std::shared_ptr<DAGNode> Parser::parseOper(const std::string& s, const std::vect
             }
             // binary operations
             case NODE_KIND::NT_IMPLIES:
+            case NODE_KIND::NT_LOG:
             case NODE_KIND::NT_ATAN2:
             case NODE_KIND::NT_LE:
             case NODE_KIND::NT_LT:
@@ -641,7 +644,6 @@ std::shared_ptr<DAGNode> Parser::parseOper(const std::string& s, const std::vect
             case NODE_KIND::NT_STR_GT:
             case NODE_KIND::NT_STR_GE:
             case NODE_KIND::NT_STR_IN_REG:
-            case NODE_KIND::NT_STR_CONTAINS:
             {
                 std::shared_ptr<DAGNode> l = NULL_NODE;
                 std::shared_ptr<DAGNode> r = NULL_NODE;
@@ -1067,7 +1069,7 @@ std::shared_ptr<DAGNode> Parser::parseOper(const std::string& s, const std::vect
             children.insert(children.end(), const_vals.begin(), const_vals.end());
             result = mkDistinct(children);
         }
-        reuturn true;
+        return true;
     }
     bool Parser::evaluateIte(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode>& result) {
         bool changed = false;
@@ -1126,32 +1128,32 @@ std::shared_ptr<DAGNode> Parser::parseOper(const std::string& s, const std::vect
             }
         }
         if(const_children.empty()){
-            result = mkDiv(non_const_children);
+            result = mkDivInt(non_const_children);
         }
         else{
             if(first_child_is_const){
-                auto res = mkInt(1);
+                auto res = mkConstInt(1);
                 for(size_t i = 1; i < const_children.size(); ++i){
-                    res = mkMul(res, const_children[i]);
+                    res = mkMul({res, const_children[i]});
                 }
                 if(res->toInt() > const_children[0]->toInt()){
                     // 1 / 3 is 0 in integer arithmetic
-                    result = mkInt(0);
+                    result = mkConstInt(0);
                     return true;
                 }
                 else{
                     // 5 / 3 is 1 in integer arithmetic
-                    auto div = mkDivInt(const_children[0], res);
+                    auto div = mkDivInt({const_children[0], res});
                     non_const_children.insert(non_const_children.begin(), div);
                 }
             }
             else{
-                auto res = mkInt(1);
+                auto res = mkConstInt(1);
                 for(size_t i = 0; i < const_children.size(); ++i){
-                    res = mkMul(res, const_children[i]);
+                    res = mkMul({res, const_children[i]});
                 }
                 non_const_children.emplace_back(res);
-                result = mkDiv(non_const_children);
+                result = mkDivInt(non_const_children);
             }
         }
         return true;
@@ -1197,6 +1199,12 @@ std::shared_ptr<DAGNode> Parser::parseOper(const std::string& s, const std::vect
 	}
     bool Parser::evaluateLg(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
         return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_LG);
+	}
+    bool Parser::evaluateLog(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_LOG);
+	}
+    bool Parser::evaluateLb(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_LB);
 	}
     bool Parser::evaluateSin(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
         return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_SIN);
@@ -1379,161 +1387,191 @@ std::shared_ptr<DAGNode> Parser::parseOper(const std::string& s, const std::vect
         return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_BV_TO_NAT);
 	}
     bool Parser::evaluateBvNatToBv(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_BV_NAT_TO_BV);
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_NAT_TO_BV);
 	}
     bool Parser::evaluateBvIntToBv(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
         return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_BV_TO_INT);
 	}
     bool Parser::evaluateBvToInt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_BV_NAT_TO_BV);
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_NAT_TO_BV);
 	}
     bool Parser::evaluateFpAbs(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("fp.abs");
+        (void)model;
+		not_implemented_warning("fp.abs");
         result = expr;
         return false;
 	}
     bool Parser::evaluateFpNeg(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("fp.neg");
+        (void)model;
+		not_implemented_warning("fp.neg");
         result = expr;
         return false;
 	}
     bool Parser::evaluateFpAdd(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("fp.add");
+        (void)model;
+		not_implemented_warning("fp.add");
         result = expr;
         return false;
 	}
     bool Parser::evaluateFpSub(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("fp.sub");
+        (void)model;
+		not_implemented_warning("fp.sub");
         result = expr;
         return false;
 	}
     bool Parser::evaluateFpMul(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("fp.mul");
+        (void)model;
+		not_implemented_warning("fp.mul");
         result = expr;
         return false;
 	}
     bool Parser::evaluateFpDiv(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("fp.div");
+        (void)model;
+		not_implemented_warning("fp.div");
         result = expr;
         return false;
 	}
     bool Parser::evaluateFpFma(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("fp.fma");
+        (void)model;
+		not_implemented_warning("fp.fma");
         result = expr;
         return false;
 	}
     bool Parser::evaluateFpSqrt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("fp.sqrt");
+        (void)model;
+		not_implemented_warning("fp.sqrt");
         result = expr;
         return false;
 	}
     bool Parser::evaluateFpRem(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("fp.rem");
+        (void)model;
+		not_implemented_warning("fp.rem");
         result = expr;
         return false;
 	}
     bool Parser::evaluateFpRoundToIntegral(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("fp.roundToIntegral");
+        (void)model;
+		not_implemented_warning("fp.roundToIntegral");
         result = expr;
         return false;
 	}
     bool Parser::evaluateFpMin(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("fp.min");
+        (void)model;
+		not_implemented_warning("fp.min");
         result = expr;
         return false;
 	}
     bool Parser::evaluateFpMax(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("fp.max");
+        (void)model;
+		not_implemented_warning("fp.max");
         result = expr;
         return false;
 	}
     bool Parser::evaluateFpLe(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("fp.le");
+        (void)model;
+		not_implemented_warning("fp.le");
         result = expr;
         return false;
 	}
     bool Parser::evaluateFpLt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("fp.lt");
+        (void)model;
+		not_implemented_warning("fp.lt");
         result = expr;
         return false;
 	}
     bool Parser::evaluateFpGe(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("fp.ge");
+        (void)model;
+		not_implemented_warning("fp.ge");
         result = expr;
         return false;
 	}
     bool Parser::evaluateFpGt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("fp.gt");
+        (void)model;
+		not_implemented_warning("fp.gt");
         result = expr;
         return false;
 	}
     bool Parser::evaluateFpEq(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("fp.eq");
+        (void)model;
+		not_implemented_warning("fp.eq");
         result = expr;
         return false;
 	}
     bool Parser::evaluateFpToUbv(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("fp.toUbv");
+        (void)model;
+		not_implemented_warning("fp.toUbv");
         result = expr;
         return false;
 	}
     bool Parser::evaluateFpToSbv(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("fp.toSbv");
+        (void)model;
+		not_implemented_warning("fp.toSbv");
         result = expr;
         return false;
 	}
     bool Parser::evaluateFpToReal(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("fp.toReal");
+        (void)model;
+		not_implemented_warning("fp.toReal");
         result = expr;
         return false;
 	}   
     bool Parser::evaluateToFp(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("fp.toFp");
+        (void)model;
+		not_implemented_warning("fp.toFp");
         result = expr;
         return false;
 	}
     bool Parser::evaluateFpIsNormal(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("fp.isNormal");
+        (void)model;
+		not_implemented_warning("fp.isNormal");
         result = expr;
         return false;
 	}
     bool Parser::evaluateFpIsSubnormal(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("fp.isSubnormal");
+        (void)model;
+		not_implemented_warning("fp.isSubnormal");
         result = expr;
         return false;
 	}
     bool Parser::evaluateFpIsZero(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("fp.isZero");
+        (void)model;
+		not_implemented_warning("fp.isZero");
         result = expr;
         return false;
 	}
     bool Parser::evaluateFpIsInf(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("fp.isInf");
+        (void)model;
+		not_implemented_warning("fp.isInf");
         result = expr;
         return false;
 	}
     bool Parser::evaluateFpIsNan(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("fp.isNan");
+        (void)model;
+		not_implemented_warning("fp.isNan");
         result = expr;
         return false;
 	}
     bool Parser::evaluateFpIsNeg(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("fp.isNeg");
+        (void)model;
+		not_implemented_warning("fp.isNeg");
         result = expr;
         return false;
 	}
     bool Parser::evaluateFpIsPos(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("fp.isPos");
+        (void)model;
+		not_implemented_warning("fp.isPos");
         result = expr;
         return false;
 	}
     bool Parser::evaluateSelect(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("select");
+        (void)model;
+		not_implemented_warning("select");
         result = expr;
         return false;
 	}
     bool Parser::evaluateStore(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("store");
+        (void)model;
+		not_implemented_warning("store");
         result = expr;
         return false;
 	}
@@ -1577,7 +1615,8 @@ std::shared_ptr<DAGNode> Parser::parseOper(const std::string& s, const std::vect
         return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_STR_REV);
 	}
     bool Parser::evaluateStrSplit(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("str.split");
+        (void)model;
+		not_implemented_warning("str.split");
         result = expr;
         return false;
 	}
@@ -1618,60 +1657,71 @@ std::shared_ptr<DAGNode> Parser::parseOper(const std::string& s, const std::vect
         return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_STR_FROM_CODE);
 	}
     bool Parser::evaluateRegConcat(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("reg.concat");
+        (void)model;
+		not_implemented_warning("reg.concat");
         result = expr;
         return false;
     }
     bool Parser::evaluateRegUnion(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("reg.union");
+        (void)model;
+		not_implemented_warning("reg.union");
         result = expr;
         return false;
 	}
     bool Parser::evaluateRegInter(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("reg.inter");
+        (void)model;
+		not_implemented_warning("reg.inter");
         result = expr;
         return false;
 	}
     bool Parser::evaluateRegDiff(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("reg.diff");
+        (void)model;
+		not_implemented_warning("reg.diff");
         result = expr;
         return false;
 	}
     bool Parser::evaluateRegStar(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("reg.star");
+        (void)model;
+		not_implemented_warning("reg.star");
         result = expr;
         return false;
 	}
     bool Parser::evaluateRegPlus(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("reg.plus");
+        (void)model;
+		not_implemented_warning("reg.plus");
         result = expr;
         return false;
 	}
     bool Parser::evaluateRegOpt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("reg.opt");
+        (void)model;
+		not_implemented_warning("reg.opt");
         result = expr;
         return false;
 	}
     bool Parser::evaluateRegRange(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("reg.range");
+        (void)model;
+		not_implemented_warning("reg.range");
         result = expr;
         return false;
 	}
     bool Parser::evaluateRegRepeat(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("reg.repeat");
+        (void)model;
+		not_implemented_warning("reg.repeat");
         result = expr;
         return false;
 	}
     bool Parser::evaluateRegComplement(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("reg.complement");
+        (void)model;
+		not_implemented_warning("reg.complement");
         result = expr;
         return false;
 	}
-    bool Parser::evaluateApplyFun(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        not_implemented_warning("apply");
+    bool Parser::evaluateApplyFun(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode>& result) {
+        (void)model;
+		not_implemented_warning("function-apply");
         result = expr;
         return false;
-	}
+    }
 }
 
 
