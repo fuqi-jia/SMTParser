@@ -164,7 +164,7 @@ g++ -std=c++17 -o application main.cpp -lsmtlibparser -lgmp
 | Bitvector Operations | `mkBvAnd`, `mkBvOr`, `mkBvXor`, `mkBvAdd`, `mkBvShl`, `...` |
 | String Operations | `mkStrLen`, `mkStrConcat`, `mkStrSubstr`, `mkStrIndexof`, `...` |
 | Regular Expression Operations | `mkStrToReg`, `mkRegUnion`, `mkRegStar`, `...` |
-| Array Operations | `mkSelect`, `mkStore`, `...` |
+| Array Operations | `mkSelect`, `mkStore` |
 | Floating Point Operations | `mkFpAdd`, `mkFpMul`, `mkFpDiv`, `mkFpEq`, `...` |
 
 ## Supported Theories
