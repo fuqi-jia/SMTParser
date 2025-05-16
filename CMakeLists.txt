@@ -40,6 +40,7 @@ set(SOURCES
     src/eval_parser.cpp
     src/op_parser.cpp
     src/opt_parser.cpp
+    src/simp_oper.cpp
     src/dag.cpp
     src/util.cpp
     src/objective.cpp
