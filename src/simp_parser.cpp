@@ -1334,9 +1334,25 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_BV_UMULO:{
                 return mkUnknown();
             }
-            case NODE_KIND::NT_BV_CONCAT:
+            case NODE_KIND::NT_BV_CONCAT:{
+                if(l->isCBV() && r->isCBV()){
+                    return mkConstBv(bvConcat(l->toString(), r->toString()), l->getSort()->getBitWidth() + r->getSort()->getBitWidth());
+                }
+                else{
+                    err_all(l, "Concat on non-bitvector", line_number);
+                    err_all(r, "Concat on non-bitvector", line_number);
+                    return mkUnknown();
+                }
+            }
             case NODE_KIND::NT_STR_CONCAT:{
-                return mkUnknown();
+                if(l->isCStr() && r->isCStr()){
+                    return mkConstStr(l->toString() + r->toString());
+                }
+                else{
+                    err_all(l, "Concat on non-string", line_number);
+                    err_all(r, "Concat on non-string", line_number);
+                    return mkUnknown();
+                }
             }
             case NODE_KIND::NT_FP_ADD:
             case NODE_KIND::NT_FP_SUB:
