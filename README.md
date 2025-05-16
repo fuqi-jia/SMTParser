@@ -249,6 +249,44 @@ When building applications that use SMTLIBParser, link against the library and i
 g++ -std=c++17 -o application main.cpp -lsmtlibparser -lgmp
 ```
 
+### Complete Project Example
+
+For a complete project example, check out [SMTLIBParser-Test](https://github.com/fuqi-jia/SMTLIBParser-Test) which demonstrates how to integrate and use the library as a Git submodule.
+
+#### Project Structure:
+```
+SMTLIBParser-Test/
+├── CMakeLists.txt          # Build configuration
+├── SMTLIBParser/           # Submodule
+├── src/                    # Application source code
+│   └── main.cpp
+└── test/                   # Test SMT-LIB2 files
+    └── 1.smt2
+```
+
+#### Setting Up the Project:
+
+1. Clone the repository and initialize the submodule:
+```bash
+git clone https://github.com/fuqi-jia/SMTLIBParser-Test.git
+cd SMTLIBParser-Test
+git submodule update --init --recursive
+```
+
+2. Build the project:
+```bash
+mkdir build && cd build
+cmake ..
+make -j$(nproc)
+```
+
+3. Run the test application:
+```bash
+./SMTLIBParser_Test ../test/1.smt2
+```
+
+This simple example demonstrates how to parse and process an SMT-LIB2 file. You can use this project as a template for your own applications.
+
 ## API Reference
 
 ### Core Components and Smart Pointer Types
