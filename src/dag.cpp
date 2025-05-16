@@ -304,6 +304,8 @@ namespace SMTLIBParser{
                 case NODE_KIND::NT_STR_REPLACE:
                 case NODE_KIND::NT_STR_REPLACE_ALL:
                 case NODE_KIND::NT_REG_LOOP:
+                    res = "((_ re.loop " + results[current->getChild(1)] + " " + results[current->getChild(2)] + ") " + results[current->getChild(0)] + ")";
+                    break;
                 case NODE_KIND::NT_REPLACE_REG:
                 case NODE_KIND::NT_REPLACE_REG_ALL:
                 case NODE_KIND::NT_INDEXOF_REG:
@@ -970,7 +972,13 @@ namespace SMTLIBParser{
             dumpDoubleOp(kind, node->getChild(0), node->getChild(1), visited, ofs);
             break;
         case NODE_KIND::NT_REG_LOOP:
-            dumpTripleOp(kind, node->getChild(0), node->getChild(1), node->getChild(2), visited, ofs);
+            ofs << "((_ re.loop ";
+            dumpSMTLIB2(node->getChild(1), visited, ofs);
+            ofs << " ";
+            dumpSMTLIB2(node->getChild(2), visited, ofs);
+            ofs << ") ";
+            dumpSMTLIB2(node->getChild(0), visited, ofs);
+            ofs << ")";
             break;
         case NODE_KIND::NT_REG_COMPLEMENT:
             dumpSingleOp(kind, node->getChild(0), visited, ofs);
