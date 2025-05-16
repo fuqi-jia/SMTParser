@@ -2119,11 +2119,6 @@ namespace SMTLIBParser{
             width += params[i]->getSort()->getBitWidth();
             new_params.emplace_back(params[i]);
         }
-
-        if(new_params.size() == 2){
-            return mkConstBv(bvConcat(new_params[0]->toString(), new_params[1]->toString()), width);
-        }
-
         std::shared_ptr<Sort> new_sort = mkBVSort(width);
 
         return mkOper(new_sort, NODE_KIND::NT_BV_CONCAT, new_params);
