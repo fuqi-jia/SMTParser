@@ -136,14 +136,14 @@ namespace SMTLIBParser{
 		return Integer(expr->toString());
 	}
 	bool Parser::isZero(std::shared_ptr<DAGNode> expr){
-		assert(expr->isCReal() || expr->isCInt());
+		if(expr->isCReal()) return toReal(expr) == 0.0;
 		if(expr->isCInt()) return toInt(expr) == 0;
-		return toReal(expr) == 0.0;
+		return false;
 	}
 	bool Parser::isOne(std::shared_ptr<DAGNode> expr){
-		assert(expr->isCReal() || expr->isCInt());
+		if(expr->isCReal()) return toReal(expr) == 1.0;
 		if(expr->isCInt()) return toInt(expr) == 1;
-		return toReal(expr) == 1.0;
+		return false;
 	}
 
 	// parse smt-lib2 file
