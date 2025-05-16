@@ -856,7 +856,7 @@ namespace SMTLIBParser{
             }
             case NODE_KIND::NT_BV_UDIV:{
                 // division by zero evaluates to all ones.
-                if(r->isCBV() && r->isZero()){
+                if(r->isCBV() && isZero(r)){
                     return mkConstBv("#b" + std::string(l->getSort()->getBitWidth(), '1'), l->getSort()->getBitWidth());
                 }
                 else if(l->isCBV() && r->isCBV()){
@@ -868,7 +868,7 @@ namespace SMTLIBParser{
             }
             case NODE_KIND::NT_BV_SDIV:{            
                 // bvsdiv by zero evaluates to all ones if it's positive, otherwise 1.
-                if(r->isCBV() && r->isZero()){
+                if(r->isCBV() && isZero(r)){
                     if(l->isCBV() && Integer(bvToInt(l->toString())) >= 0){
                         return mkConstBv("#b" + std::string(l->getSort()->getBitWidth(), '1'), l->getSort()->getBitWidth());
                     }
@@ -885,7 +885,7 @@ namespace SMTLIBParser{
             }
             case NODE_KIND::NT_BV_UREM:{
                 // remainder by zero evaluates to the first operand.
-                if(r->isCBV() && r->isZero()){
+                if(r->isCBV() && isZero(r)){
                     return l;
                 }
                 else if(l->isCBV() && r->isCBV()){
@@ -897,7 +897,7 @@ namespace SMTLIBParser{
             }
             case NODE_KIND::NT_BV_SREM:{
                 // bvsrem by zero evaluates to the first operand.
-                if(r->isCBV() && r->isZero()){
+                if(r->isCBV() && isZero(r)){
                     return l;
                 }
                 else if(l->isCBV() && r->isCBV()){
@@ -908,7 +908,7 @@ namespace SMTLIBParser{
                 }
             }
             case NODE_KIND::NT_BV_UMOD:{
-                if(r->isCBV() && r->isZero()){
+                if(r->isCBV() && isZero(r)){
                     return l;
                 }
                 else if(l->isCBV() && r->isCBV()){
@@ -920,7 +920,7 @@ namespace SMTLIBParser{
             }
             case NODE_KIND::NT_BV_SMOD:{
                 // bvsmod by zero evaluates to the first operand.
-                if(r->isCBV() && r->isZero()){
+                if(r->isCBV() && isZero(r)){
                     return l;
                 }
                 else if(l->isCBV() && r->isCBV()){
@@ -940,7 +940,7 @@ namespace SMTLIBParser{
             }
             case NODE_KIND::NT_BV_SHL:{
                 // shift amount is zero evaluates to the first operand.
-                if(r->isCBV() && r->isZero()){
+                if(r->isCBV() && isZero(r)){
                     return l;
                 }
                 else if(l->isCBV() && r->isCBV()){
@@ -952,7 +952,7 @@ namespace SMTLIBParser{
             }
             case NODE_KIND::NT_BV_LSHR:{
                 // shift amount is zero evaluates to the first operand.
-                if(r->isCBV() && r->isZero()){
+                if(r->isCBV() && isZero(r)){
                     return l;
                 }
                 else if(l->isCBV() && r->isCBV()){
@@ -964,7 +964,7 @@ namespace SMTLIBParser{
             }
             case NODE_KIND::NT_BV_ASHR:{
                 // shift amount is zero evaluates to the first operand.
-                if(r->isCBV() && r->isZero()){
+                if(r->isCBV() && isZero(r)){
                     return l;
                 }
                 else if(l->isCBV() && r->isCBV()){
@@ -1370,7 +1370,7 @@ namespace SMTLIBParser{
             }
             case NODE_KIND::NT_STR_SUBSTR:{
                 if(l->isCStr() && m->isCInt() && r->isCInt()){
-                    return mkConstStr(l->toString().substr(m->toInt().get_ui(), toInt(r).get_ui()));
+                    return mkConstStr(l->toString().substr(toInt(m).get_ui(), toInt(r).get_ui()));
                 }
                 else{
                     err_all(l, "Substr on non-string", line_number);
@@ -1392,7 +1392,7 @@ namespace SMTLIBParser{
             }
             case NODE_KIND::NT_STR_UPDATE:{
                 if(l->isCStr() && m->isCInt() && r->isCStr()){
-                    return mkConstStr(strUpdate(l->toString(), m->toInt(), r->toString()));
+                    return mkConstStr(strUpdate(l->toString(), toInt(m), r->toString()));
                 }
                 else{
                     err_all(l, "Update on non-string", line_number);
@@ -1432,8 +1432,8 @@ namespace SMTLIBParser{
             // Special processing operation
             case NODE_KIND::NT_BV_EXTRACT:{
                 if(l->isCBV() && m->isCInt() && r->isCInt()){
-                    Integer size = (toInt(r) - m->toInt());
-                    return mkConstBv(bvExtract(l->toString(), m->toInt(), toInt(r)), size.get_ui());
+                    Integer size = (toInt(r) - toInt(m));
+                    return mkConstBv(bvExtract(l->toString(), toInt(m), toInt(r)), size.get_ui());
                 }
                 else{
                     err_all(l, "Extract on non-bitvector", line_number);

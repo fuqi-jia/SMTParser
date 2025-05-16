@@ -1116,7 +1116,7 @@ namespace SMTLIBParser{
                 for(size_t i = 1; i < const_children.size(); ++i){
                     res = mkMul({res, const_children[i]});
                 }
-                if(res->toInt() > const_children[0]->toInt()){
+                if(toInt(res) > toInt(const_children[0])){
                     // 1 / 3 is 0 in integer arithmetic
                     result = mkConstInt(0);
                     return true;

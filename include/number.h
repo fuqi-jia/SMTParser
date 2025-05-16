@@ -127,7 +127,10 @@ namespace SMTLIBParser{
             // Conversion functions
             std::string toString() const;
             double toDouble() const;
-            
+            float toFloat() const;
+            int toInt() const;
+            long long toLongLong() const;
+            Integer toInteger() const;
             // Set and get precision
             void setPrecision(mpfr_prec_t precision);
             mpfr_prec_t getPrecision() const;

@@ -263,29 +263,7 @@ namespace SMTLIBParser{
         return result;
     }
     Real pow(const Real& base, const Real& exp){
-        // GMP does not support floating-point power operations directly, so we need to convert to double using std::pow
-        // Note: This may result in precision loss
-        
-        // special cases
-        if(exp == 0) return Real(1.0);
-        if(base == 1) return Real(1.0);
-        if(base == 0) return Real(0.0);
-        
-        // for integer power, use integer pow method
-        if(exp.get_d() == std::floor(exp.get_d()) && exp.get_d() > 0 && exp.get_d() < 1000) {
-            Real result = base;
-            for(int i = 1; i < (int)exp.get_d(); i++) {
-                result *= base;
-            }
-            return result;
-        }
-        
-        // for general case, convert to double calculation, then convert back to Real
-        double base_d = base.get_d();
-        double exp_d = exp.get_d();
-        double result_d = std::pow(base_d, exp_d);
-        
-        return Real(result_d);
+        return base.pow(exp);
     }
 
     Integer gcd(const Integer& a, const Integer& b){
@@ -299,73 +277,43 @@ namespace SMTLIBParser{
 
 
     Real sqrt(const Integer& i){
-        Real res, tmp(i);
-        mpf_sqrt(res.get_mpf_t(), tmp.get_mpf_t());
-        return res;
+        if(i < 0){
+            std::cerr << "Error: sqrt of negative number" << std::endl;
+            exit(1);
+        }
+        return HighPrecisionReal(i).sqrt();
     }
     Real sqrt(const Real& r){
-        Real res;
-        mpf_sqrt(res.get_mpf_t(), r.get_mpf_t());
-        return res;
+        if(r < 0){
+            std::cerr << "Error: sqrt of negative number" << std::endl;
+            exit(1);
+        }
+        return r.sqrt();
     }
+
     Real safesqrt(const Integer& i){
         if(i < 0){
             return Real(0);
         }
-        Real res;
-        Real tmp(i);
-        mpf_sqrt(res.get_mpf_t(), tmp.get_mpf_t());
-        return res;
+        return HighPrecisionReal(i).sqrt();
     }
     
     Real safesqrt(const Real& r){
         if(r < 0){
             return Real(0);
         }
-        Real res;
-        mpf_sqrt(res.get_mpf_t(), r.get_mpf_t());
-        return res;
+        return r.sqrt();
     }
 
     Integer ceil(const Real& r){
-        Integer res;
-        Real tmp;
-        mpf_ceil(tmp.get_mpf_t(), r.get_mpf_t());
-        res = tmp;
-        return res;
+        return r.ceil().toInteger();
     }
     Integer floor(const Real& r){
-        Integer res;
-        Real tmp;
-        mpf_floor(tmp.get_mpf_t(), r.get_mpf_t());
-        res = tmp;
-        return res;
+        return r.floor().toInteger();
     }
     Integer round(const Real& r){
-        Integer res;
-        Real tmp;
-        if(r >= 0){
-            mpf_floor(tmp.get_mpf_t(), r.get_mpf_t());
-            if(r - tmp >= 0.5){
-                res = tmp + 1;
-            }
-            else{
-                res = tmp;
-            }
-        }
-        else{
-            mpf_ceil(tmp.get_mpf_t(), r.get_mpf_t());
-            if(tmp - r >= 0.5){
-                res = tmp - 1;
-            }
-            else{
-                res = tmp;
-            }
-        }
-        res = tmp;
-        return res;
+        return r.round().toInteger();
     }
-
 
     bool isPrime(const Integer& n){
         if(n <= 1) return false;
@@ -1172,41 +1120,6 @@ namespace SMTLIBParser{
     }
 
     std::string toString(const Real& r){
-        mp_exp_t expo;
-        std::string str = r.get_str(expo, 10, 0);
-        if(str == ""){
-            return "0.0";
-        }
-        
-        // handle decimal point position
-        bool is_negative = false;
-        if(str[0] == '-') {
-            is_negative = true;
-            str = str.substr(1);  // remove negative sign for processing
-        }
-        
-        // insert decimal point based on exponent value
-        if(expo <= 0) {
-            // if exponent is negative or zero, add "0." and possibly additional zeros
-            str = "0." + std::string(-expo, '0') + str;
-        } else if(expo < (mp_exp_t)str.length()) {
-            // if exponent is less than string length, insert decimal point at appropriate position
-            str.insert(expo, ".");
-        } else {
-            // if exponent is greater than or equal to string length, add zeros at the end
-            str = str + std::string(expo - str.length(), '0');
-        }
-        
-        // if original number is negative, add negative sign
-        if(is_negative) {
-            str = "-" + str;
-        }
-        
-        // ensure there is a decimal point
-        if(str.find('.') == std::string::npos) {
-            str += ".0";
-        }
-        
-        return str;
+        return r.toString();
     }
 }
