@@ -404,7 +404,9 @@ std::shared_ptr<DAGNode> Parser::simp_oper(const std::shared_ptr<Sort>& sort, co
         case NODE_KIND::NT_ATANH:
         case NODE_KIND::NT_ASECH:
         case NODE_KIND::NT_ACSCH:
-        case NODE_KIND::NT_ACOTH:
+        case NODE_KIND::NT_ACOTH:{
+            return mkUnknown();
+        }
         case NODE_KIND::NT_TO_INT:{
             if(p->isCInt()){
                 return p;
@@ -511,9 +513,7 @@ std::shared_ptr<DAGNode> Parser::simp_oper(const std::shared_ptr<Sort>& sort, co
                 return mkUnknown();
             }
         }
-        case NODE_KIND::NT_FP_ABS:{
-
-        }
+        case NODE_KIND::NT_FP_ABS:
         case NODE_KIND::NT_FP_NEG:
         case NODE_KIND::NT_FP_SQRT:
         case NODE_KIND::NT_FP_ROUND_TO_INTEGRAL:
@@ -527,109 +527,151 @@ std::shared_ptr<DAGNode> Parser::simp_oper(const std::shared_ptr<Sort>& sort, co
         case NODE_KIND::NT_FP_TO_UBV:
         case NODE_KIND::NT_FP_TO_SBV:
         case NODE_KIND::NT_FP_TO_REAL:
-        case NODE_KIND::NT_FP_TO_FP:
-        case NODE_KIND::NT_STR_LEN:
-        case NODE_KIND::NT_STR_TO_LOWER:
-        case NODE_KIND::NT_STR_TO_UPPER:
-        case NODE_KIND::NT_STR_REV:
-        case NODE_KIND::NT_STR_IS_DIGIT:
-        case NODE_KIND::NT_STR_FROM_INT:
-        case NODE_KIND::NT_STR_TO_INT:
-        case NODE_KIND::NT_STR_TO_REG:
-        case NODE_KIND::NT_STR_TO_CODE:
-        case NODE_KIND::NT_STR_FROM_CODE:
+        case NODE_KIND::NT_FP_TO_FP:{
+            return mkUnknown();
+        }
+        case NODE_KIND::NT_STR_LEN:{
+            if(p->isCStr()){
+                return mkConstInt(p->toString().size());
+            }
+            else{
+                err_all(p, "String length on non-string", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_STR_TO_LOWER:{
+            if(p->isCStr()){
+                return mkConstStr(strToLower(p->toString()));
+            }
+            else{
+                err_all(p, "String to lower on non-string", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_STR_TO_UPPER:{
+            if(p->isCStr()){
+                return mkConstStr(strToUpper(p->toString()));
+            }
+            else{
+                err_all(p, "String to upper on non-string", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_STR_REV:{
+            if(p->isCStr()){
+                return mkConstStr(strRev(p->toString()));
+            }
+            else{
+                err_all(p, "String reverse on non-string", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_STR_IS_DIGIT:{
+            if(p->isCStr()){
+                return isIntUtil(p->toString()) ? mkTrue() : mkFalse();
+            }
+            else{
+                err_all(p, "String is digit on non-string", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_STR_FROM_INT:{
+            if(p->isCInt()){
+                return mkConstStr(p->toString());
+            }
+            else{
+                err_all(p, "String from int on non-integer", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_STR_TO_INT:{
+            if(p->isCStr()){
+                if(isIntUtil(p->toString())){
+                    return mkConstInt(stoi(p->toString()));
+                }
+                else{
+                    err_all(p, "String to int on non-integer", line_number);
+                    return mkUnknown();
+                }
+            }
+            else{
+                err_all(p, "String to int on non-string", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_STR_TO_CODE:{
+            if(p->isCStr()){
+                if(p->toString().size() == 1){
+                    return mkConstInt(static_cast<int>(p->toString()[0]));
+                }
+                else{
+                    err_all(p, "String to code on non-single character string", line_number);
+                    return mkUnknown();
+                }
+            }
+            else{
+                err_all(p, "String to code on non-string", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_STR_FROM_CODE:{
+            if(p->isCInt()){
+                if(p->toInt() >= 0 && p->toInt() <= 127){
+                    return mkConstStr(std::string(1, static_cast<char>(p->toInt())));
+                }
+                else{
+                    err_all(p, "String from code on non-ASCII character", line_number);
+                    return mkUnknown();
+                }
+            }
+            else{
+                err_all(p, "String from code on non-integer", line_number);
+                return mkUnknown();
+            }
+        }
         case NODE_KIND::NT_REG_STAR:
         case NODE_KIND::NT_REG_PLUS:
         case NODE_KIND::NT_REG_OPT:
         case NODE_KIND::NT_REG_COMPLEMENT:
-        case NODE_KIND::NT_BV_TO_NAT:
-        case NODE_KIND::NT_NAT_TO_BV:
-        case NODE_KIND::NT_BV_TO_INT:
-        case NODE_KIND::NT_INT_TO_BV:
-        case NODE_KIND::NT_POW2:
-            res = "(" + kindToString(kind) + " " + results[current->getChild(0)] + ")";
-            break;
-            
-        // Binary operation - accepts two parameters
+        case NODE_KIND::NT_STR_TO_REG:{
+            return mkUnknown();
+        }
+        case NODE_KIND::NT_BV_TO_NAT:{
+            if(p->isCBV()){
+                return mkConstInt(bvToNat(p->toString()));
+            }
+            else{
+                err_all(p, "Bitvector to natural on non-bitvector", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_BV_TO_INT:{
+            if(p->isCBV()){
+                return mkConstInt(bvToInt(p->toString()));
+            }
+            else{
+                err_all(p, "Bitvector to integer on non-bitvector", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_POW2:{
+            if(p->isCInt()){
+                return mkConstInt(pow(2, p->toInt()));
+            }
+            else if(p->isCReal()){
+                return mkUnknown();
+            }
+            else{
+                err_all(p, "Pow2 on non-integer or non-real", line_number);
+                return mkUnknown();
+            }
+        }
+        
+        // Multi-parameter operation - accepts arbitrary number of parameters
+        // if only accepts one parameter, just return it
         case NODE_KIND::NT_EQ:
         case NODE_KIND::NT_EQ_BOOL:
         case NODE_KIND::NT_EQ_OTHER:
-        case NODE_KIND::NT_POW:
-        case NODE_KIND::NT_DIV_INT:
-        case NODE_KIND::NT_DIV_REAL:
-        case NODE_KIND::NT_MOD:
-        case NODE_KIND::NT_LOG:
-        case NODE_KIND::NT_ATAN2:
-        case NODE_KIND::NT_LE:
-        case NODE_KIND::NT_LT:
-        case NODE_KIND::NT_GE:
-        case NODE_KIND::NT_GT:
-        case NODE_KIND::NT_IS_DIVISIBLE:
-        case NODE_KIND::NT_GCD:
-        case NODE_KIND::NT_LCM:
-        case NODE_KIND::NT_BV_UDIV:
-        case NODE_KIND::NT_BV_SDIV:
-        case NODE_KIND::NT_BV_UREM:
-        case NODE_KIND::NT_BV_SREM:
-        case NODE_KIND::NT_BV_UMOD:
-        case NODE_KIND::NT_BV_SMOD:
-        case NODE_KIND::NT_BV_SDIVO:
-        case NODE_KIND::NT_BV_UDIVO:
-        case NODE_KIND::NT_BV_SREMO:
-        case NODE_KIND::NT_BV_UREMO:
-        case NODE_KIND::NT_BV_SMODO:
-        case NODE_KIND::NT_BV_UMODO:
-        case NODE_KIND::NT_BV_SHL:
-        case NODE_KIND::NT_BV_LSHR:
-        case NODE_KIND::NT_BV_ASHR:
-        case NODE_KIND::NT_BV_ULT:
-        case NODE_KIND::NT_BV_ULE:
-        case NODE_KIND::NT_BV_UGT:
-        case NODE_KIND::NT_BV_UGE:
-        case NODE_KIND::NT_BV_SLT:
-        case NODE_KIND::NT_BV_SLE:
-        case NODE_KIND::NT_BV_SGT:
-        case NODE_KIND::NT_BV_SGE:
-        case NODE_KIND::NT_FP_DIV:
-        case NODE_KIND::NT_FP_REM:
-        case NODE_KIND::NT_FP_LE:
-        case NODE_KIND::NT_FP_LT:
-        case NODE_KIND::NT_FP_GE:
-        case NODE_KIND::NT_FP_GT:
-        case NODE_KIND::NT_FP_EQ:
-        case NODE_KIND::NT_SELECT:
-        case NODE_KIND::NT_STR_PREFIXOF:
-        case NODE_KIND::NT_STR_SUFFIXOF:
-        case NODE_KIND::NT_STR_CHARAT:
-        case NODE_KIND::NT_STR_SPLIT:
-        case NODE_KIND::NT_STR_LT:
-        case NODE_KIND::NT_STR_LE:
-        case NODE_KIND::NT_STR_GT:
-        case NODE_KIND::NT_STR_GE:
-        case NODE_KIND::NT_STR_IN_REG:
-        case NODE_KIND::NT_STR_CONTAINS:
-        case NODE_KIND::NT_REG_RANGE:
-        case NODE_KIND::NT_REG_REPEAT:
-            res = "(" + kindToString(kind) + " " + results[current->getChild(0)] + " " + results[current->getChild(1)] + ")";
-            break;
-            
-        // Ternary operation - accepts three parameters
-        case NODE_KIND::NT_ITE:
-        case NODE_KIND::NT_FP_FMA:
-        case NODE_KIND::NT_STORE:
-        case NODE_KIND::NT_STR_SUBSTR:
-        case NODE_KIND::NT_STR_INDEXOF:
-        case NODE_KIND::NT_STR_UPDATE:
-        case NODE_KIND::NT_STR_REPLACE:
-        case NODE_KIND::NT_STR_REPLACE_ALL:
-        case NODE_KIND::NT_REG_LOOP:
-        case NODE_KIND::NT_REPLACE_REG:
-        case NODE_KIND::NT_REPLACE_REG_ALL:
-        case NODE_KIND::NT_INDEXOF_REG:
-            res = "(" + kindToString(kind) + " " + results[current->getChild(0)] + " " + results[current->getChild(1)] + " " + results[current->getChild(2)] + ")";
-            break;
-            
-        // Multi-parameter operation - accepts arbitrary number of parameters
         case NODE_KIND::NT_DISTINCT:
         case NODE_KIND::NT_DISTINCT_BOOL:
         case NODE_KIND::NT_DISTINCT_OTHER:
@@ -647,7 +689,6 @@ std::shared_ptr<DAGNode> Parser::simp_oper(const std::shared_ptr<Sort>& sort, co
         case NODE_KIND::NT_BV_NAND:
         case NODE_KIND::NT_BV_NOR:
         case NODE_KIND::NT_BV_XNOR:
-        case NODE_KIND::NT_BV_COMP:
         case NODE_KIND::NT_BV_ADD:
         case NODE_KIND::NT_BV_SUB:
         case NODE_KIND::NT_BV_MUL:
@@ -666,43 +707,966 @@ std::shared_ptr<DAGNode> Parser::simp_oper(const std::shared_ptr<Sort>& sort, co
         case NODE_KIND::NT_REG_UNION:
         case NODE_KIND::NT_REG_INTER:
         case NODE_KIND::NT_REG_DIFF: {
-            res = "(" + kindToString(kind);
-            for (auto& child : current->getChildren()) {
-                res += " " + results[child];
-            }
-            res += ")";
-            break;
-        }
-            
-        // Special processing operation
-        case NODE_KIND::NT_BV_EXTRACT:
-            res = "((_ extract " + results[current->getChild(1)] + " " + results[current->getChild(2)] + ") " + results[current->getChild(0)] + ")";
-            break;
-            
-        case NODE_KIND::NT_BV_REPEAT:
-        case NODE_KIND::NT_BV_ZERO_EXT:
-        case NODE_KIND::NT_BV_SIGN_EXT:
-        case NODE_KIND::NT_BV_ROTATE_LEFT:
-        case NODE_KIND::NT_BV_ROTATE_RIGHT:
-            res = "((_ " + kindToString(kind) + " " + results[current->getChild(1)] + ") " + results[current->getChild(0)] + ")";
-            break;
-        default:
-            break;
+            return p;
+        }    
     }
     return mkUnknown();
 }
 
-std::shared_ptr<DAGNode> Parser::simp_oper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, std::shared_ptr<DAGNode> p){
-
-}
 std::shared_ptr<DAGNode> Parser::simp_oper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
+    switch(t){
+        // Binary operation - accepts two parameters
+        case NODE_KIND::NT_EQ:
+        case NODE_KIND::NT_EQ_BOOL:
+        case NODE_KIND::NT_EQ_OTHER:{
+            if(l->toString() == r->toString()){
+                return mkTrue();
+            }
+            else{
+                return mkFalse();
+            }
+        }
+        case NODE_KIND::NT_POW:{
+            if(l->isCInt() && r->isCInt()){
+                return mkConstInt(pow(l->toInt(), r->toInt()));
+            }
+            else{
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_DIV_INT:{
+            if(l->isCInt() && r->isCInt()){
+                return mkConstInt(l->toInt() / r->toInt());
+            }
+            else{
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_DIV_REAL:{
+            if(l->isCReal() && r->isCReal()){
+                return mkConstReal(l->toReal() / r->toReal());
+            }
+            else{
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_MOD:{
+            if(l->isCInt() && r->isCInt()){
+                return mkConstInt(l->toInt() % r->toInt());
+            }
+            else{
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_LOG:{
+            if(l->isCInt() && r->isCInt()){
+                if(l->toInt() <= 0 || r->toInt() <= 0){
+                    return l->isErr()?l:r;
+                }
+                else if(l->toInt() == 1){
+                    return l->isErr()?l:r;
+                }
+                else if(r->toInt() == 1){
+                    return mkConstReal(0.0);
+                }
+            }
+            else if(l->isCReal() && r->isCReal()){
+                if(l->toReal() <= 0.0 || r->toReal() <= 0.0){
+                    return l->isErr()?l:r;
+                }
+                else if(l->toReal() == 1.0){
+                    return l->isErr()?l:r;
+                }
+                else if(r->toReal() == 1.0){
+                        return mkConstReal(0.0);
+                    }
+            }
+            else{
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_ATAN2:{
+            return mkUnknown();
+        }
+        case NODE_KIND::NT_LE:{
+            if(l->isCInt() && r->isCInt()){
+                return l->toInt() <= r->toInt() ? mkTrue() : mkFalse();
+            }
+            else if(l->isCReal() && r->isCReal()){
+                return l->toReal() <= r->toReal() ? mkTrue() : mkFalse();
+            }
+            else{
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_LT:{
+            if(l->isCInt() && r->isCInt()){
+                return l->toInt() < r->toInt() ? mkTrue() : mkFalse();
+            }
+            else if(l->isCReal() && r->isCReal()){
+                return l->toReal() < r->toReal() ? mkTrue() : mkFalse();
+            }
+            else{
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_GE:{
+            if(l->isCInt() && r->isCInt()){
+                return l->toInt() >= r->toInt() ? mkTrue() : mkFalse();
+            }
+            else if(l->isCReal() && r->isCReal()){
+                return l->toReal() >= r->toReal() ? mkTrue() : mkFalse();
+            }
+            else{
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_GT:{
+            if(l->isCInt() && r->isCInt()){
+                return l->toInt() > r->toInt() ? mkTrue() : mkFalse();
+            }
+            else if(l->isCReal() && r->isCReal()){
+                return l->toReal() > r->toReal() ? mkTrue() : mkFalse();
+            }
+            else{
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_IS_DIVISIBLE:{
+            if(l->isCInt() && r->isCInt()){
+                return l->toInt() % r->toInt() == 0 ? mkTrue() : mkFalse();
+            }
+            else{
+                err_all(l, "Is divisible on non-integer", line_number);
+                err_all(r, "Is divisible on non-integer", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_GCD:{
+            if(l->isCInt() && r->isCInt()){
+                return mkConstInt(gcd(l->toInt(), r->toInt()));
+            }
+            else{
+                err_all(l, "GCD on non-integer", line_number);
+                err_all(r, "GCD on non-integer", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_LCM:{
+            if(l->isCInt() && r->isCInt()){
+                return mkConstInt(lcm(l->toInt(), r->toInt()));
+            }
+            else{
+                err_all(l, "LCM on non-integer", line_number);
+                err_all(r, "LCM on non-integer", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_BV_UDIV:{
+            // division by zero evaluates to all ones.
+            if(r->isCBV() && r->isZero()){
+                return mkConstBv("#b" + std::string(l->getSort()->getBitWidth(), '1'), l->getSort()->getBitWidth());
+            }
+            else if(l->isCBV() && r->isCBV()){
+                return mkConstBv(bvUdiv(l->toString(), r->toString()), l->getSort()->getBitWidth());
+            }
+            else{
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_BV_SDIV:{            
+            // bvsdiv by zero evaluates to all ones if it's positive, otherwise 1.
+            if(r->isCBV() && r->isZero()){
+                if(l->isCBV() && Integer(bvToInt(l->toString())) >= 0){
+                    return mkConstBv("#b" + std::string(l->getSort()->getBitWidth(), '1'), l->getSort()->getBitWidth());
+                }
+                else{
+                    return mkConstBv("#b" + std::string(l->getSort()->getBitWidth() - 1, '0') + "1", l->getSort()->getBitWidth());
+                }
+            }
+            else if(l->isCBV() && r->isCBV()){
+                return mkConstBv(bvSdiv(l->toString(), r->toString()), l->getSort()->getBitWidth());
+            }
+            else{
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_BV_UREM:{
+            // remainder by zero evaluates to the first operand.
+            if(r->isCBV() && r->isZero()){
+                return l;
+            }
+            else if(l->isCBV() && r->isCBV()){
+                return mkConstBv(bvUrem(l->toString(), r->toString()), l->getSort()->getBitWidth());
+            }
+            else{
+                return mkUnknown();
+            }`
+        }
+        case NODE_KIND::NT_BV_SREM:{
+            // bvsrem by zero evaluates to the first operand.
+            if(r->isCBV() && r->isZero()){
+                return l;
+            }
+            else if(l->isCBV() && r->isCBV()){
+                return mkConstBv(bvSrem(l->toString(), r->toString()), r->getSort()->getBitWidth());
+            }
+            else{
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_BV_UMOD:{
+            if(r->isCBV() && r->isZero()){
+                return l;
+            }
+            else if(l->isCBV() && r->isCBV()){
+                return mkConstBv(bvUmod(l->toString(), r->toString()), l->getSort()->getBitWidth());
+            }
+            else{
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_BV_SMOD:{
+            // bvsmod by zero evaluates to the first operand.
+            if(r->isCBV() && r->isZero()){
+                return l;
+            }
+            else if(l->isCBV() && r->isCBV()){
+                return mkConstBv(bvSmod(l->toString(), r->toString()), r->getSort()->getBitWidth());
+            }
+            else{
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_BV_SDIVO:
+        case NODE_KIND::NT_BV_UDIVO:
+        case NODE_KIND::NT_BV_SREMO:
+        case NODE_KIND::NT_BV_UREMO:
+        case NODE_KIND::NT_BV_SMODO:
+        case NODE_KIND::NT_BV_UMODO:{
+            return mkUnknown();
+        }
+        case NODE_KIND::NT_BV_SHL:{
+            // shift amount is zero evaluates to the first operand.
+            if(r->isCBV() && r->isZero()){
+                return l;
+            }
+            else if(l->isCBV() && r->isCBV()){
+                return mkConstBv(bvShl(l->toString(), r->toString()), l->getSort()->getBitWidth());
+            }
+            else{
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_BV_LSHR:{
+            // shift amount is zero evaluates to the first operand.
+            if(r->isCBV() && r->isZero()){
+                return l;
+            }
+            else if(l->isCBV() && r->isCBV()){
+                return mkConstBv(bvLshr(l->toString(), r->toString()), l->getSort()->getBitWidth());
+            }
+            else{
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_BV_ASHR:{
+            // shift amount is zero evaluates to the first operand.
+            if(r->isCBV() && r->isZero()){
+                return l;
+            }
+            else if(l->isCBV() && r->isCBV()){
+                return mkConstBv(bvAshr(l->toString(), r->toString()), l->getSort()->getBitWidth());
+            }
+            else{
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_BV_ULT:
+        case NODE_KIND::NT_BV_ULE:
+        case NODE_KIND::NT_BV_UGT:
+        case NODE_KIND::NT_BV_UGE:
+        case NODE_KIND::NT_BV_SLT:
+        case NODE_KIND::NT_BV_SLE:
+        case NODE_KIND::NT_BV_SGT:
+        case NODE_KIND::NT_BV_SGE:{
+            if(l->isCBV() && r->isCBV()){
+                return bvComp(l->toString(), r->toString(), t) ? mkTrue() : mkFalse();
+            }
+            else{
+                err_all(l, "Comparison on non-bitvector", line_number);
+                err_all(r, "Comparison on non-bitvector", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_NAT_TO_BV:{
+            if(l->isCInt() && r->isCInt()){
+                return mkConstBv(natToBv(l->toInt(), r->toInt()), r->toInt().get_ui());
+            }
+            else{
+                err_all(l, "Natural to bitvector on non-integer", line_number);
+                err_all(r, "Natural to bitvector on non-integer", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_INT_TO_BV:{
+            if(l->isCInt() && r->isCInt()){
+                return mkConstBv(intToBv(l->toInt(), r->toInt()), r->toInt().get_ui());
+            }
+            else{
+                err_all(l, "Integer to bitvector on non-integer", line_number);
+                err_all(r, "Integer to bitvector on non-integer", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_FP_DIV:
+        case NODE_KIND::NT_FP_REM:
+        case NODE_KIND::NT_FP_LE:
+        case NODE_KIND::NT_FP_LT:
+        case NODE_KIND::NT_FP_GE:
+        case NODE_KIND::NT_FP_GT:
+        case NODE_KIND::NT_FP_EQ:
+        case NODE_KIND::NT_SELECT:{
+            return mkUnknown();
+        }
+        case NODE_KIND::NT_STR_PREFIXOF:{
+            if(l->isCStr() && r->isCStr()){
+                return strPrefixof(l->toString(), r->toString()) ? mkTrue() : mkFalse();
+            }
+            else{   
+                err_all(l, "Prefixof on non-string", line_number);
+                err_all(r, "Prefixof on non-string", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_STR_SUFFIXOF:{
+            if(l->isCStr() && r->isCStr()){
+                return strSuffixof(l->toString(), r->toString()) ? mkTrue() : mkFalse();
+            }
+            else{
+                err_all(l, "Suffixof on non-string", line_number);
+                err_all(r, "Suffixof on non-string", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_STR_CHARAT:{
+            if(l->isCStr() && r->isCInt()){
+                return mkConstStr(strCharAt(l->toString(), r->toInt()));
+            }
+            else{
+                err_all(l, "Charat on non-string", line_number);
+                err_all(r, "Charat on non-integer", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_STR_SPLIT:{
+            return mkUnknown();
+        }
+        case NODE_KIND::NT_STR_LT:{
+            if(l->isCStr() && r->isCStr()){
+                return l->toString() < r->toString() ? mkTrue() : mkFalse();
+            }
+            else{
+                err_all(l, "Lt on non-string", line_number);
+                err_all(r, "Lt on non-string", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_STR_LE:{
+            if(l->isCStr() && r->isCStr()){
+                return l->toString() <= r->toString() ? mkTrue() : mkFalse();
+            }
+            else{
+                err_all(l, "Le on non-string", line_number);
+                err_all(r, "Le on non-string", line_number);
+                return mkUnknown();
+            }
+        case NODE_KIND::NT_STR_GT:{
+            if(l->isCStr() && r->isCStr()){ 
+                return l->toString() > r->toString() ? mkTrue() : mkFalse();
+            }
+            else{
+                err_all(l, "Gt on non-string", line_number);
+                err_all(r, "Gt on non-string", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_STR_GE:{
+            if(l->isCStr() && r->isCStr()){
+                return l->toString() >= r->toString() ? mkTrue() : mkFalse();
+            }
+            else{
+                err_all(l, "Ge on non-string", line_number);
+                err_all(r, "Ge on non-string", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_STR_CONTAINS:{
+            if(l->isCStr() && r->isCStr()){
+                return strContains(l->toString(), r->toString()) ? mkTrue() : mkFalse();
+            }
+            else{
+                err_all(l, "Contains on non-string", line_number);
+                err_all(r, "Contains on non-string", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_STR_IN_REG:
+        case NODE_KIND::NT_REG_RANGE:
+        case NODE_KIND::NT_REG_REPEAT:{
+            return mkUnknown();
+        }
+            
+        // Multi-parameter operation - accepts arbitrary number of parameters
+        case NODE_KIND::NT_DISTINCT:
+        case NODE_KIND::NT_DISTINCT_BOOL:
+        case NODE_KIND::NT_DISTINCT_OTHER:{
+            if(l->toString() == r->toString()){
+                return mkFalse();
+            }
+            else{
+                return mkTrue();
+            }
+        }
+        case NODE_KIND::NT_AND:{
+            if(l->isFalse() || r->isFalse()){
+                return mkFalse();
+            }
+            else if(l->isTrue() || r->isTrue()){
+                return mkTrue();
+            }
+            else{
+                err_all(l, "And on non-boolean", line_number);
+                err_all(r, "And on non-boolean", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_OR:{
+            if(l->isTrue() || r->isTrue()){
+                return mkTrue();
+            }
+            else if(l->isFalse() && r->isFalse()){
+                return mkFalse();
+            }
+            else{
+                err_all(l, "Or on non-boolean", line_number);
+                err_all(r, "Or on non-boolean", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_IMPLIES:{
+            if(l->isTrue() && r->isFalse()){
+                return mkFalse();
+            }
+            else if(l->isFalse() || r->isTrue()){
+                return mkTrue();
+            }
+            else{
+                err_all(l, "Implies on non-boolean", line_number);
+                err_all(r, "Implies on non-boolean", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_XOR:{
+            if(l->isTrue() && r->isTrue()){
+                return mkFalse();
+            }
+            else if(l->isFalse() && r->isFalse()){
+                return mkFalse();
+            }
+            else if(l->isTrue() && r->isFalse()){
+                return mkTrue();
+            }
+            else if(l->isFalse() && r->isTrue()){
+                return mkTrue();
+            }
+            else{
+                err_all(l, "Xor on non-boolean", line_number);
+                err_all(r, "Xor on non-boolean", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_ADD:{
+            if(l->isCInt() && r->isCInt()){
+                return mkConstInt(l->toInt() + r->toInt());
+            }
+            else if(l->isCReal() && r->isCReal()){
+                return mkConstReal(l->toReal() + r->toReal());
+            }
+            else{
+                err_all(l, "Add on non-integer or non-real", line_number);
+                err_all(r, "Add on non-integer or non-real", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_MUL:{
+            if(l->isCInt() && r->isCInt()){
+                return mkConstInt(l->toInt() * r->toInt());
+            }
+            else if(l->isCReal() && r->isCReal()){
+                return mkConstReal(l->toReal() * r->toReal());
+            }
+            else{
+                err_all(l, "Mul on non-integer or non-real", line_number);
+                err_all(r, "Mul on non-integer or non-real", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_IAND:{
+            if(l->isCInt() && r->isCInt()){
+                return mkConstInt(l->toInt() & r->toInt());
+            }
+            else{
+                err_all(l, "Iand on non-integer", line_number);
+                err_all(r, "Iand on non-integer", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_SUB:{
+            if(l->isCInt() && r->isCInt()){
+                return mkConstInt(l->toInt() - r->toInt());
+            }
+            else if(l->isCReal() && r->isCReal()){
+                return mkConstReal(l->toReal() - r->toReal());
+            }
+            else{
+                err_all(l, "Sub on non-integer or non-real", line_number);
+                err_all(r, "Sub on non-integer or non-real", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_BV_AND:{
+            if(l->isCBV() && r->isCBV()){
+                return mkConstBv(bvAnd(l->toString(), r->toString()), l->getSort()->getBitWidth());
+            }
+            else{
+                err_all(l, "And on non-bitvector", line_number);
+                err_all(r, "And on non-bitvector", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_BV_OR:{
+            if(l->isCBV() && r->isCBV()){
+                return mkConstBv(bvOr(l->toString(), r->toString()), l->getSort()->getBitWidth());
+            }
+            else{
+                err_all(l, "Or on non-bitvector", line_number);
+                err_all(r, "Or on non-bitvector", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_BV_XOR:{
+            if(l->isCBV() && r->isCBV()){
+                return mkConstBv(bvXor(l->toString(), r->toString()), l->getSort()->getBitWidth());
+            }
+            else{
+                err_all(l, "Xor on non-bitvector", line_number);
+                err_all(r, "Xor on non-bitvector", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_BV_NAND:{
+            if(l->isCBV() && r->isCBV()){
+                return mkConstBv(bvNand(l->toString(), r->toString()), l->getSort()->getBitWidth());
+            }
+            else{
+                err_all(l, "Nand on non-bitvector", line_number);
+                err_all(r, "Nand on non-bitvector", line_number);
+                return mkUnknown();
+            }
+        case NODE_KIND::NT_BV_NOR:{
+            if(l->isCBV() && r->isCBV()){
+                return mkConstBv(bvNor(l->toString(), r->toString()), l->getSort()->getBitWidth());
+            }
+            else{
+                err_all(l, "Nor on non-bitvector", line_number);
+                err_all(r, "Nor on non-bitvector", line_number);
+                return mkUnknown();
+            }
+        case NODE_KIND::NT_BV_XNOR:{
+            if(l->isCBV() && r->isCBV()){
+                return mkConstBv(bvXnor(l->toString(), r->toString()), l->getSort()->getBitWidth());
+            }
+            else{
+                err_all(l, "Xnor on non-bitvector", line_number);
+                err_all(r, "Xnor on non-bitvector", line_number);
+                return mkUnknown();
+            }
+        case NODE_KIND::NT_BV_COMP:{
+            if(l->isCBV() && r->isCBV()){
+                return bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_COMP) ? mkTrue() : mkFalse();
+            }
+            else{
+                err_all(l, "Comp on non-bitvector", line_number);
+                err_all(r, "Comp on non-bitvector", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_BV_ADD:{
+            if(l->isCBV() && r->isCBV()){
+                return mkConstBv(bvAdd(l->toString(), r->toString()), l->getSort()->getBitWidth());
+            }
+            else{
+                err_all(l, "Add on non-bitvector", line_number);
+                err_all(r, "Add on non-bitvector", line_number);
+                return mkUnknown();
+            }
+        case NODE_KIND::NT_BV_SUB:{
+            if(l->isCBV() && r->isCBV()){
+                return mkConstBv(bvSub(l->toString(), r->toString()), l->getSort()->getBitWidth());
+            }
+            else{
+                err_all(l, "Sub on non-bitvector", line_number);
+                err_all(r, "Sub on non-bitvector", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_BV_MUL:{
+            if(l->isCBV() && r->isCBV()){
+                return mkConstBv(bvMul(l->toString(), r->toString()), l->getSort()->getBitWidth());
+            }
+            else{
+                err_all(l, "Mul on non-bitvector", line_number);
+                err_all(r, "Mul on non-bitvector", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_BV_SADDO:
+        case NODE_KIND::NT_BV_UADDO:
+        case NODE_KIND::NT_BV_SMULO:
+        case NODE_KIND::NT_BV_UMULO:{
+            return mkUnknown();
+        }
+        case NODE_KIND::NT_BV_CONCAT:
+        case NODE_KIND::NT_FP_ADD:
+        case NODE_KIND::NT_FP_SUB:
+        case NODE_KIND::NT_FP_MUL:
+        case NODE_KIND::NT_FP_MIN:
+        case NODE_KIND::NT_FP_MAX:{
+            return mkUnknown();
+        }
+        case NODE_KIND::NT_STR_CONCAT:{
+            if(l->isCStr() && r->isCStr()){
+                return mkConstStr(l->toString() + r->toString());
+            }
+            else{
+                err_all(l, "Concat on non-string", line_number);
+                err_all(r, "Concat on non-string", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_REG_CONCAT:
+        case NODE_KIND::NT_REG_UNION:
+        case NODE_KIND::NT_REG_INTER:
+        case NODE_KIND::NT_REG_DIFF: {
+            return mkUnknown();
+        }
+        
+        // Special processing operation
+        case NODE_KIND::NT_BV_REPEAT:{
+            if(l->isCBV() && r->isCInt()){
+                Integer size = l->getSort()->getBitWidth() * r->toInt();
+                return mkConstBv(bvRepeat(l->toString(), r->toInt()), size.get_ui());
+            }
+            else{
+                err_all(l, "Repeat on non-bitvector", line_number);
+                err_all(r, "Repeat on non-bitvector", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_BV_ZERO_EXT:{
+            if(l->isCBV() && r->isCInt()){
+                Integer size = r->toInt();
+                return mkConstBv(bvZeroExtend(l->toString(), r->toInt()), size.get_ui());
+            }
+            else{
+                err_all(l, "Zero extend on non-bitvector", line_number);
+                err_all(r, "Zero extend on non-bitvector", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_BV_SIGN_EXT:{
+            if(l->isCBV() && r->isCInt()){
+                Integer size = r->toInt();
+                return mkConstBv(bvSignExtend(l->toString(), r->toInt()), size.get_ui());
+            }
+            else{
+                err_all(l, "Sign extend on non-bitvector", line_number);
+                err_all(r, "Sign extend on non-bitvector", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_BV_ROTATE_LEFT:{
+            if(l->isCBV() && r->isCInt()){
+                return mkConstBv(bvRotateLeft(l->toString(), r->toInt()), l->getSort()->getBitWidth());
+            }
+            else{
+                err_all(l, "Rotate left on non-bitvector", line_number);
+                err_all(r, "Rotate left on non-bitvector", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_BV_ROTATE_RIGHT:{
+            if(l->isCBV() && r->isCInt()){
+                return mkConstBv(bvRotateRight(l->toString(), r->toInt()), l->getSort()->getBitWidth());
+            }
+            else{
+                err_all(l, "Rotate right on non-bitvector", line_number);
+                err_all(r, "Rotate right on non-bitvector", line_number);
+                return mkUnknown();
+            }
+        }
+            
+        default:
+            break;
+            
 
 }
 std::shared_ptr<DAGNode> Parser::simp_oper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> m, std::shared_ptr<DAGNode> r){
 
+        // Ternary operation - accepts three parameters
+        case NODE_KIND::NT_ITE:{
+            if(l->isTrue()){
+                return m;
+            }
+            else if(l->isFalse()){
+                return r;
+            }
+            return mkUnknown();
+        }
+        case NODE_KIND::NT_FP_FMA:
+        case NODE_KIND::NT_STORE:{
+            return mkUnknown();
+        }
+        case NODE_KIND::NT_STR_SUBSTR:{
+            if(l->isCStr() && m->isCInt() && r->isCInt()){
+                return mkConstStr(l->toString().substr(m->toInt(), r->toInt()));
+            }
+            else{
+                err_all(l, "Substr on non-string", line_number);
+                err_all(m, "Substr on non-integer", line_number);
+                err_all(r, "Substr on non-integer", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_STR_INDEXOF:{
+            if(l->isCStr() && m->isCStr() && r->isCInt()){
+                return mkConstInt(l->toString().find(m->toString()));
+            }
+            else{
+                err_all(l, "Indexof on non-string", line_number);
+                err_all(m, "Indexof on non-string", line_number);
+                err_all(r, "Indexof on non-integer", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_STR_UPDATE:{
+            if(l->isCStr() && r->isCInt() && v->isCStr()){
+                return mkConstStr(strUpdate(l->toString(), r->toInt(), v->toString()));
+            }
+            else{
+                err_all(l, "Update on non-string", line_number);
+                err_all(r, "Update on non-integer", line_number);
+                err_all(v, "Update on non-string", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_STR_REPLACE:{
+            if(l->isCStr() && m->isCStr() && r->isCStr()){
+                return mkConstStr(strReplace(l->toString(), m->toString(), r->toString()));
+            }
+            else{
+                err_all(l, "Replace on non-string", line_number);
+                err_all(m, "Replace on non-string", line_number);
+                err_all(r, "Replace on non-string", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_STR_REPLACE_ALL:{
+            if(l->isCStr() && m->isCStr() && r->isCStr()){
+                return mkConstStr(strReplaceAll(l->toString(), m->toString(), r->toString()));
+            }
+            else{
+                err_all(l, "ReplaceAll on non-string", line_number);
+                err_all(m, "ReplaceAll on non-string", line_number);
+                err_all(r, "ReplaceAll on non-string", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_REG_LOOP:
+        case NODE_KIND::NT_REPLACE_REG:
+        case NODE_KIND::NT_REPLACE_REG_ALL:
+        case NODE_KIND::NT_INDEXOF_REG:{
+            return mkUnknown();
+        }
+        // Special processing operation
+        case NODE_KIND::NT_BV_EXTRACT:{
+            if(l->isCBV() && r->isCInt() && s->isCInt()){
+                Integer size = (s->toInt() - r->toInt());
+                return mkConstBv(bvExtract(l->toString(), r->toInt(), s->toInt()), size.get_ui());
+            }
+            else{
+                err_all(l, "Extract on non-bitvector", line_number);
+                err_all(r, "Extract on non-integer", line_number);
+                err_all(s, "Extract on non-integer", line_number);
+                return mkUnknown();
+            }
+        }
+
+        // Multi-parameter operation - accepts arbitrary number of parameters
+        case NODE_KIND::NT_EQ:
+        case NODE_KIND::NT_EQ_BOOL:
+        case NODE_KIND::NT_EQ_OTHER:{
+            if(l->toString() == r->toString() && m->toString() == r->toString()){
+                return mkTrue();
+            }
+            else{
+                return mkFalse();
+            }
+        }
+        case NODE_KIND::NT_DISTINCT:
+        case NODE_KIND::NT_DISTINCT_BOOL:
+        case NODE_KIND::NT_DISTINCT_OTHER:{
+            if(l->toString() != m->toString() && l->toString() != r->toString() && m->toString() != r->toString()){
+                return mkTrue();
+            }
+            else{
+                return mkFalse();
+            }
+        }
+        // convert to multi-pairs using {{l, m}, r}
+        case NODE_KIND::NT_AND:
+        case NODE_KIND::NT_OR:
+        case NODE_KIND::NT_IMPLIES:
+        case NODE_KIND::NT_XOR:
+        case NODE_KIND::NT_ADD:
+        case NODE_KIND::NT_MUL:
+        case NODE_KIND::NT_IAND:
+        case NODE_KIND::NT_SUB:
+        case NODE_KIND::NT_BV_AND:
+        case NODE_KIND::NT_BV_OR:
+        case NODE_KIND::NT_BV_XOR:
+        case NODE_KIND::NT_BV_NAND:
+        case NODE_KIND::NT_BV_NOR:
+        case NODE_KIND::NT_BV_XNOR:
+        case NODE_KIND::NT_BV_ADD:
+        case NODE_KIND::NT_BV_SUB:
+        case NODE_KIND::NT_BV_MUL:{
+            // convert to multi-pairs using {{l, m}, r}
+            std::shared_ptr<DAGNode> result = p[0];
+            for(size_t i=1;i<p.size();i++){
+                result = simp_oper(sort, t, result, p[i]);
+            }
+            return result;
+        }
+        case NODE_KIND::NT_BV_SADDO:
+        case NODE_KIND::NT_BV_UADDO:
+        case NODE_KIND::NT_BV_SMULO:
+        case NODE_KIND::NT_BV_UMULO:{
+            return mkUnknown();
+        }
+        case NODE_KIND::NT_BV_CONCAT:
+        case NODE_KIND::NT_STR_CONCAT:{
+
+        }
+        case NODE_KIND::NT_FP_ADD:
+        case NODE_KIND::NT_FP_SUB:
+        case NODE_KIND::NT_FP_MUL:
+        case NODE_KIND::NT_FP_MIN:
+        case NODE_KIND::NT_FP_MAX:
+        case NODE_KIND::NT_REG_CONCAT:
+        case NODE_KIND::NT_REG_UNION:
+        case NODE_KIND::NT_REG_INTER:
+        case NODE_KIND::NT_REG_DIFF: {
+            return mkUnknown();
+        }
 }
 std::shared_ptr<DAGNode> Parser::simp_oper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, const std::vector<std::shared_ptr<DAGNode>> &p){
+        // Multi-parameter operation - accepts arbitrary number of parameters
+        case NODE_KIND::NT_EQ:
+        case NODE_KIND::NT_EQ_BOOL:
+        case NODE_KIND::NT_EQ_OTHER:{
+            auto common = p[0]->toString();
+            for(size_t i=1;i<p.size();i++){
+                if(p[i]->toString() != common){
+                    return mkFalse();
+                }
+            }
+            return mkTrue();
+        }
+        case NODE_KIND::NT_DISTINCT:
+        case NODE_KIND::NT_DISTINCT_BOOL:
+        case NODE_KIND::NT_DISTINCT_OTHER:{
+            boost::unordered_set<std::string> s;
+            for(size_t i=0;i<p.size();i++){
+                if(s.count(p[i]->toString())){
+                    return mkFalse();
+                }
+                s.insert(p[i]->toString());
+            }
+            return mkTrue();
+        }
+        case NODE_KIND::NT_IMPLIES:{
+            // -p[0] -p[1] -p[2] -p[3] ... p[n]
+            for(size_t i=0;i<p.size();i++){
+                if(i != p.size()-1){
+                    if(p[i]->isFalse()){
+                        return mkTrue();
+                    }
+                }
+                else{
+                    if(p[i]->isTrue()){
+                        return mkTrue();
+                    }
+                }
+            }
+            return mkFalse();
+        }
+        // convert to multi-pairs using {{l, m}, r}
+        case NODE_KIND::NT_AND:
+        case NODE_KIND::NT_OR:
+        case NODE_KIND::NT_XOR:
+        case NODE_KIND::NT_ADD:
+        case NODE_KIND::NT_MUL:
+        case NODE_KIND::NT_IAND:
+        case NODE_KIND::NT_SUB:
+        case NODE_KIND::NT_BV_AND:
+        case NODE_KIND::NT_BV_OR:
+        case NODE_KIND::NT_BV_XOR:
+        case NODE_KIND::NT_BV_NAND:
+        case NODE_KIND::NT_BV_NOR:
+        case NODE_KIND::NT_BV_XNOR:
+        case NODE_KIND::NT_BV_ADD:
+        case NODE_KIND::NT_BV_SUB:
+        case NODE_KIND::NT_BV_MUL:{
+            // convert to multi-pairs using {{l, m}, r}
+            std::shared_ptr<DAGNode> result = p[0];
+            for(size_t i=1;i<p.size();i++){
+                result = simp_oper(sort, t, result, p[i]);
+            }
+            return result;
+        }
+        case NODE_KIND::NT_BV_SADDO:
+        case NODE_KIND::NT_BV_UADDO:
+        case NODE_KIND::NT_BV_SMULO:
+        case NODE_KIND::NT_BV_UMULO:{
+            return mkUnknown();
+        }
+        case NODE_KIND::NT_BV_CONCAT:
+        case NODE_KIND::NT_STR_CONCAT:{
 
+        }
+        case NODE_KIND::NT_FP_ADD:
+        case NODE_KIND::NT_FP_SUB:
+        case NODE_KIND::NT_FP_MUL:
+        case NODE_KIND::NT_FP_MIN:
+        case NODE_KIND::NT_FP_MAX:
+        case NODE_KIND::NT_REG_CONCAT:
+        case NODE_KIND::NT_REG_UNION:
+        case NODE_KIND::NT_REG_INTER:
+        case NODE_KIND::NT_REG_DIFF: {
+            return mkUnknown();
+        }
 }
 
 

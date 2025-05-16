@@ -33,13 +33,13 @@
 namespace SMTLIBParser {
 
 // 常量
-HighPrecisionReal HighPrecisionReal::pi(unsigned int precision) {
+HighPrecisionReal HighPrecisionReal::pi(mpfr_prec_t precision) {
     HighPrecisionReal result(precision);
     mpfr_const_pi(result.value, MPFR_RNDN);
     return result;
 }
 
-HighPrecisionReal HighPrecisionReal::e(unsigned int precision) {
+HighPrecisionReal HighPrecisionReal::e(mpfr_prec_t precision) {
     HighPrecisionReal result(precision);
     // use exp(1) to calculate e
     mpfr_set_ui(result.value, 1, MPFR_RNDN);
@@ -47,7 +47,7 @@ HighPrecisionReal HighPrecisionReal::e(unsigned int precision) {
     return result;
 }
 
-HighPrecisionReal HighPrecisionReal::phi(unsigned int precision) {
+HighPrecisionReal HighPrecisionReal::phi(mpfr_prec_t precision) {
     HighPrecisionReal result(precision);
     // φ = (1 + sqrt(5)) / 2
     HighPrecisionReal five(5, precision);
@@ -58,20 +58,20 @@ HighPrecisionReal HighPrecisionReal::phi(unsigned int precision) {
     return result;
 }
 
-HighPrecisionReal HighPrecisionReal::ln2(unsigned int precision) {
+HighPrecisionReal HighPrecisionReal::ln2(mpfr_prec_t precision) {
     HighPrecisionReal result(precision);
     mpfr_const_log2(result.value, MPFR_RNDN);
     return result;
 }
 
-HighPrecisionReal HighPrecisionReal::ln10(unsigned int precision) {
+HighPrecisionReal HighPrecisionReal::ln10(mpfr_prec_t precision) {
     HighPrecisionReal result(precision);
     HighPrecisionReal ten(10, precision);
     mpfr_log(result.value, ten.value, MPFR_RNDN);
     return result;
 }
 
-HighPrecisionReal HighPrecisionReal::log2_e(unsigned int precision) {
+HighPrecisionReal HighPrecisionReal::log2_e(mpfr_prec_t precision) {
     HighPrecisionReal result(precision);
     // log₂(e) = 1/ln(2)
     mpfr_const_log2(result.value, MPFR_RNDN);
@@ -79,7 +79,7 @@ HighPrecisionReal HighPrecisionReal::log2_e(unsigned int precision) {
     return result;
 }
 
-HighPrecisionReal HighPrecisionReal::log10_e(unsigned int precision) {
+HighPrecisionReal HighPrecisionReal::log10_e(mpfr_prec_t precision) {
     HighPrecisionReal result(precision);
     // log₁₀(e) = 1/ln(10)
     HighPrecisionReal ten(10, precision);
@@ -88,45 +88,50 @@ HighPrecisionReal HighPrecisionReal::log10_e(unsigned int precision) {
     return result;
 }
 
-HighPrecisionReal HighPrecisionReal::euler(unsigned int precision) {
+HighPrecisionReal HighPrecisionReal::euler(mpfr_prec_t precision) {
     HighPrecisionReal result(precision);
     mpfr_const_euler(result.value, MPFR_RNDN);
     return result;
 }
 
-HighPrecisionReal HighPrecisionReal::catalan(unsigned int precision) {
+HighPrecisionReal HighPrecisionReal::catalan(mpfr_prec_t precision) {
     HighPrecisionReal result(precision);
     mpfr_const_catalan(result.value, MPFR_RNDN);
     return result;
 }
 
 // Constructor
-HighPrecisionReal::HighPrecisionReal(unsigned int precision) {
+HighPrecisionReal::HighPrecisionReal(mpfr_prec_t precision) {
     mpfr_init2(value, precision);
     mpfr_set_zero(value, 1); // Initialize to +0
 }
 
-HighPrecisionReal::HighPrecisionReal(const Real& r, unsigned int precision) {
+HighPrecisionReal::HighPrecisionReal(int i, mpfr_prec_t precision) {
+    mpfr_init2(value, precision);
+    mpfr_set_si(value, i, MPFR_RNDN);
+}
+
+HighPrecisionReal::HighPrecisionReal(const Real& r, mpfr_prec_t precision) {
     mpfr_init2(value, precision);
     mpfr_set_f(value, r.get_mpf_t(), MPFR_RNDN);
 }
 
-HighPrecisionReal::HighPrecisionReal(const Integer& i, unsigned int precision) {
+HighPrecisionReal::HighPrecisionReal(const Integer& i, mpfr_prec_t precision) {
     mpfr_init2(value, precision);
     mpfr_set_z(value, i.get_mpz_t(), MPFR_RNDN);
 }
 
-HighPrecisionReal::HighPrecisionReal(const double& d, unsigned int precision) {
+HighPrecisionReal::HighPrecisionReal(const double& d, mpfr_prec_t precision) {
     mpfr_init2(value, precision);
     mpfr_set_d(value, d, MPFR_RNDN);
 }
 
-HighPrecisionReal::HighPrecisionReal(const float& f, unsigned int precision) {
+HighPrecisionReal::HighPrecisionReal(const float& f, mpfr_prec_t precision) {
     mpfr_init2(value, precision);
     mpfr_set_flt(value, f, MPFR_RNDN);
 }
 
-HighPrecisionReal::HighPrecisionReal(const std::string& s, unsigned int precision) {
+HighPrecisionReal::HighPrecisionReal(const std::string& s, mpfr_prec_t precision) {
     mpfr_init2(value, precision);
     if (mpfr_set_str(value, s.c_str(), 10, MPFR_RNDN) != 0) {
         mpfr_clear(value);
@@ -134,7 +139,7 @@ HighPrecisionReal::HighPrecisionReal(const std::string& s, unsigned int precisio
     }
 }
 
-HighPrecisionReal::HighPrecisionReal(const char* s, unsigned int precision) {
+HighPrecisionReal::HighPrecisionReal(const char* s, mpfr_prec_t precision) {
     mpfr_init2(value, precision);
     if (mpfr_set_str(value, s, 10, MPFR_RNDN) != 0) {
         mpfr_clear(value);
@@ -371,7 +376,7 @@ HighPrecisionReal HighPrecisionReal::atan() const {
 }
 
 HighPrecisionReal HighPrecisionReal::atan2(const HighPrecisionReal& y, const HighPrecisionReal& x) {
-    unsigned int precision = std::max(mpfr_get_prec(y.value), mpfr_get_prec(x.value));
+    mpfr_prec_t precision = std::max(mpfr_get_prec(y.value), mpfr_get_prec(x.value));
     HighPrecisionReal result(precision);
     mpfr_atan2(result.value, y.value, x.value, MPFR_RNDN);
     return result;
@@ -489,11 +494,11 @@ double HighPrecisionReal::toDouble() const {
 }
 
 // Set and get precision
-void HighPrecisionReal::setPrecision(unsigned int precision) {
+void HighPrecisionReal::setPrecision(mpfr_prec_t precision) {
     mpfr_prec_round(value, precision, MPFR_RNDN);
 }
 
-unsigned int HighPrecisionReal::getPrecision() const {
+mpfr_prec_t HighPrecisionReal::getPrecision() const {
     return mpfr_get_prec(value);
 }
 

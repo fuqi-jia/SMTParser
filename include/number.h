@@ -40,24 +40,25 @@ namespace SMTLIBParser{
     class HighPrecisionReal{
         public:
             // 常量
-            static HighPrecisionReal pi(unsigned int precision = 128);  // π (pi)
-            static HighPrecisionReal e(unsigned int precision = 128);   // e (natural logarithm base)
-            static HighPrecisionReal phi(unsigned int precision = 128); // φ (golden ratio)
-            static HighPrecisionReal ln2(unsigned int precision = 128); // ln(2)
-            static HighPrecisionReal ln10(unsigned int precision = 128); // ln(10)
-            static HighPrecisionReal log2_e(unsigned int precision = 128); // log₂(e)
-            static HighPrecisionReal log10_e(unsigned int precision = 128); // log₁₀(e)
-            static HighPrecisionReal euler(unsigned int precision = 128); // γ (Euler constant)
-            static HighPrecisionReal catalan(unsigned int precision = 128); // G (Catalan constant)
+            static HighPrecisionReal pi(mpfr_prec_t precision = 128);  // π (pi)
+            static HighPrecisionReal e(mpfr_prec_t precision = 128);   // e (natural logarithm base)
+            static HighPrecisionReal phi(mpfr_prec_t precision = 128); // φ (golden ratio)
+            static HighPrecisionReal ln2(mpfr_prec_t precision = 128); // ln(2)
+            static HighPrecisionReal ln10(mpfr_prec_t precision = 128); // ln(10)
+            static HighPrecisionReal log2_e(mpfr_prec_t precision = 128); // log₂(e)
+            static HighPrecisionReal log10_e(mpfr_prec_t precision = 128); // log₁₀(e)
+            static HighPrecisionReal euler(mpfr_prec_t precision = 128); // γ (Euler constant)
+            static HighPrecisionReal catalan(mpfr_prec_t precision = 128); // G (Catalan constant)
             
             // Constructor
-            HighPrecisionReal(unsigned int precision = 128);
-            HighPrecisionReal(const Real& r, unsigned int precision = 128);
-            HighPrecisionReal(const Integer& i, unsigned int precision = 128);
-            HighPrecisionReal(const double& d, unsigned int precision = 128);
-            HighPrecisionReal(const float& f, unsigned int precision = 128);
-            HighPrecisionReal(const std::string& s, unsigned int precision = 128);
-            HighPrecisionReal(const char* s, unsigned int precision = 128);
+            HighPrecisionReal(mpfr_prec_t precision = 128);
+            HighPrecisionReal(int i, mpfr_prec_t precision = 128);
+            HighPrecisionReal(const Real& r, mpfr_prec_t precision = 128);
+            HighPrecisionReal(const Integer& i, mpfr_prec_t precision = 128);
+            HighPrecisionReal(const double& d, mpfr_prec_t precision = 128);
+            HighPrecisionReal(const float& f, mpfr_prec_t precision = 128);
+            HighPrecisionReal(const std::string& s, mpfr_prec_t precision = 128);
+            HighPrecisionReal(const char* s, mpfr_prec_t precision = 128);
             HighPrecisionReal(const HighPrecisionReal& other);
             
             // Assignment operator
@@ -127,8 +128,8 @@ namespace SMTLIBParser{
             double toDouble() const;
             
             // Set and get precision
-            void setPrecision(unsigned int precision);
-            unsigned int getPrecision() const;
+            void setPrecision(mpfr_prec_t precision);
+            mpfr_prec_t getPrecision() const;
             
             // Access internal MPFR value
             mpfr_ptr getMPFR();
