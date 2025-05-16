@@ -739,10 +739,10 @@ namespace SMTLIBParser{
         if(new_params.size() == 0){
             // all 0 constant
             if(options->isRealTheory()){
-                return mkConstReal("0");
+                return mkConstReal(0.0);
             }
             else if(options->isIntTheory()){
-                return mkConstInt("0");
+                return mkConstInt(0);
             }
             else{
                 return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
@@ -787,7 +787,7 @@ namespace SMTLIBParser{
                     return mkConstInt("0");
                 }
                 else if(options->isRealTheory()){
-                    return mkConstReal("0");
+                    return mkConstReal(0.0);
                 }
             }
             else if(params[i]->isOne()){
@@ -801,10 +801,10 @@ namespace SMTLIBParser{
         if(new_params.size() == 0){
             // all 1 constant
             if(options->isIntTheory()){
-                return mkConstInt("1");
+                return mkConstInt(1);
             }
             else if(options->isRealTheory()){
-                return mkConstReal("1");
+                return mkConstReal(1.0);
             }
             else{
                 return mkErr(ERROR_TYPE::ERR_TYPE_MIS);

@@ -515,10 +515,10 @@ namespace SMTLIBParser{
         Real toReal() const {
             assert(isCInt() || isCReal());
             if(name == "pi"){
-                return Real(CONST_PI);
+                return Real::pi(getEvaluatePrecision());
             }
             if(name == "e"){
-                return Real(CONST_E);
+                return Real::e(getEvaluatePrecision());
             }
 
             return Real(name);

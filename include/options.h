@@ -56,6 +56,8 @@ namespace SMTLIBParser{
         // get-objectives
         bool get_objectives = false;
 
+        // evaluate precision
+        bool evaluate_use_floating = false;
         mpfr_prec_t evaluate_precision = 128;
 
     public:
@@ -151,6 +153,15 @@ namespace SMTLIBParser{
         mpfr_prec_t getEvaluatePrecision() const {
             return evaluate_precision;
         }
+
+        void setEvaluateUseFloating(bool use_floating) {
+            evaluate_use_floating = use_floating;
+        }
+
+        bool getEvaluateUseFloating() const {
+            return evaluate_use_floating;
+        }
+        
     };
 }
 #endif // _OPTIONS_H

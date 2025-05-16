@@ -183,6 +183,12 @@ HighPrecisionReal HighPrecisionReal::operator-(const HighPrecisionReal& other) c
     return result;
 }
 
+HighPrecisionReal HighPrecisionReal::operator-() const {
+    HighPrecisionReal result(mpfr_get_prec(value));
+    mpfr_neg(result.value, value, MPFR_RNDN);
+    return result;
+}
+
 HighPrecisionReal HighPrecisionReal::operator*(const HighPrecisionReal& other) const {
     HighPrecisionReal result(std::max(mpfr_get_prec(value), mpfr_get_prec(other.value)));
     mpfr_mul(result.value, value, other.value, MPFR_RNDN);

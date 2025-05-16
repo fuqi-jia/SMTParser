@@ -119,6 +119,12 @@ namespace SMTLIBParser{
 	mpfr_prec_t Parser::getEvaluatePrecision() const{
 		return options->getEvaluatePrecision();
 	}
+	void Parser::setEvaluateUseFloating(bool use_floating){
+		options->setEvaluateUseFloating(use_floating);
+	}
+	bool Parser::getEvaluateUseFloating() const{
+		return options->getEvaluateUseFloating();
+	}
 	// parse smt-lib2 file
 	std::string Parser::getSymbol() {
 
@@ -2177,7 +2183,7 @@ namespace SMTLIBParser{
 			return mkConstInt("0");
 		}
 		else if(sort == REAL_SORT){
-			return mkConstReal("0.0");
+			return mkConstReal(0.0);
 		}
 		else if(sort->isBv()){
 			return mkConstBv("0", sort->getBitWidth());

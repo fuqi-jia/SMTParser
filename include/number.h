@@ -35,7 +35,7 @@
 
 namespace SMTLIBParser{
     typedef mpz_class Integer;
-    typedef mpf_class Real;
+    // typedef mpf_class Real;
     
     class HighPrecisionReal{
         public:
@@ -53,7 +53,7 @@ namespace SMTLIBParser{
             // Constructor
             HighPrecisionReal(mpfr_prec_t precision = 128);
             HighPrecisionReal(int i, mpfr_prec_t precision = 128);
-            HighPrecisionReal(const Real& r, mpfr_prec_t precision = 128);
+            // HighPrecisionReal(const Real& r, mpfr_prec_t precision = 128);
             HighPrecisionReal(const Integer& i, mpfr_prec_t precision = 128);
             HighPrecisionReal(const double& d, mpfr_prec_t precision = 128);
             HighPrecisionReal(const float& f, mpfr_prec_t precision = 128);
@@ -70,6 +70,7 @@ namespace SMTLIBParser{
             // Basic arithmetic operators
             HighPrecisionReal operator+(const HighPrecisionReal& other) const;
             HighPrecisionReal operator-(const HighPrecisionReal& other) const;
+            HighPrecisionReal operator-() const;
             HighPrecisionReal operator*(const HighPrecisionReal& other) const;
             HighPrecisionReal operator/(const HighPrecisionReal& other) const;
             HighPrecisionReal& operator+=(const HighPrecisionReal& other);
@@ -138,6 +139,8 @@ namespace SMTLIBParser{
         private:
             mpfr_t value;
     };
+
+    typedef HighPrecisionReal Real;
 }
 
 #endif

@@ -520,6 +520,8 @@ namespace SMTLIBParser{
         // evaluate: return true if the evaluation has changed the expression
         void                                setEvaluatePrecision(mpfr_prec_t precision);
         mpfr_prec_t                         getEvaluatePrecision() const;
+        void                                setEvaluateUseFloating(bool use_floating);
+        bool                                getEvaluateUseFloating() const;
         std::shared_ptr<DAGNode>            evaluate(std::shared_ptr<DAGNode> expr, const std::shared_ptr<Model> &model);
         bool                                evaluate(std::shared_ptr<DAGNode> expr, const std::shared_ptr<Model> &model, std::shared_ptr<DAGNode> &result);
 
