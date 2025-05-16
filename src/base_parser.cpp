@@ -2201,7 +2201,7 @@ namespace SMTLIBParser{
 	}
 	std::shared_ptr<DAGNode> Parser::getZero(std::shared_ptr<Sort> sort){
 		if(sort == INT_SORT){
-			return mkConstInt("0");
+			return mkConstInt(0);
 		}
 		else if(sort == REAL_SORT){
 			return mkConstReal(0.0);

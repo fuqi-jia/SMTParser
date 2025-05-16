@@ -97,7 +97,12 @@ namespace SMTLIBParser{
             if((isInt() && other.isIntOrReal()) || (isIntOrReal() && other.isInt())){
                 return true;
             }
-            return kind == other.kind && name == other.name && arity == other.arity;
+            else if((isReal() && other.isIntOrReal()) || (isIntOrReal() && other.isReal())){
+                return true;
+            }
+            else{
+                return kind == other.kind && name == other.name && arity == other.arity;
+            }
         }
         bool operator!=(const Sort& other) const {
             return !(*this == other);
