@@ -29,6 +29,9 @@ A high-performance C++ library for parsing, manipulating, and processing SMT-LIB
 - GMP (GNU Multiple Precision Arithmetic Library)
 - MPFR (GNU Multiple Precision Floating-Point Reliable Library)
 
+### Installing Dependencies
+
+#### Ubuntu/Debian
 ```bash
 sudo apt update
 sudo apt install -y \
@@ -40,6 +43,61 @@ sudo apt install -y \
   libgmp-dev \
   libmpfr-dev
 ```
+
+#### Fedora/RHEL/CentOS
+```bash
+# Fedora
+sudo dnf install -y \
+  gcc-c++ \
+  cmake \
+  boost-devel \
+  gmp-devel \
+  mpfr-devel
+
+# RHEL/CentOS
+sudo yum install -y \
+  gcc-c++ \
+  cmake \
+  boost-devel \
+  gmp-devel \
+  mpfr-devel
+```
+
+#### macOS
+Using [Homebrew](https://brew.sh/):
+```bash
+brew install \
+  cmake \
+  boost \
+  gmp \
+  mpfr
+```
+
+#### Windows
+
+##### Using MSYS2
+1. Install [MSYS2](https://www.msys2.org/)
+2. Open MSYS2 MinGW 64-bit terminal and run:
+```bash
+pacman -Syu
+pacman -S \
+  mingw-w64-x86_64-gcc \
+  mingw-w64-x86_64-cmake \
+  mingw-w64-x86_64-boost \
+  mingw-w64-x86_64-gmp \
+  mingw-w64-x86_64-mpfr
+```
+
+##### Using vcpkg
+1. Install [vcpkg](https://github.com/microsoft/vcpkg)
+2. Install dependencies:
+```bash
+vcpkg install boost:x64-windows gmp:x64-windows mpfr:x64-windows
+```
+
+##### Using WSL (Windows Subsystem for Linux)
+1. Install and set up [WSL](https://learn.microsoft.com/en-us/windows/wsl/install)
+2. Follow the Ubuntu/Debian instructions to install dependencies within WSL
 
 ## Installation
 
