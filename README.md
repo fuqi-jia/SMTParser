@@ -183,7 +183,6 @@ int main() {
 
 ```cpp
 #include "parser.h"
-#include "model.h"
 #include <iostream>
 
 int main() {
