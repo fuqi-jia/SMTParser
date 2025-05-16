@@ -25,7 +25,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "include/model.h"
+#include "model.h"
 
 namespace SMTLIBParser{
     Model::Model(){
