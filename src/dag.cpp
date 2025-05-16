@@ -60,29 +60,6 @@ namespace SMTLIBParser{
                 return name;
             }
         }
-        else if(sort->isRat()){
-            size_t pos = name.find("/");
-            if(pos == std::string::npos){
-                return name;
-            }
-            std::string num = name.substr(0, pos);
-            std::string den = name.substr(pos+1);
-            bool is_neg = false;
-            if(num[0] == '-'){
-                is_neg = true;
-                num = num.substr(1);
-            }
-            if(den[0] == '-'){
-                is_neg = !is_neg;
-                den = den.substr(1);
-            }
-            if(is_neg){
-                return "(/ (- " + num + ") " + den + ")";
-            }
-            else{
-            return "(/ " + num + " " + den + ")";
-            }
-        }
         else if(sort->isInt()){
             if(name[0] == '-'){
                 return "(- " + name.substr(1) + ")";

@@ -1,6 +1,6 @@
 /* -*- Source -*-
 *
-* An SMT/OMT Parser (Operator part)
+* An SMT/OMT Parser (simplification part)
 *
 * Author: Fuqi Jia <jiafq@ios.ac.cn>
 *
@@ -46,9 +46,13 @@ std::shared_ptr<DAGNode> Parser::simp_oper(const std::shared_ptr<Sort>& sort, co
             if(p->isCInt()){
                 return mkConstInt(-p->toInt());
             }
-            else{
+            else if(p->isCReal()){
                 // p is a real number
                 return mkConstReal(-p->toReal());
+            }
+            else{
+                err_all(p, "Negation on non-integer or non-real", line_number);
+                return mkUnknown();
             }
         }
         case NODE_KIND::NT_ABS:{
@@ -61,7 +65,7 @@ std::shared_ptr<DAGNode> Parser::simp_oper(const std::shared_ptr<Sort>& sort, co
                     return p;
                 }
             }
-            else{
+            else if(p->isCReal()){
                 // p is a real number
                 Real r = p->toReal();
                 if(r < 0){
@@ -70,6 +74,10 @@ std::shared_ptr<DAGNode> Parser::simp_oper(const std::shared_ptr<Sort>& sort, co
                 else{
                     return p;
                 }
+            }
+            else{
+                err_all(p, "Absolute value on non-integer or non-real", line_number);
+                return mkUnknown();
             }
         }
         case NODE_KIND::NT_SQRT:{
@@ -83,7 +91,7 @@ std::shared_ptr<DAGNode> Parser::simp_oper(const std::shared_ptr<Sort>& sort, co
                     return mkConstInt(sqrt(i));
                 }
             }
-            else{
+            else if(p->isCReal()){
                 // p is a real number
                 Real r = p->toReal();
                 if(r < 0){
@@ -93,6 +101,10 @@ std::shared_ptr<DAGNode> Parser::simp_oper(const std::shared_ptr<Sort>& sort, co
                 else{
                     return mkConstReal(sqrt(r));
                 }
+            }
+            else{
+                err_all(p, "Square root on non-integer or non-real", line_number);
+                return mkUnknown();
             }
         }
         case NODE_KIND::NT_SAFESQRT:{
@@ -105,7 +117,7 @@ std::shared_ptr<DAGNode> Parser::simp_oper(const std::shared_ptr<Sort>& sort, co
                     return mkConstInt(sqrt(i));
                 }
             }
-            else{
+            else if(p->isCReal()){
                 // p is a real number
                 Real r = p->toReal();
                 if(r < 0){
@@ -115,32 +127,48 @@ std::shared_ptr<DAGNode> Parser::simp_oper(const std::shared_ptr<Sort>& sort, co
                     return mkConstReal(sqrt(r));
                 }
             }
+            else{
+                err_all(p, "Safe square root on non-integer or non-real", line_number);
+                return mkUnknown();
+            }
         }
         case NODE_KIND::NT_CEIL:{
             if(p->isCInt()){
                 return p;
             }
-            else{
+            else if(p->isCReal()){
                 // p is a real number
                 return mkConstReal(ceil(p->toReal()));
+            }
+            else{
+                err_all(p, "Ceiling on non-integer or non-real", line_number);
+                return mkUnknown();
             }
         }
         case NODE_KIND::NT_FLOOR:{
             if(p->isCInt()){
                 return p;
             }
-            else{
+            else if(p->isCReal()){
                 // p is a real number
                 return mkConstReal(floor(p->toReal()));
+            }
+            else{
+                err_all(p, "Floor on non-integer or non-real", line_number);
+                return mkUnknown();
             }
         }
         case NODE_KIND::NT_ROUND:{
             if(p->isCInt()){
                 return p;
             }
-            else{
+            else if(p->isCReal()){
                 // p is a real number
                 return mkConstReal(round(p->toReal()));
+            }
+            else{
+                err_all(p, "Round on non-integer or non-real", line_number);
+                return mkUnknown();
             }
         }
         case NODE_KIND::NT_EXP:{
@@ -153,6 +181,10 @@ std::shared_ptr<DAGNode> Parser::simp_oper(const std::shared_ptr<Sort>& sort, co
                 if(p->toReal() == 0.0){
                     return mkConstReal(1.0);
                 }
+            }
+            else{
+                err_all(p, "Exponentiation on non-integer or non-real", line_number);
+                return mkUnknown();
             }
         }
         case NODE_KIND::NT_LN:{
@@ -177,6 +209,10 @@ std::shared_ptr<DAGNode> Parser::simp_oper(const std::shared_ptr<Sort>& sort, co
                 else if(p->isE()){
                     return mkConstReal(1.0);
                 }
+            }
+            else{
+                err_all(p, "Natural logarithm on non-integer or non-real", line_number);
+                return mkUnknown();
             }
         }
         case NODE_KIND::NT_LG:{
@@ -258,6 +294,10 @@ std::shared_ptr<DAGNode> Parser::simp_oper(const std::shared_ptr<Sort>& sort, co
                 }
                 // ... ...
             }
+            else{
+                err_all(p, "Logarithm on non-integer or non-real", line_number);
+                return mkUnknown();
+            }
         }
         case NODE_KIND::NT_LB:{
             if(p->isCInt()){
@@ -335,6 +375,10 @@ std::shared_ptr<DAGNode> Parser::simp_oper(const std::shared_ptr<Sort>& sort, co
                 else if(p->toReal() == 1024.0){
                     return mkConstReal(10.0);
                 }
+            }
+            else{
+                err_all(p, "Logarithm on non-integer or non-real", line_number);
+                return mkUnknown();
             }
         }
         case NODE_KIND::NT_SIN:
@@ -467,7 +511,9 @@ std::shared_ptr<DAGNode> Parser::simp_oper(const std::shared_ptr<Sort>& sort, co
                 return mkUnknown();
             }
         }
-        case NODE_KIND::NT_FP_ABS:
+        case NODE_KIND::NT_FP_ABS:{
+
+        }
         case NODE_KIND::NT_FP_NEG:
         case NODE_KIND::NT_FP_SQRT:
         case NODE_KIND::NT_FP_ROUND_TO_INTEGRAL:

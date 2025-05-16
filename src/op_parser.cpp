@@ -417,20 +417,6 @@ namespace SMTLIBParser{
     std::shared_ptr<DAGNode> Parser::mkConstInt(const int& v){
         return mkConst(INTOREAL_SORT, std::to_string(v));
     }
-    std::shared_ptr<DAGNode> Parser::mkConstRat(const Rational &v){
-        return mkConst(RAT_SORT, v.get_str());
-    }
-    std::shared_ptr<DAGNode> Parser::mkConstRat(const Rational &l, const Rational &r){
-        Rational v = l/r;
-        return mkConst(RAT_SORT, v.get_str()); 
-    }
-    std::shared_ptr<DAGNode> Parser::mkConstRat(const double &v){
-        return mkConst(RAT_SORT, std::to_string(v));
-    }
-    std::shared_ptr<DAGNode> Parser::mkConstRat(const Integer &l, const Integer &r){
-        Rational v = Rational(l)/Rational(r);
-        return mkConst(RAT_SORT, v.get_str());
-    }
     std::shared_ptr<DAGNode> Parser::mkConstReal(const std::string &v){
         return mkConst(REAL_SORT, v);
     }

@@ -1,0 +1,143 @@
+/* -*- Header -*-
+ *
+ * The Numbers
+ *
+ * Author: Fuqi Jia <jiafq@ios.ac.cn>
+ *
+ * Copyright (C) 2025 Fuqi Jia
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ */
+
+#ifndef NUMBER_HEADER
+#define NUMBER_HEADER
+
+#include <gmp.h>
+#include <gmpxx.h>
+#include <mpfr.h>
+#include <string>
+
+namespace SMTLIBParser{
+    typedef mpz_class Integer;
+    typedef mpf_class Real;
+    
+    class HighPrecisionReal{
+        public:
+            // 常量
+            static HighPrecisionReal pi(unsigned int precision = 128);  // π (pi)
+            static HighPrecisionReal e(unsigned int precision = 128);   // e (natural logarithm base)
+            static HighPrecisionReal phi(unsigned int precision = 128); // φ (golden ratio)
+            static HighPrecisionReal ln2(unsigned int precision = 128); // ln(2)
+            static HighPrecisionReal ln10(unsigned int precision = 128); // ln(10)
+            static HighPrecisionReal log2_e(unsigned int precision = 128); // log₂(e)
+            static HighPrecisionReal log10_e(unsigned int precision = 128); // log₁₀(e)
+            static HighPrecisionReal euler(unsigned int precision = 128); // γ (Euler constant)
+            static HighPrecisionReal catalan(unsigned int precision = 128); // G (Catalan constant)
+            
+            // Constructor
+            HighPrecisionReal(unsigned int precision = 128);
+            HighPrecisionReal(const Real& r, unsigned int precision = 128);
+            HighPrecisionReal(const Integer& i, unsigned int precision = 128);
+            HighPrecisionReal(const double& d, unsigned int precision = 128);
+            HighPrecisionReal(const float& f, unsigned int precision = 128);
+            HighPrecisionReal(const std::string& s, unsigned int precision = 128);
+            HighPrecisionReal(const char* s, unsigned int precision = 128);
+            HighPrecisionReal(const HighPrecisionReal& other);
+            
+            // Assignment operator
+            HighPrecisionReal& operator=(const HighPrecisionReal& other);
+            
+            // Destructor
+            ~HighPrecisionReal();
+            
+            // Basic arithmetic operators
+            HighPrecisionReal operator+(const HighPrecisionReal& other) const;
+            HighPrecisionReal operator-(const HighPrecisionReal& other) const;
+            HighPrecisionReal operator*(const HighPrecisionReal& other) const;
+            HighPrecisionReal operator/(const HighPrecisionReal& other) const;
+            HighPrecisionReal& operator+=(const HighPrecisionReal& other);
+            HighPrecisionReal& operator-=(const HighPrecisionReal& other);
+            HighPrecisionReal& operator*=(const HighPrecisionReal& other);
+            HighPrecisionReal& operator/=(const HighPrecisionReal& other);
+            
+            // Comparison operators
+            bool operator==(const HighPrecisionReal& other) const;
+            bool operator!=(const HighPrecisionReal& other) const;
+            bool operator<(const HighPrecisionReal& other) const;
+            bool operator<=(const HighPrecisionReal& other) const;
+            bool operator>(const HighPrecisionReal& other) const;
+            bool operator>=(const HighPrecisionReal& other) const;
+            
+            // Other operations
+            HighPrecisionReal abs() const;
+            HighPrecisionReal sqrt() const;
+            HighPrecisionReal safeSqrt() const;
+            HighPrecisionReal pow(const HighPrecisionReal& exp) const;
+            
+            // Rounding operations
+            HighPrecisionReal ceil() const;
+            HighPrecisionReal floor() const;
+            HighPrecisionReal round() const;
+            
+            // Exponential and logarithmic functions
+            HighPrecisionReal exp() const;
+            HighPrecisionReal ln() const;
+            HighPrecisionReal lg() const;
+            HighPrecisionReal lb() const;
+            HighPrecisionReal log(const HighPrecisionReal& base) const;
+            
+            // Trigonometric functions
+            HighPrecisionReal sin() const;
+            HighPrecisionReal cos() const;
+            HighPrecisionReal tan() const;
+            HighPrecisionReal asin() const;
+            HighPrecisionReal acos() const;
+            HighPrecisionReal atan() const;
+            static HighPrecisionReal atan2(const HighPrecisionReal& y, const HighPrecisionReal& x);
+            
+            // Hyperbolic functions
+            HighPrecisionReal sinh() const;
+            HighPrecisionReal cosh() const;
+            HighPrecisionReal tanh() const;
+            HighPrecisionReal asinh() const;
+            HighPrecisionReal acosh() const;
+            HighPrecisionReal atanh() const;
+            HighPrecisionReal asech() const;
+            HighPrecisionReal acsch() const;
+            HighPrecisionReal acoth() const;
+            
+            // Conversion functions
+            std::string toString() const;
+            double toDouble() const;
+            
+            // Set and get precision
+            void setPrecision(unsigned int precision);
+            unsigned int getPrecision() const;
+            
+            // Access internal MPFR value
+            mpfr_ptr getMPFR();
+            mpfr_srcptr getMPFR() const;
+            
+        private:
+            mpfr_t value;
+    };
+}
+
+#endif
+
