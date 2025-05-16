@@ -26,15 +26,19 @@
 */
 
 #include "parser.h"
+
+void precision_warning(const std::string& op){
+    std::cerr << "Precision warning: " << op << " will use double precision" << std::endl;
+}
 std::shared_ptr<DAGNode> Parser::simp_oper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, std::shared_ptr<DAGNode> p){
     switch(t){
         // Unary operation - accepts one parameter
         case NODE_KIND::NT_NOT:{
-            if(param->isTrue()){
+            if(p->isTrue()){
                 return mkFalse();
             }
             else{
-                // param is false
+                // p is false
                 return mkTrue();
             }
         }
@@ -141,16 +145,198 @@ std::shared_ptr<DAGNode> Parser::simp_oper(const std::shared_ptr<Sort>& sort, co
         }
         case NODE_KIND::NT_EXP:{
             if(p->isCInt()){
-                return mkConstReal(exp(p->toReal()));
+                if(p->toInt() == 0){
+                    return mkConstReal(1.0);
+                }
             }
-            else{
-                // p is a real number
-                return mkConstReal(exp(p->toReal()));
+            else if(p->isCReal()){
+                if(p->toReal() == 0.0){
+                    return mkConstReal(1.0);
+                }
             }
         }
-        case NODE_KIND::NT_LN:
-        case NODE_KIND::NT_LG:
-        case NODE_KIND::NT_LB:
+        case NODE_KIND::NT_LN:{
+            // ln(x) = ln(e^ln(x)) = ln(e) + ln(x)
+            if(p->isCInt()){
+                if(p->toInt() <= 0){
+                    err_all(p, "Natural logarithm of non-positive integer", line_number);
+                    return mkUnknown();
+                }
+                else if(p->toInt() == 1){
+                    return mkConstReal(0.0);
+                }
+            }
+            else if(p->isCReal()){
+                if(p->toReal() <= 0.0){
+                    err_all(p, "Natural logarithm of non-positive real number", line_number);
+                    return mkUnknown();
+                }
+                else if(p->toReal() == 1.0){
+                    return mkConstReal(0.0);
+                }
+                else if(p->isE()){
+                    return mkConstReal(1.0);
+                }
+            }
+        }
+        case NODE_KIND::NT_LG:{
+            if(p->isCInt()){
+                if(p->toInt() <= 0){
+                    return mkErr(ERROR_TYPE::ERR_NEG_PARAM);
+                }
+                else if(p->toInt() == 1){
+                    return mkConstReal(0.0);
+                }
+                else if(p->toInt() == 10){
+                    return mkConstReal(1.0);
+                }
+                else if(p->toInt() == 100){
+                    return mkConstReal(2.0);
+                }
+                else if(p->toInt() == 1000){
+                    return mkConstReal(3.0);
+                }
+                else if(p->toInt() == 10000){
+                    return mkConstReal(4.0);
+                }
+                else if(p->toInt() == 100000){
+                    return mkConstReal(5.0);
+                }
+                else if(p->toInt() == 1000000){
+                    return mkConstReal(6.0);
+                }
+                else if(p->toInt() == 10000000){
+                    return mkConstReal(7.0);
+                }
+                else if(p->toInt() == 100000000){
+                    return mkConstReal(8.0);
+                }
+                else if(p->toInt() == 1000000000){
+                    return mkConstReal(9.0);
+                }
+                else if(p->toInt() == 10000000000){
+                    return mkConstReal(10.0);
+                }
+                // ... ...
+            }
+            else if(p->isCReal()){
+                if(p->toReal() <= 0.0){
+                    return mkErr(ERROR_TYPE::ERR_NEG_PARAM);
+                }
+                else if(p->toReal() == 1.0){
+                    return mkConstReal(0.0);
+                }
+                else if(p->toReal() == 10.0){
+                    return mkConstReal(1.0);
+                }
+                else if(p->toReal() == 100.0){
+                    return mkConstReal(2.0);
+                }
+                else if(p->toReal() == 1000.0){
+                    return mkConstReal(3.0);
+                }
+                else if(p->toReal() == 10000.0){
+                    return mkConstReal(4.0);
+                }
+                else if(p->toReal() == 100000.0){
+                    return mkConstReal(5.0);
+                }
+                else if(p->toReal() == 1000000.0){
+                    return mkConstReal(6.0);
+                }
+                else if(p->toReal() == 10000000.0){
+                    return mkConstReal(7.0);
+                }
+                else if(p->toReal() == 100000000.0){
+                    return mkConstReal(8.0);
+                }
+                else if(p->toReal() == 1000000000.0){
+                    return mkConstReal(9.0);
+                }
+                else if(p->toReal() == 10000000000.0){
+                    return mkConstReal(10.0);
+                }
+                // ... ...
+            }
+        }
+        case NODE_KIND::NT_LB:{
+            if(p->isCInt()){
+                if(p->toInt() <= 0){
+                    return mkErr(ERROR_TYPE::ERR_NEG_PARAM);
+                }
+                else if(p->toInt() == 1){
+                    return mkConstReal(0.0);
+                }
+                else if(p->toInt() == 2){
+                    return mkConstReal(1.0);
+                }
+                else if(p->toInt() == 4){
+                    return mkConstReal(2.0);
+                }
+                else if(p->toInt() == 8){
+                    return mkConstReal(3.0);
+                }
+                else if(p->toInt() == 16){
+                    return mkConstReal(4.0);
+                }
+                else if(p->toInt() == 32){
+                    return mkConstReal(5.0);
+                }
+                else if(p->toInt() == 64){
+                    return mkConstReal(6.0);
+                }
+                else if(p->toInt() == 128){
+                    return mkConstReal(7.0);
+                }
+                else if(p->toInt() == 256){
+                    return mkConstReal(8.0);
+                }
+                else if(p->toInt() == 512){
+                    return mkConstReal(9.0);
+                }
+                else if(p->toInt() == 1024){
+                    return mkConstReal(10.0);
+                }
+            }
+            else if(p->isCReal()){
+                if(p->toReal() <= 0.0){
+                    return mkErr(ERROR_TYPE::ERR_NEG_PARAM);
+                }
+                else if(p->toReal() == 1.0){
+                    return mkConstReal(0.0);
+                }
+                else if(p->toReal() == 2.0){
+                    return mkConstReal(1.0);
+                }
+                else if(p->toReal() == 4.0){
+                    return mkConstReal(2.0);
+                }
+                else if(p->toReal() == 8.0){
+                    return mkConstReal(3.0);
+                }
+                else if(p->toReal() == 16.0){
+                    return mkConstReal(4.0);
+                }
+                else if(p->toReal() == 32.0){
+                    return mkConstReal(5.0);
+                }
+                else if(p->toReal() == 64.0){
+                    return mkConstReal(6.0);
+                }
+                else if(p->toReal() == 128.0){
+                    return mkConstReal(7.0);
+                }
+                else if(p->toReal() == 256.0){
+                    return mkConstReal(8.0);
+                }
+                else if(p->toReal() == 512.0){
+                    return mkConstReal(9.0);
+                }
+                else if(p->toReal() == 1024.0){
+                    return mkConstReal(10.0);
+                }
+            }
+        }
         case NODE_KIND::NT_SIN:
         case NODE_KIND::NT_COS:
         case NODE_KIND::NT_SEC:
@@ -175,16 +361,112 @@ std::shared_ptr<DAGNode> Parser::simp_oper(const std::shared_ptr<Sort>& sort, co
         case NODE_KIND::NT_ASECH:
         case NODE_KIND::NT_ACSCH:
         case NODE_KIND::NT_ACOTH:
-        case NODE_KIND::NT_TO_INT:
-        case NODE_KIND::NT_TO_REAL:
-        case NODE_KIND::NT_IS_INT:
-        case NODE_KIND::NT_IS_PRIME:
-        case NODE_KIND::NT_IS_EVEN:
-        case NODE_KIND::NT_IS_ODD:
-        case NODE_KIND::NT_FACT:
-        case NODE_KIND::NT_BV_NOT:
-        case NODE_KIND::NT_BV_NEG:
-        case NODE_KIND::NT_BV_NEGO:
+        case NODE_KIND::NT_TO_INT:{
+            if(p->isCInt()){
+                return p;
+            }
+            else{
+                return mkConstInt(floor(p->toReal()));
+            }
+        }
+        case NODE_KIND::NT_TO_REAL:{
+            if(p->isCInt()){
+                return mkConstReal(p->toInt());
+            }
+            else{
+                return p;
+            }
+        }
+        case NODE_KIND::NT_IS_INT:{
+            if(p->isCInt()){
+                return mkTrue();
+            }
+            else{
+                return mkFalse();
+            }
+        }
+        case NODE_KIND::NT_IS_PRIME:{
+            if(p->isCInt()){
+                Integer i = p->toInt();
+                if(isPrime(i)){
+                    return mkTrue();
+                }
+                else{
+                    return mkFalse();
+                }
+            }
+            else{
+                err_all(p, "Prime check on non-integer", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_IS_EVEN:{
+            if(p->isCInt()){
+                Integer i = p->toInt();
+                if(isEven(i)){
+                    return mkTrue();
+                }
+                else{
+                    return mkFalse();
+                }
+            }
+            else{
+                err_all(p, "Even check on non-integer", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_IS_ODD:{
+            if(p->isCInt()){
+                Integer i = p->toInt();
+                if(isOdd(i)){
+                    return mkTrue();
+                }
+                else{
+                    return mkFalse();
+                }
+            }
+            else{
+                err_all(p, "Odd check on non-integer", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_FACT:{
+            if(p->isCInt()){
+                Integer i = p->toInt();
+                if(i < 0){
+                    err_all(p, "Factorial of negative integer", line_number);
+                    return mkUnknown();
+                }
+                else if(i == 0){
+                    return mkConstInt(1);
+                }
+                else{
+                    return mkConstInt(factorial(i));
+                }
+            }
+            else{
+                err_all(p, "Factorial on non-integer", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_BV_NOT:{
+            if(p->isCBV()){
+                return mkConstBv(bvNot(p->toString()), p->getSort()->getBitWidth());
+            }
+            else{
+                err_all(p, "Bitwise NOT on non-bitvector", line_number);
+                return mkUnknown();
+            }
+        }
+        case NODE_KIND::NT_BV_NEG:{
+            if(p->isCBV()){
+                return mkConstBv(bvNeg(p->toString()), p->getSort()->getBitWidth());
+            }
+            else{
+                err_all(p, "Bitwise NEG on non-bitvector", line_number);
+                return mkUnknown();
+            }
+        }
         case NODE_KIND::NT_FP_ABS:
         case NODE_KIND::NT_FP_NEG:
         case NODE_KIND::NT_FP_SQRT:
@@ -358,5 +640,23 @@ std::shared_ptr<DAGNode> Parser::simp_oper(const std::shared_ptr<Sort>& sort, co
         case NODE_KIND::NT_BV_ROTATE_RIGHT:
             res = "((_ " + kindToString(kind) + " " + results[current->getChild(1)] + ") " + results[current->getChild(0)] + ")";
             break;
+        default:
+            break;
     }
+    return mkUnknown();
 }
+
+std::shared_ptr<DAGNode> Parser::simp_oper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, std::shared_ptr<DAGNode> p){
+
+}
+std::shared_ptr<DAGNode> Parser::simp_oper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
+
+}
+std::shared_ptr<DAGNode> Parser::simp_oper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> m, std::shared_ptr<DAGNode> r){
+
+}
+std::shared_ptr<DAGNode> Parser::simp_oper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, const std::vector<std::shared_ptr<DAGNode>> &p){
+
+}
+
+

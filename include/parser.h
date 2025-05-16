@@ -216,6 +216,7 @@ namespace SMTLIBParser{
         std::shared_ptr<DAGNode> mkConstReal(const std::string &v); // CONST_REAL
         std::shared_ptr<DAGNode> mkConstReal(const Real &v); // CONST_REAL
         std::shared_ptr<DAGNode> mkConstReal(const double &v); // CONST_REAL
+        std::shared_ptr<DAGNode> mkConstReal(const Integer &v); // CONST_REAL
         std::shared_ptr<DAGNode> mkConstStr(const std::string &v); // CONST_Str
         std::shared_ptr<DAGNode> mkConstBv(const std::string &v, const size_t& width); // CONST_BV
         std::shared_ptr<DAGNode> mkConstFp(const std::string &v, const size_t& e, const size_t& s); // CONST_FP

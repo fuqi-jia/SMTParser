@@ -440,6 +440,9 @@ namespace SMTLIBParser{
     std::shared_ptr<DAGNode> Parser::mkConstReal(const double &v){
         return mkConst(REAL_SORT, std::to_string(v));
     }
+    std::shared_ptr<DAGNode> Parser::mkConstReal(const Integer &v){
+        return mkConst(REAL_SORT, toString(v));
+    }
     std::shared_ptr<DAGNode> Parser::mkConstStr(const std::string &v){
         return mkConst(STR_SORT, v);
     }
@@ -1074,22 +1077,6 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkExp(std::shared_ptr<DAGNode> param){
         if(param->isErr()) return param;
-        if(param->isCInt()){
-            if(param->toInt() == 0){
-                return mkConstReal(1.0);
-            }
-            else if(param->toInt() == 1){
-                return mkE();
-            }
-        }
-        else if(param->isCReal()){
-            if(param->toReal() == 0.0){
-                return mkConstReal(1.0);
-            }
-            else if(param->toReal() == 1.0){
-                return mkE();
-            }
-        }
         return mkOper(REAL_SORT, NODE_KIND::NT_EXP, param);
     }
     /*
@@ -1097,25 +1084,6 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkLn(std::shared_ptr<DAGNode> param){
         if(param->isErr()) return param;
-        if(param->isCInt()){
-            if(param->toInt() <= 0){
-                return mkErr(ERROR_TYPE::ERR_NEG_PARAM);
-            }
-            else if(param->toInt() == 1){
-                return mkConstReal(0.0);
-            }
-        }
-        else if(param->isCReal()){
-            if(param->toReal() <= 0.0){
-                return mkErr(ERROR_TYPE::ERR_NEG_PARAM);
-            }
-            else if(param->toReal() == 1.0){
-                return mkConstReal(0.0);
-            }
-            else if(param->isE()){
-                return mkConstReal(1.0);
-            }
-        }
         return mkOper(REAL_SORT, NODE_KIND::NT_LN, param);
     }
     /*
@@ -1123,82 +1091,6 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkLb(std::shared_ptr<DAGNode> param){
         if(param->isErr()) return param;
-        if(param->isCInt()){
-            if(param->toInt() <= 0){
-                return mkErr(ERROR_TYPE::ERR_NEG_PARAM);
-            }
-            else if(param->toInt() == 1){
-                return mkConstReal(0.0);
-            }
-            else if(param->toInt() == 2){
-                return mkConstReal(1.0);
-            }
-            else if(param->toInt() == 4){
-                return mkConstReal(2.0);
-            }
-            else if(param->toInt() == 8){
-                return mkConstReal(3.0);
-            }
-            else if(param->toInt() == 16){
-                return mkConstReal(4.0);
-            }
-            else if(param->toInt() == 32){
-                return mkConstReal(5.0);
-            }
-            else if(param->toInt() == 64){
-                return mkConstReal(6.0);
-            }
-            else if(param->toInt() == 128){
-                return mkConstReal(7.0);
-            }
-            else if(param->toInt() == 256){
-                return mkConstReal(8.0);
-            }
-            else if(param->toInt() == 512){
-                return mkConstReal(9.0);
-            }
-            else if(param->toInt() == 1024){
-                return mkConstReal(10.0);
-            }
-        }
-        else if(param->isCReal()){
-            if(param->toReal() <= 0.0){
-                return mkErr(ERROR_TYPE::ERR_NEG_PARAM);
-            }
-            else if(param->toReal() == 1.0){
-                return mkConstReal(0.0);
-            }
-            else if(param->toReal() == 2.0){
-                return mkConstReal(1.0);
-            }
-            else if(param->toReal() == 4.0){
-                return mkConstReal(2.0);
-            }
-            else if(param->toReal() == 8.0){
-                return mkConstReal(3.0);
-            }
-            else if(param->toReal() == 16.0){
-                return mkConstReal(4.0);
-            }
-            else if(param->toReal() == 32.0){
-                return mkConstReal(5.0);
-            }
-            else if(param->toReal() == 64.0){
-                return mkConstReal(6.0);
-            }
-            else if(param->toReal() == 128.0){
-                return mkConstReal(7.0);
-            }
-            else if(param->toReal() == 256.0){
-                return mkConstReal(8.0);
-            }
-            else if(param->toReal() == 512.0){
-                return mkConstReal(9.0);
-            }
-            else if(param->toReal() == 1024.0){
-                return mkConstReal(10.0);
-            }
-        }
         return mkOper(REAL_SORT, NODE_KIND::NT_LB, param);
     }
     /*
@@ -1206,84 +1098,6 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkLg(std::shared_ptr<DAGNode> param){
         if(param->isErr()) return param;
-        if(param->isCInt()){
-            if(param->toInt() <= 0){
-                return mkErr(ERROR_TYPE::ERR_NEG_PARAM);
-            }
-            else if(param->toInt() == 1){
-                return mkConstReal(0.0);
-            }
-            else if(param->toInt() == 10){
-                return mkConstReal(1.0);
-            }
-            else if(param->toInt() == 100){
-                return mkConstReal(2.0);
-            }
-            else if(param->toInt() == 1000){
-                return mkConstReal(3.0);
-            }
-            else if(param->toInt() == 10000){
-                return mkConstReal(4.0);
-            }
-            else if(param->toInt() == 100000){
-                return mkConstReal(5.0);
-            }
-            else if(param->toInt() == 1000000){
-                return mkConstReal(6.0);
-            }
-            else if(param->toInt() == 10000000){
-                return mkConstReal(7.0);
-            }
-            else if(param->toInt() == 100000000){
-                return mkConstReal(8.0);
-            }
-            else if(param->toInt() == 1000000000){
-                return mkConstReal(9.0);
-            }
-            else if(param->toInt() == 10000000000){
-                return mkConstReal(10.0);
-            }
-            // ... ...
-        }
-        else if(param->isCReal()){
-            if(param->toReal() <= 0.0){
-                return mkErr(ERROR_TYPE::ERR_NEG_PARAM);
-            }
-            else if(param->toReal() == 1.0){
-                return mkConstReal(0.0);
-            }
-            else if(param->toReal() == 10.0){
-                return mkConstReal(1.0);
-            }
-            else if(param->toReal() == 100.0){
-                return mkConstReal(2.0);
-            }
-            else if(param->toReal() == 1000.0){
-                return mkConstReal(3.0);
-            }
-            else if(param->toReal() == 10000.0){
-                return mkConstReal(4.0);
-            }
-            else if(param->toReal() == 100000.0){
-                return mkConstReal(5.0);
-            }
-            else if(param->toReal() == 1000000.0){
-                return mkConstReal(6.0);
-            }
-            else if(param->toReal() == 10000000.0){
-                return mkConstReal(7.0);
-            }
-            else if(param->toReal() == 100000000.0){
-                return mkConstReal(8.0);
-            }
-            else if(param->toReal() == 1000000000.0){
-                return mkConstReal(9.0);
-            }
-            else if(param->toReal() == 10000000000.0){
-                return mkConstReal(10.0);
-            }
-            // ... ...
-        }
         return mkOper(REAL_SORT, NODE_KIND::NT_LG, param);
     }
     /*
@@ -1690,14 +1504,6 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkIsPrime(std::shared_ptr<DAGNode> param){
         if(param->isErr()) return param;
-        if(param->isCInt()){
-            if(isPrime(param->toInt())){
-                return mkTrue();
-            }
-            else{
-                return mkFalse();
-            }
-        }
         return mkOper(BOOL_SORT, NODE_KIND::NT_IS_PRIME, param);
     }
     /*
@@ -1705,9 +1511,6 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkIsEven(std::shared_ptr<DAGNode> param){
         if(param->isErr()) return param;
-        if(param->isCInt()){
-            return isEven(param->toInt()) ? mkTrue() : mkFalse();
-        }
         return mkOper(BOOL_SORT, NODE_KIND::NT_IS_EVEN, param);
     }
     /*
@@ -1715,9 +1518,6 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkIsOdd(std::shared_ptr<DAGNode> param){
         if(param->isErr()) return param;
-        if(param->isCInt()){
-            return isOdd(param->toInt()) ? mkTrue() : mkFalse();
-        }
         return mkOper(BOOL_SORT, NODE_KIND::NT_IS_ODD, param);
     }
     // ARITHMATIC CONSTANTS
@@ -1773,9 +1573,6 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkFact(std::shared_ptr<DAGNode> param){
         if(param->isErr()) return param;
-        if(param->isCInt()){
-            return mkConstInt(factorial(param->toInt()));
-        }
         return mkOper(INT_SORT, NODE_KIND::NT_FACT, param);
     }
     // BITVECTOR COMMON OPERATORS
@@ -1784,9 +1581,6 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkBvNot(std::shared_ptr<DAGNode> param){
         if(param->isErr()) return param;
-        if(param->isCBV()){
-            return mkConstBv(bvNot(param->toString()), param->getSort()->getBitWidth());
-        }
         return mkOper(param->getSort(), NODE_KIND::NT_BV_NOT, param);
     }
     /*
@@ -2018,9 +1812,6 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkBvNeg(std::shared_ptr<DAGNode> param){
         if(param->isErr()) return param;
-        if(param->isCBV()){
-            return mkConstBv(bvNeg(param->toString()), param->getSort()->getBitWidth());
-        }
         return mkOper(param->getSort(), NODE_KIND::NT_BV_NEG, param);
     }
     /*
