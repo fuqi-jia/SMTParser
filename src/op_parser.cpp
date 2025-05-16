@@ -134,7 +134,7 @@ namespace SMTLIBParser{
     std::shared_ptr<DAGNode> Parser::mkOper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, const std::vector<std::shared_ptr<DAGNode>> &p){
         bool is_all_const = true;
         for(auto &param: p){
-            if(param->isErr()) return param;
+            
             if(!param->isConst()) is_all_const = false;
         }
         if(is_all_const){
@@ -143,10 +143,10 @@ namespace SMTLIBParser{
                 return res;
             }
         }
-        if(t == NODE_KIND::NT_VAR || t == NODE_KIND::NT_CONST || t == NODE_KIND::NT_FUNC_PARAM){
-            return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(p.size() == 0){
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "No parameters for operation", line_number);
+            return mkUnknown();
         }
-        if(p.size() == 0) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
         // make the params unique
         std::vector<std::shared_ptr<DAGNode>> params(p);
         if(isCommutative(t)){
@@ -169,7 +169,8 @@ namespace SMTLIBParser{
     std::shared_ptr<DAGNode> Parser::mkFuncDec(const std::string &name, const std::vector<std::shared_ptr<Sort>> &params, std::shared_ptr<Sort> out_sort){
         if(fun_key_map.find(name)!=fun_key_map.end()){
             // multiple declarations
-            return mkErr(ERROR_TYPE::ERR_MUL_DECL);
+            err_all(ERROR_TYPE::ERR_MUL_DECL, "Multiple declarations of function", line_number);
+            return mkUnknown();
         }
         else{
             // create a new function
@@ -204,7 +205,8 @@ namespace SMTLIBParser{
             }
             else{
                 // multiple definitions
-                return mkErr(ERROR_TYPE::ERR_MUL_DEF);
+                err_all(ERROR_TYPE::ERR_MUL_DEF, "Multiple definitions of function", line_number);
+                return mkUnknown();
             }
         }
         else{
@@ -243,8 +245,12 @@ namespace SMTLIBParser{
     (= A A+ :chainable), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkEq(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!l->getSort()->isEqTo(r->getSort())) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!l->getSort()->isEqTo(r->getSort())) {
+            err_all(l, "Type mismatch in equality", line_number);
+            err_all(r, "Type mismatch in equality", line_number);
+            return mkUnknown();
+        }
+        
         if(l->isTrue() && r->isTrue()){
             return mkTrue();
         }
@@ -280,7 +286,10 @@ namespace SMTLIBParser{
         }
     }
     std::shared_ptr<DAGNode> Parser::mkEq(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(params.size() < 2) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for equality", line_number);
+            return mkUnknown();
+        }
         std::shared_ptr<Sort> sort = getSort(params);
 
         if(params.size() == 2){
@@ -290,8 +299,10 @@ namespace SMTLIBParser{
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
         for(size_t i=0;i<params.size();i++){
-            if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !params[i]->getSort()->isEqTo(sort)) {
+                err_all(params[i], "Type mismatch in equality", line_number);
+                return mkUnknown();
+            }
             if(params[i]->isTrue()){
                 // x = true => x
                 continue;
@@ -317,8 +328,11 @@ namespace SMTLIBParser{
     (distinct A A+ :std::pairwise), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkDistinct(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!l->getSort()->isEqTo(r->getSort())) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!l->getSort()->isEqTo(r->getSort())) {
+            err_all(l, "Type mismatch in distinct", line_number);
+            err_all(r, "Type mismatch in distinct", line_number);
+            return mkUnknown();
+        }
 
         if(l->isTrue() && r->isTrue()){
             return mkFalse();
@@ -361,14 +375,20 @@ namespace SMTLIBParser{
         }
     }
     std::shared_ptr<DAGNode> Parser::mkDistinct(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(params.size() < 2) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for distinct", line_number);
+            return mkUnknown();
+        }
         std::shared_ptr<Sort> sort = getSort(params);
 
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) {
+                err_all(params[i], "Type mismatch in distinct", line_number);
+                return mkUnknown();
+            }
             if(params[i]->isFalse()){
                 // x != False => x
                 continue;
@@ -546,9 +566,10 @@ namespace SMTLIBParser{
     (not Bool), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkNot(std::shared_ptr<DAGNode> param){
-        
-        if (param->isErr())	return param;
-
+        if(!isBoolParam(param)) {
+            err_all(param, "Negation on non-boolean", line_number);
+            return mkUnknown();
+        }
         if (param->isNot()) {
             // reduce nested not
             assert(param->getChildrenSize() == 1);
@@ -562,13 +583,18 @@ namespace SMTLIBParser{
     (and Bool Bool+ :left-assoc), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkAnd(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() == 0) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
-        else if(params.size() == 1) return params[0];
-
+        if(params.size() < 2) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for AND", line_number);
+            return mkUnknown();
+        }
+            
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
-        for (size_t i = 0; i < params.size(); i++) {
-
+        for(size_t i=0;i<params.size();i++){
+            if(!isBoolParam(params[i])) {
+                err_all(params[i], "AND on non-boolean", line_number);
+                return mkUnknown();
+            }
             if (params[i]->isErr()) {
                 return params[i];
             }
@@ -603,13 +629,18 @@ namespace SMTLIBParser{
     (or Bool Bool+ :left-assoc), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkOr(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() == 0) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
-        else if(params.size() == 1) return params[0];
-
+        if(params.size() < 2) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for OR", line_number);
+            return mkUnknown();
+        }
+            
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
-        for (size_t i = 0; i < params.size(); i++) {
-
+        for(size_t i=0;i<params.size();i++){
+            if(!isBoolParam(params[i])) {
+                err_all(params[i], "OR on non-boolean", line_number);
+                return mkUnknown();
+            }
             if (params[i]->isErr()) {
                 return params[i];
             }
@@ -645,7 +676,10 @@ namespace SMTLIBParser{
     (=> a b c d) <=> (or -a -b -c d)
     */
     std::shared_ptr<DAGNode> Parser::mkImplies(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(params.size() < 2) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for implies", line_number);
+            return mkUnknown();
+        }
 
         std::vector<std::shared_ptr<DAGNode>> new_params;
         // (=> a b c d) <=> (or -a -b -c d)
@@ -679,7 +713,10 @@ namespace SMTLIBParser{
     (xor Bool Bool+ :left-assoc), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkXor(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(params.size() < 2) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for xor", line_number);
+            return mkUnknown();
+        }
 
         std::vector<std::shared_ptr<DAGNode>> new_params;
         for(size_t i=0;i<params.size();i++){
@@ -715,7 +752,10 @@ namespace SMTLIBParser{
         return mkOper(l->getSort(), NODE_KIND::NT_ITE, cond, l, r);
     }
     std::shared_ptr<DAGNode> Parser::mkIte(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() != 3) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(params.size() != 3) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for ite", line_number);
+            return mkUnknown();
+        }
 
         return mkIte(params[0], params[1], params[2]);
     }
@@ -724,7 +764,10 @@ namespace SMTLIBParser{
     (+ rt rt+), return rt
     */
     std::shared_ptr<DAGNode> Parser::mkAdd(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(params.size() < 2) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for add", line_number);
+            return mkUnknown();
+        }
         if(params.size() == 1){
             return params[0];
         }
@@ -735,7 +778,10 @@ namespace SMTLIBParser{
 
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) {
+                err_all(params[i], "Type mismatch in add", line_number);
+                return mkUnknown();
+            }
             if(isZero(params[i])){
                 continue;
             }
@@ -754,7 +800,8 @@ namespace SMTLIBParser{
                 return mkConstInt(0);
             }
             else{
-                return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in add", line_number);
+                return mkUnknown();
             }
         }
         else if(new_params.size() == 1){
@@ -770,7 +817,8 @@ namespace SMTLIBParser{
                     sort = INT_SORT;
                 }
                 else{
-                    return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+                    err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in add", line_number);
+                    return mkUnknown();
                 }
             }
             return mkOper(sort, NODE_KIND::NT_ADD, new_params);
@@ -790,7 +838,10 @@ namespace SMTLIBParser{
 
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) {
+                err_all(params[i], "Type mismatch in mul", line_number);
+                return mkUnknown();
+            }
             if(isZero(params[i])){
                 if(options->isIntTheory()){
                     return mkConstInt("0");
@@ -816,7 +867,8 @@ namespace SMTLIBParser{
                 return mkConstReal(1.0);
             }
             else{
-                return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in mul", line_number);
+                return mkUnknown();
             }
         }
         else if(new_params.size() == 1){
@@ -832,7 +884,8 @@ namespace SMTLIBParser{
                     sort = INT_SORT;
                 }
                 else{
-                    return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+                    err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in mul", line_number);
+                    return mkUnknown();
                 }
             }
             if(new_params.size() == 2){
@@ -864,7 +917,10 @@ namespace SMTLIBParser{
         std::vector<std::shared_ptr<DAGNode>> new_params;
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) {
+                err_all(params[i], "Type mismatch in iand", line_number);
+                return mkUnknown();
+            }
 
             new_params.emplace_back(params[i]);
         }
@@ -877,7 +933,8 @@ namespace SMTLIBParser{
                 sort = INT_SORT;
             }
             else{
-                return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in iand", line_number);
+                return mkUnknown();
             }
         }
         if(new_params.size() == 2){
@@ -891,19 +948,20 @@ namespace SMTLIBParser{
         return mkOper(sort, NODE_KIND::NT_IAND, new_params);
     }
     std::shared_ptr<DAGNode> Parser::mkPow2(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
+        
         return mkOper(param->getSort(), NODE_KIND::NT_POW2, param);
     }
     std::shared_ptr<DAGNode> Parser::mkPow(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!l->getSort()->isEqTo(r->getSort())) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
         return mkOper(l->getSort(), NODE_KIND::NT_POW, l, r);
     }
     /*
     (- rt rt+), return rt
     */
     std::shared_ptr<DAGNode> Parser::mkSub(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() == 0) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(params.size() == 0) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for sub", line_number);
+            return mkUnknown();
+        }
         if(params.size() == 1){
             return mkNeg(params[0]);
         }
@@ -913,7 +971,10 @@ namespace SMTLIBParser{
         // (- a b c)
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !params[i]->getSort()->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !params[i]->getSort()->isEqTo(sort)) {
+                err_all(params[i], "Type mismatch in sub", line_number);
+                return mkUnknown();
+            }
             new_params.emplace_back(params[i]);
         }
         if(sort == nullptr){
@@ -924,7 +985,8 @@ namespace SMTLIBParser{
                 sort = INT_SORT;
             }
             else{
-                return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in sub", line_number);
+                return mkUnknown();
             }
         }
         if(new_params.size() == 2){
@@ -945,19 +1007,25 @@ namespace SMTLIBParser{
     (- rt), return rt
     */  
     std::shared_ptr<DAGNode> Parser::mkNeg(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
+        
         return mkOper(param->getSort(), NODE_KIND::NT_NEG, param);
     }
     /*
     (div Int Int), return Int
     */
     std::shared_ptr<DAGNode> Parser::mkDivInt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isIntParam(l) || !isIntParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isIntParam(l) || !isIntParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in div", line_number);
+            return mkUnknown();
+        }
         return mkOper(INT_SORT, NODE_KIND::NT_DIV_INT, l, r);
     }
     std::shared_ptr<DAGNode> Parser::mkDivInt(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(params.size() < 2) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for div", line_number);
+            return mkUnknown();
+        }
         if(params.size() == 1){
             return params[0];
         }
@@ -970,12 +1038,18 @@ namespace SMTLIBParser{
     (/ Real Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkDivReal(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isRealParam(l) || !isRealParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isRealParam(l) || !isRealParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in div", line_number);
+            return mkUnknown();
+        }
         return mkOper(REAL_SORT, NODE_KIND::NT_DIV_REAL, l, r);
     }
     std::shared_ptr<DAGNode> Parser::mkDivReal(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(params.size() < 2) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for div", line_number);
+            return mkUnknown();
+        }
         if(params.size() == 1){
             return params[0];
         }
@@ -988,8 +1062,11 @@ namespace SMTLIBParser{
     (mod Int Int), return Int
     */
     std::shared_ptr<DAGNode> Parser::mkMod(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isIntParam(l) || !isIntParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isIntParam(l) || !isIntParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in mod", line_number);
+            return mkUnknown();
+        }
         return mkOper(INT_SORT, NODE_KIND::NT_MOD, l, r);
     }
     /*
@@ -997,7 +1074,10 @@ namespace SMTLIBParser{
     (abs Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkAbs(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
+        if(!isIntParam(param) && !isRealParam(param)) {
+            err_all(param, "Absolute value on non-integer or non-real", line_number);
+            return mkUnknown();
+        }
         return mkOper(param->getSort(), NODE_KIND::NT_ABS, param);
     }
     /*
@@ -1005,36 +1085,45 @@ namespace SMTLIBParser{
     (sqrt Int), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkSqrt(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        return mkOper(REAL_SORT, NODE_KIND::NT_SQRT, param);
+        if(!isIntParam(param) && !isRealParam(param)) {
+            err_all(param, "Square root on non-integer or non-real", line_number);
+            return mkUnknown();
+        }
+        return mkOper(param->getSort(), NODE_KIND::NT_SQRT, param);
     }
     /*
     (safesqrt Real), return Real
     (safesqrt Int), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkSafeSqrt(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        return mkOper(REAL_SORT, NODE_KIND::NT_SAFESQRT, param);
+        if(!isIntParam(param) && !isRealParam(param)) {
+            err_all(param, "Safe square root on non-integer or non-real", line_number);
+            return mkUnknown();
+        }
+        return mkOper(param->getSort(), NODE_KIND::NT_SAFESQRT, param);
     }
     /*
     (ceil Real), return Int
     */
     std::shared_ptr<DAGNode> Parser::mkCeil(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        return mkOper(INT_SORT, NODE_KIND::NT_CEIL, param);
+        if(!isIntParam(param) && !isRealParam(param)) {
+            err_all(param, "Ceiling on non-integer or non-real", line_number);
+            return mkUnknown();
+        }
+        return mkOper(param->getSort(), NODE_KIND::NT_CEIL, param);
     }
     /*
     (floor Real), return Int
     */
     std::shared_ptr<DAGNode> Parser::mkFloor(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
+        
         return mkOper(INT_SORT, NODE_KIND::NT_FLOOR, param);
     }
     /*
     (round Real), return Int
     */
     std::shared_ptr<DAGNode> Parser::mkRound(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
+        
         return mkOper(INT_SORT, NODE_KIND::NT_ROUND, param);
     }
     // TRANSCENDENTAL ARITHMATIC
@@ -1042,36 +1131,38 @@ namespace SMTLIBParser{
     (exp Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkExp(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
+        
         return mkOper(REAL_SORT, NODE_KIND::NT_EXP, param);
     }
     /*
     (ln Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkLn(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
+        
         return mkOper(REAL_SORT, NODE_KIND::NT_LN, param);
     }
     /*
     (lb Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkLb(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
+        
         return mkOper(REAL_SORT, NODE_KIND::NT_LB, param);
     }
     /*
     (lg Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkLg(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
+        
         return mkOper(REAL_SORT, NODE_KIND::NT_LG, param);
     }
     /*
     (log Real Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkLog(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!l->getSort()->isEqTo(r->getSort())) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!l->getSort()->isEqTo(r->getSort())) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in log", line_number);
+            return mkUnknown();
+        }
 
 
         return mkOper(REAL_SORT, NODE_KIND::NT_LOG, l, r);
@@ -1080,175 +1171,175 @@ namespace SMTLIBParser{
     (sin Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkSin(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
+        
         return mkOper(REAL_SORT, NODE_KIND::NT_SIN, param);
     }
     /*
     (cos Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkCos(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
+        
         return mkOper(REAL_SORT, NODE_KIND::NT_COS, param);
     }
     /*
     (sec Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkSec(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
+        
         return mkOper(REAL_SORT, NODE_KIND::NT_SEC, param);
     }
     /*
     (csc Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkCsc(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
+        
         return mkOper(REAL_SORT, NODE_KIND::NT_CSC, param);
     }
     /*
     (tan Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkTan(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
+        
         return mkOper(REAL_SORT, NODE_KIND::NT_TAN, param);
     }
     /*
     (cot Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkCot(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
+        
         return mkOper(REAL_SORT, NODE_KIND::NT_COT, param);
     }
     /*
     (asin Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkAsin(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
+        
         return mkOper(REAL_SORT, NODE_KIND::NT_ASIN, param);
     }
     /*
     (acos Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkAcos(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
+        
         return mkOper(REAL_SORT, NODE_KIND::NT_ACOS, param);
     }
     /*
     (asec Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkAsec(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
+        
         return mkOper(REAL_SORT, NODE_KIND::NT_ASEC, param);
     }
     /*
     (acsc Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkAcsc(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
+        
         return mkOper(REAL_SORT, NODE_KIND::NT_ACSC, param);
     }
     /*
     (atan Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkAtan(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
+        
         return mkOper(REAL_SORT, NODE_KIND::NT_ATAN, param);
     }
     /*
     (acot Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkAcot(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
+        
         return mkOper(REAL_SORT, NODE_KIND::NT_ACOT, param);
     }
     /*
     (sinh Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkSinh(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
+        
         return mkOper(REAL_SORT, NODE_KIND::NT_SINH, param);
     }
     /*
     (cosh Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkCosh(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
+        
         return mkOper(REAL_SORT, NODE_KIND::NT_COSH, param);
     }
     /*
     (tanh Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkTanh(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
+        
         return mkOper(REAL_SORT, NODE_KIND::NT_TANH, param);
     }
     /*
     (sech Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkSech(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
+        
         return mkOper(REAL_SORT, NODE_KIND::NT_SECH, param);
     }
     /*
     (csch Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkCsch(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
+        
         return mkOper(REAL_SORT, NODE_KIND::NT_CSCH, param);
     }
     /*
     (coth Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkCoth(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
+        
         return mkOper(REAL_SORT, NODE_KIND::NT_COTH, param);
     }
     /*
     (asinh Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkAsinh(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
+        
         return mkOper(REAL_SORT, NODE_KIND::NT_ASINH, param);
     }
     /*
     (acosh Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkAcosh(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
+        
         return mkOper(REAL_SORT, NODE_KIND::NT_ACOSH, param);
     }
     /*
     (atanh Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkAtanh(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
+        
         return mkOper(REAL_SORT, NODE_KIND::NT_ATANH, param);
     }
     /*
     (asech Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkAsech(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
+        
         return mkOper(REAL_SORT, NODE_KIND::NT_ASECH, param);
     }
     /*
     (acsch Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkAcsch(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
+        
         return mkOper(REAL_SORT, NODE_KIND::NT_ACSCH, param);
     }
     /*
     (acoth Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkAcoth(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
+        
         return mkOper(REAL_SORT, NODE_KIND::NT_ACOTH, param);
     }
     /*
     (atan2 Real Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkAtan2(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
+        
         return mkOper(REAL_SORT, NODE_KIND::NT_ATAN2, l, r);
     }
     // ARITHMATIC COMP
@@ -1256,27 +1347,42 @@ namespace SMTLIBParser{
     (<= rt rt+), return rt
     */
     std::shared_ptr<DAGNode> Parser::mkLe(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!l->getSort()->isEqTo(r->getSort())) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!l->getSort()->isEqTo(r->getSort())) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in le", line_number);
+            return mkUnknown();
+        }
         return mkOper(BOOL_SORT, NODE_KIND::NT_LE, l, r);
     }
     std::shared_ptr<DAGNode> Parser::mkLt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!l->getSort()->isEqTo(r->getSort())) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!l->getSort()->isEqTo(r->getSort())) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in lt", line_number);
+            return mkUnknown();
+        }
         return mkOper(BOOL_SORT, NODE_KIND::NT_LT, l, r);
     }
     std::shared_ptr<DAGNode> Parser::mkGe(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!l->getSort()->isEqTo(r->getSort())) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!l->getSort()->isEqTo(r->getSort())) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in ge", line_number);
+            return mkUnknown();
+        }
         return mkOper(BOOL_SORT, NODE_KIND::NT_GE, l, r);
     }
     std::shared_ptr<DAGNode> Parser::mkGt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!l->getSort()->isEqTo(r->getSort())) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!l->getSort()->isEqTo(r->getSort())) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in gt", line_number);
+            return mkUnknown();
+        }
         return mkOper(BOOL_SORT, NODE_KIND::NT_GT, l, r);
     }
     std::shared_ptr<DAGNode> Parser::mkLe(const std::vector<std::shared_ptr<DAGNode>>& params){
-        if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(params.size() < 2) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for le", line_number);
+            return mkUnknown();
+        }
         std::shared_ptr<Sort> sort = getSort(params);
 
         if(params.size() == 2){
@@ -1288,7 +1394,10 @@ namespace SMTLIBParser{
         // pair-wise comparison: (<= a b c d) <=> (and (<= a b) (<= b c) (<= c d))
         for(size_t i=0;i<params.size() - 1;i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) {
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in le", line_number);
+                return mkUnknown();
+            }
             std::shared_ptr<DAGNode> le = mkLe(params[i], params[i + 1]);
             if(le->isErr()) return le;
             new_params.emplace_back(le);
@@ -1297,7 +1406,10 @@ namespace SMTLIBParser{
         return mkAnd(new_params);
     }
     std::shared_ptr<DAGNode> Parser::mkLt(const std::vector<std::shared_ptr<DAGNode>>& params){
-        if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(params.size() < 2) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for lt", line_number);
+            return mkUnknown();
+        }
         std::shared_ptr<Sort> sort = getSort(params);
 
         if(params.size() == 2){
@@ -1309,7 +1421,10 @@ namespace SMTLIBParser{
         // pair-wise comparison: (< a b c d) <=> (and (< a b) (< b c) (< c d))
         for(size_t i=0;i<params.size() - 1;i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) {
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in lt", line_number);
+                return mkUnknown();
+            }
             std::shared_ptr<DAGNode> lt = mkLt(params[i], params[i + 1]);
             if(lt->isErr()) return lt;
             new_params.emplace_back(lt);
@@ -1318,7 +1433,10 @@ namespace SMTLIBParser{
         return mkAnd(new_params);
     }
     std::shared_ptr<DAGNode> Parser::mkGe(const std::vector<std::shared_ptr<DAGNode>>& params){
-        if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(params.size() < 2) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for ge", line_number);
+            return mkUnknown();
+        }
         std::shared_ptr<Sort> sort = getSort(params);
 
         if(params.size() == 2){
@@ -1330,7 +1448,10 @@ namespace SMTLIBParser{
         // pair-wise comparison: (>= a b c d) <=> (and (>= a b) (>= b c) (>= c d))
         for(size_t i=0;i<params.size() - 1;i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) {
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in ge", line_number);
+                return mkUnknown();
+            }
             std::shared_ptr<DAGNode> ge = mkGe(params[i], params[i + 1]);
             if(ge->isErr()) return ge;
             new_params.emplace_back(ge);
@@ -1339,7 +1460,10 @@ namespace SMTLIBParser{
         return mkAnd(new_params);
     }
     std::shared_ptr<DAGNode> Parser::mkGt(const std::vector<std::shared_ptr<DAGNode>>& params){
-        if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(params.size() < 2) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for gt", line_number);
+            return mkUnknown();
+        }
         std::shared_ptr<Sort> sort = getSort(params);
 
         if(params.size() == 2){
@@ -1351,7 +1475,10 @@ namespace SMTLIBParser{
         // pair-wise comparison: (> a b c d) <=> (and (> a b) (> b c) (> c d))
         for(size_t i=0;i<params.size() - 1;i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) {
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in gt", line_number);
+                return mkUnknown();
+            }
             std::shared_ptr<DAGNode> gt = mkGt(params[i], params[i + 1]);
             if(gt->isErr()) return gt;
             new_params.emplace_back(gt);
@@ -1364,16 +1491,22 @@ namespace SMTLIBParser{
     (to_int Real), return Int
     */
     std::shared_ptr<DAGNode> Parser::mkToInt(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        if(!isRealParam(param)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isRealParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in to_int", line_number);
+            return mkUnknown();
+        }
         return mkOper(INT_SORT, NODE_KIND::NT_TO_INT, param);
     }
     /*
     (to_real Int), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkToReal(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        if(!isIntParam(param)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isIntParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in to_real", line_number);
+            return mkUnknown();
+        }
         return mkOper(REAL_SORT, NODE_KIND::NT_TO_REAL, param);
     }
     // ARITHMATIC PROPERTIES
@@ -1381,40 +1514,55 @@ namespace SMTLIBParser{
     (is_int Real), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkIsInt(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        if(!isRealParam(param)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isRealParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in is_int", line_number);
+            return mkUnknown();
+        }
         return mkOper(BOOL_SORT, NODE_KIND::NT_IS_INT, param);
     }
     /*
     (is_divisible Int Int), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkIsDivisible(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isIntParam(l) || !isIntParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isIntParam(l) || !isIntParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in is_divisible", line_number);
+            return mkUnknown();
+        }
         return mkOper(BOOL_SORT, NODE_KIND::NT_IS_DIVISIBLE, l, r);
     }
     /*
     (is_prime Int), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkIsPrime(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        if(!isIntParam(param)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isIntParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in is_prime", line_number);
+            return mkUnknown();
+        }
         return mkOper(BOOL_SORT, NODE_KIND::NT_IS_PRIME, param);
     }
     /*
     (is_even Int), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkIsEven(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        if(!isIntParam(param)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isIntParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in is_even", line_number);
+            return mkUnknown();
+        }
         return mkOper(BOOL_SORT, NODE_KIND::NT_IS_EVEN, param);
     }
     /*
     (is_odd Int), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkIsOdd(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        if(!isIntParam(param)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isIntParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in is_odd", line_number);
+            return mkUnknown();
+        }
         return mkOper(BOOL_SORT, NODE_KIND::NT_IS_ODD, param);
     }
     // ARITHMATIC CONSTANTS
@@ -1443,24 +1591,33 @@ namespace SMTLIBParser{
     (gcd Int Int), return Int
     */
     std::shared_ptr<DAGNode> Parser::mkGcd(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isIntParam(l) || !isIntParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isIntParam(l) || !isIntParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in gcd", line_number);
+            return mkUnknown();
+        }
         return mkOper(INT_SORT, NODE_KIND::NT_GCD, l, r);
     }
     /*
     (lcm Int Int), return Int
     */
     std::shared_ptr<DAGNode> Parser::mkLcm(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isIntParam(l) || !isIntParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isIntParam(l) || !isIntParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in lcm", line_number);
+            return mkUnknown();
+        }
         return mkOper(INT_SORT, NODE_KIND::NT_LCM, l, r);
     }
     /*
     (factorial Int), return Int
     */
     std::shared_ptr<DAGNode> Parser::mkFact(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        if(!isIntParam(param)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isIntParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in factorial", line_number);
+            return mkUnknown();
+        }
         return mkOper(INT_SORT, NODE_KIND::NT_FACT, param);
     }
     // BITVECTOR COMMON OPERATORS
@@ -1468,20 +1625,29 @@ namespace SMTLIBParser{
     (bv_not Bv), return Bv
     */
     std::shared_ptr<DAGNode> Parser::mkBvNot(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        if(!isBvParam(param)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isBvParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_not", line_number);
+            return mkUnknown();
+        }
         return mkOper(param->getSort(), NODE_KIND::NT_BV_NOT, param);
     }
     /*
     (bvand Bv Bv+), return Bv
     */
     std::shared_ptr<DAGNode> Parser::mkBvAnd(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isBvParam(l) || !isBvParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isBvParam(l) || !isBvParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_and", line_number);
+            return mkUnknown();
+        }
         return mkOper(l->getSort(), NODE_KIND::NT_BV_AND, l, r);
     }
     std::shared_ptr<DAGNode> Parser::mkBvAnd(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(params.size() < 2) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for bv_and", line_number);
+            return mkUnknown();
+        }
         std::shared_ptr<Sort> sort = getSort(params);
 
         if(params.size() == 2){
@@ -1492,7 +1658,10 @@ namespace SMTLIBParser{
 
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !isBvParam(params[i])) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !isBvParam(params[i])) {
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_and", line_number);
+                return mkUnknown();
+            }
             new_params.emplace_back(params[i]);
         }
 
@@ -1506,15 +1675,21 @@ namespace SMTLIBParser{
     (bvor Bv Bv+), return Bv
     */
     std::shared_ptr<DAGNode> Parser::mkBvOr(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isBvParam(l) || !isBvParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isBvParam(l) || !isBvParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_or", line_number);
+            return mkUnknown();
+        }
         return mkOper(l->getSort(), NODE_KIND::NT_BV_OR, l, r);
     }
     /*
     (bvor Bv Bv+), return Bv
     */
     std::shared_ptr<DAGNode> Parser::mkBvOr(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(params.size() < 2) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for bv_or", line_number);
+            return mkUnknown();
+        }
         std::shared_ptr<Sort> sort = getSort(params);
 
         if(params.size() == 2){
@@ -1525,7 +1700,10 @@ namespace SMTLIBParser{
 
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !isBvParam(params[i])) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !isBvParam(params[i])) {
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_or", line_number);
+                return mkUnknown();
+            }
             new_params.emplace_back(params[i]);
         }
 
@@ -1537,12 +1715,18 @@ namespace SMTLIBParser{
 
     }
     std::shared_ptr<DAGNode> Parser::mkBvXor(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isBvParam(l) || !isBvParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isBvParam(l) || !isBvParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_xor", line_number);
+            return mkUnknown();
+        }
         return mkOper(l->getSort(), NODE_KIND::NT_BV_XOR, l, r);
     }
     std::shared_ptr<DAGNode> Parser::mkBvXor(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(params.size() < 2) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for bv_xor", line_number);
+            return mkUnknown();
+        }
         std::shared_ptr<Sort> sort = getSort(params);
 
         if(params.size() == 2){
@@ -1553,7 +1737,10 @@ namespace SMTLIBParser{
 
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !isBvParam(params[i])) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !isBvParam(params[i])) {
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_xor", line_number);
+                return mkUnknown();
+            }
             new_params.emplace_back(params[i]);
         }
 
@@ -1567,12 +1754,18 @@ namespace SMTLIBParser{
     (bvnand Bv Bv), return Bv
     */
     std::shared_ptr<DAGNode> Parser::mkBvNand(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isBvParam(l) || !isBvParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isBvParam(l) || !isBvParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_nand", line_number);
+            return mkUnknown();
+        }
         return mkOper(l->getSort(), NODE_KIND::NT_BV_NAND, l, r);
     }
     std::shared_ptr<DAGNode> Parser::mkBvNand(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(params.size() < 2) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for bv_nand", line_number);
+            return mkUnknown();
+        }
         std::shared_ptr<Sort> sort = getSort(params);
 
         if(params.size() == 2){
@@ -1583,7 +1776,10 @@ namespace SMTLIBParser{
 
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !isBvParam(params[i])) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !isBvParam(params[i])) {
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_nand", line_number);
+                return mkUnknown();
+            }
             new_params.emplace_back(params[i]);
         }
 
@@ -1597,12 +1793,18 @@ namespace SMTLIBParser{
     (bvnor Bv Bv), return Bv
     */
     std::shared_ptr<DAGNode> Parser::mkBvNor(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isBvParam(l) || !isBvParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isBvParam(l) || !isBvParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_nor", line_number);
+            return mkUnknown();
+        }
         return mkOper(l->getSort(), NODE_KIND::NT_BV_NOR, l, r);
     }
     std::shared_ptr<DAGNode> Parser::mkBvNor(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(params.size() < 2) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for bv_nor", line_number);
+            return mkUnknown();
+        }
         std::shared_ptr<Sort> sort = getSort(params);
 
         if(params.size() == 2){
@@ -1613,7 +1815,10 @@ namespace SMTLIBParser{
 
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !isBvParam(params[i])) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !isBvParam(params[i])) {
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_nor", line_number);
+                return mkUnknown();
+            }
             new_params.emplace_back(params[i]);
         }
 
@@ -1627,12 +1832,18 @@ namespace SMTLIBParser{
     (bvxnor Bv Bv+), return Bv
     */
     std::shared_ptr<DAGNode> Parser::mkBvXnor(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isBvParam(l) || !isBvParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isBvParam(l) || !isBvParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_xnor", line_number);
+            return mkUnknown();
+        }
         return mkOper(l->getSort(), NODE_KIND::NT_BV_XNOR, l, r);
     }
     std::shared_ptr<DAGNode> Parser::mkBvXnor(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(params.size() < 2) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for bv_xnor", line_number);
+            return mkUnknown();
+        }
         std::shared_ptr<Sort> sort = getSort(params);
 
         if(params.size() == 2){
@@ -1643,7 +1854,10 @@ namespace SMTLIBParser{
 
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !isBvParam(params[i])) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !isBvParam(params[i])) {
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_xnor", line_number);
+                return mkUnknown();
+            }
             new_params.emplace_back(params[i]);
         }
 
@@ -1657,27 +1871,36 @@ namespace SMTLIBParser{
     (bvcomp Bv Bv), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkBvComp(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isBvParam(l) || !isBvParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isBvParam(l) || !isBvParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_comp", line_number);
+            return mkUnknown();
+        }
         return mkOper(BOOL_SORT, NODE_KIND::NT_BV_COMP, l, r);
     }
     /*
     (bvneg Bv), return Bv
     */
     std::shared_ptr<DAGNode> Parser::mkBvNeg(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
+        
         return mkOper(param->getSort(), NODE_KIND::NT_BV_NEG, param);
     }
     /*
     (bvadd Bv Bv+), return Bv
     */
     std::shared_ptr<DAGNode> Parser::mkBvAdd(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isBvParam(l) || !isBvParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isBvParam(l) || !isBvParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_add", line_number);
+            return mkUnknown();
+        }
         return mkOper(l->getSort(), NODE_KIND::NT_BV_ADD, l, r);
     }
     std::shared_ptr<DAGNode> Parser::mkBvAdd(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(params.size() < 2) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for bv_add", line_number);
+            return mkUnknown();
+        }
         std::shared_ptr<Sort> sort = getSort(params);
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
@@ -1687,7 +1910,10 @@ namespace SMTLIBParser{
 
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !isBvParam(params[i])) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !isBvParam(params[i])) {
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_add", line_number);
+                return mkUnknown();
+            }
             new_params.emplace_back(params[i]);
         }
 
@@ -1701,12 +1927,18 @@ namespace SMTLIBParser{
     (bvsub Bv Bv), return Bv
     */
     std::shared_ptr<DAGNode> Parser::mkBvSub(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isBvParam(l) || !isBvParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isBvParam(l) || !isBvParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_sub", line_number);
+            return mkUnknown();
+        }
         return mkOper(l->getSort(), NODE_KIND::NT_BV_SUB, l, r);
     }
     std::shared_ptr<DAGNode> Parser::mkBvSub(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(params.size() < 2) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for bv_sub", line_number);
+            return mkUnknown();
+        }
         std::shared_ptr<Sort> sort = getSort(params);
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
@@ -1716,7 +1948,10 @@ namespace SMTLIBParser{
 
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !isBvParam(params[i])) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !isBvParam(params[i])) {
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_sub", line_number);
+                return mkUnknown();
+            }
             new_params.emplace_back(params[i]);
         }
 
@@ -1730,12 +1965,18 @@ namespace SMTLIBParser{
     (bvmul Bv Bv+), return Bv
     */
     std::shared_ptr<DAGNode> Parser::mkBvMul(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isBvParam(l) || !isBvParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isBvParam(l) || !isBvParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_mul", line_number);
+            return mkUnknown();
+        }
         return mkOper(l->getSort(), NODE_KIND::NT_BV_MUL, l, r);
     }
     std::shared_ptr<DAGNode> Parser::mkBvMul(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(params.size() < 2) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for bv_mul", line_number);
+            return mkUnknown();
+        }
         std::shared_ptr<Sort> sort = getSort(params);
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
@@ -1745,7 +1986,10 @@ namespace SMTLIBParser{
 
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !isBvParam(params[i])) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !isBvParam(params[i])) {
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_mul", line_number);
+                return mkUnknown();
+            }
             new_params.emplace_back(params[i]);
         }
 
@@ -1759,86 +2003,119 @@ namespace SMTLIBParser{
     (bvudiv Bv Bv), return Bv
     */
     std::shared_ptr<DAGNode> Parser::mkBvUdiv(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isBvParam(l) || !isBvParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isBvParam(l) || !isBvParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_udiv", line_number);
+            return mkUnknown();
+        }
         return mkOper(l->getSort(), NODE_KIND::NT_BV_UDIV, l, r);
     }
     /*
     (bvurem Bv Bv), return Bv
     */
     std::shared_ptr<DAGNode> Parser::mkBvUrem(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isBvParam(l) || !isBvParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isBvParam(l) || !isBvParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_urem", line_number);
+            return mkUnknown();
+        }
         return mkOper(l->getSort(), NODE_KIND::NT_BV_UREM, l, r);
     }
     /*
     (bvumod Bv Bv), return Bv
     */
     std::shared_ptr<DAGNode> Parser::mkBvUmod(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isBvParam(l) || !isBvParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isBvParam(l) || !isBvParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_umod", line_number);
+            return mkUnknown();
+        }
         return mkOper(l->getSort(), NODE_KIND::NT_BV_UMOD, l, r);
     }
     /*
     (bvsdiv Bv Bv), return Bv
     */
     std::shared_ptr<DAGNode> Parser::mkBvSdiv(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isBvParam(l) || !isBvParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isBvParam(l) || !isBvParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_sdiv", line_number);
+            return mkUnknown();
+        }
         return mkOper(l->getSort(), NODE_KIND::NT_BV_SDIV, l, r);
     }
     /*
     (bvsrem Bv Bv), return Bv
     */
     std::shared_ptr<DAGNode> Parser::mkBvSrem(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isBvParam(l) || !isBvParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isBvParam(l) || !isBvParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_srem", line_number);
+            return mkUnknown();
+        }
         return mkOper(l->getSort(), NODE_KIND::NT_BV_SREM, l, r);
     }
     /*
     (bvsmod Bv Bv), return Bv
     */
     std::shared_ptr<DAGNode> Parser::mkBvSmod(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isBvParam(l) || !isBvParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isBvParam(l) || !isBvParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_smod", line_number);
+            return mkUnknown();
+        }
         return mkOper(l->getSort(), NODE_KIND::NT_BV_SMOD, l, r);
     }
     /*
     (bvshl Bv Bv), return Bv
     */
     std::shared_ptr<DAGNode> Parser::mkBvShl(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isBvParam(l) || !isBvParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isBvParam(l) || !isBvParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_shl", line_number);
+            return mkUnknown();
+        }
         return mkOper(l->getSort(), NODE_KIND::NT_BV_SHL, l, r);
     }
     /*
     (bvlshr Bv Bv), return Bv
     */
     std::shared_ptr<DAGNode> Parser::mkBvLshr(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isBvParam(l) || !isBvParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isBvParam(l) || !isBvParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_lshr", line_number);
+            return mkUnknown();
+        }
         return mkOper(l->getSort(), NODE_KIND::NT_BV_LSHR, l, r);
     }
     /*
     (bvashr Bv Bv), return Bv
     */
     std::shared_ptr<DAGNode> Parser::mkBvAshr(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isBvParam(l) || !isBvParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isBvParam(l) || !isBvParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_ashr", line_number);
+            return mkUnknown();
+        }
         return mkOper(l->getSort(), NODE_KIND::NT_BV_ASHR, l, r);
     }
     /*
     (bvconcat Bv Bv+), return Bv
     */
     std::shared_ptr<DAGNode> Parser::mkBvConcat(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(params.size() < 2) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for bv_concat", line_number);
+            return mkUnknown();
+        }
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
         size_t width = 0;
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
             // no need to check equal sort
-            if(!isBvParam(params[i])) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(!isBvParam(params[i])) {
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_concat", line_number);
+                return mkUnknown();
+            }
             width += params[i]->getSort()->getBitWidth();
             new_params.emplace_back(params[i]);
         }
@@ -1856,7 +2133,10 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkBvExtract(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> s){
         if(l->isErr() || r->isErr() || s->isErr()) return l->isErr()?l:r;
-        if(!isBvParam(l) || !isIntParam(r) || !isIntParam(s)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!isBvParam(l) || !isIntParam(r) || !isIntParam(s)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_extract", line_number);
+            return mkUnknown();
+        }
         size_t width = toInt(r).get_ui() - toInt(s).get_ui() + 1;
         std::shared_ptr<Sort> new_sort = mkBVSort(width);
 
@@ -1866,8 +2146,11 @@ namespace SMTLIBParser{
     (bvrepeat Bv Int), return Bv
     */
     std::shared_ptr<DAGNode> Parser::mkBvRepeat(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isBvParam(l) || !isIntParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isBvParam(l) || !isIntParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_repeat", line_number);
+            return mkUnknown();
+        }
         size_t width = l->getSort()->getBitWidth() * toInt(r).get_ui();
         std::shared_ptr<Sort> new_sort = mkBVSort(width);
 
@@ -1877,8 +2160,11 @@ namespace SMTLIBParser{
     (zero_extend Bv Int), return Bv
     */
     std::shared_ptr<DAGNode> Parser::mkBvZeroExt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isBvParam(l) || !isIntParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS); 
+        
+        if(!isBvParam(l) || !isIntParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_zero_ext", line_number);
+            return mkUnknown();
+        }
         size_t width = toInt(r).get_ui();
         std::shared_ptr<Sort> new_sort = mkBVSort(width);
         return mkOper(new_sort, NODE_KIND::NT_BV_ZERO_EXT, l, r);
@@ -1887,8 +2173,11 @@ namespace SMTLIBParser{
     (bvsign_extend Bv Int), return Bv
     */
     std::shared_ptr<DAGNode> Parser::mkBvSignExt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isBvParam(l) || !isIntParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isBvParam(l) || !isIntParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_sign_ext", line_number);
+            return mkUnknown();
+        }
         size_t width = toInt(r).get_ui();
         std::shared_ptr<Sort> new_sort = mkBVSort(width);
 
@@ -1898,8 +2187,11 @@ namespace SMTLIBParser{
     (bvrotate_left Bv Int), return Bv
     */
     std::shared_ptr<DAGNode> Parser::mkBvRotateLeft(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isBvParam(l) || !isIntParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isBvParam(l) || !isIntParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_rotate_left", line_number);
+            return mkUnknown();
+        }
 
         size_t width = l->getSort()->getBitWidth();
         std::shared_ptr<Sort> new_sort = mkBVSort(width);
@@ -1910,8 +2202,11 @@ namespace SMTLIBParser{
     (bvrotate_right Bv Int), return Bv
     */
     std::shared_ptr<DAGNode> Parser::mkBvRotateRight(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isBvParam(l) || !isIntParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isBvParam(l) || !isIntParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_rotate_right", line_number);
+            return mkUnknown();
+        }
         size_t width = l->getSort()->getBitWidth();
         std::shared_ptr<Sort> new_sort = mkBVSort(width);
 
@@ -1922,16 +2217,22 @@ namespace SMTLIBParser{
     (bvult Bv Bv), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkBvUlt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isBvParam(l) || !isBvParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isBvParam(l) || !isBvParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_ult", line_number);
+            return mkUnknown();
+        }
         return mkOper(BOOL_SORT, NODE_KIND::NT_BV_ULT, l, r);
     }
     /*
     (bvule Bv Bv), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkBvUle(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isBvParam(l) || !isBvParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isBvParam(l) || !isBvParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_ule", line_number);
+            return mkUnknown();
+        }
 
         if(l->isCBV() && r->isCBV()){
             return bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_ULE) ? mkTrue() : mkFalse();
@@ -1943,8 +2244,11 @@ namespace SMTLIBParser{
     (bvugt Bv Bv), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkBvUgt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isBvParam(l) || !isBvParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isBvParam(l) || !isBvParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_ugt", line_number);
+            return mkUnknown();
+        }
 
         if(l->isCBV() && r->isCBV()){
             return bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_UGT) ? mkTrue() : mkFalse();
@@ -1956,8 +2260,11 @@ namespace SMTLIBParser{
     (bvuge Bv Bv), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkBvUge(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isBvParam(l) || !isBvParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isBvParam(l) || !isBvParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_uge", line_number);
+            return mkUnknown();
+        }
 
         if(l->isCBV() && r->isCBV()){
             return bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_UGE) ? mkTrue() : mkFalse();
@@ -1969,8 +2276,11 @@ namespace SMTLIBParser{
     (bvslt Bv Bv), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkBvSlt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isBvParam(l) || !isBvParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isBvParam(l) || !isBvParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_slt", line_number);
+            return mkUnknown();
+        }
 
         if(l->isCBV() && r->isCBV()){
             return bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_SLT) ? mkTrue() : mkFalse();
@@ -1982,8 +2292,11 @@ namespace SMTLIBParser{
     (bvsle Bv Bv), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkBvSle(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isBvParam(l) || !isBvParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isBvParam(l) || !isBvParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_sle", line_number);
+            return mkUnknown();
+        }
 
         if(l->isCBV() && r->isCBV()){
             return bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_SLE) ? mkTrue() : mkFalse();
@@ -1995,8 +2308,11 @@ namespace SMTLIBParser{
     (bvsgt Bv Bv), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkBvSgt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isBvParam(l) || !isBvParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isBvParam(l) || !isBvParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_sgt", line_number);
+            return mkUnknown();
+        }
 
         if(l->isCBV() && r->isCBV()){
             return bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_SGT) ? mkTrue() : mkFalse();
@@ -2008,8 +2324,11 @@ namespace SMTLIBParser{
     (bvsge Bv Bv), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkBvSge(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isBvParam(l) || !isBvParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isBvParam(l) || !isBvParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_sge", line_number);
+            return mkUnknown();
+        }
 
         if(l->isCBV() && r->isCBV()){
             return bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_SGE) ? mkTrue() : mkFalse();
@@ -2022,8 +2341,11 @@ namespace SMTLIBParser{
     (bv2nat Bv), return Nat
     */
     std::shared_ptr<DAGNode> Parser::mkBvToNat(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        if(!isBvParam(param)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isBvParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_to_nat", line_number);
+            return mkUnknown();
+        }
 
         return mkOper(NAT_SORT, NODE_KIND::NT_BV_TO_NAT, param);
     }
@@ -2031,8 +2353,11 @@ namespace SMTLIBParser{
     (nat2bv Nat Int), return Bv
     */
     std::shared_ptr<DAGNode> Parser::mkNatToBv(std::shared_ptr<DAGNode> param, std::shared_ptr<DAGNode> size){
-        if(param->isErr() || size->isErr()) return param->isErr()?param:size;
-        if(!isIntParam(param) || !isIntParam(size)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isIntParam(param) || !isIntParam(size)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in nat_to_bv", line_number);
+            return mkUnknown();
+        }
         std::shared_ptr<Sort> new_sort = mkBVSort(toInt(size).get_ui());
         return mkOper(new_sort, NODE_KIND::NT_NAT_TO_BV, param, size);
     }
@@ -2040,16 +2365,22 @@ namespace SMTLIBParser{
     (bv2int Bv), return Int
     */
     std::shared_ptr<DAGNode> Parser::mkBvToInt(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        if(!isBvParam(param)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isBvParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_to_int", line_number);
+            return mkUnknown();
+        }
         return mkOper(INT_SORT, NODE_KIND::NT_BV_TO_INT, param);
     }
     /*
     (int2bv Int Int), return Bv
     */
     std::shared_ptr<DAGNode> Parser::mkIntToBv(std::shared_ptr<DAGNode> param, std::shared_ptr<DAGNode> size){
-        if(param->isErr() || size->isErr()) return param->isErr()?param:size;
-        if(!isIntParam(param) || !isIntParam(size)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isIntParam(param) || !isIntParam(size)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in int_to_bv", line_number);
+            return mkUnknown();
+        }
         std::shared_ptr<Sort> new_sort = mkBVSort(toInt(size).get_ui());
         return mkOper(new_sort, NODE_KIND::NT_INT_TO_BV, param, size);
     }
@@ -2059,13 +2390,19 @@ namespace SMTLIBParser{
     (fp.add Fp Fp+), return Fp
     */
     std::shared_ptr<DAGNode> Parser::mkFpAdd(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(params.size() < 2) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for fp_add", line_number);
+            return mkUnknown();
+        }
         std::shared_ptr<Sort> sort = getSort(params);
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !isFpParam(params[i])) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !isFpParam(params[i])) {
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_add", line_number);
+                return mkUnknown();
+            }
             new_params.emplace_back(params[i]);
         }
 
@@ -2079,13 +2416,19 @@ namespace SMTLIBParser{
     (fp.sub Fp Fp+), return Fp
     */
     std::shared_ptr<DAGNode> Parser::mkFpSub(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(params.size() < 2) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for fp_sub", line_number);
+            return mkUnknown();
+        }
         std::shared_ptr<Sort> sort = getSort(params);
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !isFpParam(params[i])) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !isFpParam(params[i])) {
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_sub", line_number);
+                return mkUnknown();
+            }
             new_params.emplace_back(params[i]);
         }
 
@@ -2099,13 +2442,19 @@ namespace SMTLIBParser{
     (fp.mul Fp Fp+), return Fp
     */
     std::shared_ptr<DAGNode> Parser::mkFpMul(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(params.size() < 2) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for fp_mul", line_number);
+            return mkUnknown();
+        }
         std::shared_ptr<Sort> sort = getSort(params);
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !isFpParam(params[i])) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !isFpParam(params[i])) {
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_mul", line_number);
+                return mkUnknown();
+            }
             new_params.emplace_back(params[i]);
         }
 
@@ -2119,13 +2468,19 @@ namespace SMTLIBParser{
     (fp.div Fp Fp), return Fp
     */
     std::shared_ptr<DAGNode> Parser::mkFpDiv(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(params.size() < 2) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for fp_div", line_number);
+            return mkUnknown();
+        }
         std::shared_ptr<Sort> sort = getSort(params);
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !isFpParam(params[i])) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !isFpParam(params[i])) {
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_div", line_number);
+                return mkUnknown();
+            }
             new_params.emplace_back(params[i]);
         }
 
@@ -2139,8 +2494,11 @@ namespace SMTLIBParser{
     (fp.abs Fp), return Fp
     */
     std::shared_ptr<DAGNode> Parser::mkFpAbs(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        if(!isFpParam(param)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isFpParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_abs", line_number);
+            return mkUnknown();
+        }
 
         return mkOper(param->getSort(), NODE_KIND::NT_FP_ABS, param);
     }
@@ -2148,8 +2506,11 @@ namespace SMTLIBParser{
     (fp.neg Fp), return Fp
     */
     std::shared_ptr<DAGNode> Parser::mkFpNeg(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        if(!isFpParam(param)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isFpParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_neg", line_number);
+            return mkUnknown();
+        }
 
         return mkOper(param->getSort(), NODE_KIND::NT_FP_NEG, param);
     }
@@ -2157,8 +2518,11 @@ namespace SMTLIBParser{
     (fp.rem Fp Fp), return Fp
     */
     std::shared_ptr<DAGNode> Parser::mkFpRem(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isFpParam(l) || !isFpParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isFpParam(l) || !isFpParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_rem", line_number);
+            return mkUnknown();
+        }
 
         return mkOper(l->getSort(), NODE_KIND::NT_FP_REM, l, r);
     }
@@ -2166,13 +2530,19 @@ namespace SMTLIBParser{
     (fp.fma Fp Fp Fp), return Fp
     */
     std::shared_ptr<DAGNode> Parser::mkFpFma(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 3) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(params.size() < 3) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for fp_fma", line_number);
+            return mkUnknown();
+        }
         std::shared_ptr<Sort> sort = getSort(params);
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
         for(size_t i=0;i<params.size() - 2;i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !isFpParam(params[i])) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !isFpParam(params[i])) {
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_fma", line_number);
+                return mkUnknown();
+            }
             new_params.emplace_back(params[i]);
         }
 
@@ -2186,8 +2556,11 @@ namespace SMTLIBParser{
     (fp.sqrt Fp), return Fp
     */
     std::shared_ptr<DAGNode> Parser::mkFpSqrt(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        if(!isFpParam(param)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isFpParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_sqrt", line_number);
+            return mkUnknown();
+        }
 
         return mkOper(param->getSort(), NODE_KIND::NT_FP_SQRT, param);
     }
@@ -2195,8 +2568,11 @@ namespace SMTLIBParser{
     (fp.roundToIntegral Fp), return Fp
     */
     std::shared_ptr<DAGNode> Parser::mkFpRoundToIntegral(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        if(!isFpParam(param)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isFpParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_roundToIntegral", line_number);
+            return mkUnknown();
+        }
 
         return mkOper(param->getSort(), NODE_KIND::NT_FP_ROUND_TO_INTEGRAL, param);
     }
@@ -2204,13 +2580,19 @@ namespace SMTLIBParser{
     (fp.min Fp+), return Fp
     */
     std::shared_ptr<DAGNode> Parser::mkFpMin(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(params.size() < 2) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for fp_min", line_number);
+            return mkUnknown();
+        }
         std::shared_ptr<Sort> sort = getSort(params);
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !isFpParam(params[i])) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !isFpParam(params[i])) {
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_min", line_number);
+                return mkUnknown();
+            }
             new_params.emplace_back(params[i]);
         }
 
@@ -2224,13 +2606,19 @@ namespace SMTLIBParser{
     (fp.max Fp+), return Fp
     */
     std::shared_ptr<DAGNode> Parser::mkFpMax(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(params.size() < 2) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for fp_max", line_number);
+            return mkUnknown();
+        }
         std::shared_ptr<Sort> sort = getSort(params);
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !isFpParam(params[i])) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(sort != nullptr && !isFpParam(params[i])) {
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_max", line_number);
+                return mkUnknown();
+            }
             new_params.emplace_back(params[i]);
         }
 
@@ -2245,8 +2633,11 @@ namespace SMTLIBParser{
     (fp.leq Fp Fp), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkFpLe(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isFpParam(l) || !isFpParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isFpParam(l) || !isFpParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_le", line_number);
+            return mkUnknown();
+        }
 
         return mkOper(BOOL_SORT, NODE_KIND::NT_FP_LE, l, r);
     }
@@ -2254,8 +2645,11 @@ namespace SMTLIBParser{
     (fp.lt Fp Fp), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkFpLt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isFpParam(l) || !isFpParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isFpParam(l) || !isFpParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_lt", line_number);
+            return mkUnknown();
+        }
 
         return mkOper(BOOL_SORT, NODE_KIND::NT_FP_LT, l, r);
     }
@@ -2263,8 +2657,11 @@ namespace SMTLIBParser{
     (fp.geq Fp Fp), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkFpGe(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isFpParam(l) || !isFpParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isFpParam(l) || !isFpParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_ge", line_number);
+            return mkUnknown();
+        }
 
         return mkOper(BOOL_SORT, NODE_KIND::NT_FP_GE, l, r);
     }
@@ -2272,8 +2669,11 @@ namespace SMTLIBParser{
     (fp.gt Fp Fp), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkFpGt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isFpParam(l) || !isFpParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isFpParam(l) || !isFpParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_gt", line_number);
+            return mkUnknown();
+        }
 
         return mkOper(BOOL_SORT, NODE_KIND::NT_FP_GT, l, r);
     }
@@ -2281,8 +2681,11 @@ namespace SMTLIBParser{
     (fp.eq Fp Fp), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkFpEq(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isFpParam(l) || !isFpParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isFpParam(l) || !isFpParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_eq", line_number);
+            return mkUnknown();
+        }
 
         return mkOper(BOOL_SORT, NODE_KIND::NT_FP_EQ, l, r);
     }
@@ -2291,8 +2694,11 @@ namespace SMTLIBParser{
     (fp.to_ubv Fp), return Bv
     */
     std::shared_ptr<DAGNode> Parser::mkFpToUbv(std::shared_ptr<DAGNode> param, std::shared_ptr<DAGNode> size){
-        if(param->isErr() || size->isErr()) return param->isErr()?param:size;
-        if(!isFpParam(param) || !isIntParam(size)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isFpParam(param) || !isIntParam(size)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_to_ubv", line_number);
+            return mkUnknown();
+        }
 
         if(param->isCBV() && size->isCBV()){
             return mkConstBv(fpToUbv(param->toString(), toInt(size)), toInt(size).get_ui());
@@ -2303,8 +2709,11 @@ namespace SMTLIBParser{
         return mkOper(new_sort, NODE_KIND::NT_FP_TO_UBV, param, size);
     }
     std::shared_ptr<DAGNode> Parser::mkFpToSbv(std::shared_ptr<DAGNode> param, std::shared_ptr<DAGNode> size){
-        if(param->isErr() || size->isErr()) return param->isErr()?param:size;
-        if(!isFpParam(param) || !isIntParam(size)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isFpParam(param) || !isIntParam(size)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_to_sbv", line_number);
+            return mkUnknown();
+        }
 
         if(param->isCBV() && size->isCBV()){
             return mkConstBv(fpToSbv(param->toString(), toInt(size)), toInt(size).get_ui());
@@ -2315,8 +2724,11 @@ namespace SMTLIBParser{
         return mkOper(new_sort, NODE_KIND::NT_FP_TO_SBV, param, size);
     }
     std::shared_ptr<DAGNode> Parser::mkFpToReal(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        if(!isFpParam(param)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isFpParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_to_real", line_number);
+            return mkUnknown();
+        }
 
         return mkOper(REAL_SORT, NODE_KIND::NT_FP_TO_REAL, param);
     }
@@ -2337,8 +2749,11 @@ namespace SMTLIBParser{
     (fp.isNormal Fp), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkFpIsNormal(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        if(!isFpParam(param)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isFpParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_isNormal", line_number);
+            return mkUnknown();
+        }
 
         return mkOper(BOOL_SORT, NODE_KIND::NT_FP_IS_NORMAL, param);
     }
@@ -2346,8 +2761,11 @@ namespace SMTLIBParser{
     (fp.isSubnormal Fp), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkFpIsSubnormal(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        if(!isFpParam(param)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isFpParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_isSubnormal", line_number);
+            return mkUnknown();
+        }
 
         return mkOper(BOOL_SORT, NODE_KIND::NT_FP_IS_SUBNORMAL, param);
     }
@@ -2355,8 +2773,11 @@ namespace SMTLIBParser{
     (fp.isZero Fp), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkFpIsZero(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        if(!isFpParam(param)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isFpParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_isZero", line_number);
+            return mkUnknown();
+        }
 
         return mkOper(BOOL_SORT, NODE_KIND::NT_FP_IS_ZERO, param);
     }
@@ -2364,8 +2785,10 @@ namespace SMTLIBParser{
     (fp.isInfinite Fp), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkFpIsInf(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        if(!isFpParam(param)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!isFpParam(param)) {
+            err_all(param, "Expected floating-point parameter", line_number);
+            return mkUnknown();
+        }
 
         return mkOper(BOOL_SORT, NODE_KIND::NT_FP_IS_INF, param);
     }
@@ -2373,8 +2796,10 @@ namespace SMTLIBParser{
     (fp.isNaN Fp), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkFpIsNan(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        if(!isFpParam(param)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!isFpParam(param)) {
+            err_all(param, "Expected floating-point parameter", line_number);
+            return mkUnknown();
+        }
 
         return mkOper(BOOL_SORT, NODE_KIND::NT_FP_IS_NAN, param);
     }
@@ -2382,8 +2807,11 @@ namespace SMTLIBParser{
     (fp.isNegative Fp), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkFpIsNeg(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        if(!isFpParam(param)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isFpParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_isNeg", line_number);
+            return mkUnknown();
+        }
 
         return mkOper(BOOL_SORT, NODE_KIND::NT_FP_IS_NEG, param);
     }
@@ -2391,8 +2819,11 @@ namespace SMTLIBParser{
     (fp.isPositive Fp), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkFpIsPos(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        if(!isFpParam(param)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isFpParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_isPos", line_number);
+            return mkUnknown();
+        }
 
         return mkOper(BOOL_SORT, NODE_KIND::NT_FP_IS_POS, param);
     }
@@ -2401,8 +2832,11 @@ namespace SMTLIBParser{
     (select Array Int), return Int
     */
     std::shared_ptr<DAGNode> Parser::mkSelect(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isArrayParam(l) || !isIntParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isArrayParam(l) || !isIntParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in select", line_number);
+            return mkUnknown();
+        }
 
         return mkOper(l->getSort()->getElemSort(), NODE_KIND::NT_SELECT, l, r);
     }
@@ -2411,7 +2845,10 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkStore(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> v){
         if(l->isErr() || r->isErr() || v->isErr()) return l->isErr()?l:r;
-        if(!isArrayParam(l) || !isIntParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!isArrayParam(l) || !isIntParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in store", line_number);
+            return mkUnknown();
+        }
 
         return mkOper(l->getSort(), NODE_KIND::NT_STORE, l, r, v);
     }
@@ -2420,20 +2857,30 @@ namespace SMTLIBParser{
     (str.len Str), return Nat
     */
     std::shared_ptr<DAGNode> Parser::mkStrLen(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        if(!isStrParam(param)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isStrParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_len", line_number);
+            return mkUnknown();
+        }
+
         return mkOper(NAT_SORT, NODE_KIND::NT_STR_LEN, param);
     }
     /*
     (str.++ Str Str+), return Str
     */
     std::shared_ptr<DAGNode> Parser::mkStrConcat(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(params.size() < 2) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for str_concat", line_number);
+            return mkUnknown();
+        }
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(!isStrParam(params[i])) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(!isStrParam(params[i])) {
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_concat", line_number);
+                return mkUnknown();
+            }
             new_params.emplace_back(params[i]);
         }
 
@@ -2446,23 +2893,35 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkStrSubstr(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> s){
         if(l->isErr() || r->isErr() || s->isErr()) return l->isErr()?l:r;
-        if(!isStrParam(l) || !isIntParam(r) || !isIntParam(s)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!isStrParam(l) || !isIntParam(r) || !isIntParam(s)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_substr", line_number);
+            return mkUnknown();
+        }
+
         return mkOper(l->getSort(), NODE_KIND::NT_STR_SUBSTR, l, r, s);
     }
     /*
     (str.prefixof Str Str), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkStrPrefixof(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isStrParam(l) || !isStrParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isStrParam(l) || !isStrParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_prefixof", line_number);
+            return mkUnknown();
+        }
+
         return mkOper(BOOL_SORT, NODE_KIND::NT_STR_PREFIXOF, l, r);
     }
     /*
     (str.suffixof Str Str), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkStrSuffixof(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isStrParam(l) || !isStrParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isStrParam(l) || !isStrParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_suffixof", line_number);
+            return mkUnknown();
+        }
+
         return mkOper(BOOL_SORT, NODE_KIND::NT_STR_SUFFIXOF, l, r);
     }
     /*
@@ -2470,15 +2929,23 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkStrIndexof(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> s){
         if(l->isErr() || r->isErr() || s->isErr()) return l->isErr()?l:r;
-        if(!isStrParam(l) || !isStrParam(r) || !isIntParam(s)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!isStrParam(l) || !isStrParam(r) || !isIntParam(s)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_indexof", line_number);
+            return mkUnknown();
+        }
+
         return mkOper(INT_SORT, NODE_KIND::NT_STR_INDEXOF, l, r, s);
     }
     /*
     (str.at Str Int), return Str
     */
     std::shared_ptr<DAGNode> Parser::mkStrCharat(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isStrParam(l) || !isIntParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isStrParam(l) || !isIntParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_charat", line_number);
+            return mkUnknown();
+        }
+
         return mkOper(STR_SORT, NODE_KIND::NT_STR_CHARAT, l, r);
     }
     /*
@@ -2486,7 +2953,11 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkStrUpdate(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> v){
         if(l->isErr() || r->isErr() || v->isErr()) return l->isErr()?l:r;
-        if(!isStrParam(l) || !isIntParam(r) || !isStrParam(v)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!isStrParam(l) || !isIntParam(r) || !isStrParam(v)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_update", line_number);
+            return mkUnknown();
+        }
+
         return mkOper(l->getSort(), NODE_KIND::NT_STR_UPDATE, l, r, v);
     }
     /*
@@ -2494,47 +2965,76 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkStrReplace(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> v){
         if(l->isErr() || r->isErr() || v->isErr()) return l->isErr()?l:r;
-        if(!isStrParam(l) || !isStrParam(r) || !isStrParam(v)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!isStrParam(l) || !isStrParam(r) || !isStrParam(v)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_replace", line_number);
+            return mkUnknown();
+        }
+
         return mkOper(l->getSort(), NODE_KIND::NT_STR_REPLACE, l, r, v);
     }
     /*
     (str.replace_all Str Str Str), return Str
     */
     std::shared_ptr<DAGNode> Parser::mkStrReplaceAll(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> v){
-        if(l->isErr() || r->isErr() || v->isErr()) return l->isErr()?l:r;
-        if(!isStrParam(l) || !isStrParam(r) || !isStrParam(v)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!isStrParam(l)) {
+            err_all(l, "Expected string parameter", line_number);
+            return mkUnknown();
+        }
+        if(!isStrParam(r)) {
+            err_all(r, "Expected string parameter", line_number);
+            return mkUnknown();
+        }
+        if(!isStrParam(v)) {
+            err_all(v, "Expected string parameter", line_number);
+            return mkUnknown();
+        }
         return mkOper(l->getSort(), NODE_KIND::NT_STR_REPLACE_ALL, l, r, v);
     }
     /*
     (str.to_lower Str), return Str
     */
     std::shared_ptr<DAGNode> Parser::mkStrToLower(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        if(!isStrParam(param)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isStrParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_to_lower", line_number);
+            return mkUnknown();
+        }
+
         return mkOper(STR_SORT, NODE_KIND::NT_STR_TO_LOWER, param);
     }
     /*
     (str.to_upper Str), return Str
     */
     std::shared_ptr<DAGNode> Parser::mkStrToUpper(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        if(!isStrParam(param)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isStrParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_to_upper", line_number);
+            return mkUnknown();
+        }
+
         return mkOper(STR_SORT, NODE_KIND::NT_STR_TO_UPPER, param);
     }
     /*
     (str.rev Str), return Str
     */
     std::shared_ptr<DAGNode> Parser::mkStrRev(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        if(!isStrParam(param)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isStrParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_rev", line_number);
+            return mkUnknown();
+        }
+
         return mkOper(STR_SORT, NODE_KIND::NT_STR_REV, param);
     }
     /*
     (str.split Str Str), return (_ Array Int Str)
     */
     std::shared_ptr<DAGNode> Parser::mkStrSplit(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isStrParam(l) || !isStrParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isStrParam(l) || !isStrParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_split", line_number);
+            return mkUnknown();
+        }
 
         return mkOper(mkArraySort(INT_SORT, STR_SORT), NODE_KIND::NT_STR_SPLIT, l, r);
     }
@@ -2543,32 +3043,48 @@ namespace SMTLIBParser{
     (str.< Str Str), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkStrLt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isStrParam(l) || !isStrParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isStrParam(l) || !isStrParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_lt", line_number);
+            return mkUnknown();
+        }
+
         return mkOper(BOOL_SORT, NODE_KIND::NT_STR_LT, l, r);
     }
     /*
     (str.<= Str Str), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkStrLe(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isStrParam(l) || !isStrParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isStrParam(l) || !isStrParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_le", line_number);
+            return mkUnknown();
+        }
+
         return mkOper(BOOL_SORT, NODE_KIND::NT_STR_LE, l, r);
     }
     /*
     (str.> Str Str), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkStrGt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isStrParam(l) || !isStrParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isStrParam(l) || !isStrParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_gt", line_number);
+            return mkUnknown();
+        }
+
         return mkOper(BOOL_SORT, NODE_KIND::NT_STR_GT, l, r);
     }
     /*
     (str.>= Str Str), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkStrGe(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isStrParam(l) || !isStrParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isStrParam(l) || !isStrParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_ge", line_number);
+            return mkUnknown();
+        }
+
         return mkOper(BOOL_SORT, NODE_KIND::NT_STR_GE, l, r);
     }
     // STRINGS PROPERTIES
@@ -2576,38 +3092,59 @@ namespace SMTLIBParser{
     (str.in_re Str Reg), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkStrInReg(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isStrParam(l) || !isRegParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!isStrParam(l)) {
+            err_all(l, "Expected string parameter", line_number);
+            return mkUnknown();
+        }
+        if(!isRegParam(r)) {
+            err_all(r, "Expected regex parameter", line_number);
+            return mkUnknown();
+        }
         return mkOper(BOOL_SORT, NODE_KIND::NT_STR_IN_REG, l, r);
     }
     /*
     (str.contains Str Str), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkStrContains(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isStrParam(l) || !isStrParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isStrParam(l) || !isStrParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_contains", line_number);
+            return mkUnknown();
+        }
+
         return mkOper(BOOL_SORT, NODE_KIND::NT_STR_CONTAINS, l, r);
     }
     /*
     (str.is_digit Str), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkStrIsDigit(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        if(!isStrParam(param)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isStrParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_is_digit", line_number);
+            return mkUnknown();
+        }
+
         return mkOper(BOOL_SORT, NODE_KIND::NT_STR_IS_DIGIT, param);
     }
     // STRINGS CONVERSION
     std::shared_ptr<DAGNode> Parser::mkStrFromInt(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        if(!isIntParam(param)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isIntParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_from_int", line_number);
+            return mkUnknown();
+        }
+
         return mkOper(STR_SORT, NODE_KIND::NT_STR_FROM_INT, param);
     }
     /*
     (str.to_int Str), return Int
     */
     std::shared_ptr<DAGNode> Parser::mkStrToInt(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        if(!isStrParam(param)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isStrParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_to_int", line_number);
+            return mkUnknown();
+        }
 
         return mkOper(INT_SORT, NODE_KIND::NT_STR_TO_INT, param);
     }
@@ -2615,24 +3152,35 @@ namespace SMTLIBParser{
     (str.to_re Str), return Reg
     */
     std::shared_ptr<DAGNode> Parser::mkStrToReg(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        if(!isStrParam(param)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isStrParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_to_reg", line_number);
+            return mkUnknown();
+        }
+
         return mkOper(REG_SORT, NODE_KIND::NT_STR_TO_REG, param);
     }
     /*
     (str.to_code Str), return Int
     */
     std::shared_ptr<DAGNode> Parser::mkStrToCode(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        if(!isStrParam(param)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isStrParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_to_code", line_number);
+            return mkUnknown();
+        }
+
         return mkOper(INT_SORT, NODE_KIND::NT_STR_TO_CODE, param);
     }
     /*
     (str.from_code Int), return Str
     */
     std::shared_ptr<DAGNode> Parser::mkStrFromCode(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        if(!isIntParam(param)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isIntParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_from_code", line_number);
+            return mkUnknown();
+        }
 
         return mkOper(STR_SORT, NODE_KIND::NT_STR_FROM_CODE, param);
     }
@@ -2651,12 +3199,18 @@ namespace SMTLIBParser{
     (re.++ Reg Reg+), return Reg
     */
     std::shared_ptr<DAGNode> Parser::mkRegConcat(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(params.size() < 2) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for reg_concat", line_number);
+            return mkUnknown();
+        }
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(!isRegParam(params[i])) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(!isRegParam(params[i])) {
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in reg_concat", line_number);
+                return mkUnknown();
+            }
             new_params.emplace_back(params[i]);
         }
 
@@ -2666,12 +3220,18 @@ namespace SMTLIBParser{
     (re.union Reg Reg+), return Reg
     */
     std::shared_ptr<DAGNode> Parser::mkRegUnion(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(params.size() < 2) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for reg_union", line_number);
+            return mkUnknown();
+        }
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(!isRegParam(params[i])) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(!isRegParam(params[i])) {
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in reg_union", line_number);
+                return mkUnknown();
+            }
             new_params.emplace_back(params[i]);
         }
 
@@ -2681,12 +3241,18 @@ namespace SMTLIBParser{
     (re.inter Reg Reg+), return Reg
     */
     std::shared_ptr<DAGNode> Parser::mkRegInter(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(params.size() < 2) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for reg_inter", line_number);
+            return mkUnknown();
+        }
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(!isRegParam(params[i])) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+            if(!isRegParam(params[i])) {
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in reg_inter", line_number);
+                return mkUnknown();
+            }
             new_params.emplace_back(params[i]);
         }
 
@@ -2696,9 +3262,15 @@ namespace SMTLIBParser{
     (re.diff Reg Reg), return Reg
     */
     std::shared_ptr<DAGNode> Parser::mkRegDiff(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() != 2) return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+        if(params.size() != 2) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for reg_diff", line_number);
+            return mkUnknown();
+        }
         if(params[0]->isErr() || params[1]->isErr()) return params[0]->isErr()?params[0]:params[1];
-        if(!isRegParam(params[0]) || !isRegParam(params[1])) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!isRegParam(params[0]) || !isRegParam(params[1])) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in reg_diff", line_number);
+            return mkUnknown();
+        }
 
         return mkOper(REG_SORT, NODE_KIND::NT_REG_DIFF, params[0], params[1]);
     }
@@ -2706,8 +3278,11 @@ namespace SMTLIBParser{
     (re.* Reg), return Reg
     */
     std::shared_ptr<DAGNode> Parser::mkRegStar(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        if(!isRegParam(param)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isRegParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in reg_star", line_number);
+            return mkUnknown();
+        }
 
         return mkOper(REG_SORT, NODE_KIND::NT_REG_STAR, param);
     }
@@ -2715,8 +3290,11 @@ namespace SMTLIBParser{
     (re.+ Reg), return Reg
     */
     std::shared_ptr<DAGNode> Parser::mkRegPlus(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        if(!isRegParam(param)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isRegParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in reg_plus", line_number);
+            return mkUnknown();
+        }
 
         return mkOper(REG_SORT, NODE_KIND::NT_REG_PLUS, param);
     }
@@ -2724,8 +3302,11 @@ namespace SMTLIBParser{
     (re.opt Reg), return Reg
     */
     std::shared_ptr<DAGNode> Parser::mkRegOpt(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        if(!isRegParam(param)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isRegParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in reg_opt", line_number);
+            return mkUnknown();
+        }
 
         return mkOper(REG_SORT, NODE_KIND::NT_REG_OPT, param);
     }
@@ -2733,8 +3314,11 @@ namespace SMTLIBParser{
     (re.range Str Str), return Reg
     */
     std::shared_ptr<DAGNode> Parser::mkRegRange(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isStrParam(l) || !isStrParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isStrParam(l) || !isStrParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in reg_range", line_number);
+            return mkUnknown();
+        }
 
         return mkOper(REG_SORT, NODE_KIND::NT_REG_RANGE, l, r);
     }
@@ -2743,8 +3327,11 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkRegRepeat(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         // e.g. (re.^ (str.to.re "a") 3)
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isRegParam(l) || !isIntParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isRegParam(l) || !isIntParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in reg_repeat", line_number);
+            return mkUnknown();
+        }
 
         return mkOper(REG_SORT, NODE_KIND::NT_REG_REPEAT, l, r);
     }
@@ -2753,7 +3340,10 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkRegLoop(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> s){
         if(l->isErr() || r->isErr() || s->isErr()) return l->isErr()?l:r;
-        if(!isRegParam(l) || !isIntParam(r) || !isIntParam(s)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!isRegParam(l) || !isIntParam(r) || !isIntParam(s)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in reg_loop", line_number);
+            return mkUnknown();
+        }
 
         return mkOper(REG_SORT, NODE_KIND::NT_REG_LOOP, l, r, s);
     }
@@ -2761,8 +3351,11 @@ namespace SMTLIBParser{
     (re.comp Reg), return Reg
     */
     std::shared_ptr<DAGNode> Parser::mkRegComplement(std::shared_ptr<DAGNode> param){
-        if(param->isErr()) return param;
-        if(!isRegParam(param)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isRegParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in reg_complement", line_number);
+            return mkUnknown();
+        }
 
         return mkOper(REG_SORT, NODE_KIND::NT_REG_COMPLEMENT, param);
     }
@@ -2772,7 +3365,10 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkReplaceReg(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> v){
         if(l->isErr() || r->isErr() || v->isErr()) return l->isErr()?l:r;
-        if(!isStrParam(l) || !isRegParam(r) || !isStrParam(v)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!isStrParam(l) || !isRegParam(r) || !isStrParam(v)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_replace_re", line_number);
+            return mkUnknown();
+        }
 
         return mkOper(STR_SORT, NODE_KIND::NT_REPLACE_REG, l, r, v);
     }
@@ -2781,7 +3377,10 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkReplaceRegAll(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> v){
         if(l->isErr() || r->isErr() || v->isErr()) return l->isErr()?l:r;
-        if(!isStrParam(l) || !isRegParam(r) || !isStrParam(v)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!isStrParam(l) || !isRegParam(r) || !isStrParam(v)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_replace_all_re", line_number);
+            return mkUnknown();
+        }
 
         return mkOper(STR_SORT, NODE_KIND::NT_REPLACE_REG_ALL, l, r, v);
     }
@@ -2789,8 +3388,11 @@ namespace SMTLIBParser{
     (str.indexof_re Str Reg), return Int
     */
     std::shared_ptr<DAGNode> Parser::mkIndexofReg(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isStrParam(l) || !isRegParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        
+        if(!isStrParam(l) || !isRegParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_indexof_re", line_number);
+            return mkUnknown();
+        }
 
         return mkOper(INT_SORT, NODE_KIND::NT_INDEXOF_REG, l, r);
     }
