@@ -1044,6 +1044,16 @@ namespace SMTLIBParser{
 		else if (s == "false") {
 			return mkFalse();
 		}
+		// no parameters
+		else if (s == "re.none"){
+			return mkRegNone();
+		}
+		else if (s == "re.all"){
+			return mkRegAll();
+		}
+		else if (s == "re.allchar"){
+			return mkRegAllChar();
+		}
 		else {
 			if(let_key_map.find(s) != let_key_map.end()){
 				return let_key_map[s];
@@ -1686,15 +1696,6 @@ namespace SMTLIBParser{
 		else if (s == "str.from_code"){
 			assert(params.size() == 1);
 			return mkStrFromCode(params[0]);
-		}
-		else if (s == "re.none"){
-			return mkRegNone();
-		}
-		else if (s == "re.all"){
-			return mkRegAll();
-		}
-		else if (s == "re.allchar"){
-			return mkRegAllChar();
 		}
 		else if (s == "re.++") {
 			return mkRegConcat(params);
