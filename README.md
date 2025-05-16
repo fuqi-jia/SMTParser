@@ -323,30 +323,7 @@ This simple example demonstrates how to parse and process an SMT-LIB2 file. You 
 | Regular Expression Operations | `mkStrToReg`, `mkRegUnion`, `mkRegStar`, `...` |
 | Array Operations | `mkSelect`, `mkStore` |
 | Floating Point Operations | `mkFpAdd`, `mkFpMul`, `mkFpDiv`, `mkFpEq`, `...` |
-| Model Operations | `evaluate`, `add`, `get`, `...` |
-
-## Model Usage
-
-The Model class provides functionality to:
-
-1. **Create variable assignments** - Assign values to variables
-2. **Evaluate expressions** - Compute expression values based on variable assignments
-3. **Serialize and deserialize** - Save and load models
-4. **Validate against constraints** - Check if a model satisfies constraints
-
-Example model usage:
-
-```cpp
-// Create and populate a model
-auto model = SMTLIBParser::newModel();
-model->add(x, parser->mkConstInt(5));
-
-// Check if an expression is satisfied by the model
-bool isSatisfied = model->evaluate(constraint)->isTrue();
-
-// Get the value of a variable in the model
-auto x_value = model->evaluate(x);
-```
+| Model Operations | `add`, `get`, `...` |
 
 ## Supported Theories
 
