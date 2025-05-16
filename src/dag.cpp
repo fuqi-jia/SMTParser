@@ -303,13 +303,13 @@ namespace SMTLIBParser{
                 case NODE_KIND::NT_STR_UPDATE:
                 case NODE_KIND::NT_STR_REPLACE:
                 case NODE_KIND::NT_STR_REPLACE_ALL:
-                case NODE_KIND::NT_REG_LOOP:
-                    res = "((_ re.loop " + results[current->getChild(1)] + " " + results[current->getChild(2)] + ") " + results[current->getChild(0)] + ")";
-                    break;
                 case NODE_KIND::NT_REPLACE_REG:
                 case NODE_KIND::NT_REPLACE_REG_ALL:
                 case NODE_KIND::NT_INDEXOF_REG:
                     res = "(" + kindToString(kind) + " " + results[current->getChild(0)] + " " + results[current->getChild(1)] + " " + results[current->getChild(2)] + ")";
+                    break;
+                case NODE_KIND::NT_REG_LOOP:
+                    res = "((_ re.loop " + results[current->getChild(1)] + " " + results[current->getChild(2)] + ") " + results[current->getChild(0)] + ")";
                     break;
                     
                 // Multi-parameter operation - accepts arbitrary number of parameters
