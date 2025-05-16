@@ -1876,8 +1876,8 @@ namespace SMTLIBParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_comp", line_number);
             return mkUnknown();
         }
-        std::shared_ptr<Sort> sort = mkBvSort(1);
-        
+        std::shared_ptr<Sort> sort = mkBVSort(1);
+
         return mkOper(sort, NODE_KIND::NT_BV_COMP, l, r);
     }
     /*
