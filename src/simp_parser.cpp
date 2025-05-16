@@ -1448,7 +1448,7 @@ namespace SMTLIBParser{
             // Special processing operation
             case NODE_KIND::NT_BV_EXTRACT:{
                 if(l->isCBV() && m->isCInt() && r->isCInt()){
-                    Integer size = (toInt(r) - toInt(m));
+                    Integer size = (toInt(m) - toInt(r));
                     return mkConstBv(bvExtract(l->toString(), toInt(m), toInt(r)), size.get_ui());
                 }
                 else{
