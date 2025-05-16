@@ -60,29 +60,6 @@ namespace SMTLIBParser{
                 return name;
             }
         }
-        else if(sort->isRat()){
-            size_t pos = name.find("/");
-            if(pos == std::string::npos){
-                return name;
-            }
-            std::string num = name.substr(0, pos);
-            std::string den = name.substr(pos+1);
-            bool is_neg = false;
-            if(num[0] == '-'){
-                is_neg = true;
-                num = num.substr(1);
-            }
-            if(den[0] == '-'){
-                is_neg = !is_neg;
-                den = den.substr(1);
-            }
-            if(is_neg){
-                return "(/ (- " + num + ") " + den + ")";
-            }
-            else{
-            return "(/ " + num + " " + den + ")";
-            }
-        }
         else if(sort->isInt()){
             if(name[0] == '-'){
                 return "(- " + name.substr(1) + ")";
@@ -246,9 +223,7 @@ namespace SMTLIBParser{
                 case NODE_KIND::NT_REG_OPT:
                 case NODE_KIND::NT_REG_COMPLEMENT:
                 case NODE_KIND::NT_BV_TO_NAT:
-                case NODE_KIND::NT_NAT_TO_BV:
                 case NODE_KIND::NT_BV_TO_INT:
-                case NODE_KIND::NT_INT_TO_BV:
                 case NODE_KIND::NT_POW2:
                     res = "(" + kindToString(kind) + " " + results[current->getChild(0)] + ")";
                     break;
@@ -285,6 +260,7 @@ namespace SMTLIBParser{
                 case NODE_KIND::NT_BV_SHL:
                 case NODE_KIND::NT_BV_LSHR:
                 case NODE_KIND::NT_BV_ASHR:
+                case NODE_KIND::NT_BV_COMP:
                 case NODE_KIND::NT_BV_ULT:
                 case NODE_KIND::NT_BV_ULE:
                 case NODE_KIND::NT_BV_UGT:
@@ -293,6 +269,8 @@ namespace SMTLIBParser{
                 case NODE_KIND::NT_BV_SLE:
                 case NODE_KIND::NT_BV_SGT:
                 case NODE_KIND::NT_BV_SGE:
+                case NODE_KIND::NT_NAT_TO_BV:
+                case NODE_KIND::NT_INT_TO_BV:
                 case NODE_KIND::NT_FP_DIV:
                 case NODE_KIND::NT_FP_REM:
                 case NODE_KIND::NT_FP_LE:
@@ -350,7 +328,6 @@ namespace SMTLIBParser{
                 case NODE_KIND::NT_BV_NAND:
                 case NODE_KIND::NT_BV_NOR:
                 case NODE_KIND::NT_BV_XNOR:
-                case NODE_KIND::NT_BV_COMP:
                 case NODE_KIND::NT_BV_ADD:
                 case NODE_KIND::NT_BV_SUB:
                 case NODE_KIND::NT_BV_MUL:
@@ -763,7 +740,6 @@ namespace SMTLIBParser{
         case NODE_KIND::NT_BV_NAND:
         case NODE_KIND::NT_BV_NOR:
         case NODE_KIND::NT_BV_XNOR:
-        case NODE_KIND::NT_BV_COMP:
             dumpChainOp(kind, node->getChildren(), visited, ofs);
             break;
         // Arithmetic operations
@@ -773,6 +749,7 @@ namespace SMTLIBParser{
         case NODE_KIND::NT_BV_ADD:
         case NODE_KIND::NT_BV_SUB:
         case NODE_KIND::NT_BV_MUL:
+        case NODE_KIND::NT_BV_COMP:
             dumpChainOp(kind, node->getChildren(), visited, ofs);
             break;
         case NODE_KIND::NT_BV_UDIV:

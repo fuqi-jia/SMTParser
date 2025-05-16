@@ -9,7 +9,7 @@ A high-performance C++ library for parsing, manipulating, and processing SMT-LIB
 - **Comprehensive SMT-LIB2 Standard Support** - Fully compliant with the latest SMT-LIB2 specification
 - **Multi-Theory Integration** - Seamless support for:
   - Core theory (Boolean operations)
-  - Arithmetic theories (Integer, Real, Rational)
+  - Arithmetic theories (Integer, Real)
   - Bitvector theory with full operation support
   - IEEE-754 compliant Floating Point theory
   - String theory with Regular Expression operations
@@ -27,6 +27,19 @@ A high-performance C++ library for parsing, manipulating, and processing SMT-LIB
 - CMake 3.10+
 - Boost library (system components)
 - GMP (GNU Multiple Precision Arithmetic Library)
+- MPFR (GNU Multiple Precision Floating-Point Reliable Library)
+
+```bash
+sudo apt update
+sudo apt install -y \
+  build-essential \
+  g++ \
+  cmake \
+  libboost-system-dev \
+  libboost-filesystem-dev \
+  libgmp-dev \
+  libmpfr-dev
+```
 
 ## Installation
 
@@ -246,7 +259,7 @@ auto x_value = model->evaluate(x);
 - Equality and distinctness predicates
 
 ### Arithmetic Theory
-- Integer, Real, and Rational arithmetic
+- Integer and Real arithmetic
 - Arithmetic operations: addition, subtraction, multiplication, division
 - Comparison relations: <, ≤, >, ≥
 - Transcendental functions: exponential, logarithm, trigonometric functions

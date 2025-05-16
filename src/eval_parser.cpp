@@ -28,9 +28,6 @@
 #include "parser.h"
 
 namespace SMTLIBParser{
-    void precision_warning(const std::string& op){
-        std::cerr << "Precision warning: " << op << " will use double precision" << std::endl;
-    }
 
     void not_implemented_warning(const std::string& op){
         std::cerr << "Not implemented warning: " << op << " is not implemented" << std::endl;
@@ -585,9 +582,7 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_BV_NOT:
             case NODE_KIND::NT_BV_NEG:
             case NODE_KIND::NT_BV_TO_NAT:
-            case NODE_KIND::NT_NAT_TO_BV:
             case NODE_KIND::NT_BV_TO_INT:
-            case NODE_KIND::NT_INT_TO_BV:
             case NODE_KIND::NT_STR_LEN:
             case NODE_KIND::NT_STR_TO_LOWER:
             case NODE_KIND::NT_STR_TO_UPPER:
@@ -635,6 +630,8 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_BV_SGT:
             case NODE_KIND::NT_BV_SLE:
             case NODE_KIND::NT_BV_SGE:
+            case NODE_KIND::NT_NAT_TO_BV:
+            case NODE_KIND::NT_INT_TO_BV:
             case NODE_KIND::NT_STR_PREFIXOF:
             case NODE_KIND::NT_STR_SUFFIXOF:
             case NODE_KIND::NT_STR_CONTAINS:

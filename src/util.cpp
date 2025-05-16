@@ -1171,10 +1171,6 @@ namespace SMTLIBParser{
         return i.get_str();
     }
 
-    std::string toString(const Rational& r){
-        return r.get_str();
-    }
-
     std::string toString(const Real& r){
         mp_exp_t expo;
         std::string str = r.get_str(expo, 10, 0);

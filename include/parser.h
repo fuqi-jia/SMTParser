@@ -182,6 +182,10 @@ namespace SMTLIBParser{
         std::shared_ptr<DAGNode> mkOper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r);
         std::shared_ptr<DAGNode> mkOper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> m, std::shared_ptr<DAGNode> r);
         std::shared_ptr<DAGNode> mkOper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, const std::vector<std::shared_ptr<DAGNode>> &p);
+        std::shared_ptr<DAGNode> simp_oper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, std::shared_ptr<DAGNode> p);
+        std::shared_ptr<DAGNode> simp_oper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r);
+        std::shared_ptr<DAGNode> simp_oper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> m, std::shared_ptr<DAGNode> r);
+        std::shared_ptr<DAGNode> simp_oper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, const std::vector<std::shared_ptr<DAGNode>> &p);
         // mk function
         std::shared_ptr<DAGNode> mkFuncDec(const std::string &name, const std::vector<std::shared_ptr<Sort>> &params, std::shared_ptr<Sort> out_sort);
         std::shared_ptr<DAGNode> mkFuncDef(const std::string &name, const std::vector<std::shared_ptr<DAGNode>> &params, std::shared_ptr<Sort> out_sort, std::shared_ptr<DAGNode> body);
@@ -202,16 +206,13 @@ namespace SMTLIBParser{
         std::shared_ptr<DAGNode> mkConstBool(const int& v); // CONST_BOOL
         std::shared_ptr<DAGNode> mkConstBool(const std::string &v); // CONST_BOOL
         std::shared_ptr<DAGNode> mkConstBool(const double &v); // CONST_BOOL
-        std::shared_ptr<DAGNode> mkConstRat(const Rational &v); // CONST_RAN
-        std::shared_ptr<DAGNode> mkConstRat(const Rational &l, const Rational &r); // CONST_RAN
-        std::shared_ptr<DAGNode> mkConstRat(const Integer &l, const Integer &r); // CONST_RAN
-        std::shared_ptr<DAGNode> mkConstRat(const double &v); // CONST_RAN
         std::shared_ptr<DAGNode> mkConstInt(const std::string &v); // CONST_INT
         std::shared_ptr<DAGNode> mkConstInt(const int& v); // CONST_INT
         std::shared_ptr<DAGNode> mkConstInt(const Integer &v); // CONST_INT
         std::shared_ptr<DAGNode> mkConstReal(const std::string &v); // CONST_REAL
         std::shared_ptr<DAGNode> mkConstReal(const Real &v); // CONST_REAL
         std::shared_ptr<DAGNode> mkConstReal(const double &v); // CONST_REAL
+        std::shared_ptr<DAGNode> mkConstReal(const Integer &v); // CONST_REAL
         std::shared_ptr<DAGNode> mkConstStr(const std::string &v); // CONST_Str
         std::shared_ptr<DAGNode> mkConstBv(const std::string &v, const size_t& width); // CONST_BV
         std::shared_ptr<DAGNode> mkConstFp(const std::string &v, const size_t& e, const size_t& s); // CONST_FP
