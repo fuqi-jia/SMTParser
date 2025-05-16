@@ -778,8 +778,8 @@ namespace SMTLIBParser{
     }
     std::string bvExtract(const std::string& bv, const Integer& i, const Integer& j){
         assert(bv[0] == '#' && bv[1] == 'b');
-        assert(i <= j);
-        return "#b" + bv.substr(2 + bv.size() - 2 - j.get_ui(), j.get_ui() - i.get_ui() + 1);
+        assert(i >= j);
+        return "#b" + bv.substr(2 + bv.size() - 2 - j.get_ui(), i.get_ui() - j.get_ui() + 1);
     }
     std::string bvRepeat(const std::string& bv, const Integer& n){
         assert(bv[0] == '#' && bv[1] == 'b');
