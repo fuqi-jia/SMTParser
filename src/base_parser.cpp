@@ -113,6 +113,12 @@ namespace SMTLIBParser{
 		}
 		return funs;
 	}
+	void Parser::setEvaluatePrecision(mpfr_prec_t precision){
+		options->setEvaluatePrecision(precision);
+	}
+	mpfr_prec_t Parser::getEvaluatePrecision() const{
+		return options->getEvaluatePrecision();
+	}
 	// parse smt-lib2 file
 	std::string Parser::getSymbol() {
 

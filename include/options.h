@@ -56,7 +56,7 @@ namespace SMTLIBParser{
         // get-objectives
         bool get_objectives = false;
 
-        
+        mpfr_prec_t evaluate_precision = 128;
 
     public:
         GlobalOptions() = default;
@@ -143,7 +143,14 @@ namespace SMTLIBParser{
         bool isIntRealTheory() const {
             return logic.find("I") != std::string::npos && logic.find("R") != std::string::npos;
         }
-        
+
+        void setEvaluatePrecision(mpfr_prec_t precision) {
+            evaluate_precision = precision;
+        }
+
+        mpfr_prec_t getEvaluatePrecision() const {
+            return evaluate_precision;
+        }
     };
 }
 #endif // _OPTIONS_H

@@ -138,7 +138,7 @@ namespace SMTLIBParser{
         // (define-objective name single_opt)
         boost::unordered_map<std::string, std::shared_ptr<Objective>> 
                                                         objective_map;
-        
+
     public:
         std::vector<std::shared_ptr<DAGNode>>               assertions;
         boost::unordered_map<std::string, boost::unordered_set<size_t>> 
@@ -518,6 +518,8 @@ namespace SMTLIBParser{
         std::shared_ptr<DAGNode>	        negateAtom(std::shared_ptr<DAGNode> atom);
 
         // evaluate: return true if the evaluation has changed the expression
+        void                                setEvaluatePrecision(mpfr_prec_t precision);
+        mpfr_prec_t                         getEvaluatePrecision() const;
         std::shared_ptr<DAGNode>            evaluate(std::shared_ptr<DAGNode> expr, const std::shared_ptr<Model> &model);
         bool                                evaluate(std::shared_ptr<DAGNode> expr, const std::shared_ptr<Model> &model, std::shared_ptr<DAGNode> &result);
 
