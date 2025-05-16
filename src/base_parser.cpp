@@ -125,6 +125,27 @@ namespace SMTLIBParser{
 	bool Parser::getEvaluateUseFloating() const{
 		return options->getEvaluateUseFloating();
 	}
+	Real Parser::toReal(std::shared_ptr<DAGNode> expr){
+		assert(expr->isCReal() || expr->isCInt());
+		if(expr->isPi()) return Real::pi(getEvaluatePrecision());
+		if(expr->isE()) return Real::e(getEvaluatePrecision());
+		return Real(expr->toString());
+	}
+	Integer Parser::toInt(std::shared_ptr<DAGNode> expr){
+		assert(expr->isCInt());
+		return Integer(expr->toString());
+	}
+	bool Parser::isZero(std::shared_ptr<DAGNode> expr){
+		assert(expr->isCReal() || expr->isCInt());
+		if(expr->isCInt()) return toInt(expr) == 0;
+		return toReal(expr) == 0.0;
+	}
+	bool Parser::isOne(std::shared_ptr<DAGNode> expr){
+		assert(expr->isCReal() || expr->isCInt());
+		if(expr->isCInt()) return toInt(expr) == 1;
+		return toReal(expr) == 1.0;
+	}
+
 	// parse smt-lib2 file
 	std::string Parser::getSymbol() {
 

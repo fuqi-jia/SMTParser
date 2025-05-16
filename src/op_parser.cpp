@@ -831,7 +831,9 @@ namespace SMTLIBParser{
                     return mkConstInt(new_params[0]->toInt() * new_params[1]->toInt());
                 }
                 else if(new_params[0]->isCReal() && new_params[1]->isCReal()){
-                    return mkConstReal(new_params[0]->toReal() * new_params[1]->toReal());
+                    return mkConstReal(
+                        toReal(new_params[0]) * toReal(new_params[1])
+                    );
                 }
             }
             return mkOper(sort, NODE_KIND::NT_MUL, new_params);
@@ -914,10 +916,14 @@ namespace SMTLIBParser{
         }
         if(new_params.size() == 2){
             if(sort->isInt() && new_params[0]->isCInt() && new_params[1]->isCInt()){
-                return mkConstInt(new_params[0]->toInt() - new_params[1]->toInt());
+                return mkConstInt(
+                    toInt(new_params[0]) - toInt(new_params[1])
+                );
             }
             else if(sort->isReal() && new_params[0]->isCReal() && new_params[1]->isCReal()){
-                return mkConstReal(new_params[0]->toReal() - new_params[1]->toReal());
+                return mkConstReal(
+                    toReal(new_params[0]) - toReal(new_params[1])
+                );
             }
         }
         return mkOper(sort, NODE_KIND::NT_SUB, new_params);

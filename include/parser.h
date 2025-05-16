@@ -508,31 +508,37 @@ namespace SMTLIBParser{
 
         
         // additional functions
-        std::shared_ptr<DAGNode>            substitute(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::string, std::shared_ptr<DAGNode>> &params);
-        std::shared_ptr<DAGNode>            substitute(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::string, std::shared_ptr<DAGNode>> &params, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> & visited);
+        std::shared_ptr<DAGNode>                substitute(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::string, std::shared_ptr<DAGNode>> &params);
+        std::shared_ptr<DAGNode>                substitute(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::string, std::shared_ptr<DAGNode>> &params, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> & visited);
         
         // apply function
-        std::shared_ptr<DAGNode>	        applyFun(std::shared_ptr<DAGNode> fun, const std::vector<std::shared_ptr<DAGNode>> & params);
-        std::shared_ptr<DAGNode>	        applyFunPostOrder(std::shared_ptr<DAGNode> node, boost::unordered_map<std::string, std::shared_ptr<DAGNode>> &params);
+        std::shared_ptr<DAGNode>	            applyFun(std::shared_ptr<DAGNode> fun, const std::vector<std::shared_ptr<DAGNode>> & params);
+        std::shared_ptr<DAGNode>	            applyFunPostOrder(std::shared_ptr<DAGNode> node, boost::unordered_map<std::string, std::shared_ptr<DAGNode>> &params);
         // negate an atom
-        std::shared_ptr<DAGNode>	        negateAtom(std::shared_ptr<DAGNode> atom);
+        std::shared_ptr<DAGNode>	            negateAtom(std::shared_ptr<DAGNode> atom);
 
         // evaluate: return true if the evaluation has changed the expression
-        void                                setEvaluatePrecision(mpfr_prec_t precision);
-        mpfr_prec_t                         getEvaluatePrecision() const;
-        void                                setEvaluateUseFloating(bool use_floating);
-        bool                                getEvaluateUseFloating() const;
-        std::shared_ptr<DAGNode>            evaluate(std::shared_ptr<DAGNode> expr, const std::shared_ptr<Model> &model);
-        bool                                evaluate(std::shared_ptr<DAGNode> expr, const std::shared_ptr<Model> &model, std::shared_ptr<DAGNode> &result);
+        void                                    setEvaluatePrecision(mpfr_prec_t precision);
+        mpfr_prec_t                             getEvaluatePrecision() const;
+        void                                    setEvaluateUseFloating(bool use_floating);
+        bool                                    getEvaluateUseFloating() const;
+        std::shared_ptr<DAGNode>                evaluate(std::shared_ptr<DAGNode> expr, const std::shared_ptr<Model> &model);
+        bool                                    evaluate(std::shared_ptr<DAGNode> expr, const std::shared_ptr<Model> &model, std::shared_ptr<DAGNode> &result);
+
+        // type conversion
+        Real                                    toReal(std::shared_ptr<DAGNode> expr);
+        Integer                                 toInt(std::shared_ptr<DAGNode> expr);
+        bool                                    isZero(std::shared_ptr<DAGNode> expr);
+        bool                                    isOne(std::shared_ptr<DAGNode> expr);
 
     private:
         // parse smt-lib2 file
-        std::string	                        getSymbol();
-        void 		                        scanToNextSymbol();
-        void		                        parseLpar();
-        void 		                        parseRpar();
-        void		                        skipToRpar();
-        std::string                         peekSymbol();
+        std::string	                            getSymbol();
+        void 		                            scanToNextSymbol();
+        void		                            parseLpar();
+        void 		                            parseRpar();
+        void		                            skipToRpar();
+        std::string                             peekSymbol();
 
 
         CMD_TYPE	                            parseCommand();
