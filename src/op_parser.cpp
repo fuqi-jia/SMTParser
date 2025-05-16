@@ -1868,7 +1868,7 @@ namespace SMTLIBParser{
         return mkOper(sort, NODE_KIND::NT_BV_XNOR, new_params);
     }
     /*
-    (bvcomp Bv Bv), return Bool
+    (bvcomp Bv Bv), return (_ BitVec 1)
     */
     std::shared_ptr<DAGNode> Parser::mkBvComp(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         
@@ -1876,7 +1876,9 @@ namespace SMTLIBParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_comp", line_number);
             return mkUnknown();
         }
-        return mkOper(BOOL_SORT, NODE_KIND::NT_BV_COMP, l, r);
+        std::shared_ptr<Sort> sort = mkBvSort(1);
+        
+        return mkOper(sort, NODE_KIND::NT_BV_COMP, l, r);
     }
     /*
     (bvneg Bv), return Bv
