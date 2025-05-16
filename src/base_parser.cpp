@@ -1717,7 +1717,7 @@ namespace SMTLIBParser{
 			assert(params.size() == 1);
 			return mkRegPlus(params[0]);
 		}
-		else if (s == "re.?") {
+		else if (s == "re.?" || s == "re.opt") {
 			assert(params.size() == 1);
 			return mkRegOpt(params[0]);
 		}
