@@ -86,17 +86,36 @@ namespace SMTLIBParser{
         return params;
     }
     std::shared_ptr<DAGNode> Parser::mkOper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, std::shared_ptr<DAGNode> p){
+        // simplify
+        if(p->isConst()){
+            auto res = simp_oper(sort, t, p);
+            if(res->isConst()){
+                return res;
+            }
+        }
         std::vector<std::shared_ptr<DAGNode>> params;
         params.emplace_back(p);
         return mkOper(sort, t, params);
     }
     std::shared_ptr<DAGNode> Parser::mkOper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
+        if(l->isConst() && r->isConst()){
+            auto res = simp_oper(sort, t, l, r);
+            if(res->isConst()){
+                return res;
+            }
+        }
         std::vector<std::shared_ptr<DAGNode>> params;
         params.emplace_back(l);
         params.emplace_back(r);
         return mkOper(sort, t, params);
     }
     std::shared_ptr<DAGNode> Parser::mkOper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> m, std::shared_ptr<DAGNode> r){
+        if(l->isConst() && m->isConst() && r->isConst()){
+            auto res = simp_oper(sort, t, l, m, r);
+            if(res->isConst()){
+                return res;
+            }
+        }
         std::vector<std::shared_ptr<DAGNode>> params;
         params.emplace_back(l);
         params.emplace_back(m);
@@ -104,6 +123,17 @@ namespace SMTLIBParser{
         return mkOper(sort, t, params);
     }
     std::shared_ptr<DAGNode> Parser::mkOper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, const std::vector<std::shared_ptr<DAGNode>> &p){
+        bool is_all_const = true;
+        for(auto &param: p){
+            if(param->isErr()) return param;
+            if(!param->isConst()) is_all_const = false;
+        }
+        if(is_all_const){
+            auto res = simp_oper(sort, t, p);
+            if(res->isConst()){
+                return res;
+            }
+        }
         if(t == NODE_KIND::NT_VAR || t == NODE_KIND::NT_CONST || t == NODE_KIND::NT_FUNC_PARAM){
             return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
         }
@@ -526,12 +556,6 @@ namespace SMTLIBParser{
             assert(param->getChildrenSize() == 1);
             return param->getChild(0);
         }
-        else if(param->isTrue()){
-            return mkFalse();
-        }
-        else if(param->isFalse()){
-            return mkTrue();
-        }
         else{
             return mkOper(BOOL_SORT, NODE_KIND::NT_NOT, param);
         }
@@ -939,12 +963,6 @@ namespace SMTLIBParser{
     */  
     std::shared_ptr<DAGNode> Parser::mkNeg(std::shared_ptr<DAGNode> param){
         if(param->isErr()) return param;
-        if(param->isCInt()){
-            return mkConstInt(-param->toInt());
-        }
-        else if(param->isCReal()){
-            return mkConstReal(-param->toReal());
-        }
         return mkOper(param->getSort(), NODE_KIND::NT_NEG, param);
     }
     /*
@@ -1011,12 +1029,6 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkAbs(std::shared_ptr<DAGNode> param){
         if(param->isErr()) return param;
-        if(param->isCInt()){
-            return mkConstInt(abs(param->toInt()));
-        }
-        else if(param->isCReal()){
-            return mkConstReal(abs(param->toReal()));
-        }
         return mkOper(param->getSort(), NODE_KIND::NT_ABS, param);
     }
     /*
@@ -1025,12 +1037,6 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkSqrt(std::shared_ptr<DAGNode> param){
         if(param->isErr()) return param;
-        if(param->isCInt()){
-            return mkConstReal(sqrt(param->toInt()));
-        }
-        else if(param->isCReal()){
-            return mkConstReal(sqrt(param->toReal()));
-        }
         return mkOper(REAL_SORT, NODE_KIND::NT_SQRT, param);
     }
     /*
@@ -1039,12 +1045,6 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkSafeSqrt(std::shared_ptr<DAGNode> param){
         if(param->isErr()) return param;
-        if(param->isCInt()){
-            return mkConstReal(safesqrt(param->toInt()));
-        }
-        else if(param->isCReal()){
-            return mkConstReal(safesqrt(param->toReal()));
-        }
         return mkOper(REAL_SORT, NODE_KIND::NT_SAFESQRT, param);
     }
     /*
@@ -1052,12 +1052,6 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkCeil(std::shared_ptr<DAGNode> param){
         if(param->isErr()) return param;
-        if(param->isCInt()){
-            return param;
-        }
-        else if(param->isCReal()){
-            return mkConstInt(ceil(param->toReal()));
-        }
         return mkOper(INT_SORT, NODE_KIND::NT_CEIL, param);
     }
     /*
@@ -1065,26 +1059,13 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkFloor(std::shared_ptr<DAGNode> param){
         if(param->isErr()) return param;
-        if(param->isCInt()){
-            return param;
-        }
-        else if(param->isCReal()){
-            return mkConstInt(floor(param->toReal()));
-        }
         return mkOper(INT_SORT, NODE_KIND::NT_FLOOR, param);
-
     }
     /*
     (round Real), return Int
     */
     std::shared_ptr<DAGNode> Parser::mkRound(std::shared_ptr<DAGNode> param){
         if(param->isErr()) return param;
-        if(param->isCInt()){
-            return param;
-        }
-        else if(param->isCReal()){
-            return mkConstInt(round(param->toReal()));
-        }
         return mkOper(INT_SORT, NODE_KIND::NT_ROUND, param);
     }
     // TRANSCENDENTAL ARITHMATIC
