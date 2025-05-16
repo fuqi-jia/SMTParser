@@ -2730,11 +2730,11 @@ namespace SMTLIBParser{
         return mkOper(REG_SORT, NODE_KIND::NT_REG_OPT, param);
     }
     /*
-    (re.range Reg Int Int), return Reg
+    (re.range Str Str), return Reg
     */
     std::shared_ptr<DAGNode> Parser::mkRegRange(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(l->isErr() || r->isErr()) return l->isErr()?l:r;
-        if(!isIntParam(l) || !isIntParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+        if(!isStrParam(l) || !isStrParam(r)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         return mkOper(REG_SORT, NODE_KIND::NT_REG_RANGE, l, r);
     }
