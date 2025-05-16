@@ -1729,7 +1729,7 @@ namespace SMTLIBParser{
 			assert(params.size() == 2);
 			return mkRegRepeat(params[0], params[1]);
 		}
-		else if (s == "re.complement") {
+		else if (s == "re.comp") {
 			assert(params.size() == 1);
 			return mkRegComplement(params[0]);
 		}
