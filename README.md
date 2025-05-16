@@ -325,43 +325,6 @@ This simple example demonstrates how to parse and process an SMT-LIB2 file. You 
 | Floating Point Operations | `mkFpAdd`, `mkFpMul`, `mkFpDiv`, `mkFpEq`, `...` |
 | Model Operations | `add`, `get`, `...` |
 
-## Supported Theories
-
-### Core Theory
-- Full Boolean algebra: `and`, `or`, `not`, `implies`, `xor`
-- Equality and distinctness predicates
-
-### Arithmetic Theory
-- Integer and Real arithmetic
-- Arithmetic operations: addition, subtraction, multiplication, division
-- Comparison relations: <, ≤, >, ≥
-- Transcendental functions: exponential, logarithm, trigonometric functions
-- Special functions: absolute value, modulo, power, square root
-
-### Bitvector Theory
-- Bit-level operations: `and`, `or`, `xor`, `not`, `nand`, `nor`, `xnor`
-- Arithmetic operations: addition, subtraction, multiplication, division
-- Comparison relations: unsigned/signed less than, greater than
-- Bit manipulation: shift, rotate, concatenation, extraction
-- Conversion operations: to/from integers, sign extension
-
-### Floating Point Theory
-- IEEE-754 compliant arithmetic operations
-- Special value detection: `isNaN`, `isInfinite`, `isZero`
-- Rounding modes support
-- Conversion operations to/from other types
-
-### String Theory
-- String operations: concatenation, length, substring, indexing
-- Regular expression operations: union, intersection, Kleene star
-- String predicates: contains, prefix, suffix
-- Conversion functions: to/from integers, to/from code points
-
-### Array Theory
-- Multi-dimensional array support
-- Select and store operations
-- Array extensionality
-
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
