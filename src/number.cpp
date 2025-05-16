@@ -29,10 +29,11 @@
 #include <stdexcept>
 #include <cstring>
 #include <cmath>
+#include <climits> // For LLONG_MAX and LLONG_MIN
 
 namespace SMTLIBParser {
 
-// 常量
+// Constants
 HighPrecisionReal HighPrecisionReal::pi(mpfr_prec_t precision) {
     HighPrecisionReal result(precision);
     mpfr_const_pi(result.value, MPFR_RNDN);
@@ -111,11 +112,6 @@ HighPrecisionReal::HighPrecisionReal(int i, mpfr_prec_t precision) {
     mpfr_set_si(value, i, MPFR_RNDN);
 }
 
-HighPrecisionReal::HighPrecisionReal(const Real& r, mpfr_prec_t precision) {
-    mpfr_init2(value, precision);
-    mpfr_set_f(value, r.get_mpf_t(), MPFR_RNDN);
-}
-
 HighPrecisionReal::HighPrecisionReal(const Integer& i, mpfr_prec_t precision) {
     mpfr_init2(value, precision);
     mpfr_set_z(value, i.get_mpz_t(), MPFR_RNDN);
@@ -180,6 +176,12 @@ HighPrecisionReal HighPrecisionReal::operator+(const HighPrecisionReal& other) c
 HighPrecisionReal HighPrecisionReal::operator-(const HighPrecisionReal& other) const {
     HighPrecisionReal result(std::max(mpfr_get_prec(value), mpfr_get_prec(other.value)));
     mpfr_sub(result.value, value, other.value, MPFR_RNDN);
+    return result;
+}
+
+HighPrecisionReal HighPrecisionReal::operator-() const {
+    HighPrecisionReal result(mpfr_get_prec(value));
+    mpfr_neg(result.value, value, MPFR_RNDN);
     return result;
 }
 
@@ -491,6 +493,47 @@ std::string HighPrecisionReal::toString() const {
 
 double HighPrecisionReal::toDouble() const {
     return mpfr_get_d(value, MPFR_RNDN);
+}
+
+float HighPrecisionReal::toFloat() const {
+    return mpfr_get_flt(value, MPFR_RNDN);
+}
+
+int HighPrecisionReal::toInt() const {
+    return mpfr_get_si(value, MPFR_RNDN);
+}
+
+Integer HighPrecisionReal::toInteger() const {
+    mpz_t z;
+    mpz_init(z);
+    mpfr_get_z(z, value, MPFR_RNDN);
+    Integer result(z);
+    mpz_clear(z);
+    return result;
+}
+
+long long HighPrecisionReal::toLongLong() const {
+    // MPFR doesn't have a direct mpfr_get_ll function, so we'll use a workaround
+    // First convert to integer, then to long long
+    mpz_t z;
+    mpz_init(z);
+    mpfr_get_z(z, value, MPFR_RNDN);
+    
+    // Get the value as a long long
+    long long result;
+    if (mpz_fits_slong_p(z)) {
+        result = mpz_get_si(z);
+    } else {
+        // Handle values that are too large
+        if (mpz_sgn(z) >= 0) {
+            result = LLONG_MAX; // Maximum long long value
+        } else {
+            result = LLONG_MIN; // Minimum long long value
+        }
+    }
+    
+    mpz_clear(z);
+    return result;
 }
 
 // Set and get precision

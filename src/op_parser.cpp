@@ -727,7 +727,7 @@ namespace SMTLIBParser{
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
             if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
-            if(params[i]->isZero()){
+            if(isZero(params[i])){
                 continue;
             }
             else{
@@ -739,10 +739,10 @@ namespace SMTLIBParser{
         if(new_params.size() == 0){
             // all 0 constant
             if(options->isRealTheory()){
-                return mkConstReal("0");
+                return mkConstReal(0.0);
             }
             else if(options->isIntTheory()){
-                return mkConstInt("0");
+                return mkConstInt(0);
             }
             else{
                 return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
@@ -782,15 +782,15 @@ namespace SMTLIBParser{
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
             if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
-            if(params[i]->isZero()){
+            if(isZero(params[i])){
                 if(options->isIntTheory()){
                     return mkConstInt("0");
                 }
                 else if(options->isRealTheory()){
-                    return mkConstReal("0");
+                    return mkConstReal(0.0);
                 }
             }
-            else if(params[i]->isOne()){
+            else if(isOne(params[i])){
                 continue;
             }
             else{
@@ -801,10 +801,10 @@ namespace SMTLIBParser{
         if(new_params.size() == 0){
             // all 1 constant
             if(options->isIntTheory()){
-                return mkConstInt("1");
+                return mkConstInt(1);
             }
             else if(options->isRealTheory()){
-                return mkConstReal("1");
+                return mkConstReal(1.0);
             }
             else{
                 return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
@@ -828,10 +828,14 @@ namespace SMTLIBParser{
             }
             if(new_params.size() == 2){
                 if(new_params[0]->isCInt() && new_params[1]->isCInt()){
-                    return mkConstInt(new_params[0]->toInt() * new_params[1]->toInt());
+                    return mkConstInt(
+                        toInt(new_params[0]) * toInt(new_params[1])
+                    );
                 }
                 else if(new_params[0]->isCReal() && new_params[1]->isCReal()){
-                    return mkConstReal(new_params[0]->toReal() * new_params[1]->toReal());
+                    return mkConstReal(
+                        toReal(new_params[0]) * toReal(new_params[1])
+                    );
                 }
             }
             return mkOper(sort, NODE_KIND::NT_MUL, new_params);
@@ -869,7 +873,9 @@ namespace SMTLIBParser{
         }
         if(new_params.size() == 2){
             if(new_params[0]->isCInt() && new_params[1]->isCInt()){
-                return mkConstInt(new_params[0]->toInt() & new_params[1]->toInt());
+                return mkConstInt(
+                    toInt(new_params[0]) & toInt(new_params[1])
+                );
             }
         }
 
@@ -914,10 +920,14 @@ namespace SMTLIBParser{
         }
         if(new_params.size() == 2){
             if(sort->isInt() && new_params[0]->isCInt() && new_params[1]->isCInt()){
-                return mkConstInt(new_params[0]->toInt() - new_params[1]->toInt());
+                return mkConstInt(
+                    toInt(new_params[0]) - toInt(new_params[1])
+                );
             }
             else if(sort->isReal() && new_params[0]->isCReal() && new_params[1]->isCReal()){
-                return mkConstReal(new_params[0]->toReal() - new_params[1]->toReal());
+                return mkConstReal(
+                    toReal(new_params[0]) - toReal(new_params[1])
+                );
             }
         }
         return mkOper(sort, NODE_KIND::NT_SUB, new_params);
@@ -1830,7 +1840,7 @@ namespace SMTLIBParser{
     std::shared_ptr<DAGNode> Parser::mkBvExtract(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> s){
         if(l->isErr() || r->isErr() || s->isErr()) return l->isErr()?l:r;
         if(!l->getSort()->isBv() || !r->isCInt() || !s->isCInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
-        size_t width = r->toInt().get_ui() - s->toInt().get_ui() + 1;
+        size_t width = toInt(r).get_ui() - toInt(s).get_ui() + 1;
         std::shared_ptr<Sort> new_sort = mkBVSort(width);
 
         return mkOper(new_sort, NODE_KIND::NT_BV_EXTRACT, l, r, s);
@@ -1841,7 +1851,7 @@ namespace SMTLIBParser{
     std::shared_ptr<DAGNode> Parser::mkBvRepeat(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(l->isErr() || r->isErr()) return l->isErr()?l:r;
         if(!l->getSort()->isBv() || !r->isCInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
-        size_t width = l->getSort()->getBitWidth() * r->toInt().get_ui();
+        size_t width = l->getSort()->getBitWidth() * toInt(r).get_ui();
         std::shared_ptr<Sort> new_sort = mkBVSort(width);
 
         return mkOper(new_sort, NODE_KIND::NT_BV_REPEAT, l, r);
@@ -1852,7 +1862,7 @@ namespace SMTLIBParser{
     std::shared_ptr<DAGNode> Parser::mkBvZeroExt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(l->isErr() || r->isErr()) return l->isErr()?l:r;
         if(!l->getSort()->isBv() || !r->isCInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS); 
-        size_t width = r->toInt().get_ui();
+        size_t width = toInt(r).get_ui();
         std::shared_ptr<Sort> new_sort = mkBVSort(width);
         return mkOper(new_sort, NODE_KIND::NT_BV_ZERO_EXT, l, r);
     }
@@ -1862,7 +1872,7 @@ namespace SMTLIBParser{
     std::shared_ptr<DAGNode> Parser::mkBvSignExt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(l->isErr() || r->isErr()) return l->isErr()?l:r;
         if(!l->getSort()->isBv() || !r->isCInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
-        size_t width = r->toInt().get_ui();
+        size_t width = toInt(r).get_ui();
         std::shared_ptr<Sort> new_sort = mkBVSort(width);
 
         return mkOper(new_sort, NODE_KIND::NT_BV_SIGN_EXT, l, r);
@@ -2006,7 +2016,7 @@ namespace SMTLIBParser{
     std::shared_ptr<DAGNode> Parser::mkNatToBv(std::shared_ptr<DAGNode> param, std::shared_ptr<DAGNode> size){
         if(param->isErr() || size->isErr()) return param->isErr()?param:size;
         if(!param->isCInt() || !size->isCInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
-        std::shared_ptr<Sort> new_sort = mkBVSort(size->toInt().get_ui());
+        std::shared_ptr<Sort> new_sort = mkBVSort(toInt(size).get_ui());
         return mkOper(new_sort, NODE_KIND::NT_NAT_TO_BV, param, size);
     }
     /*
@@ -2023,7 +2033,7 @@ namespace SMTLIBParser{
     std::shared_ptr<DAGNode> Parser::mkIntToBv(std::shared_ptr<DAGNode> param, std::shared_ptr<DAGNode> size){
         if(param->isErr() || size->isErr()) return param->isErr()?param:size;
         if(!param->isCInt() || !size->isCInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
-        std::shared_ptr<Sort> new_sort = mkBVSort(size->toInt().get_ui());
+        std::shared_ptr<Sort> new_sort = mkBVSort(toInt(size).get_ui());
         return mkOper(new_sort, NODE_KIND::NT_INT_TO_BV, param, size);
     }
 
@@ -2268,10 +2278,10 @@ namespace SMTLIBParser{
         if(!param->getSort()->isFp() || !size->isCInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         if(param->isCBV() && size->isCBV()){
-            return mkConstBv(fpToUbv(param->toString(), size->toInt()), size->toInt().get_ui());
+            return mkConstBv(fpToUbv(param->toString(), toInt(size)), toInt(size).get_ui());
         }
 
-        std::shared_ptr<Sort> new_sort = mkBVSort(size->toInt().get_ui());
+        std::shared_ptr<Sort> new_sort = mkBVSort(toInt(size).get_ui());
 
         return mkOper(new_sort, NODE_KIND::NT_FP_TO_UBV, param, size);
     }
@@ -2280,10 +2290,10 @@ namespace SMTLIBParser{
         if(!param->getSort()->isFp() || !size->isCInt()) return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
 
         if(param->isCBV() && size->isCBV()){
-            return mkConstBv(fpToSbv(param->toString(), size->toInt()), size->toInt().get_ui());
+            return mkConstBv(fpToSbv(param->toString(), toInt(size)), toInt(size).get_ui());
         }
 
-        std::shared_ptr<Sort> new_sort = mkBVSort(size->toInt().get_ui());
+        std::shared_ptr<Sort> new_sort = mkBVSort(toInt(size).get_ui());
 
         return mkOper(new_sort, NODE_KIND::NT_FP_TO_SBV, param, size);
     }
@@ -2301,7 +2311,7 @@ namespace SMTLIBParser{
     std::shared_ptr<DAGNode> Parser::mkToFp(std::shared_ptr<DAGNode> eb, std::shared_ptr<DAGNode> sb, std::shared_ptr<DAGNode> param){
         if(eb->isErr() || sb->isErr() || param->isErr()) return eb->isErr()?eb:(sb->isErr()?sb:param);
 
-        std::shared_ptr<Sort> sort = mkFPSort(eb->toInt().get_ui(), sb->toInt().get_ui());
+        std::shared_ptr<Sort> sort = mkFPSort(toInt(eb).get_ui(), toInt(sb).get_ui());
 
         return mkOper(sort, NODE_KIND::NT_FP_TO_FP, eb, sb, param);
     }
