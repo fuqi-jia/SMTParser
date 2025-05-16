@@ -121,7 +121,6 @@ namespace SMTLIBParser{
     std::string strRev(const std::string& s);
 
     std::string toString(const Integer& i);
-    std::string toString(const Rational& r);
     std::string toString(const Real& r);
 
     

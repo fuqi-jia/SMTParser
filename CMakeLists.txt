@@ -31,6 +31,23 @@ if(NOT GMP_FOUND)
     endif()
 endif()
 
+# find MPFR library
+pkg_check_modules(MPFR REQUIRED mpfr)
+
+if(NOT MPFR_FOUND)
+    # if pkg-config not found, try using environment variable
+    if(DEFINED ENV{MPFR_DIR})
+        set(MPFR_INCLUDE_DIRS $ENV{MPFR_DIR}/include)
+        set(MPFR_LIBRARY_DIRS $ENV{MPFR_DIR}/lib)
+        set(MPFR_LIBRARIES mpfr)
+        set(MPFR_FOUND TRUE)
+    else()
+        message(FATAL_ERROR "MPFR library not found. Please install MPFR and either:\n"
+                          "1. Install pkg-config and ensure MPFR is properly installed\n"
+                          "2. Set MPFR_DIR environment variable to point to MPFR installation directory")
+    endif()
+endif()
+
 # set library name
 set(LIB_NAME "smtlibparser")
 
@@ -46,6 +63,7 @@ set(SOURCES
     src/kind.cpp
     src/sort.cpp
     src/model.cpp
+    src/number.cpp
 )
 
 # define public headers
@@ -58,6 +76,7 @@ set(PUBLIC_HEADERS
     include/sort.h
     include/options.h
     include/model.h
+    include/number.h
 )
 
 # create include directory
@@ -74,6 +93,7 @@ set(INCLUDE_DIRS
     ${CMAKE_CURRENT_BINARY_DIR}/include
     ${Boost_INCLUDE_DIRS}
     ${GMP_INCLUDE_DIRS}
+    ${MPFR_INCLUDE_DIRS}
 )
 
 # create library
@@ -88,7 +108,7 @@ if(BUILD_BOTH_LIBS)
         VISIBILITY_INLINES_HIDDEN YES
     )
     target_include_directories(${LIB_NAME}_static PUBLIC ${INCLUDE_DIRS})
-    target_link_libraries(${LIB_NAME}_static PUBLIC ${Boost_LIBRARIES} ${GMP_LIBRARIES})
+    target_link_libraries(${LIB_NAME}_static PUBLIC ${Boost_LIBRARIES} ${GMP_LIBRARIES} ${MPFR_LIBRARIES})
 
     # create dynamic library
     add_library(${LIB_NAME}_shared SHARED ${SOURCES})
@@ -101,7 +121,7 @@ if(BUILD_BOTH_LIBS)
         VISIBILITY_INLINES_HIDDEN YES
     )
     target_include_directories(${LIB_NAME}_shared PUBLIC ${INCLUDE_DIRS})
-    target_link_libraries(${LIB_NAME}_shared PUBLIC ${Boost_LIBRARIES} ${GMP_LIBRARIES})
+    target_link_libraries(${LIB_NAME}_shared PUBLIC ${Boost_LIBRARIES} ${GMP_LIBRARIES} ${MPFR_LIBRARIES})
 
     # add compile options
     if(MSVC)
@@ -143,6 +163,7 @@ else()
         PUBLIC
             ${Boost_LIBRARIES}
             ${GMP_LIBRARIES}
+            ${MPFR_LIBRARIES}
     )
 
     # install rules

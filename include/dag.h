@@ -166,8 +166,7 @@ namespace SMTLIBParser{
                                                     kind == NODE_KIND::NT_CONST_TRUE || kind == NODE_KIND::NT_CONST_FALSE ||
                                                     kind == NODE_KIND::NT_CONST_PI || kind == NODE_KIND::NT_CONST_E; };
         bool isCInt()       		const { return isConst() && (sort->isInt() || sort->isIntOrReal()); };
-        bool isCRat()               const { return isConst() && (sort->isRat() || sort->isIntOrReal()); };
-        bool isCReal()      		const { return isConst() && (sort->isReal() || sort->isRat() || sort->isIntOrReal()); };
+        bool isCReal()      		const { return isConst() && (sort->isReal() || sort->isIntOrReal()); };
         bool isCBV()        		const { return isConst() && sort->isBv(); };
         bool isCFP()        		const { return isConst() && sort->isFp(); };
         bool isCStr()       		const { return isConst() && sort->isStr(); };
@@ -262,7 +261,7 @@ namespace SMTLIBParser{
         bool isGt() 				const { return (kind == NODE_KIND::NT_GT); };
         bool isArithTerm() 			const { return (isArithOp() || isArithConv() || isTranscendentalOp() || 
                                                     (isVar() && (isVInt() || isVReal())) ||
-                                                    (isConst() && (isCInt() || isCRat() || isCReal()))); };
+                                                    (isConst() && (isCInt() || isCReal()))); };
         bool isArithAtom() 			const { return ((isEq() && getChild(0)->isArithTerm() && getChild(1)->isArithTerm())|| 
                                                     (isDistinct() && getChild(0)->isArithTerm() && getChild(1)->isArithTerm()) || 
                                                     isLe() || isLt() || isGe() || isGt()); };
@@ -514,7 +513,7 @@ namespace SMTLIBParser{
         }
         // convert to real
         Real toReal() const {
-            assert(isCInt() || isCReal() || isCRat());
+            assert(isCInt() || isCReal());
             if(name == "pi"){
                 return Real(CONST_PI);
             }
@@ -524,11 +523,6 @@ namespace SMTLIBParser{
 
             return Real(name);
         }
-        // convert to rational
-        Rational toRat() const {
-            assert(isCRat());
-            return Rational(name);
-        }
 
         // check if it is zero
         bool isZero() const {
@@ -537,9 +531,6 @@ namespace SMTLIBParser{
             }
             else if(isCReal()){
                 return toReal() == 0.0;
-            }
-            else if(isCRat()){
-                return toRat() == 0;
             }
             else if(isCBV()){
                 return Integer(bvToNat(name)) == 0;
@@ -554,9 +545,6 @@ namespace SMTLIBParser{
             }
             else if(isCReal()){
                 return toReal() == 1.0;
-            }
-            else if(isCRat()){
-                return toRat() == 1;
             }
             return false;
         }

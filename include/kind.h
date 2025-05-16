@@ -28,17 +28,13 @@
 #ifndef _TYPES_H
 #define _TYPES_H
 
+#include "number.h"
 #include <cassert>
 #include <string>
-#include <gmp.h>
-#include <gmpxx.h>
 
 namespace SMTLIBParser{
     // common types
     enum class State {UNKNOWN=-1, UNSAT, SAT};
-    typedef mpz_class Integer;
-    typedef mpq_class Rational;
-    typedef mpf_class Real;
 
     enum class NODE_KIND {
         NT_UNKNOWN=0,NT_ERROR,NT_NULL, 
