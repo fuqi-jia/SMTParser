@@ -428,35 +428,92 @@ namespace SMTLIBParser{
             return newconst;
         }
     }
-    std::shared_ptr<DAGNode> Parser::mkConstBool(const std::string &v){
-        return mkConst(BOOL_SORT, v);
+    std::shared_ptr<DAGNode> Parser::mkConst(const std::shared_ptr<Sort>& sort, const int& v){
+        std::string v_str = toString(v);
+        if(constants.find(v_str) != constants.end()){
+            return node_list[constants[v_str]];
+        }
+        else{
+            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(sort, v);
+            constants.insert(std::pair<std::string, size_t>(v_str, node_list.size()));
+            node_list.emplace_back(newconst);
+            return newconst;
+        }
+    }
+    std::shared_ptr<DAGNode> Parser::mkConst(const std::shared_ptr<Sort>& sort, const double& v){
+        std::string v_str = toString(v);
+        if(constants.find(v_str) != constants.end()){
+            return node_list[constants[v_str]];
+        }
+        else{
+            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(sort, v);
+            constants.insert(std::pair<std::string, size_t>(v_str, node_list.size()));
+            node_list.emplace_back(newconst);
+            return newconst;
+        }
+    }
+    std::shared_ptr<DAGNode> Parser::mkConst(const std::shared_ptr<Sort>& sort, const Real& v){
+        std::string v_str = toString(v);
+        if(constants.find(v_str) != constants.end()){
+            return node_list[constants[v_str]];
+        }
+        else{
+            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(sort, v);
+            constants.insert(std::pair<std::string, size_t>(v_str, node_list.size()));
+            node_list.emplace_back(newconst);
+            return newconst;
+        }
+    }
+    std::shared_ptr<DAGNode> Parser::mkConst(const std::shared_ptr<Sort>& sort, const Integer& v){
+        std::string v_str = toString(v);
+        if(constants.find(v_str) != constants.end()){
+            return node_list[constants[v_str]];
+        }
+        else{
+            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(sort, v);
+            constants.insert(std::pair<std::string, size_t>(v_str, node_list.size()));
+            node_list.emplace_back(newconst);
+            return newconst;
+        }
+    }
+    std::shared_ptr<DAGNode> Parser::mkConst(const std::shared_ptr<Sort>& sort, const bool& v){
+        std::string v_str = v ? "true" : "false";
+        if(constants.find(v_str) != constants.end()){
+            return node_list[constants[v_str]];
+        }
+        else{
+            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(sort, v);
+            constants.insert(std::pair<std::string, size_t>(v_str, node_list.size()));
+            node_list.emplace_back(newconst);
+            return newconst;
+        }
     }
     std::shared_ptr<DAGNode> Parser::mkConstBool(const bool &v){
-        return mkConst(BOOL_SORT, v ? "true" : "false");
+        return mkConst(BOOL_SORT, v);
     }
     std::shared_ptr<DAGNode> Parser::mkConstBool(const int& v){
-        return mkConst(BOOL_SORT, v == 0 ? "false" : "true");
+        return mkConst(BOOL_SORT, v == 0 ? false : true);
     }
     std::shared_ptr<DAGNode> Parser::mkConstInt(const Integer &v){
-        return mkConst(INTOREAL_SORT, toString(v));
+        return mkConst(INTOREAL_SORT, v);
     }
     std::shared_ptr<DAGNode> Parser::mkConstInt(const std::string &v){
         return mkConst(INTOREAL_SORT, v);
     }
     std::shared_ptr<DAGNode> Parser::mkConstInt(const int& v){
-        return mkConst(INTOREAL_SORT, std::to_string(v));
+        return mkConst(INTOREAL_SORT, v);
     }
     std::shared_ptr<DAGNode> Parser::mkConstReal(const std::string &v){
         return mkConst(REAL_SORT, v);
     }
     std::shared_ptr<DAGNode> Parser::mkConstReal(const Real &v){
-        return mkConst(REAL_SORT, toString(v));
+        return mkConst(REAL_SORT, v);
     }
     std::shared_ptr<DAGNode> Parser::mkConstReal(const double &v){
-        return mkConst(REAL_SORT, std::to_string(v));
+        return mkConst(REAL_SORT, v);
     }
     std::shared_ptr<DAGNode> Parser::mkConstReal(const Integer &v){
-        return mkConst(REAL_SORT, toString(v));
+        return mkConst(REAL_SORT, v);
     }
     std::shared_ptr<DAGNode> Parser::mkConstStr(const std::string &v){
         return mkConst(STR_SORT, v);
@@ -844,7 +901,7 @@ namespace SMTLIBParser{
             }
             if(isZero(params[i])){
                 if(options->isIntTheory()){
-                    return mkConstInt("0");
+                    return mkConstInt(0);
                 }
                 else if(options->isRealTheory()){
                     return mkConstReal(0.0);
@@ -2134,7 +2191,7 @@ namespace SMTLIBParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_extract", line_number);
             return mkUnknown();
         }
-        size_t width = toInt(r).get_ui() - toInt(s).get_ui() + 1;
+        size_t width = toInt(r).toULong() - toInt(s).toULong() + 1;
         std::shared_ptr<Sort> new_sort = mkBVSort(width);
 
         return mkOper(new_sort, NODE_KIND::NT_BV_EXTRACT, l, r, s);
@@ -2148,7 +2205,7 @@ namespace SMTLIBParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_repeat", line_number);
             return mkUnknown();
         }
-        size_t width = l->getSort()->getBitWidth() * toInt(r).get_ui();
+        size_t width = l->getSort()->getBitWidth() * toInt(r).toULong();
         std::shared_ptr<Sort> new_sort = mkBVSort(width);
 
         return mkOper(new_sort, NODE_KIND::NT_BV_REPEAT, l, r);
@@ -2162,7 +2219,7 @@ namespace SMTLIBParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_zero_ext", line_number);
             return mkUnknown();
         }
-        size_t width = toInt(r).get_ui();
+        size_t width = toInt(r).toULong();
         std::shared_ptr<Sort> new_sort = mkBVSort(width);
         return mkOper(new_sort, NODE_KIND::NT_BV_ZERO_EXT, l, r);
     }
@@ -2175,7 +2232,7 @@ namespace SMTLIBParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_sign_ext", line_number);
             return mkUnknown();
         }
-        size_t width = toInt(r).get_ui();
+        size_t width = toInt(r).toULong();
         std::shared_ptr<Sort> new_sort = mkBVSort(width);
 
         return mkOper(new_sort, NODE_KIND::NT_BV_SIGN_EXT, l, r);
@@ -2355,7 +2412,7 @@ namespace SMTLIBParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in nat_to_bv", line_number);
             return mkUnknown();
         }
-        std::shared_ptr<Sort> new_sort = mkBVSort(toInt(size).get_ui());
+        std::shared_ptr<Sort> new_sort = mkBVSort(toInt(size).toULong());
         return mkOper(new_sort, NODE_KIND::NT_NAT_TO_BV, param, size);
     }
     /*
@@ -2378,7 +2435,7 @@ namespace SMTLIBParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in int_to_bv", line_number);
             return mkUnknown();
         }
-        std::shared_ptr<Sort> new_sort = mkBVSort(toInt(size).get_ui());
+        std::shared_ptr<Sort> new_sort = mkBVSort(toInt(size).toULong());
         return mkOper(new_sort, NODE_KIND::NT_INT_TO_BV, param, size);
     }
 
@@ -2698,10 +2755,10 @@ namespace SMTLIBParser{
         }
 
         if(param->isCBV() && size->isCBV()){
-            return mkConstBv(fpToUbv(param->toString(), toInt(size)), toInt(size).get_ui());
+            return mkConstBv(fpToUbv(param->toString(), toInt(size)), toInt(size).toULong());
         }
 
-        std::shared_ptr<Sort> new_sort = mkBVSort(toInt(size).get_ui());
+        std::shared_ptr<Sort> new_sort = mkBVSort(toInt(size).toULong());
 
         return mkOper(new_sort, NODE_KIND::NT_FP_TO_UBV, param, size);
     }
@@ -2713,10 +2770,10 @@ namespace SMTLIBParser{
         }
 
         if(param->isCBV() && size->isCBV()){
-            return mkConstBv(fpToSbv(param->toString(), toInt(size)), toInt(size).get_ui());
+            return mkConstBv(fpToSbv(param->toString(), toInt(size)), toInt(size).toULong());
         }
 
-        std::shared_ptr<Sort> new_sort = mkBVSort(toInt(size).get_ui());
+        std::shared_ptr<Sort> new_sort = mkBVSort(toInt(size).toULong());
 
         return mkOper(new_sort, NODE_KIND::NT_FP_TO_SBV, param, size);
     }
@@ -2737,7 +2794,7 @@ namespace SMTLIBParser{
     std::shared_ptr<DAGNode> Parser::mkToFp(std::shared_ptr<DAGNode> eb, std::shared_ptr<DAGNode> sb, std::shared_ptr<DAGNode> param){
         if(eb->isErr() || sb->isErr() || param->isErr()) return eb->isErr()?eb:(sb->isErr()?sb:param);
 
-        std::shared_ptr<Sort> sort = mkFPSort(toInt(eb).get_ui(), toInt(sb).get_ui());
+        std::shared_ptr<Sort> sort = mkFPSort(toInt(eb).toULong(), toInt(sb).toULong());
 
         return mkOper(sort, NODE_KIND::NT_FP_TO_FP, eb, sb, param);
     }

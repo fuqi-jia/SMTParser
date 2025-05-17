@@ -86,54 +86,20 @@ namespace SMTLIBParser{
                 }
             }
             case NODE_KIND::NT_SQRT:{
-                if(p->isCInt()){
-                    Integer i = toInt(p);
-                    if(i < 0){
-                        err_all(p, "Square root of negative integer", line_number);
-                        return mkUnknown();
-                    }
-                    else{
-                        return mkConstReal(sqrt(i));
-                    }
-                }
-                else if(p->isCReal()){
-                    // p is a real number
-                    Real r = toReal(p);
-                    if(r < 0){
-                        err_all(p, "Square root of negative real number", line_number);
-                        return mkUnknown();
-                    }
-                    else{
-                        return mkConstReal(sqrt(r));
-                    }
+                // use floating point to approximate
+                if(getEvaluateUseFloating()){
+                    return mkConstReal(toReal(p).sqrt());
                 }
                 else{
-                    err_all(p, "Square root on non-integer or non-real", line_number);
                     return mkUnknown();
                 }
             }
             case NODE_KIND::NT_SAFESQRT:{
-                if(p->isCInt()){
-                    Integer i = toInt(p);
-                    if(i < 0){
-                        return mkConstReal(0);
-                    }
-                    else{
-                        return mkConstReal(sqrt(i));
-                    }
-                }
-                else if(p->isCReal()){
-                    // p is a real number
-                    Real r = toReal(p);
-                    if(r < 0){
-                        return mkConstReal(0);
-                    }
-                    else{
-                        return mkConstReal(sqrt(r));
-                    }
+                // use floating point to approximate
+                if(getEvaluateUseFloating()){
+                    return mkConstReal(toReal(p).safeSqrt());
                 }
                 else{
-                    err_all(p, "Safe square root on non-integer or non-real", line_number);
                     return mkUnknown();
                 }
             }
@@ -177,228 +143,407 @@ namespace SMTLIBParser{
                 }
             }
             case NODE_KIND::NT_EXP:{
-                if(p->isCInt()){
-                    if(toInt(p) == 0){
-                        return mkConstReal(1.0);
-                    }
+                if(getEvaluateUseFloating()){
+                    return mkConstReal(toReal(p).exp());
                 }
-                else if(p->isCReal()){
-                    if(toReal(p) == 0.0){
-                        return mkConstReal(1.0);
-                    }
+                else{
+                    return mkUnknown();
                 }
-                return mkUnknown();
             }
             case NODE_KIND::NT_LN:{
                 // ln(x) = ln(e^ln(x)) = ln(e) + ln(x)
-                if(p->isCInt()){
-                    if(toInt(p) <= 0){
-                        err_all(p, "Natural logarithm of non-positive integer", line_number);
-                        return mkUnknown();
-                    }
-                    else if(toInt(p) == 1){
-                        return mkConstReal(0.0);
-                    }
+                if(getEvaluateUseFloating()){
+                    return mkConstReal(toReal(p).ln());
                 }
-                else if(p->isCReal()){
-                    if(toReal(p) <= 0.0){
-                        err_all(p, "Natural logarithm of non-positive real number", line_number);
-                        return mkUnknown();
+                else{
+                    // simple evaluation
+                    if(p->isCInt()){
+                        if(toInt(p) <= 0){
+                            err_all(p, "Natural logarithm of non-positive integer", line_number);
+                            return mkUnknown();
+                        }
+                        else if(toInt(p) == 1){
+                            return mkConstReal(0.0);
+                        }
                     }
-                    else if(toReal(p) == 1.0){
-                        return mkConstReal(0.0);
+                    else if(p->isCReal()){
+                        if(toReal(p) <= 0.0){
+                            err_all(p, "Natural logarithm of non-positive real number", line_number);
+                            return mkUnknown();
+                        }
+                        else if(toReal(p) == 1.0){
+                            return mkConstReal(0.0);
+                        }
+                        else if(p->isE()){
+                            return mkConstReal(1.0);
+                        }
                     }
-                    else if(p->isE()){
-                        return mkConstReal(1.0);
-                    }
+                    return mkUnknown();
                 }
-                return mkUnknown();
             }
             case NODE_KIND::NT_LG:{
-                if(p->isCInt()){
-                    if(toInt(p) <= 0){
-                        return mkErr(ERROR_TYPE::ERR_NEG_PARAM);
-                    }
-                    else if(toInt(p) == 1){
-                        return mkConstReal(0.0);
-                    }
-                    else if(toInt(p) == 10){
-                        return mkConstReal(1.0);
-                    }
-                    else if(toInt(p) == 100){
-                        return mkConstReal(2.0);
-                    }
-                    else if(toInt(p) == 1000){
-                        return mkConstReal(3.0);
-                    }
-                    else if(toInt(p) == 10000){
-                        return mkConstReal(4.0);
-                    }
-                    else if(toInt(p) == 100000){
-                        return mkConstReal(5.0);
-                    }
-                    else if(toInt(p) == 1000000){
-                        return mkConstReal(6.0);
-                    }
-                    else if(toInt(p) == 10000000){
-                        return mkConstReal(7.0);
-                    }
-                    else if(toInt(p) == 100000000){
-                        return mkConstReal(8.0);
-                    }
-                    else if(toInt(p) == 1000000000){
-                        return mkConstReal(9.0);
-                    }
-                    else if(toInt(p) == 10000000000){
-                        return mkConstReal(10.0);
-                    }
-                    // ... ...
+                if(getEvaluateUseFloating()){
+                    return mkConstReal(toReal(p).lg());
                 }
-                else if(p->isCReal()){
-                    if(toReal(p) <= 0.0){
-                        return mkErr(ERROR_TYPE::ERR_NEG_PARAM);
+                else{
+                    // simple evaluation
+                    if(p->isCInt()){
+                        if(toInt(p) <= 0){
+                            return mkErr(ERROR_TYPE::ERR_NEG_PARAM);
+                        }
+                        else if(toInt(p) == 1){
+                            return mkConstReal(0.0);
+                        }
+                        else if(toInt(p) == 10){
+                            return mkConstReal(1.0);
+                        }
+                        else if(toInt(p) == 100){
+                            return mkConstReal(2.0);
+                        }
+                        else if(toInt(p) == 1000){
+                            return mkConstReal(3.0);
+                        }
+                        else if(toInt(p) == 10000){
+                            return mkConstReal(4.0);
+                        }
+                        else if(toInt(p) == 100000){
+                            return mkConstReal(5.0);
+                        }
+                        else if(toInt(p) == 1000000){
+                            return mkConstReal(6.0);
+                        }
+                        else if(toInt(p) == 10000000){
+                            return mkConstReal(7.0);
+                        }
+                        else if(toInt(p) == 100000000){
+                            return mkConstReal(8.0);
+                        }
+                        else if(toInt(p) == 1000000000){
+                            return mkConstReal(9.0);
+                        }
+                        else if(toInt(p) == 10000000000){
+                            return mkConstReal(10.0);
+                        }
+                        // ... ...
                     }
-                    else if(toReal(p) == 1.0){
-                        return mkConstReal(0.0);
+                    else if(p->isCReal()){
+                        if(toReal(p) <= 0.0){
+                            return mkErr(ERROR_TYPE::ERR_NEG_PARAM);
+                        }
+                        else if(toReal(p) == 1.0){
+                            return mkConstReal(0.0);
+                        }
+                        else if(toReal(p) == 10.0){
+                            return mkConstReal(1.0);
+                        }
+                        else if(toReal(p) == 100.0){
+                            return mkConstReal(2.0);
+                        }
+                        else if(toReal(p) == 1000.0){
+                            return mkConstReal(3.0);
+                        }
+                        else if(toReal(p) == 10000.0){
+                            return mkConstReal(4.0);
+                        }
+                        else if(toReal(p) == 100000.0){
+                            return mkConstReal(5.0);
+                        }
+                        else if(toReal(p) == 1000000.0){
+                            return mkConstReal(6.0);
+                        }
+                        else if(toReal(p) == 10000000.0){
+                            return mkConstReal(7.0);
+                        }
+                        else if(toReal(p) == 100000000.0){
+                            return mkConstReal(8.0);
+                        }
+                        else if(toReal(p) == 1000000000.0){
+                            return mkConstReal(9.0);
+                        }
+                        else if(toReal(p) == 10000000000.0){
+                            return mkConstReal(10.0);
+                        }
+                        // ... ...
                     }
-                    else if(toReal(p) == 10.0){
-                        return mkConstReal(1.0);
-                    }
-                    else if(toReal(p) == 100.0){
-                        return mkConstReal(2.0);
-                    }
-                    else if(toReal(p) == 1000.0){
-                        return mkConstReal(3.0);
-                    }
-                    else if(toReal(p) == 10000.0){
-                        return mkConstReal(4.0);
-                    }
-                    else if(toReal(p) == 100000.0){
-                        return mkConstReal(5.0);
-                    }
-                    else if(toReal(p) == 1000000.0){
-                        return mkConstReal(6.0);
-                    }
-                    else if(toReal(p) == 10000000.0){
-                        return mkConstReal(7.0);
-                    }
-                    else if(toReal(p) == 100000000.0){
-                        return mkConstReal(8.0);
-                    }
-                    else if(toReal(p) == 1000000000.0){
-                        return mkConstReal(9.0);
-                    }
-                    else if(toReal(p) == 10000000000.0){
-                        return mkConstReal(10.0);
-                    }
-                    // ... ...
+                    return mkUnknown();
                 }
-                return mkUnknown();
             }
             case NODE_KIND::NT_LB:{
-                if(p->isCInt()){
-                    if(toInt(p) <= 0){
-                        return mkErr(ERROR_TYPE::ERR_NEG_PARAM);
-                    }
-                    else if(toInt(p) == 1){
-                        return mkConstReal(0.0);
-                    }
-                    else if(toInt(p) == 2){
-                        return mkConstReal(1.0);
-                    }
-                    else if(toInt(p) == 4){
-                        return mkConstReal(2.0);
-                    }
-                    else if(toInt(p) == 8){
-                        return mkConstReal(3.0);
-                    }
-                    else if(toInt(p) == 16){
-                        return mkConstReal(4.0);
-                    }
-                    else if(toInt(p) == 32){
-                        return mkConstReal(5.0);
-                    }
-                    else if(toInt(p) == 64){
-                        return mkConstReal(6.0);
-                    }
-                    else if(toInt(p) == 128){
-                        return mkConstReal(7.0);
-                    }
-                    else if(toInt(p) == 256){
-                        return mkConstReal(8.0);
-                    }
-                    else if(toInt(p) == 512){
-                        return mkConstReal(9.0);
-                    }
-                    else if(toInt(p) == 1024){
-                        return mkConstReal(10.0);
-                    }
+                if(getEvaluateUseFloating()){
+                    return mkConstReal(toReal(p).lb());
                 }
-                else if(p->isCReal()){
-                    if(toReal(p) <= 0.0){
-                        return mkErr(ERROR_TYPE::ERR_NEG_PARAM);
+                else{
+                    // simple evaluation
+                    if(p->isCInt()){
+                        if(toInt(p) <= 0){
+                            return mkErr(ERROR_TYPE::ERR_NEG_PARAM);
+                        }
+                        else if(toInt(p) == 1){
+                            return mkConstReal(0.0);
+                        }
+                        else if(toInt(p) == 2){
+                            return mkConstReal(1.0);
+                        }
+                        else if(toInt(p) == 4){
+                            return mkConstReal(2.0);
+                        }
+                        else if(toInt(p) == 8){
+                            return mkConstReal(3.0);
+                        }
+                        else if(toInt(p) == 16){
+                            return mkConstReal(4.0);
+                        }
+                        else if(toInt(p) == 32){
+                            return mkConstReal(5.0);
+                        }
+                        else if(toInt(p) == 64){
+                            return mkConstReal(6.0);
+                        }
+                        else if(toInt(p) == 128){
+                            return mkConstReal(7.0);
+                        }
+                        else if(toInt(p) == 256){
+                            return mkConstReal(8.0);
+                        }
+                        else if(toInt(p) == 512){
+                            return mkConstReal(9.0);
+                        }
+                        else if(toInt(p) == 1024){
+                            return mkConstReal(10.0);
+                        }
                     }
-                    else if(toReal(p) == 1.0){
-                        return mkConstReal(0.0);
+                    else if(p->isCReal()){
+                        if(toReal(p) <= 0.0){
+                            return mkErr(ERROR_TYPE::ERR_NEG_PARAM);
+                        }
+                        else if(toReal(p) == 1.0){
+                            return mkConstReal(0.0);
+                        }
+                        else if(toReal(p) == 2.0){
+                            return mkConstReal(1.0);
+                        }
+                        else if(toReal(p) == 4.0){
+                            return mkConstReal(2.0);
+                        }
+                        else if(toReal(p) == 8.0){
+                            return mkConstReal(3.0);
+                        }
+                        else if(toReal(p) == 16.0){
+                            return mkConstReal(4.0);
+                        }
+                        else if(toReal(p) == 32.0){
+                            return mkConstReal(5.0);
+                        }
+                        else if(toReal(p) == 64.0){
+                            return mkConstReal(6.0);
+                        }
+                        else if(toReal(p) == 128.0){
+                            return mkConstReal(7.0);
+                        }
+                        else if(toReal(p) == 256.0){
+                            return mkConstReal(8.0);
+                        }
+                        else if(toReal(p) == 512.0){
+                            return mkConstReal(9.0);
+                        }
+                        else if(toReal(p) == 1024.0){
+                            return mkConstReal(10.0);
+                        }
                     }
-                    else if(toReal(p) == 2.0){
-                        return mkConstReal(1.0);
-                    }
-                    else if(toReal(p) == 4.0){
-                        return mkConstReal(2.0);
-                    }
-                    else if(toReal(p) == 8.0){
-                        return mkConstReal(3.0);
-                    }
-                    else if(toReal(p) == 16.0){
-                        return mkConstReal(4.0);
-                    }
-                    else if(toReal(p) == 32.0){
-                        return mkConstReal(5.0);
-                    }
-                    else if(toReal(p) == 64.0){
-                        return mkConstReal(6.0);
-                    }
-                    else if(toReal(p) == 128.0){
-                        return mkConstReal(7.0);
-                    }
-                    else if(toReal(p) == 256.0){
-                        return mkConstReal(8.0);
-                    }
-                    else if(toReal(p) == 512.0){
-                        return mkConstReal(9.0);
-                    }
-                    else if(toReal(p) == 1024.0){
-                        return mkConstReal(10.0);
-                    }
+                    return mkUnknown();
                 }
-                return mkUnknown();
             }
-            case NODE_KIND::NT_SIN:
-            case NODE_KIND::NT_COS:
-            case NODE_KIND::NT_SEC:
-            case NODE_KIND::NT_CSC:
-            case NODE_KIND::NT_TAN:
-            case NODE_KIND::NT_COT:
-            case NODE_KIND::NT_ASIN:
-            case NODE_KIND::NT_ACOS:
-            case NODE_KIND::NT_ASEC:
-            case NODE_KIND::NT_ACSC:
-            case NODE_KIND::NT_ATAN:
-            case NODE_KIND::NT_ACOT:
-            case NODE_KIND::NT_SINH:
-            case NODE_KIND::NT_COSH:
-            case NODE_KIND::NT_TANH:
-            case NODE_KIND::NT_SECH:
-            case NODE_KIND::NT_CSCH:
-            case NODE_KIND::NT_COTH:
-            case NODE_KIND::NT_ASINH:
-            case NODE_KIND::NT_ACOSH:
-            case NODE_KIND::NT_ATANH:
-            case NODE_KIND::NT_ASECH:
-            case NODE_KIND::NT_ACSCH:
+            case NODE_KIND::NT_SIN:{
+                if(getEvaluateUseFloating()){
+                    return mkConstReal(toReal(p).sin());
+                }
+                else{
+                    return mkUnknown();
+                }
+            }
+            case NODE_KIND::NT_COS:{
+                if(getEvaluateUseFloating()){
+                    return mkConstReal(toReal(p).cos());
+                }
+                else{
+                    return mkUnknown();
+                }
+            }
+            case NODE_KIND::NT_SEC:{
+                if(getEvaluateUseFloating()){   
+                    return mkConstReal(toReal(p).sec());
+                }
+                else{
+                    return mkUnknown();
+                }
+            }
+            case NODE_KIND::NT_CSC:{
+                if(getEvaluateUseFloating()){
+                    return mkConstReal(toReal(p).csc());
+                }
+                else{
+                    return mkUnknown();
+                }
+            }
+            case NODE_KIND::NT_TAN:{
+                if(getEvaluateUseFloating()){
+                    return mkConstReal(toReal(p).tan());
+                }
+                else{
+                    return mkUnknown();
+                }
+            }
+            case NODE_KIND::NT_COT:{
+                if(getEvaluateUseFloating()){
+                    return mkConstReal(toReal(p).cot());
+                }
+                else{
+                    return mkUnknown();
+                }
+            }
+            case NODE_KIND::NT_ASIN:{
+                if(getEvaluateUseFloating()){
+                    return mkConstReal(toReal(p).asin());
+                }
+                else{
+                    return mkUnknown();
+                }
+            }
+            case NODE_KIND::NT_ACOS:{
+                if(getEvaluateUseFloating()){
+                    return mkConstReal(toReal(p).acos());
+                }
+                else{
+                    return mkUnknown();
+                }
+            }
+            case NODE_KIND::NT_ASEC:{
+                if(getEvaluateUseFloating()){
+                    return mkConstReal(toReal(p).asec());
+                }
+                else{
+                    return mkUnknown();
+                }
+            }
+            case NODE_KIND::NT_ACSC:{
+                if(getEvaluateUseFloating()){
+                    return mkConstReal(toReal(p).acsc());
+                }
+                else{
+                    return mkUnknown();
+                }
+            }
+            case NODE_KIND::NT_ATAN:{
+                if(getEvaluateUseFloating()){
+                    return mkConstReal(toReal(p).atan());
+                }
+                else{
+                    return mkUnknown();
+                }
+            }
+            case NODE_KIND::NT_ACOT:{
+                if(getEvaluateUseFloating()){
+                    return mkConstReal(toReal(p).acot());
+                }
+                else{
+                    return mkUnknown();
+                }
+            }
+            case NODE_KIND::NT_SINH:{
+                if(getEvaluateUseFloating()){
+                    return mkConstReal(toReal(p).sinh());
+                }
+                else{
+                    return mkUnknown();
+                }
+            }
+            case NODE_KIND::NT_COSH:{
+                if(getEvaluateUseFloating()){
+                    return mkConstReal(toReal(p).cosh());
+                }
+                else{
+                    return mkUnknown();
+                }
+            }
+            case NODE_KIND::NT_TANH:{
+                if(getEvaluateUseFloating()){
+                    return mkConstReal(toReal(p).tanh());
+                }
+                else{
+                    return mkUnknown();
+                }
+            }
+            case NODE_KIND::NT_SECH:{
+                if(getEvaluateUseFloating()){
+                    return mkConstReal(toReal(p).sech());
+                }
+                else{
+                    return mkUnknown();
+                }
+            }
+            case NODE_KIND::NT_CSCH:{
+                if(getEvaluateUseFloating()){
+                    return mkConstReal(toReal(p).csch());
+                }
+                else{
+                    return mkUnknown();
+                }
+            }
+            case NODE_KIND::NT_COTH:{
+                if(getEvaluateUseFloating()){
+                    return mkConstReal(toReal(p).coth());
+                }
+                else{
+                    return mkUnknown();
+                }
+            }
+            case NODE_KIND::NT_ASINH:{
+                if(getEvaluateUseFloating()){
+                    return mkConstReal(toReal(p).asinh());
+                }
+                else{
+                    return mkUnknown();
+                }
+            }
+            case NODE_KIND::NT_ACOSH:{
+                if(getEvaluateUseFloating()){
+                    return mkConstReal(toReal(p).acosh());
+                }
+                else{
+                    return mkUnknown();
+                }
+            }
+            case NODE_KIND::NT_ATANH:{
+                if(getEvaluateUseFloating()){
+                    return mkConstReal(toReal(p).atanh());
+                }
+                else{
+                    return mkUnknown();
+                }
+            }
+            case NODE_KIND::NT_ASECH:{
+                if(getEvaluateUseFloating()){
+                    return mkConstReal(toReal(p).asech());
+                }
+                else{
+                    return mkUnknown();
+                }
+            }
+            case NODE_KIND::NT_ACSCH:{
+                if(getEvaluateUseFloating()){
+                    return mkConstReal(toReal(p).acsch());
+                }
+                else{
+                    return mkUnknown();
+                }
+            }
             case NODE_KIND::NT_ACOTH:{
-                return mkUnknown();
+                if(getEvaluateUseFloating()){
+                    return mkConstReal(toReal(p).acoth());
+                }
+                else{
+                    return mkUnknown();
+                }
             }
             case NODE_KIND::NT_TO_INT:{
                 if(p->isCInt()){
@@ -610,7 +755,7 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_STR_FROM_CODE:{
                 if(p->isCInt()){
                     if(toInt(p) >= 0 && toInt(p) <= 127){
-                        return mkConstStr(std::string(1, static_cast<char>(toInt(p).get_ui())));
+                        return mkConstStr(std::string(1, static_cast<char>(toInt(p).toULong())));
                     }
                     else{
                         err_all(p, "String from code on non-ASCII character", line_number);
@@ -753,32 +898,44 @@ namespace SMTLIBParser{
                 }
             }
             case NODE_KIND::NT_LOG:{
-                if(l->isCInt() && r->isCInt()){
-                    if(toInt(l) <= 0 || toInt(r) <= 0){
-                        return l->isErr()?l:r;
-                    }
-                    else if(toInt(l) == 1){
-                        return l->isErr()?l:r;
-                    }
-                    else if(toInt(r) == 1){
-                        return mkConstReal(0.0);
-                    }
+                if(getEvaluateUseFloating()){
+                    // log_l(r)
+                    return mkConstReal(toReal(r).log(toReal(l)));
                 }
-                else if(l->isCReal() && r->isCReal()){
-                    if(toReal(l) <= 0.0 || toReal(r) <= 0.0){
-                        return l->isErr()?l:r;
+                else{
+                    // simple evaluation
+                    if(l->isCInt() && r->isCInt()){
+                        if(toInt(l) <= 0 || toInt(r) <= 0){
+                            return l->isErr()?l:r;
+                        }
+                        else if(toInt(l) == 1){
+                            return l->isErr()?l:r;
+                        }
+                        else if(toInt(r) == 1){
+                            return mkConstReal(0.0);
+                        }
                     }
-                    else if(toReal(l) == 1.0){
-                        return l->isErr()?l:r;
+                    else if(l->isCReal() && r->isCReal()){
+                        if(toReal(l) <= 0.0 || toReal(r) <= 0.0){
+                            return l->isErr()?l:r;
+                        }
+                        else if(toReal(l) == 1.0){
+                            return l->isErr()?l:r;
+                        }
+                        else if(toReal(r) == 1.0){
+                            return mkConstReal(0.0);
+                        }
                     }
-                    else if(toReal(r) == 1.0){
-                        return mkConstReal(0.0);
-                    }
+                    return mkUnknown();
                 }
-                return mkUnknown();
             }
             case NODE_KIND::NT_ATAN2:{
-                return mkUnknown();
+                if(getEvaluateUseFloating()){
+                    return mkConstReal(Real::atan2(toReal(l), toReal(r)));
+                }
+                else{
+                    return mkUnknown();
+                }
             }
             case NODE_KIND::NT_LE:{
                 if(l->isCInt() && r->isCInt()){
@@ -993,7 +1150,7 @@ namespace SMTLIBParser{
             }
             case NODE_KIND::NT_NAT_TO_BV:{
                 if(l->isCInt() && r->isCInt()){
-                    return mkConstBv(natToBv(toInt(l), toInt(r)), toInt(r).get_ui());
+                    return mkConstBv(natToBv(toInt(l), toInt(r)), toInt(r).toULong());
                 }
                 else{
                     err_all(l, "Natural to bitvector on non-integer", line_number);
@@ -1003,7 +1160,7 @@ namespace SMTLIBParser{
             }
             case NODE_KIND::NT_INT_TO_BV:{
                 if(l->isCInt() && r->isCInt()){
-                    return mkConstBv(intToBv(toInt(l), toInt(r)), toInt(r).get_ui());
+                    return mkConstBv(intToBv(toInt(l), toInt(r)), toInt(r).toULong());
                 }
                 else{
                     err_all(l, "Integer to bitvector on non-integer", line_number);
@@ -1386,7 +1543,7 @@ namespace SMTLIBParser{
             }
             case NODE_KIND::NT_STR_SUBSTR:{
                 if(l->isCStr() && m->isCInt() && r->isCInt()){
-                    return mkConstStr(l->toString().substr(toInt(m).get_ui(), toInt(r).get_ui()));
+                    return mkConstStr(l->toString().substr(toInt(m).toULong(), toInt(r).toULong()));
                 }
                 else{
                     err_all(l, "Substr on non-string", line_number);
@@ -1449,7 +1606,7 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_BV_EXTRACT:{
                 if(l->isCBV() && m->isCInt() && r->isCInt()){
                     Integer size = (toInt(m) - toInt(r));
-                    return mkConstBv(bvExtract(l->toString(), toInt(m), toInt(r)), size.get_ui());
+                    return mkConstBv(bvExtract(l->toString(), toInt(m), toInt(r)), size.toULong());
                 }
                 else{
                     err_all(l, "Extract on non-bitvector", line_number);

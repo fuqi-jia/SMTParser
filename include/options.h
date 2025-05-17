@@ -57,7 +57,7 @@ namespace SMTLIBParser{
         bool get_objectives = false;
 
         // evaluate precision
-        bool evaluate_use_floating = false;
+        bool evaluate_use_floating = true;
         mpfr_prec_t evaluate_precision = 128;
 
     public:

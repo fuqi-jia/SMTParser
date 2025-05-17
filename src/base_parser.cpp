@@ -129,11 +129,11 @@ namespace SMTLIBParser{
 		assert(expr->isCReal() || expr->isCInt());
 		if(expr->isPi()) return Real::pi(getEvaluatePrecision());
 		if(expr->isE()) return Real::e(getEvaluatePrecision());
-		return Real(expr->toString());
+		return expr->getValue().toReal(getEvaluatePrecision());
 	}
 	Integer Parser::toInt(std::shared_ptr<DAGNode> expr){
 		assert(expr->isCInt());
-		return Integer(expr->toString());
+		return expr->getValue().toInteger();
 	}
 	bool Parser::isZero(std::shared_ptr<DAGNode> expr){
 		if(expr->isCReal()) return toReal(expr) == 0.0;
