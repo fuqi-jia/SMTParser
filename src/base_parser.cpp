@@ -37,6 +37,7 @@ namespace SMTLIBParser{
 		buflen = 0;
 		line_number = 0;
 		scan_mode = SCAN_MODE::SM_COMMON;
+		temp_var_counter = 0;
 
 		constants.insert(std::pair<std::string, size_t>("false", node_list.size()));
 		node_list.emplace_back(FALSE_NODE);
@@ -59,6 +60,7 @@ namespace SMTLIBParser{
 		buflen = 0;
 		line_number = 0;
 		scan_mode = SCAN_MODE::SM_COMMON;
+		temp_var_counter = 0;
 
 		constants.insert(std::pair<std::string, size_t>("false", node_list.size()));
 		node_list.emplace_back(FALSE_NODE);

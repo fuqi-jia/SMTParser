@@ -147,6 +147,9 @@ namespace SMTLIBParser{
                 case NODE_KIND::NT_VAR:
                     res = current->getName();
                     break;
+                case NODE_KIND::NT_TEMP_VAR:
+                    res = current->getName();
+                    break;
                     
                 // Unary operation - accepts one parameter
                 case NODE_KIND::NT_NOT:

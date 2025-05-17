@@ -129,6 +129,10 @@ namespace SMTLIBParser{
         boost::unordered_map<std::string, size_t>       var_names;
         // const node
         boost::unordered_map<std::string, size_t>       constants;
+        // temp var name list
+        size_t temp_var_counter;
+        boost::unordered_map<std::string, size_t>       temp_var_names;
+        // function name list
         std::vector<std::string>                        function_names;
         // global options
         std::shared_ptr<GlobalOptions>                  options;
@@ -225,6 +229,7 @@ namespace SMTLIBParser{
         // VAR
         // TODO ...
         std::shared_ptr<DAGNode> mkVar(const std::shared_ptr<Sort>& sort, const std::string &name); // VAR
+        std::shared_ptr<DAGNode> mkTempVar(const std::shared_ptr<Sort>& sort); // TEMP_VAR
         std::shared_ptr<DAGNode> mkVarBool(const std::string &name); // VAR_BOOL
         std::shared_ptr<DAGNode> mkVarInt(const std::string &name); // VAR_INT
         std::shared_ptr<DAGNode> mkVarReal(const std::string &name); // VAR_REAL
@@ -494,8 +499,8 @@ namespace SMTLIBParser{
         int                      getArity(NODE_KIND k) const;
 
         // aux functions
-        NODE_KIND getAddOp(std::shared_ptr<Sort> sort); // mk unique add 
-        std::shared_ptr<DAGNode>  getZero(std::shared_ptr<Sort> sort); // mk unique zero
+        NODE_KIND                getAddOp(std::shared_ptr<Sort> sort); // mk unique add 
+        std::shared_ptr<DAGNode> getZero(std::shared_ptr<Sort> sort); // mk unique zero
 
         // parse optimization
         // single_opt = (maximize <expr> [:comp <symbol>] [:epsilon <symbol>] [:M <symbol>] [:id <symbol>]) 
@@ -556,6 +561,7 @@ namespace SMTLIBParser{
         // Format conversion
         void                                    collectAtoms(std::shared_ptr<DAGNode> expr, boost::unordered_set<std::shared_ptr<DAGNode>>& atoms);
         void                                    replaceAtoms(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& atom_map);
+        std::shared_ptr<DAGNode>                toTseitinCNF(std::shared_ptr<DAGNode> expr, std::vector<std::shared_ptr<DAGNode>>& clauses);
         std::shared_ptr<DAGNode>                toCNF(std::shared_ptr<DAGNode> expr);
         std::shared_ptr<DAGNode>                toCNF(std::vector<std::shared_ptr<DAGNode>> exprs);
         std::shared_ptr<DAGNode>                toDNF(std::shared_ptr<DAGNode> expr);
@@ -592,6 +598,17 @@ namespace SMTLIBParser{
         // auxilary functions
         std::shared_ptr<DAGNode>	            bindLetVar(const std::string &key, std::shared_ptr<DAGNode> expr);
         std::shared_ptr<DAGNode>	            bindFunVar(const std::string &key, std::shared_ptr<DAGNode> expr);
+        std::shared_ptr<DAGNode>                replaceAtoms(std::shared_ptr<DAGNode> expr, 
+                                                            boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& atom_map, 
+                                                            boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited, 
+                                                            bool& is_changed);
+        std::shared_ptr<DAGNode>                toTseitinCNF(std::shared_ptr<DAGNode> expr, 
+                                                            boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited, 
+                                                            std::vector<std::shared_ptr<DAGNode>>& clauses);
+        std::shared_ptr<DAGNode>                toTseitinXor(std::shared_ptr<DAGNode> a, std::shared_ptr<DAGNode> b, std::vector<std::shared_ptr<DAGNode>>& clauses);
+        std::shared_ptr<DAGNode>                toTseitinEq(std::shared_ptr<DAGNode> a, std::shared_ptr<DAGNode> b, std::vector<std::shared_ptr<DAGNode>>& clauses);
+        std::shared_ptr<DAGNode>                toTseitinDistinct(std::shared_ptr<DAGNode> a, std::shared_ptr<DAGNode> b, std::vector<std::shared_ptr<DAGNode>>& clauses);
+
         //errors & warnings
         // mk errror node
         std::shared_ptr<DAGNode>	            mkErr(const ERROR_TYPE t);
@@ -622,7 +639,6 @@ namespace SMTLIBParser{
 
         // collect atoms
         void        collectAtoms(std::shared_ptr<DAGNode> expr, boost::unordered_set<std::shared_ptr<DAGNode>>& atoms, boost::unordered_set<std::shared_ptr<DAGNode>>& visited);
-        
         // evaluate functions
         bool		evaluateSimpleOp(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result, NODE_KIND op);
         bool		evaluateAnd(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);

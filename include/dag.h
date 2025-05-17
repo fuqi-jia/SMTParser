@@ -233,12 +233,14 @@ namespace SMTLIBParser{
 
         // check var
         bool isVBool() 				const { return kind == NODE_KIND::NT_VAR && sort->isBool(); };
+        bool isLiteral() 			const { return (isVBool() || (isNot() && getChild(0)->isVBool()) || isCBool())};
         bool isVInt() 				const { return kind == NODE_KIND::NT_VAR && sort->isInt(); };
         bool isVReal() 				const { return kind == NODE_KIND::NT_VAR && sort->isReal(); };
         bool isVBV() 				const { return kind == NODE_KIND::NT_VAR && sort->isBv(); };
         bool isVFP() 				const { return kind == NODE_KIND::NT_VAR && sort->isFp(); };
         bool isVStr() 				const { return kind == NODE_KIND::NT_VAR && sort->isStr(); };
-        bool isVar() 				const { return (isVBool() || isVInt() || isVReal() || isVBV() || isVFP() || isVStr()); };
+        bool isTempVar() 			const { return kind == NODE_KIND::NT_TEMP_VAR; };
+        bool isVar() 				const { return (isVBool() || isVInt() || isVReal() || isVBV() || isVFP() || isVStr() || isTempVar()); };
         
         // check array
         bool isArray() 			    const { return kind == NODE_KIND::NT_VAR && sort->isArray(); };

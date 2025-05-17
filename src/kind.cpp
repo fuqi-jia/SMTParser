@@ -60,6 +60,8 @@ namespace SMTLIBParser{
             return "CONST";
         case NODE_KIND::NT_VAR:
             return "VAR";
+        case NODE_KIND::NT_TEMP_VAR:
+            return "TEMP_VAR";
         // BOOLEAN
         case NODE_KIND::NT_NOT:
             return "not";

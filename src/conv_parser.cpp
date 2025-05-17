@@ -47,123 +47,470 @@ namespace SMTLIBParser {
         }
     }
 
-    // // convert a list of expressions to CNF (a large AND node, whose children are all OR clauses)
-    // std::shared_ptr<DAGNode> Parser::toCNF(std::vector<std::shared_ptr<DAGNode>> exprs) {
-    //     std::vector<std::shared_ptr<DAGNode>> new_cnf_children;
-    //     // collect all atoms
-    //     boost::unordered_set<std::shared_ptr<DAGNode>> atoms;
-    //     for (auto& expr : exprs) {
-    //         collectAtoms(expr, atoms);
-    //     }
+    std::shared_ptr<DAGNode> Parser::replaceAtoms(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& atom_map) {
+        boost::unordered_set<std::shared_ptr<DAGNode>> visited;
+        bool is_changed = false;
+        std::shared_ptr<DAGNode> new_expr = replaceAtoms(expr, atom_map, visited, is_changed);
+        if (is_changed) {
+            return new_expr;
+        }
+        return expr;
+    }
 
-    //     // create a new variable for each atom
-    //     boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> atom_map;
-    //     for (auto& atom : atoms) {
-    //         std::shared_ptr<DAGNode> new_var = mkVar(BOOL_SORT, atom->getName() + "_cnf");
-    //         atom_map[atom] = new_var;
-    //     }
+    std::shared_ptr<DAGNode> Parser::replaceAtoms(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& atom_map, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited, bool& is_changed) {
+        if (visited.find(expr) != visited.end()) {
+            return visited[expr];
+        }
+        if (expr->isAtom() && atom_map.find(expr) != atom_map.end()) {
+            is_changed = true;
+            visited[expr] = atom_map[expr];
+            return atom_map[expr];
+        }
+        std::vector<std::shared_ptr<DAGNode>> children;
+        for (size_t i = 0; i < expr->getChildrenSize(); i++) {
+            bool child_is_changed = false;
+            std::shared_ptr<DAGNode> child_expr = replaceAtoms(expr->getChild(i), atom_map, visited, child_is_changed);
+            if (child_is_changed) {
+                is_changed = true;
+            }
+            children.emplace_back(child_expr);
+        }
+        if (is_changed) {
+            std::shared_ptr<DAGNode> new_expr = mkOper(expr->getSort(), expr->getKind(), children);
+            visited[expr] = new_expr; // no need to visit again
+            return new_expr;
+        }
+        assert(!is_changed);
+        visited[expr] = expr;
+        return expr;
+    }
 
-    //     // use Tseitin transformation for each atom
-    //     for(auto& atom : atoms){
-    //         // not(atom) -> (new_var)
-    //         new_cnf_children.emplace_back(mkOr({mkNot(atom), atom_map[atom]}));
-    //         // (new_var) -> (atom)
-    //         new_cnf_children.emplace_back(mkOr({mkNot(atom_map[atom]), atom}));
-    //     }
+    std::shared_ptr<DAGNode> Parser::toTseitinCNF(std::shared_ptr<DAGNode> expr, std::vector<std::shared_ptr<DAGNode>>& clauses) {
+        boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> visited;
+        std::shared_ptr<DAGNode> result = toTseitinCNF(expr, visited, clauses);
+        return result;
+    }
+    std::shared_ptr<DAGNode> Parser::toTseitinXor(std::shared_ptr<DAGNode> a, std::shared_ptr<DAGNode> b, std::vector<std::shared_ptr<DAGNode>>& clauses) {
+        // c <-> a xor b <=> (c -> a xor b) and (a xor b -> c)
+        // => c -> a xor b => ¬c or a xor b => ¬c or ((¬a or ¬b) and (a or b))
+        //    => (¬c or ¬a or ¬b) and (¬c or a or b)
+        // => a xor b -> c => ¬((¬a and b) or (a and ¬b)) or c => (a or ¬b) and (¬a or b) -> c
+        //    => (a or ¬b or c) and (¬a or b or c)
+        std::shared_ptr<DAGNode> c = mkTempVar(BOOL_SORT);
+        // -a -b -c
+        std::vector<std::shared_ptr<DAGNode>> or_children1;
+        or_children1.emplace_back(mkNot(c));
+        or_children1.emplace_back(mkNot(a));
+        or_children1.emplace_back(mkNot(b));
+        clauses.emplace_back(mkOr(or_children1));
+        // a b -c
+        std::vector<std::shared_ptr<DAGNode>> or_children2;
+        or_children2.emplace_back(mkNot(c));
+        or_children2.emplace_back(a);
+        or_children2.emplace_back(b);
+        clauses.emplace_back(mkOr(or_children2));
+        // -a b c
+        std::vector<std::shared_ptr<DAGNode>> or_children3;
+        or_children3.emplace_back(c);
+        or_children3.emplace_back(mkNot(a));
+        or_children3.emplace_back(b);
+        clauses.emplace_back(mkOr(or_children3));
+        // a -b c
+        std::vector<std::shared_ptr<DAGNode>> or_children4;
+        or_children4.emplace_back(c);
+        or_children4.emplace_back(a);
+        or_children4.emplace_back(mkNot(b));
+        clauses.emplace_back(mkOr(or_children4));
+        visited[expr] = c;
+        assert(c->isLiteral());
+        return c;
+    }
+    // auxiliary function: handle the equivalence relation between two boolean variables
+    std::shared_ptr<DAGNode> Parser::toTseitinEq(std::shared_ptr<DAGNode> a, std::shared_ptr<DAGNode> b, std::vector<std::shared_ptr<DAGNode>>& clauses) {
+        std::shared_ptr<DAGNode> c = mkTempVar(BOOL_SORT);
+        
+        // c <-> (a <-> b) -> c -> (a <-> b) and (a <-> b) -> c
+        // => (¬c or a or ¬b) and (¬c or ¬a or b) and (c or a or b) and (c or ¬a or ¬b)
+        
+        // add clause: (¬c ∨ a ∨ ¬b) - when a is false or b is true, c can be false
+        clauses.emplace_back(mkOr({mkNot(c), a, mkNot(b)}));
+        
+        // add clause: (¬c ∨ ¬a ∨ b) - when a is true or b is false, c can be false
+        clauses.emplace_back(mkOr({mkNot(c), mkNot(a), b}));
+        
+        // add clause: (c ∨ a ∨ b) - when a and b are both false, c must be true
+        clauses.emplace_back(mkOr({c, a, b}));
+        
+        // add clause: (c ∨ ¬a ∨ ¬b) - when a and b are both true, c must be true
+        clauses.emplace_back(mkOr({c, mkNot(a), mkNot(b)}));
+        
+        return c;
+    }
 
-    //     // create a new formula with Tseitin variables
-    //     std::vector<std::shared_ptr<DAGNode>> new_exprs;
-    //     for(auto& expr : exprs){
-    //         std::shared_ptr<DAGNode> new_expr = replaceAtoms(expr, atom_map);
-    //         new_exprs.emplace_back(new_expr);
-    //     }
+    // auxiliary function: handle the inequality relation between two boolean variables
+    std::shared_ptr<DAGNode> Parser::toTseitinDistinct(std::shared_ptr<DAGNode> a, std::shared_ptr<DAGNode> b, std::vector<std::shared_ptr<DAGNode>>& clauses) {
+        std::shared_ptr<DAGNode> c = mkTempVar(BOOL_SORT);
+        
+        // c <-> (a != b) -> c -> (a != b)
+        // => (¬c or a or b) and (¬c or ¬a or ¬b) and (c or ¬a or b) and (c or a or ¬b)
+        
+        // add clause: (¬c ∨ a ∨ b) - when a and b are both false, c can be false
+        clauses.emplace_back(mkOr({mkNot(c), a, b}));
+        
+        // add clause: (¬c ∨ ¬a ∨ ¬b) - when a and b are both true, c can be false
+        clauses.emplace_back(mkOr({mkNot(c), mkNot(a), mkNot(b)}));
+        
+        // add clause: (c ∨ ¬a ∨ b) - when a is true and b is false, c must be true
+        clauses.emplace_back(mkOr({c, mkNot(a), b}));
+        
+        // add clause: (c ∨ a ∨ ¬b) - when a is false and b is true, c must be true
+        clauses.emplace_back(mkOr({c, a, mkNot(b)}));
+        
+        return c;
+    }
+    std::shared_ptr<DAGNode> Parser::toTseitinCNF(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited, std::vector<std::shared_ptr<DAGNode>>& clauses) {
+        // Tseitin CNF is ¬applied to atoms: all atoms are already in CNF form
+        assert(!expr->isAtom());
+        if (visited.find(expr) != visited.end()) {
+            return visited[expr];
+        }
+        if(expr->isLiteral()) {
+            // always return the original expression
+            // and no need to add to visited
+            return expr;
+        }
+        // a and b and ... <=> c <-> a and b and ...
+        // => c -> a and b and ... => ¬c or a and b and ... => (¬c or a) and (¬c or b) and ...
+        // => a and b and ... -> c => ¬a or ¬b or ... or c
+        if (expr->isAnd()) {
+            std::vector<std::shared_ptr<DAGNode>> children;
+            for (size_t i = 0; i < expr->getChildrenSize(); i++) {
+                std::shared_ptr<DAGNode> child_cnf = toTseitinCNF(expr->getChild(i), visited, clauses);
+                children.emplace_back(child_cnf);
+            }
+            if(children.size() == 1){
+                // return the only child, which is a temp var or boolean variable
+                assert(children[0]->isLiteral());
+                return children[0];
+            }
+            std::shared_ptr<DAGNode> c = mkTempVar(BOOL_SORT);
+            std::vector<std::shared_ptr<DAGNode>> or_children;
+            for(auto& child : children) {
+                clauses.emplace_back(mkOr({mkNot(c), child}));
+                or_children.emplace_back(mkNot(child));
+            }
+            or_children.emplace_back(c);
+            clauses.emplace_back(mkOr(or_children));
+            visited[expr] = c; // no need to visit again
+            assert(c->isLiteral());
+            return c;
+        }
+        // a or b or ... <=> c <-> a or b or ...
+        // => c -> a or b or ... => ¬c or a or b or ... => ¬c or a or b or ...
+        // => a or b or ... -> c => (¬a and ¬b and ...) or c => ¬a or c and ¬b or c and ...
+        else if (expr->isOr()) {
+            std::vector<std::shared_ptr<DAGNode>> children;
+            for (size_t i = 0; i < expr->getChildrenSize(); i++) {
+                std::shared_ptr<DAGNode> child_cnf = toTseitinCNF(expr->getChild(i), visited, clauses);
+                children.emplace_back(child_cnf);
+            }
+            if(children.size() == 1){
+                // return the only child, which is a temp var or boolean variable
+                assert(children[0]->isLiteral());
+                return children[0];
+            }
+            std::shared_ptr<DAGNode> c = mkTempVar(BOOL_SORT);
+            std::vector<std::shared_ptr<DAGNode>> or_children;
+            for(auto& child : children) {
+                clauses.emplace_back(mkOr({mkNot(child), c}));
+                or_children.emplace_back(child);
+            }
+            or_children.emplace_back(mkNot(c));
+            clauses.emplace_back(mkOr(or_children));
+            visited[expr] = c; // no need to visit again
+            assert(c->isLiteral());
+            return c;
+        }
+        // c <-> a -> b <=> c -> a -> b and a -> b -> c
+        // => c -> a -> b => ¬c or ¬a or b
+        // => a -> b -> c => ¬a or ¬b or c
+        else if (expr->isImplies()) {
+            std::vector<std::shared_ptr<DAGNode>> children;
+            for (size_t i = 0; i < expr->getChildrenSize(); i++) {
+                std::shared_ptr<DAGNode> child_cnf = toTseitinCNF(expr->getChild(i), visited, clauses);
+                children.emplace_back(child_cnf);
+            }
+            if(children.size() == 1){
+                // return the only child, which is a temp var or boolean variable
+                assert(children[0]->isLiteral());
+                return children[0];
+            }
+            std::shared_ptr<DAGNode> c = mkTempVar(BOOL_SORT);
+            std::vector<std::shared_ptr<DAGNode>> or_children1;
+            std::vector<std::shared_ptr<DAGNode>> or_children2;
+            or_children1.emplace_back(mkNot(c));
+            for(size_t i = 0; i < children.size(); i++) {
+                if(i == children.size() - 1){
+                    or_children1.emplace_back(children[i]);
+                } else {
+                    or_children1.emplace_back(mkNot(children[i]));
+                }
+                or_children2.emplace_back(mkNot(children[i]));
+            }
+            or_children2.emplace_back(c);
+            clauses.emplace_back(mkOr(or_children1));
+            clauses.emplace_back(mkOr(or_children2));
+            visited[expr] = c; // no need to visit again
+            assert(c->isLiteral());
+            return c;
+        }
+        // c <-> a xor b <=> (c -> a xor b) and (a xor b -> c)
+        // => c -> a xor b => ¬c or a xor b => ¬c or ((¬a or ¬b) and (a or b))
+        //    => (¬c or ¬a or ¬b) and (¬c or a or b)
+        // => a xor b -> c => ¬((¬a and b) or (a and ¬b)) or c => (a or ¬b) and (¬a or b) -> c
+        //    => (a or ¬b or c) and (¬a or b or c)
+        else if (expr->isXor()) {
+            std::vector<std::shared_ptr<DAGNode>> children;
+            if(expr->getChildrenSize() == 1){
+                std::shared_ptr<DAGNode> child_cnf = toTseitinCNF(expr->getChild(0), visited, clauses);
+                visited[expr] = child_cnf;
+                assert(child_cnf->isLiteral());
+                return child_cnf;
+            }
+            else if(expr->getChildrenSize() == 2){
+                std::shared_ptr<DAGNode> a = toTseitinCNF(expr->getChild(0), visited, clauses);
+                std::shared_ptr<DAGNode> b = toTseitinCNF(expr->getChild(1), visited, clauses);
+                std::shared_ptr<DAGNode> c = toTseitinXor(a, b, clauses);
+                visited[expr] = c;
+                assert(c->isLiteral());
+                return c;
+            }
+            else{
+                std::shared_ptr<DAGNode> a = toTseitinCNF(expr->getChild(0), visited, clauses);
+                for(size_t i = 1; i < expr->getChildrenSize(); i++){
+                    std::shared_ptr<DAGNode> b = toTseitinCNF(expr->getChild(i), visited, clauses);
+                    a = toTseitinXor(a, b, clauses);
+                }
+                visited[expr] = a;
+                assert(a->isLiteral());
+                return a;
+            }
+        }
+        else if(expr->isEq()){
+            // all children are boolean variables
+            bool all_bool = true;
+            for(size_t i = 0; i < expr->getChildrenSize(); i++){
+                if(!expr->getChild(i)->getSort()->isBool()){
+                    all_bool = false;
+                    err_all(ERROR_TYPE::ERR_TYPE_MISMATCH, "boolean", expr->getChild(i)->getSort()->toString());
+                    break;
+                }
+            }
 
+            assert(all_bool);
+            
+            if(all_bool){
+                if(expr->getChildrenSize() == 1){
+                    // directly return the only child
+                    std::shared_ptr<DAGNode> child_cnf = toTseitinCNF(expr->getChild(0), visited, clauses);
+                    visited[expr] = child_cnf;
+                    return child_cnf;
+                }
+                else if(expr->getChildrenSize() == 2){
+                    // two children
+                    std::shared_ptr<DAGNode> a = toTseitinCNF(expr->getChild(0), visited, clauses);
+                    std::shared_ptr<DAGNode> b = toTseitinCNF(expr->getChild(1), visited, clauses);
+                    std::shared_ptr<DAGNode> c = toTseitinEq(a, b, clauses);
+                    visited[expr] = c;
+                    assert(c->isLiteral());
+                    return c;
+                }
+                else{
+                    // multiple children
+                    std::vector<std::shared_ptr<DAGNode>> eq_results;
+                    std::shared_ptr<DAGNode> first = toTseitinCNF(expr->getChild(0), visited, clauses);
+                    
+                    for(size_t i = 1; i < expr->getChildrenSize(); i++){
+                        std::shared_ptr<DAGNode> next = toTseitinCNF(expr->getChild(i), visited, clauses);
+                        eq_results.emplace_back(toTseitinEq(first, next, clauses));
+                    }
+                    
+                    // combine all equalities using AND
+                    std::shared_ptr<DAGNode> result = mkTempVar(BOOL_SORT);
+                    
+                    // add the equivalence relation clauses
+                    // result -> (eq1 ∧ eq2 ∧ ... ∧ eqn)
+                    // => ¬result ∨ (eq1 ∧ eq2 ∧ ... ∧ eqn)
+                    // => (¬result ∨ eq1) ∧ (¬result ∨ eq2) ∧ ... ∧ (¬result ∨ eqn)
+                    for(auto& eq : eq_results){
+                        clauses.emplace_back(mkOr({mkNot(result), eq}));
+                    }
+                    
+                    // (eq1 ∧ eq2 ∧ ... ∧ eqn) -> result
+                    // => ¬(eq1 ∧ eq2 ∧ ... ∧ eqn) ∨ result
+                    // => (¬eq1 ∨ ¬eq2 ∨ ... ∨ ¬eqn) ∨ result
+                    std::vector<std::shared_ptr<DAGNode>> or_children;
+                    for(auto& eq : eq_results){
+                        or_children.emplace_back(mkNot(eq));
+                    }
+                    or_children.emplace_back(result);
+                    clauses.emplace_back(mkOr(or_children));
+                    
+                    visited[expr] = result;
+                    assert(result->isLiteral());
+                    return result;
+                }
+            }
+        }
+        else if(expr->isDistinct() && expr->getChild(0)->getSort()->isBool() && expr->getChild(1)->getSort()->isBool()){
+            // ensure all children are boolean
+            bool all_bool = true;
+            for(size_t i = 0; i < expr->getChildrenSize(); i++){
+                if(!expr->getChild(i)->getSort()->isBool()){
+                    all_bool = false;
+                    break;
+                }
+            }
+            
+            if(all_bool){
+                // handle boolean inequality
+                if(expr->getChildrenSize() == 1){
+                    // single child, meaningless, return true
+                    err_all(ERROR_TYPE::ERR_TYPE_MISMATCH, "distinct with 1 variable is meaningless");
+                    return mkTrue();
+                }
+                else if(expr->getChildrenSize() == 2){
+                    // two children
+                    std::shared_ptr<DAGNode> a = toTseitinCNF(expr->getChild(0), visited, clauses);
+                    std::shared_ptr<DAGNode> b = toTseitinCNF(expr->getChild(1), visited, clauses);
+                    std::shared_ptr<DAGNode> c = toTseitinDistinct(a, b, clauses);
+                    visited[expr] = c;
+                    assert(c->isLiteral());
+                    return c;
+                }
+                else{
+                    // for boolean variables, distinct with more than 2 variables is always unsatisfiable
+                    // because boolean values can only be true or false
+                    std::cerr << "toTseitinCNF: distinct with more than 2 variables is always unsatisfiable" << std::endl;
+                    return mkFalse();
+                }
+            }
+        }
+        else if(expr->isITE() && expr->getChild(1)->getSort()->isBool() && expr->getChild(2)->getSort()->isBool()){
+            // handle condition expression: if a then b else c
+            std::shared_ptr<DAGNode> a = toTseitinCNF(expr->getChild(0), visited, clauses);
+            std::shared_ptr<DAGNode> b = toTseitinCNF(expr->getChild(1), visited, clauses);
+            std::shared_ptr<DAGNode> c = toTseitinCNF(expr->getChild(2), visited, clauses);
+            std::shared_ptr<DAGNode> d = mkTempVar(BOOL_SORT);
+            
+            // add clause: (¬d ∨ ¬a ∨ b) - when a is true, d must be the same as b
+            clauses.emplace_back(mkOr({mkNot(d), mkNot(a), b}));
+            
+            // add clause: (¬d ∨ a ∨ c) - when a is false, d must be the same as c
+            clauses.emplace_back(mkOr({mkNot(d), a, c}));
+            
+            // add clause: (d ∨ ¬a ∨ ¬b) - when a is true and b is true, d must be true
+            clauses.emplace_back(mkOr({d, mkNot(a), mkNot(b)}));
+            
+            // add clause: (d ∨ a ∨ ¬c) - when a is false and c is false, d must be true
+            clauses.emplace_back(mkOr({d, a, mkNot(c)}));
+            
+            visited[expr] = d;
+            assert(d->isLiteral());
+            return d;
+        }
+        else{
+            err_all(ERROR_TYPE::ERR_TYPE_MISMATCH, "unsupported node type: " + kindToString(expr->getKind()));
+            return mkFalse();
+        }
 
-    //     // convert the new formula to CNF
-    //     std::shared_ptr<DAGNode> cnf = toCNF(new_formula);
+        return expr;
+    }
+    
+    
 
-    //     // return the CNF
-    //     return cnf;
+    // convert a list of expressions to CNF (a large AND node, whose children are all OR clauses)
+    std::shared_ptr<DAGNode> Parser::toCNF(std::vector<std::shared_ptr<DAGNode>> exprs) {
+        std::vector<std::shared_ptr<DAGNode>> clauses;
+        // collect all atoms
+        boost::unordered_set<std::shared_ptr<DAGNode>> atoms;
+        for (auto& expr : exprs) {
+            collectAtoms(expr, atoms);
+        }
 
+        // create a new variable for each atom
+        boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> atom_map;
+        for (auto& atom : atoms) {
+            std::shared_ptr<DAGNode> new_var = mkTempVar(BOOL_SORT);
+            atom_map[atom] = new_var;
+        }
 
-    //     std::vector<std::shared_ptr<DAGNode>> clauses;
-    //     for (auto& expr : exprs) {
-    //         std::shared_ptr<DAGNode> cnf = toCNF(expr);
-    //         if (cnf->isAnd()) {
-    //             // add the children of the CNF (OR clauses) to the result
-    //             for (size_t i = 0; i < cnf->getChildrenSize(); i++) {
-    //                 clauses.emplace_back(cnf->getChild(i));
-    //             }
-    //         } else {
-    //             // a single clause directly added
-    //             clauses.emplace_back(cnf);
-    //         }
-    //     }
-    //     // if there is only one clause, return it directly
-    //     if (clauses.size() == 1) {
-    //         return clauses[0];
-    //     }
-    //     // otherwise, create an AND node, containing all OR clauses
-    //     return mkAnd(clauses);
-    // }
+        // use Tseitin transformation for each atom
+        for(auto& atom : atoms){
+            // not(atom) -> (new_var)
+            clauses.emplace_back(mkOr({mkNot(atom), atom_map[atom]}));
+            // (new_var) -> (atom)
+            clauses.emplace_back(mkOr({mkNot(atom_map[atom]), atom}));
+        }
+
+        // create a new formula with Tseitin variables
+        std::vector<std::shared_ptr<DAGNode>> new_exprs;
+        for(auto& expr : exprs){
+            std::shared_ptr<DAGNode> new_expr = replaceAtoms(expr, atom_map);
+            new_exprs.emplace_back(new_expr);
+        }
+
+        // currently, the new formula has only boolean variables
+        for (auto& expr : new_exprs) {
+            std::shared_ptr<DAGNode> tseitin_cnf = toTseitinCNF(expr, clauses);
+            clauses.emplace_back(tseitin_cnf);
+        }
+
+        // if there is only one clause, return it directly
+        if (clauses.size() == 1) {
+            return clauses[0];
+        }
+        // otherwise, create an AND node, containing all OR clauses
+        return mkAnd(clauses);
+    }
 
     
-    // // convert a single expression to CNF
-    // std::shared_ptr<DAGNode> Parser::toCNF(std::shared_ptr<DAGNode> expr) {
-    //     // first convert to NNF
-    //     std::shared_ptr<DAGNode> nnf_expr = toNNF(expr);
-        
-    //     // if the expression is already an atom or its negation
-    //     if (expr->isAtom()) {
-    //         // atom is regarded as a single clause of CNF
-    //         std::vector<std::shared_ptr<DAGNode>> clause;
-    //         clause.emplace_back(nnf_expr);
-    //         return mkOr(clause);
-    //     }
-        
-    //     // if the expression is AND
-    //     if (nnf_expr->isAnd()) {
-    //         std::vector<std::shared_ptr<DAGNode>> clauses;
-    //         for (size_t i = 0; i < nnf_expr->getChildrenSize(); i++) {
-    //             std::shared_ptr<DAGNode> child_cnf = toCNF(nnf_expr->getChild(i));
-    //             if (child_cnf->isAnd()) {
-    //                 // add all children of the child CNF to the result
-    //                 for (size_t j = 0; j < child_cnf->getChildrenSize(); j++) {
-    //                     clauses.emplace_back(child_cnf->getChild(j));
-    //                 }
-    //             } else {
-    //                 // add a single clause
-    //                 clauses.emplace_back(child_cnf);
-    //             }
-    //         }
-    //         return mkAnd(clauses);
-    //     }
-        
-    //     // if the expression is OR
-    //     if (nnf_expr->isOr()) {
-    //         // collect CNF forms of all children of OR
-    //         std::vector<std::shared_ptr<DAGNode>> child_cnfs;
-    //         for (size_t i = 0; i < nnf_expr->getChildrenSize(); i++) {
-    //             child_cnfs.emplace_back(toCNF(nnf_expr->getChild(i)));
-    //         }
-            
-    //         // apply distributive law: (A∨B)∧(C∨D) -> (A∨B∨C∨D)
-    //         return applyCNFDistributiveLaw(child_cnfs);
-    //     }
-        
-    //     // other types of nodes remain unchanged
-    //     return nnf_expr;
-    // }
+    // convert a single expression to CNF
+    std::shared_ptr<DAGNode> Parser::toCNF(std::shared_ptr<DAGNode> expr) {
+        std::vector<std::shared_ptr<DAGNode>> clauses;
+        // collect all atoms
+        boost::unordered_set<std::shared_ptr<DAGNode>> atoms;
+        collectAtoms(expr, atoms);
 
-    // std::shared_ptr<DAGNode> Parser::toCNF(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& cache) {
-    //     if (cache.find(expr) != cache.end()) {
-    //         return cache[expr];
-    //     }
-    //     // Tseitin transformation
-    //     std::shared_ptr<DAGNode> result = toCNF(expr);
-    //     cache[expr] = result;
-    //     return result;
-    // }
+        // create a new variable for each atom
+        boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> atom_map;
+        for (auto& atom : atoms) {
+            std::shared_ptr<DAGNode> new_var = mkTempVar(BOOL_SORT);
+            atom_map[atom] = new_var;
+        }
+
+        // use Tseitin transformation for each atom
+        for(auto& atom : atoms){
+            // not(atom) -> (new_var)
+            clauses.emplace_back(mkOr({mkNot(atom), atom_map[atom]}));
+            // (new_var) -> (atom)
+            clauses.emplace_back(mkOr({mkNot(atom_map[atom]), atom}));
+        }
+
+        // create a new formula with Tseitin variables
+        std::shared_ptr<DAGNode> new_expr = replaceAtoms(expr, atom_map);
+
+        // currently, the new formula has only boolean variables
+        std::shared_ptr<DAGNode> tseitin_cnf = toTseitinCNF(new_expr, clauses);
+        clauses.emplace_back(tseitin_cnf);
+
+        // if there is only one clause, return it directly
+        if (clauses.size() == 1) {
+            return clauses[0];
+        }
+        // otherwise, create an AND node, containing all OR clauses
+        return mkAnd(clauses);
+    }
 
     // // convert a list of expressions to DNF (a large OR node, whose children are all AND terms)
     // std::shared_ptr<DAGNode> Parser::toDNF(std::vector<std::shared_ptr<DAGNode>> exprs) {
@@ -259,50 +606,10 @@ namespace SMTLIBParser {
 
     // // convert a single expression to DNF
     // std::shared_ptr<DAGNode> Parser::toDNF(std::shared_ptr<DAGNode> expr) {
-    //     // first convert to NNF
-    //     std::shared_ptr<DAGNode> nnf_expr = toNNF(expr);
-        
-    //     // if the expression is already an atom or its negation
-    //     if (nnf_expr->isCBool() || nnf_expr->isVBool() || 
-    //         (nnf_expr->isNot() && (nnf_expr->getChild(0)->isCBool() || nnf_expr->getChild(0)->isVBool()))) {
-    //         // atom is regarded as a single term of DNF
-    //         std::vector<std::shared_ptr<DAGNode>> term;
-    //         term.emplace_back(nnf_expr);
-    //         return mkAnd(term);
-    //     }
-        
-    //     // if the expression is OR
-    //     if (nnf_expr->isOr()) {
-    //         std::vector<std::shared_ptr<DAGNode>> terms;
-    //         for (size_t i = 0; i < nnf_expr->getChildrenSize(); i++) {
-    //             std::shared_ptr<DAGNode> child_dnf = toDNF(nnf_expr->getChild(i));
-    //             if (child_dnf->isOr()) {
-    //                 // add all terms of the child DNF to the result
-    //                 for (size_t j = 0; j < child_dnf->getChildrenSize(); j++) {
-    //                     terms.emplace_back(child_dnf->getChild(j));
-    //                 }
-    //             } else {
-    //                 // add a single term
-    //                 terms.emplace_back(child_dnf);
-    //             }
-    //         }
-    //         return mkOr(terms);
-    //     }
-        
-    //     // if the expression is AND
-    //     if (nnf_expr->isAnd()) {
-    //         // collect DNF forms of all children of AND
-    //         std::vector<std::shared_ptr<DAGNode>> child_dnfs;
-    //         for (size_t i = 0; i < nnf_expr->getChildrenSize(); i++) {
-    //             child_dnfs.emplace_back(toDNF(nnf_expr->getChild(i)));
-    //         }
-            
-    //         // apply distributive law: (A∧B)∨(C∧D) -> (A∧B∧C∧D)
-    //         return applyDNFDistributiveLaw(child_dnfs);
-    //     }
-        
-    //     // other types of nodes remain unchanged
-    //     return nnf_expr;
+    //     // eliminate xor, implies, ite
+    //     expr = toNNF(expr);
+    //     expr = toCNF(expr);
+    //     return applyDNFDistributiveLaw(expr);
     // }
     
     // // apply DNF distributive law

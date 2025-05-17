@@ -548,6 +548,17 @@ namespace SMTLIBParser{
     }
     
     // VAR
+    std::shared_ptr<DAGNode> Parser::mkTempVar(const std::shared_ptr<Sort>& sort, const std::string &name){
+        std::string temp_var_name = "temp_" + std::to_string(temp_var_counter++);
+        if(temp_var_names.find(temp_var_name) != temp_var_names.end()){
+            err_all(ERROR_TYPE::ERR_TEMP_VAR_MIS, "Temp variable name already exists", line_number);
+            return mkUnknown();
+        }
+        std::shared_ptr<DAGNode> newvar = std::make_shared<DAGNode>(sort, NODE_KIND::NT_TEMP_VAR, temp_var_name);
+        temp_var_names.insert(std::pair<std::string, size_t>(temp_var_name, node_list.size()));
+        node_list.emplace_back(newvar);
+        return newvar;
+    }
     std::shared_ptr<DAGNode> Parser::mkVar(const std::shared_ptr<Sort>& sort, const std::string &name){
         if(var_names.find(name)!=var_names.end()){
             // multiple declarations
@@ -3557,6 +3568,7 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_NULL:
             case NODE_KIND::NT_CONST:
             case NODE_KIND::NT_VAR:
+            case NODE_KIND::NT_TEMP_VAR:
             case NODE_KIND::NT_CONST_TRUE:
             case NODE_KIND::NT_CONST_FALSE:
             case NODE_KIND::NT_CONST_PI:
