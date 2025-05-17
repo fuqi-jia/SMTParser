@@ -116,6 +116,8 @@ namespace SMTLIBParser{
             return "ln";
         case NODE_KIND::NT_LG:
             return "lg";
+        case NODE_KIND::NT_LB:
+            return "lb";
         case NODE_KIND::NT_SIN:
             return "sin";
         case NODE_KIND::NT_COS:

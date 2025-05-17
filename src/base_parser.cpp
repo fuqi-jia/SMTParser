@@ -1213,15 +1213,15 @@ namespace SMTLIBParser{
 			assert(params.size() == 1);
 			return mkExp(params[0]);
 		}
-		else if (s == "ln") {
+		else if (s == "ln" || s == "loge") {
 			assert(params.size() == 1);
 			return mkLn(params[0]);
 		}
-		else if (s == "lg") {
+		else if (s == "lg" || s == "log10"){
 			assert(params.size() == 1);
 			return mkLg(params[0]);
 		}
-		else if (s == "lb"){
+		else if (s == "lb" || s == "log2"){
 			assert(params.size() == 1);
 			return mkLb(params[0]);
 		}
