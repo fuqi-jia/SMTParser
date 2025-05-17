@@ -122,6 +122,13 @@ namespace SMTLIBParser{
 
     std::string toString(const Integer& i);
     std::string toString(const Real& r);
+    std::string toString(const int& i);
+    std::string toString(const double& d);
+    std::string toString(const float& f);
+    std::string toString(const long& l);
+    std::string toString(const short& s);
+    std::string toString(const char& c);
+    std::string toString(const bool& b);
 
     
     class SHA256 {

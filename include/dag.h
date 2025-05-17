@@ -71,9 +71,9 @@ namespace SMTLIBParser{
 
             if(kind == NODE_KIND::NT_CONST){
                 if(isIntUtil(name)){
-                    value = Number(name);
+                    value = Number(name, true);
                 } else if(isRealUtil(name)){
-                    value = Number(name);
+                    value = Number(name, false);
                 } 
             }
         }
@@ -82,9 +82,9 @@ namespace SMTLIBParser{
 
             if(kind == NODE_KIND::NT_CONST){
                 if(isIntUtil(name)){
-                    value = Number(name);
+                    value = Number(name, true);
                 } else if(isRealUtil(name)){
-                    value = Number(name);
+                    value = Number(name, false);
                 } 
             }
         }
@@ -113,9 +113,9 @@ namespace SMTLIBParser{
 
             if(kind == NODE_KIND::NT_CONST){
                 if(isIntUtil(name)){
-                    value = Number(name);
+                    value = Number(name, true);
                 } else if(isRealUtil(name)){
-                    value = Number(name);
+                    value = Number(name, false);
                 } 
             }
         }
@@ -126,6 +126,27 @@ namespace SMTLIBParser{
                 value = Number();
             }
         }
+        DAGNode(std::shared_ptr<Sort> sort, const Integer& v): sort(sort), kind(NODE_KIND::NT_CONST), name(""), value(v) {
+            children_hash = "";
+            name = v.toString();
+        }
+        DAGNode(std::shared_ptr<Sort> sort, const Real& v): sort(sort), kind(NODE_KIND::NT_CONST), name(""), value(v) {
+            children_hash = "";
+            name = v.toString();
+        }
+        DAGNode(std::shared_ptr<Sort> sort, const double& v): sort(sort), kind(NODE_KIND::NT_CONST), name(""), value(v) {
+            children_hash = "";
+            name = std::to_string(v);
+        }
+        DAGNode(std::shared_ptr<Sort> sort, const int& v): sort(sort), kind(NODE_KIND::NT_CONST), name(""), value(v) {
+            children_hash = "";
+            name = std::to_string(v);
+        }
+        DAGNode(std::shared_ptr<Sort> sort, const bool& v): sort(sort), kind(NODE_KIND::NT_CONST), name(""), value(Number()) {
+            children_hash = "";
+            name = v ? "true" : "false";
+        }
+        
         // only constant
         DAGNode(const std::string& n) {
             if (n == "true") {
@@ -155,11 +176,11 @@ namespace SMTLIBParser{
             } else if(isIntUtil(n)){
                 sort = INT_SORT;
                 kind = NODE_KIND::NT_CONST;
-                value = Number(n);
+                value = Number(n, true);
             } else if(isRealUtil(n)){
                 sort = REAL_SORT;
                 kind = NODE_KIND::NT_CONST;
-                value = Number(n);
+                value = Number(n, false);
             } 
             // else if(isBVUtil(n)){
             //     sort = BV_SORT;

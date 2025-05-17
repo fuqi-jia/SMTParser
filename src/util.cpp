@@ -1115,11 +1115,32 @@ namespace SMTLIBParser{
     }
 
 
+    // toString
     std::string toString(const Integer& i){
         return i.toString();
     }
-
     std::string toString(const Real& r){
         return r.toString();
+    }
+    std::string toString(const int& i){
+        return std::to_string(i);
+    }
+    std::string toString(const double& d){
+        return std::to_string(d);
+    }
+    std::string toString(const float& f){
+        return std::to_string(f);
+    }
+    std::string toString(const long& l){
+        return std::to_string(l);
+    }
+    std::string toString(const short& s){
+        return std::to_string(s);
+    }
+    std::string toString(const char& c){
+        return std::string(1, c);
+    }
+    std::string toString(const bool& b){
+        return b ? "true" : "false";
     }
 }

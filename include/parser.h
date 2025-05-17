@@ -202,6 +202,11 @@ namespace SMTLIBParser{
         std::shared_ptr<DAGNode> mkDistinct(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l != r
         // CONST
         std::shared_ptr<DAGNode> mkConst(const std::shared_ptr<Sort>& sort, const std::string &v); // CONST
+        std::shared_ptr<DAGNode> mkConst(const std::shared_ptr<Sort>& sort, const int& v); // CONST_INT
+        std::shared_ptr<DAGNode> mkConst(const std::shared_ptr<Sort>& sort, const double& v); // CONST_REAL
+        std::shared_ptr<DAGNode> mkConst(const std::shared_ptr<Sort>& sort, const Real& v); // CONST_REAL
+        std::shared_ptr<DAGNode> mkConst(const std::shared_ptr<Sort>& sort, const Integer& v); // CONST_REAL/INT
+        std::shared_ptr<DAGNode> mkConst(const std::shared_ptr<Sort>& sort, const bool& v); // CONST_BOOL
         std::shared_ptr<DAGNode> mkConstBool(const bool &v); // CONST_BOOL
         std::shared_ptr<DAGNode> mkConstBool(const int& v); // CONST_BOOL
         std::shared_ptr<DAGNode> mkConstBool(const std::string &v); // CONST_BOOL
