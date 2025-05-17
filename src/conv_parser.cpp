@@ -498,25 +498,8 @@ namespace SMTLIBParser {
 
     // convert a list of expressions to DNF (a large OR node, whose children are all AND terms)
     std::shared_ptr<DAGNode> Parser::toDNF(std::vector<std::shared_ptr<DAGNode>> exprs) {
-        std::vector<std::shared_ptr<DAGNode>> terms;
-        for (auto& expr : exprs) {
-            std::shared_ptr<DAGNode> dnf = toDNF(expr);
-            if (dnf->isOr()) {
-                // add the children of the DNF (AND terms) to the result
-                for (size_t i = 0; i < dnf->getChildrenSize(); i++) {
-                    terms.emplace_back(dnf->getChild(i));
-                }
-            } else {
-                // a single term directly added
-                terms.emplace_back(dnf);
-            }
-        }
-        // if there is only one term, return it directly
-        if (terms.size() == 1) {
-            return terms[0];
-        }
-        // otherwise, create an OR node, containing all AND terms
-        return mkOr(terms);
+        std::shared_ptr<DAGNode> result = mkOr(exprs);
+        return toDNF(result);
     }
 
     // convert a single expression to DNF
