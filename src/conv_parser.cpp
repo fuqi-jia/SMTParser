@@ -170,7 +170,7 @@ namespace SMTLIBParser {
     std::shared_ptr<DAGNode> Parser::toTseitinCNF(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited, std::vector<std::shared_ptr<DAGNode>>& clauses) {
         // Tseitin CNF is ¬applied to atoms: all atoms are already in CNF form
         assert(!expr->isAtom());
-        if(expr->isLiteral()) {
+        if(expr->isLiteral() || expr->isTempVar()) {
             // always return the original expression
             // and no need to add to visited
             return expr;
@@ -541,7 +541,7 @@ namespace SMTLIBParser {
     std::shared_ptr<DAGNode> Parser::toDNFEliminateAll(std::shared_ptr<DAGNode> expr,
                                                         boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited,
                                                         bool& is_changed){
-        if(expr->isLiteral() || expr->isAtom()){ return expr; }
+        if(expr->isLiteral() || expr->isAtom() || expr->isTempVar()){ return expr; }
         if(visited.find(expr) != visited.end()){
             return visited[expr];
         }
@@ -712,7 +712,7 @@ namespace SMTLIBParser {
             boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited) {
         
         // base case: literal or visited node
-        if(expr->isLiteral() || expr->isAtom()) { 
+        if(expr->isLiteral() || expr->isAtom() || expr->isTempVar()) { 
             return expr; 
         }
         
