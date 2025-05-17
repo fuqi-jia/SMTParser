@@ -3516,7 +3516,7 @@ namespace SMTLIBParser{
         return mkNot(atom);
     }
 
-    int Parser::getOpParamSize(NODE_KIND k) const{
+    int Parser::getArity(NODE_KIND k) const{
         switch(k){
             // zero-ary
             case NODE_KIND::NT_NULL:
