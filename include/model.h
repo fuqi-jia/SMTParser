@@ -34,6 +34,7 @@ namespace SMTLIBParser{
     class Model{
         public:
             Model();
+            Model(const Model &other);
             ~Model();
             void add(const std::shared_ptr<DAGNode> &node, const std::shared_ptr<DAGNode> &value);
             void add(const std::string &name, const std::shared_ptr<DAGNode> &value);

@@ -32,6 +32,12 @@ namespace SMTLIBParser{
 
     }
 
+    Model::Model(const Model &other){
+        model_vars = other.model_vars;
+        model_values = other.model_values;
+        model_name_index = other.model_name_index;
+    }
+
     Model::~Model(){
 
     }

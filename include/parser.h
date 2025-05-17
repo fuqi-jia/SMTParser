@@ -536,6 +536,7 @@ namespace SMTLIBParser{
         void                                    setEvaluateUseFloating(bool use_floating);
         bool                                    getEvaluateUseFloating() const;
         std::shared_ptr<DAGNode>                evaluate(std::shared_ptr<DAGNode> expr, const std::shared_ptr<Model> &model);
+        std::shared_ptr<DAGNode>                evaluate(std::shared_ptr<DAGNode> expr, const Model &model);
         bool                                    evaluate(std::shared_ptr<DAGNode> expr, const std::shared_ptr<Model> &model, std::shared_ptr<DAGNode> &result);
 
         // type conversion

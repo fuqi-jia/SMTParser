@@ -32,6 +32,12 @@ namespace SMTLIBParser{
     void not_implemented_warning(const std::string& op){
         std::cerr << "Not implemented warning: " << op << " is not implemented" << std::endl;
     }
+    std::shared_ptr<DAGNode> Parser::evaluate(std::shared_ptr<DAGNode> expr, const Model &model){
+        std::shared_ptr<DAGNode> result = NULL_NODE;
+        std::shared_ptr<Model> model_ptr = std::make_shared<Model>(model);
+        evaluate(expr, model_ptr, result);
+        return result;
+    }
 
     std::shared_ptr<DAGNode> Parser::evaluate(std::shared_ptr<DAGNode> expr, const std::shared_ptr<Model> &model){
         std::shared_ptr<DAGNode> result = NULL_NODE;
