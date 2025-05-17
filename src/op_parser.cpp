@@ -548,10 +548,10 @@ namespace SMTLIBParser{
     }
     
     // VAR
-    std::shared_ptr<DAGNode> Parser::mkTempVar(const std::shared_ptr<Sort>& sort, const std::string &name){
+    std::shared_ptr<DAGNode> Parser::mkTempVar(const std::shared_ptr<Sort>& sort){
         std::string temp_var_name = "temp_" + std::to_string(temp_var_counter++);
         if(temp_var_names.find(temp_var_name) != temp_var_names.end()){
-            err_all(ERROR_TYPE::ERR_TEMP_VAR_MIS, "Temp variable name already exists", line_number);
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Temp variable name already exists", line_number);
             return mkUnknown();
         }
         std::shared_ptr<DAGNode> newvar = std::make_shared<DAGNode>(sort, NODE_KIND::NT_TEMP_VAR, temp_var_name);

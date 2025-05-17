@@ -48,7 +48,7 @@ namespace SMTLIBParser {
     }
 
     std::shared_ptr<DAGNode> Parser::replaceAtoms(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& atom_map) {
-        boost::unordered_set<std::shared_ptr<DAGNode>> visited;
+        boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> visited;
         bool is_changed = false;
         std::shared_ptr<DAGNode> new_expr = replaceAtoms(expr, atom_map, visited, is_changed);
         if (is_changed) {
@@ -121,10 +121,9 @@ namespace SMTLIBParser {
         or_children4.emplace_back(a);
         or_children4.emplace_back(mkNot(b));
         clauses.emplace_back(mkOr(or_children4));
-        visited[expr] = c;
-        assert(c->isLiteral());
         return c;
     }
+
     // auxiliary function: handle the equivalence relation between two boolean variables
     std::shared_ptr<DAGNode> Parser::toTseitinEq(std::shared_ptr<DAGNode> a, std::shared_ptr<DAGNode> b, std::vector<std::shared_ptr<DAGNode>>& clauses) {
         std::shared_ptr<DAGNode> c = mkTempVar(BOOL_SORT);
@@ -302,7 +301,7 @@ namespace SMTLIBParser {
             for(size_t i = 0; i < expr->getChildrenSize(); i++){
                 if(!expr->getChild(i)->getSort()->isBool()){
                     all_bool = false;
-                    err_all(ERROR_TYPE::ERR_TYPE_MISMATCH, "boolean", expr->getChild(i)->getSort()->toString());
+                    err_all(ERROR_TYPE::ERR_TYPE_MIS, "Need boolean variables for eq, but got " + expr->getChild(i)->getSort()->toString());
                     break;
                 }
             }
@@ -376,7 +375,7 @@ namespace SMTLIBParser {
                 // handle boolean inequality
                 if(expr->getChildrenSize() == 1){
                     // single child, meaningless, return true
-                    err_all(ERROR_TYPE::ERR_TYPE_MISMATCH, "distinct with 1 variable is meaningless");
+                    err_all(ERROR_TYPE::ERR_TYPE_MIS, "distinct with 1 variable is meaningless");
                     return mkTrue();
                 }
                 else if(expr->getChildrenSize() == 2){
@@ -396,7 +395,7 @@ namespace SMTLIBParser {
                 }
             }
         }
-        else if(expr->isITE() && expr->getChild(1)->getSort()->isBool() && expr->getChild(2)->getSort()->isBool()){
+        else if(expr->isIte() && expr->getChild(1)->getSort()->isBool() && expr->getChild(2)->getSort()->isBool()){
             // handle condition expression: if a then b else c
             std::shared_ptr<DAGNode> a = toTseitinCNF(expr->getChild(0), visited, clauses);
             std::shared_ptr<DAGNode> b = toTseitinCNF(expr->getChild(1), visited, clauses);
@@ -420,7 +419,7 @@ namespace SMTLIBParser {
             return d;
         }
         else{
-            err_all(ERROR_TYPE::ERR_TYPE_MISMATCH, "unsupported node type: " + kindToString(expr->getKind()));
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "unsupported node type: " + kindToString(expr->getKind()));
             return mkFalse();
         }
 
