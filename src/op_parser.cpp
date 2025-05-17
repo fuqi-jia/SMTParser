@@ -838,6 +838,12 @@ namespace SMTLIBParser{
     /*
     (+ rt rt+), return rt
     */
+    std::shared_ptr<DAGNode> Parser::mkAdd(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
+        return mkAdd({l, r});
+    }
+    std::shared_ptr<DAGNode> Parser::mkAdd(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> m, std::shared_ptr<DAGNode> r){
+        return mkAdd({l, m, r});
+    }
     std::shared_ptr<DAGNode> Parser::mkAdd(const std::vector<std::shared_ptr<DAGNode>> &params){
         if(params.size() < 2) {
             err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for add", line_number);
@@ -902,6 +908,12 @@ namespace SMTLIBParser{
     /*
     (* rt rt+), return rt
     */
+    std::shared_ptr<DAGNode> Parser::mkMul(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
+        return mkMul({l, r});
+    }
+    std::shared_ptr<DAGNode> Parser::mkMul(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> m, std::shared_ptr<DAGNode> r){
+        return mkMul({l, m, r});
+    }
     std::shared_ptr<DAGNode> Parser::mkMul(const std::vector<std::shared_ptr<DAGNode>> &params){
         if(params.size() == 1){
             return params[0];
@@ -1032,6 +1044,12 @@ namespace SMTLIBParser{
     /*
     (- rt rt+), return rt
     */
+    std::shared_ptr<DAGNode> Parser::mkSub(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
+        return mkSub({l, r});
+    }
+    std::shared_ptr<DAGNode> Parser::mkSub(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> m, std::shared_ptr<DAGNode> r){
+        return mkSub({l, m, r});
+    }
     std::shared_ptr<DAGNode> Parser::mkSub(const std::vector<std::shared_ptr<DAGNode>> &params){
         if(params.size() == 0) {
             err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for sub", line_number);
