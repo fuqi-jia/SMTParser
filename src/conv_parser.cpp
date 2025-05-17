@@ -687,9 +687,79 @@ namespace SMTLIBParser {
     // apply DNF distributive law
     std::shared_ptr<DAGNode> Parser::applyDNFDistributiveLaw(std::shared_ptr<DAGNode> expr) {
         boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> visited;
-        return applyDNFDistributiveLawRec(expr, visited);
+        std::shared_ptr<DAGNode> result = applyDNFDistributiveLawRec(expr, visited);
+        return flattenDNF(result);
     }
 
+    // flatten DNF expression, eliminate nested OR/AND
+    std::shared_ptr<DAGNode> Parser::flattenDNF(std::shared_ptr<DAGNode> expr) {
+        if (!expr->isOr() && !expr->isAnd()) {
+            return expr;
+        }
+        
+        std::vector<std::shared_ptr<DAGNode>> flattened;
+        
+        if (expr->isOr()) {
+            // collect all OR node children, eliminate nested OR
+            for (size_t i = 0; i < expr->getChildrenSize(); i++) {
+                std::shared_ptr<DAGNode> child = expr->getChild(i);
+                if (child->isOr()) {
+                    // if child is also OR, expand it
+                    for (size_t j = 0; j < child->getChildrenSize(); j++) {
+                        flattened.push_back(flattenDNF(child->getChild(j)));
+                    }
+                } else {
+                    flattened.push_back(flattenDNF(child));
+                }
+            }
+            
+            // remove duplicates
+            boost::unordered_set<std::shared_ptr<DAGNode>> unique_terms;
+            std::vector<std::shared_ptr<DAGNode>> result;
+            for (auto& term : flattened) {
+                if (unique_terms.find(term) == unique_terms.end()) {
+                    unique_terms.insert(term);
+                    result.push_back(term);
+                }
+            }
+            
+            if (result.size() == 1) {
+                return result[0];
+            }
+            return mkOr(result);
+        }
+        else { // expr->isAnd()
+            // collect all AND node children, eliminate nested AND
+            for (size_t i = 0; i < expr->getChildrenSize(); i++) {
+                std::shared_ptr<DAGNode> child = expr->getChild(i);
+                if (child->isAnd()) {
+                    // if child is also AND, expand it
+                    for (size_t j = 0; j < child->getChildrenSize(); j++) {
+                        flattened.push_back(flattenDNF(child->getChild(j)));
+                    }
+                } else {
+                    flattened.push_back(flattenDNF(child));
+                }
+            }
+            
+            // remove duplicates
+            boost::unordered_set<std::shared_ptr<DAGNode>> unique_literals;
+            std::vector<std::shared_ptr<DAGNode>> result;
+            for (auto& literal : flattened) {
+                if (unique_literals.find(literal) == unique_literals.end()) {
+                    unique_literals.insert(literal);
+                    result.push_back(literal);
+                }
+            }
+            
+            if (result.size() == 1) {
+                return result[0];
+            }
+            return mkAnd(result);
+        }
+    }
+
+    // recursive implementation of DNF distributive law
     std::shared_ptr<DAGNode> Parser::applyDNFDistributiveLawRec(
             std::shared_ptr<DAGNode> expr,
             boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited) {
@@ -703,90 +773,133 @@ namespace SMTLIBParser {
             return visited[expr];
         }
         
-        // recursive processing of children
         if(expr->isNot()) {
             // negation only appears in front of literals in NNF
             return expr;
         }
         else if(expr->isOr()) {
-            // recursive processing of children
+            // recursively process each child
             std::vector<std::shared_ptr<DAGNode>> children;
+            bool has_or_child = false;
+            
             for(size_t i = 0; i < expr->getChildrenSize(); i++) {
                 std::shared_ptr<DAGNode> child = applyDNFDistributiveLawRec(expr->getChild(i), visited);
-                
-                // if the child is also OR, then flatten (extract its children)
+                if(child->isOr()) {
+                    has_or_child = true;
+                }
+                children.push_back(child);
+            }
+            
+            // if there are no nested OR children, return the OR node directly
+            if(!has_or_child) {
+                std::shared_ptr<DAGNode> result = mkOr(children);
+                visited[expr] = result;
+                return result;
+            }
+            
+            // otherwise, flatten the nested OR node
+            std::vector<std::shared_ptr<DAGNode>> flattened;
+            for(auto& child : children) {
                 if(child->isOr()) {
                     for(size_t j = 0; j < child->getChildrenSize(); j++) {
-                        children.emplace_back(child->getChild(j));
+                        flattened.push_back(child->getChild(j));
                     }
                 } else {
-                    children.emplace_back(child);
+                    flattened.push_back(child);
                 }
             }
             
-            std::shared_ptr<DAGNode> result = mkOr(children);
+            std::shared_ptr<DAGNode> result = mkOr(flattened);
             visited[expr] = result;
             return result;
         }
         else if(expr->isAnd()) {
-            // recursive processing of children
+            // recursively process each child, and divide into OR children and non-OR children
             std::vector<std::shared_ptr<DAGNode>> andChildren;
             std::vector<std::shared_ptr<DAGNode>> orChildren;
             
-            // recursive processing of all children
             for(size_t i = 0; i < expr->getChildrenSize(); i++) {
                 std::shared_ptr<DAGNode> child = applyDNFDistributiveLawRec(expr->getChild(i), visited);
-                
-                // divide the children of AND into OR nodes and non-OR nodes
                 if(child->isOr()) {
-                    orChildren.emplace_back(child);
+                    orChildren.push_back(child);
                 } else {
-                    andChildren.emplace_back(child);
+                    andChildren.push_back(child);
                 }
             }
             
-            // if there is no OR child, return the AND directly
+            // if there are no OR children, return the AND node directly
             if(orChildren.empty()) {
                 std::shared_ptr<DAGNode> result = mkAnd(andChildren);
                 visited[expr] = result;
                 return result;
             }
             
-            // apply distributive law: select the first OR node, and combine it with other nodes
-            std::shared_ptr<DAGNode> firstOr = orChildren[0];
-            orChildren.erase(orChildren.begin());
+            // apply distributive law
+            // initialize distributedOr as the first OR child
+            std::shared_ptr<DAGNode> distributedOr = orChildren[0];
             
-            std::vector<std::shared_ptr<DAGNode>> dnfTerms;
-            
-            // for each child of the first OR
-            for(size_t i = 0; i < firstOr->getChildrenSize(); i++) {
-                std::shared_ptr<DAGNode> term = firstOr->getChild(i);
+            // apply distributive law to each subsequent OR child
+            for(size_t i = 1; i < orChildren.size(); i++) {
+                std::shared_ptr<DAGNode> currentOr = orChildren[i];
+                std::vector<std::shared_ptr<DAGNode>> newOrTerms;
                 
-                // combine the current OR term with all non-OR children
-                std::vector<std::shared_ptr<DAGNode>> termAndChildren = andChildren;
-                termAndChildren.emplace_back(term);
-                
-                // create a new AND node
-                std::shared_ptr<DAGNode> newAnd = mkAnd(termAndChildren);
-                
-                // if there are other OR nodes, continue recursive application of distributive law
-                if(!orChildren.empty()) {
-                    std::vector<std::shared_ptr<DAGNode>> remainingOrTerms;
-                    remainingOrTerms.emplace_back(newAnd);
-                    for(auto& orChild : orChildren) {
-                        remainingOrTerms.emplace_back(orChild);
+                // distributive law: (a∨b∨c)∧(d∨e) → (a∧d)∨(a∧e)∨(b∧d)∨(b∧e)∨(c∧d)∨(c∧e)
+                for(size_t j = 0; j < distributedOr->getChildrenSize(); j++) {
+                    for(size_t k = 0; k < currentOr->getChildrenSize(); k++) {
+                        std::vector<std::shared_ptr<DAGNode>> andTerm;
+                        
+                        // copy previous AND terms
+                        if(distributedOr->getChild(j)->isAnd()) {
+                            for(size_t l = 0; l < distributedOr->getChild(j)->getChildrenSize(); l++) {
+                                andTerm.push_back(distributedOr->getChild(j)->getChild(l));
+                            }
+                        } else {
+                            andTerm.push_back(distributedOr->getChild(j));
+                        }
+                        
+                        // add new AND terms
+                        if(currentOr->getChild(k)->isAnd()) {
+                            for(size_t l = 0; l < currentOr->getChild(k)->getChildrenSize(); l++) {
+                                andTerm.push_back(currentOr->getChild(k)->getChild(l));
+                            }
+                        } else {
+                            andTerm.push_back(currentOr->getChild(k));
+                        }
+                        
+                        newOrTerms.push_back(mkAnd(andTerm));
                     }
-                    std::shared_ptr<DAGNode> newExpr = mkAnd(remainingOrTerms);
-                    dnfTerms.emplace_back(applyDNFDistributiveLawRec(newExpr, visited));
-                } else {
-                    dnfTerms.emplace_back(newAnd);
                 }
+                
+                distributedOr = mkOr(newOrTerms);
             }
             
-            // create the final OR node, containing all DNF terms
-            std::shared_ptr<DAGNode> result = mkOr(dnfTerms);
-            visited[expr] = result;
-            return result;
+            // merge non-OR children into each OR term
+            if(!andChildren.empty()) {
+                std::vector<std::shared_ptr<DAGNode>> finalOrTerms;
+                
+                for(size_t i = 0; i < distributedOr->getChildrenSize(); i++) {
+                    std::vector<std::shared_ptr<DAGNode>> andTerm;
+                    
+                    // add original AND terms
+                    if(distributedOr->getChild(i)->isAnd()) {
+                        for(size_t j = 0; j < distributedOr->getChild(i)->getChildrenSize(); j++) {
+                            andTerm.push_back(distributedOr->getChild(i)->getChild(j));
+                        }
+                    } else {
+                        andTerm.push_back(distributedOr->getChild(i));
+                    }
+                    
+                    // add additional AND children
+                    andTerm.insert(andTerm.end(), andChildren.begin(), andChildren.end());
+                    
+                    finalOrTerms.push_back(mkAnd(andTerm));
+                }
+                
+                distributedOr = mkOr(finalOrTerms);
+            }
+            
+            visited[expr] = distributedOr;
+            return distributedOr;
         }
         else {
             // other node types (should not appear, because all complex operators have been processed through NNF conversion)

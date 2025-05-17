@@ -620,7 +620,8 @@ namespace SMTLIBParser{
         std::shared_ptr<DAGNode>                applyDNFDistributiveLaw(std::shared_ptr<DAGNode> expr);
         std::shared_ptr<DAGNode>                applyDNFDistributiveLawRec(std::shared_ptr<DAGNode> expr,
                                                                          boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited);
-
+        std::shared_ptr<DAGNode>                flattenDNF(std::shared_ptr<DAGNode> expr);
+        
         //errors & warnings
         // mk errror node
         std::shared_ptr<DAGNode>	            mkErr(const ERROR_TYPE t);
