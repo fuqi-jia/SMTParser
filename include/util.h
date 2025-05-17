@@ -206,16 +206,16 @@ namespace SMTLIBParser{
             bitLength = input.size() * 8;
             
             // Append a 1 bit (0x80) to the input
-            data.push_back(0x80);
+            data.emplace_back(0x80);
     
             // Append 0 bits until the length is congruent to 448 mod 512
             while ((data.size() * 8) % 512 != 448) {
-                data.push_back(0x00);
+                data.emplace_back(0x00);
             }
     
             // Append the length of the original message (in bits) as a 64-bit big-endian integer
             for (int i = 7; i >= 0; --i) {
-                data.push_back(static_cast<uint8_t>((bitLength >> (i * 8)) & 0xFF));
+                data.emplace_back(static_cast<uint8_t>((bitLength >> (i * 8)) & 0xFF));
             }
     
             return data;

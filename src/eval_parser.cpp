@@ -72,7 +72,7 @@ namespace SMTLIBParser{
         else if(expr->isNot()){
             return evaluateNot(expr, model, result);
         }
-        else if(expr->isImpl()){
+        else if(expr->isImplies()){
             return evaluateImpl(expr, model, result);
         }
         else if(expr->isXor()){
@@ -817,16 +817,16 @@ namespace SMTLIBParser{
                         }
                         if(i == expr->getChildren().size()){
                             // all remaining children are constant
-                            children.push_back(child);
+                            children.emplace_back(child);
                             break;
                         }
                         else if(child_->isNull()){
                             // child_ is null -> only child is constant
-                            children.push_back(child);
+                            children.emplace_back(child);
                         }
                         else{
                             assert(!child->isConst());
-                            children.push_back(child);
+                            children.emplace_back(child);
                         }
                     }
                     else{

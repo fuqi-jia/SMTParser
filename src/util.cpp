@@ -529,7 +529,7 @@ namespace SMTLIBParser{
                 std::string partial = bv1_.substr(0, bv2_.size() - i);
                 partial = partial + std::string(i - 1, '0');
                 partial = "#b" + partial;
-                partials.emplace_back(partial);
+                partials.push_back(partial);
             }
         }
         if(partials.empty()){

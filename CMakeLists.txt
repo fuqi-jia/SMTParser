@@ -58,6 +58,7 @@ set(SOURCES
     src/op_parser.cpp
     src/opt_parser.cpp
     src/simp_parser.cpp
+    src/conv_parser.cpp
     src/dag.cpp
     src/util.cpp
     src/objective.cpp

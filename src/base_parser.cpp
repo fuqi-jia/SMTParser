@@ -1870,7 +1870,7 @@ namespace SMTLIBParser{
 		std::vector<LetContext> stateStack;
 		
 		// Push initial state onto the stack
-		stateStack.push_back(LetContext(0));
+		stateStack.emplace_back(LetContext(0));
 		
 		// Enter the initial "("
 		parseLpar();
@@ -1935,7 +1935,7 @@ namespace SMTLIBParser{
 				assert(let_key == "let");
 				parseLpar();  // Consume the second let expression's starting '('
 				
-				stateStack.push_back(LetContext(currentState.nesting_level + 1));
+				stateStack.emplace_back(LetContext(currentState.nesting_level + 1));
 			}
 			else{
 				if(*bufptr != ')'){
@@ -2043,7 +2043,7 @@ namespace SMTLIBParser{
 				
 				// Collect results from all children
 				for (size_t i = 0; i < current->getChildrenSize(); i++) {
-					childResults.push_back(results[current->getChild(i)]);
+					childResults.emplace_back(results[current->getChild(i)]);
 				}
 				
 				// Create a new node with processed children
@@ -2073,7 +2073,7 @@ namespace SMTLIBParser{
 					// Process the function body and parameters
 					for (size_t i = 1; i < current->getChildrenSize(); i++) {
 						todo.push(std::make_pair(current->getChild(i), false));
-						funcParams.push_back(current->getChild(i));
+						funcParams.emplace_back(current->getChild(i));
 					}
 					
 					// Apply the function to its parameters
@@ -2386,6 +2386,9 @@ namespace SMTLIBParser{
 		exit(0);
 	}
 
+	std::string Parser::toString(std::shared_ptr<DAGNode> expr){
+		return dumpSMTLIB2(expr);
+	}
 
 	/*
 	warnings

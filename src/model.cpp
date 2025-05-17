@@ -48,8 +48,8 @@ namespace SMTLIBParser{
         }
         else{
             model_name_index[node->getName()] = model_vars.size();
-            model_vars.push_back(node);
-            model_values.push_back(value);
+            model_vars.emplace_back(node);
+            model_values.emplace_back(value);
         }
     }
 
@@ -77,8 +77,8 @@ namespace SMTLIBParser{
             return;
         }
         model_name_index[node->getName()] = model_vars.size();
-        model_vars.push_back(node);
-        model_values.push_back(UNKNOWN_NODE);
+        model_vars.emplace_back(node);
+        model_values.emplace_back(UNKNOWN_NODE);
     }
 
     bool Model::isFull() const{
@@ -123,7 +123,7 @@ namespace SMTLIBParser{
     std::vector<std::pair<std::string, std::shared_ptr<DAGNode>>> Model::getPairs() const{
         std::vector<std::pair<std::string, std::shared_ptr<DAGNode>>> pairs;
         for(size_t i = 0; i < model_vars.size(); i++){
-            pairs.push_back(std::make_pair(model_vars[i]->getName(), model_values[i]));
+            pairs.emplace_back(std::make_pair(model_vars[i]->getName(), model_values[i]));
         }
         return pairs;
     }

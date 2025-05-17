@@ -247,7 +247,7 @@ namespace SMTLIBParser{
         bool isAnd() 				const { return (kind == NODE_KIND::NT_AND); };
         bool isOr() 				const { return (kind == NODE_KIND::NT_OR); };
         bool isNot() 				const { return (kind == NODE_KIND::NT_NOT); };
-        bool isImpl() 				const { return (kind == NODE_KIND::NT_IMPLIES); };
+        bool isImplies() 				const { return (kind == NODE_KIND::NT_IMPLIES); };
         bool isXor() 				const { return (kind == NODE_KIND::NT_XOR); };
         
         // check comparison
@@ -322,7 +322,7 @@ namespace SMTLIBParser{
         bool isArithTerm() 			const { return (isArithOp() || isArithConv() || isTranscendentalOp() || 
                                                     (isVar() && (isVInt() || isVReal())) ||
                                                     (isConst() && (isCInt() || isCReal()))); };
-        bool isArithAtom() 			const { return ((isEq() && getChild(0)->isArithTerm() && getChild(1)->isArithTerm())|| 
+        bool isArithComp() 			const { return ((isEq() && getChild(0)->isArithTerm() && getChild(1)->isArithTerm())|| 
                                                     (isDistinct() && getChild(0)->isArithTerm() && getChild(1)->isArithTerm()) || 
                                                     isLe() || isLt() || isGe() || isGt()); };
 
@@ -488,11 +488,13 @@ namespace SMTLIBParser{
         bool isStrLe() 				const { return (kind == NODE_KIND::NT_STR_LE); };
         bool isStrGt() 				const { return (kind == NODE_KIND::NT_STR_GT); };
         bool isStrGe() 				const { return (kind == NODE_KIND::NT_STR_GE); };
+        bool isStrComp() 			const { return (isStrLt() || isStrLe() || isStrGt() || isStrGe()); };
 
         // check strings properties
         bool isStrInReg() 			const { return (kind == NODE_KIND::NT_STR_IN_REG); };
         bool isStrContains() 		const { return (kind == NODE_KIND::NT_STR_CONTAINS); };
         bool isStrIsDigit() 		const { return (kind == NODE_KIND::NT_STR_IS_DIGIT); };
+        bool isStrProp() 			const { return (isStrInReg() || isStrContains() || isStrIsDigit()); };
 
         // check strings conversion
         bool isStrFromInt() 		const { return (kind == NODE_KIND::NT_STR_FROM_INT); };
@@ -518,7 +520,10 @@ namespace SMTLIBParser{
         bool isRegLoop() 			const { return (kind == NODE_KIND::NT_REG_LOOP); };
         bool isRegComplement() 		const { return (kind == NODE_KIND::NT_REG_COMPLEMENT); };
 
-
+        bool isAtom()				const { return (isArithComp() || isArithProp() ||
+                                                    isBVCompOp() || 
+                                                    isFPComp() || isFPProp() ||
+                                                    isStrComp() || isStrProp()); };
         // check let
         bool isLet()				const { return kind == NODE_KIND::NT_LET; };
 

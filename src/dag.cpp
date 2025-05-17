@@ -34,9 +34,9 @@ namespace SMTLIBParser{
         assert(out_sort == sort);
         (void)out_sort;
         children.clear();
-        children.push_back(body);
+        children.emplace_back(body);
         for(auto& p : params){
-            children.push_back(p);
+            children.emplace_back(p);
         }
         kind = NODE_KIND::NT_FUNC_DEF;
     }
@@ -46,9 +46,9 @@ namespace SMTLIBParser{
         assert(out_sort == sort);
         (void)out_sort;
         children.clear();
-        children.push_back(body);
+        children.emplace_back(body);
         for(auto& p : params){
-            children.push_back(p);
+            children.emplace_back(p);
         }
         kind = NODE_KIND::NT_FUNC_APPLY;
     }

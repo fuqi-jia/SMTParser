@@ -429,7 +429,7 @@ namespace SMTLIBParser{
         }
     }
     std::shared_ptr<DAGNode> Parser::mkConst(const std::shared_ptr<Sort>& sort, const int& v){
-        std::string v_str = toString(v);
+        std::string v_str = SMTLIBParser::toString(v);
         if(constants.find(v_str) != constants.end()){
             return node_list[constants[v_str]];
         }
@@ -441,7 +441,7 @@ namespace SMTLIBParser{
         }
     }
     std::shared_ptr<DAGNode> Parser::mkConst(const std::shared_ptr<Sort>& sort, const double& v){
-        std::string v_str = toString(v);
+        std::string v_str = SMTLIBParser::toString(v);
         if(constants.find(v_str) != constants.end()){
             return node_list[constants[v_str]];
         }
@@ -453,7 +453,7 @@ namespace SMTLIBParser{
         }
     }
     std::shared_ptr<DAGNode> Parser::mkConst(const std::shared_ptr<Sort>& sort, const Real& v){
-        std::string v_str = toString(v);
+        std::string v_str = SMTLIBParser::toString(v);
         if(constants.find(v_str) != constants.end()){
             return node_list[constants[v_str]];
         }
@@ -465,7 +465,7 @@ namespace SMTLIBParser{
         }
     }
     std::shared_ptr<DAGNode> Parser::mkConst(const std::shared_ptr<Sort>& sort, const Integer& v){
-        std::string v_str = toString(v);
+        std::string v_str = SMTLIBParser::toString(v);
         if(constants.find(v_str) != constants.end()){
             return node_list[constants[v_str]];
         }
@@ -639,14 +639,7 @@ namespace SMTLIBParser{
     /*
     (and Bool Bool+ :left-assoc), return Bool
     */
-    std::shared_ptr<DAGNode> Parser::mkAnd(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> m, std::shared_ptr<DAGNode> r){
-        return mkAnd({l, m, r});
-    }
     std::shared_ptr<DAGNode> Parser::mkAnd(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) {
-            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for AND", line_number);
-            return mkUnknown();
-        }
             
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
@@ -3505,7 +3498,7 @@ namespace SMTLIBParser{
         }
 
         // negate an arithmetic atom
-        if(atom->isArithAtom()){
+        if(atom->isArithComp()){
             // less than
             if(atom->isLt()){
                 return mkGe(atom->getChild(0), atom->getChild(1));

@@ -553,6 +553,19 @@ namespace SMTLIBParser{
         bool                                    isZero(std::shared_ptr<DAGNode> expr);
         bool                                    isOne(std::shared_ptr<DAGNode> expr);
 
+        // Format conversion
+        void                                    collectAtoms(std::shared_ptr<DAGNode> expr, boost::unordered_set<std::shared_ptr<DAGNode>>& atoms);
+        void                                    replaceAtoms(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& atom_map);
+        std::shared_ptr<DAGNode>                toCNF(std::shared_ptr<DAGNode> expr);
+        std::shared_ptr<DAGNode>                toCNF(std::vector<std::shared_ptr<DAGNode>> exprs);
+        std::shared_ptr<DAGNode>                toDNF(std::shared_ptr<DAGNode> expr);
+        std::shared_ptr<DAGNode>                toDNF(std::vector<std::shared_ptr<DAGNode>> exprs);
+        std::shared_ptr<DAGNode>                toNNF(std::shared_ptr<DAGNode> expr);
+        std::shared_ptr<DAGNode>                toNNF(std::shared_ptr<DAGNode> expr, bool is_not);
+        std::shared_ptr<DAGNode>                toNNF(std::vector<std::shared_ptr<DAGNode>> exprs);
+
+        // print
+        std::string                             toString(std::shared_ptr<DAGNode> expr);
     private:
         // parse smt-lib2 file
         std::string	                            getSymbol();
@@ -607,7 +620,9 @@ namespace SMTLIBParser{
 
         void 		warn_cmd_nsup(const std::string nm, const size_t ln) const;
 
-
+        // collect atoms
+        void        collectAtoms(std::shared_ptr<DAGNode> expr, boost::unordered_set<std::shared_ptr<DAGNode>>& atoms, boost::unordered_set<std::shared_ptr<DAGNode>>& visited);
+        
         // evaluate functions
         bool		evaluateSimpleOp(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result, NODE_KIND op);
         bool		evaluateAnd(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
