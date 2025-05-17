@@ -639,6 +639,15 @@ namespace SMTLIBParser{
     /*
     (and Bool Bool+ :left-assoc), return Bool
     */
+    std::shared_ptr<DAGNode> Parser::mkAnd(std::shared_ptr<DAGNode> param){
+        return mkAnd({param});
+    }
+    std::shared_ptr<DAGNode> Parser::mkAnd(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
+        return mkAnd({l, r});
+    }
+    std::shared_ptr<DAGNode> Parser::mkAnd(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> m, std::shared_ptr<DAGNode> r){
+        return mkAnd({l, m, r});
+    }
     std::shared_ptr<DAGNode> Parser::mkAnd(const std::vector<std::shared_ptr<DAGNode>> &params){
         if(params.size() < 2) {
             err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for AND", line_number);
@@ -685,6 +694,15 @@ namespace SMTLIBParser{
     /*
     (or Bool Bool+ :left-assoc), return Bool
     */
+    std::shared_ptr<DAGNode> Parser::mkOr(std::shared_ptr<DAGNode> param){
+        return mkOr({param});
+    }
+    std::shared_ptr<DAGNode> Parser::mkOr(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
+        return mkOr({l, r});
+    }
+    std::shared_ptr<DAGNode> Parser::mkOr(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> m, std::shared_ptr<DAGNode> r){
+        return mkOr({l, m, r});
+    }
     std::shared_ptr<DAGNode> Parser::mkOr(const std::vector<std::shared_ptr<DAGNode>> &params){
         if(params.size() < 2) {
             err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for OR", line_number);
@@ -732,6 +750,9 @@ namespace SMTLIBParser{
     (=> Bool Bool+ :right-assoc), return Bool
     (=> a b c d) <=> (or -a -b -c d)
     */
+    std::shared_ptr<DAGNode> Parser::mkImplies(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
+        return mkImplies({l, r});
+    }
     std::shared_ptr<DAGNode> Parser::mkImplies(const std::vector<std::shared_ptr<DAGNode>> &params){
         if(params.size() < 2) {
             err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for implies", line_number);
@@ -769,6 +790,15 @@ namespace SMTLIBParser{
     /*
     (xor Bool Bool+ :left-assoc), return Bool
     */
+    std::shared_ptr<DAGNode> Parser::mkXor(std::shared_ptr<DAGNode> param){
+        return mkXor({param});
+    }
+    std::shared_ptr<DAGNode> Parser::mkXor(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
+        return mkXor({l, r});
+    }
+    std::shared_ptr<DAGNode> Parser::mkXor(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> m, std::shared_ptr<DAGNode> r){
+        return mkXor({l, m, r});
+    }
     std::shared_ptr<DAGNode> Parser::mkXor(const std::vector<std::shared_ptr<DAGNode>> &params){
         if(params.size() < 2) {
             err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for xor", line_number);
