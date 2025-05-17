@@ -48,9 +48,6 @@
 #include <boost/unordered_map.hpp>
 #include <boost/unordered_set.hpp>
 
-const double CONST_PI = 3.14159265358979323846;
-const double CONST_E = 2.71828182845904523536;
-
 namespace SMTLIBParser{
     class DAGNode {
     // <sort, kind, name> --- <sort, node_kind, name>
@@ -58,36 +55,76 @@ namespace SMTLIBParser{
         std::shared_ptr<Sort>                   sort;
         NODE_KIND		                        kind;
         std::string		                        name;
+        Number                                  value;
         std::vector<std::shared_ptr<DAGNode>>   children;
 
         std::string                             children_hash;
 
     public:
-        DAGNode(std::shared_ptr<Sort> sort, NODE_KIND kind, std::string name, std::vector<std::shared_ptr<DAGNode>> children): sort(sort), kind(kind), name(name), children(children) {
+        DAGNode(std::shared_ptr<Sort> sort, NODE_KIND kind, std::string name, std::vector<std::shared_ptr<DAGNode>> children): sort(sort), kind(kind), name(name), value(Number()), children(children){
+            // value is not used for hash
             children_hash = "";
             for(auto& child : children){
                 children_hash += child->hashString() + "__";
             }
             children_hash = sha256(children_hash);
+
+            if(kind == NODE_KIND::NT_CONST){
+                if(isIntUtil(name)){
+                    value = Number(name);
+                } else if(isRealUtil(name)){
+                    value = Number(name);
+                } 
+            }
         }
-        DAGNode(std::shared_ptr<Sort> sort, NODE_KIND kind, std::string name): sort(sort), kind(kind), name(name) {
+        DAGNode(std::shared_ptr<Sort> sort, NODE_KIND kind, std::string name): sort(sort), kind(kind), name(name), value(Number()) {
+            children_hash = "";
+
+            if(kind == NODE_KIND::NT_CONST){
+                if(isIntUtil(name)){
+                    value = Number(name);
+                } else if(isRealUtil(name)){
+                    value = Number(name);
+                } 
+            }
+        }
+        DAGNode(std::shared_ptr<Sort> sort, NODE_KIND kind): sort(sort), kind(kind), name(""), value(Number()) {
+            children_hash = "";
+
+            if(kind == NODE_KIND::NT_CONST){
+                value = Number();
+            }
+        }
+        DAGNode(std::shared_ptr<Sort> sort): sort(sort), kind(NODE_KIND::NT_UNKNOWN), name(""), value(Number()) {
+            children_hash = "";
+
+            if(kind == NODE_KIND::NT_CONST){
+                value = Number();
+            }
+        }
+        DAGNode(): sort(NULL_SORT), kind(NODE_KIND::NT_UNKNOWN), name(""), value(Number()), children_hash("") {
             children_hash = "";
         }
-        DAGNode(std::shared_ptr<Sort> sort, NODE_KIND kind): sort(sort), kind(kind), name("") {
-            children_hash = "";
-        }
-        DAGNode(std::shared_ptr<Sort> sort): sort(sort), kind(NODE_KIND::NT_UNKNOWN), name("") {
-            children_hash = "";
-        }
-        DAGNode(): sort(NULL_SORT), kind(NODE_KIND::NT_UNKNOWN), name(""), children_hash("") {}
-        DAGNode(const DAGNode& other): sort(other.sort), kind(other.kind), name(other.name), children(other.children), children_hash(other.children_hash) {}
+        DAGNode(const DAGNode& other): sort(other.sort), kind(other.kind), name(other.name), value(other.value), children(other.children), children_hash(other.children_hash) {}
 
         // other initialization
-        DAGNode(NODE_KIND kind, std::string name): sort(NULL_SORT), kind(kind), name(name) {
+        DAGNode(NODE_KIND kind, std::string name): sort(NULL_SORT), kind(kind), name(name), value(Number()) {
             children_hash = "";
+
+            if(kind == NODE_KIND::NT_CONST){
+                if(isIntUtil(name)){
+                    value = Number(name);
+                } else if(isRealUtil(name)){
+                    value = Number(name);
+                } 
+            }
         }
-        DAGNode(NODE_KIND kind): sort(NULL_SORT), kind(kind), name("") {
+        DAGNode(NODE_KIND kind): sort(NULL_SORT), kind(kind), name(""), value(Number()) {
             children_hash = "";
+
+            if(kind == NODE_KIND::NT_CONST){
+                value = Number();
+            }
         }
         // only constant
         DAGNode(const std::string& n) {
@@ -118,9 +155,11 @@ namespace SMTLIBParser{
             } else if(isIntUtil(n)){
                 sort = INT_SORT;
                 kind = NODE_KIND::NT_CONST;
+                value = Number(n);
             } else if(isRealUtil(n)){
                 sort = REAL_SORT;
                 kind = NODE_KIND::NT_CONST;
+                value = Number(n);
             } 
             // else if(isBVUtil(n)){
             //     sort = BV_SORT;
@@ -478,6 +517,8 @@ namespace SMTLIBParser{
                                     const { return sort; };
         NODE_KIND getKind()         const { return kind; };
         std::string getName()       const { return name; };
+        Number getValue()           const { return value; };
+        void setValue(Number v)           { value = v; };
         size_t getChildrenSize()    const { return children.size(); };
         std::vector<std::shared_ptr<DAGNode>> getChildren() 
                                     const { return children; };
