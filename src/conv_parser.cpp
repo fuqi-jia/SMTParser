@@ -201,7 +201,7 @@ namespace SMTLIBParser {
             or_children.emplace_back(c);
             clauses.emplace_back(mkOr(or_children));
             visited[expr] = c; // no need to visit again
-            assert(c->isLiteral());
+            assert(c->isLiteral() || c->isTempVar());
             return c;
         }
         // a or b or ... <=> c <-> a or b or ...
@@ -227,7 +227,7 @@ namespace SMTLIBParser {
             or_children.emplace_back(mkNot(c));
             clauses.emplace_back(mkOr(or_children));
             visited[expr] = c; // no need to visit again
-            assert(c->isLiteral());
+            assert(c->isLiteral() || c->isTempVar());
             return c;
         }
         // c <-> a -> b <=> c -> a -> b and a -> b -> c
@@ -260,7 +260,7 @@ namespace SMTLIBParser {
             clauses.emplace_back(mkOr(or_children1));
             clauses.emplace_back(mkOr(or_children2));
             visited[expr] = c; // no need to visit again
-            assert(c->isLiteral());
+            assert(c->isLiteral() || c->isTempVar());
             return c;
         }
         // c <-> a xor b <=> (c -> a xor b) and (a xor b -> c)
@@ -307,7 +307,7 @@ namespace SMTLIBParser {
                     std::shared_ptr<DAGNode> b = toTseitinCNF(expr->getChild(1), visited, clauses);
                     std::shared_ptr<DAGNode> c = toTseitinEq(a, b, clauses);
                     visited[expr] = c;
-                    assert(c->isLiteral());
+                    assert(c->isLiteral() || c->isTempVar());
                     return c;
                 }
                 else{
@@ -342,7 +342,7 @@ namespace SMTLIBParser {
                     clauses.emplace_back(mkOr(or_children));
                     
                     visited[expr] = result;
-                    assert(result->isLiteral());
+                    assert(result->isLiteral() || result->isTempVar());
                     return result;
                 }
             }
@@ -370,7 +370,7 @@ namespace SMTLIBParser {
                     std::shared_ptr<DAGNode> b = toTseitinCNF(expr->getChild(1), visited, clauses);
                     std::shared_ptr<DAGNode> c = toTseitinDistinct(a, b, clauses);
                     visited[expr] = c;
-                    assert(c->isLiteral());
+                    assert(c->isLiteral() || c->isTempVar());
                     return c;
                 }
                 else{
@@ -401,7 +401,7 @@ namespace SMTLIBParser {
             clauses.emplace_back(mkOr({d, a, mkNot(c)}));
             
             visited[expr] = d;
-            assert(d->isLiteral());
+            assert(d->isLiteral() || d->isTempVar());
             return d;
         }
         else{
