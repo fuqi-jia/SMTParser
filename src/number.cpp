@@ -28,6 +28,7 @@
 #include "number.h"
 #include <stdexcept>
 #include <cstring>
+#include <cassert>
 #include <cmath>
 #include <climits> // For LLONG_MAX and LLONG_MIN
 
@@ -114,7 +115,7 @@ HighPrecisionReal::HighPrecisionReal(int i, mpfr_prec_t precision) {
 
 HighPrecisionReal::HighPrecisionReal(const Integer& i, mpfr_prec_t precision) {
     mpfr_init2(value, precision);
-    mpfr_set_z(value, i.get_mpz_t(), MPFR_RNDN);
+    mpfr_set_z(value, i.getMPZ().get_mpz_t(), MPFR_RNDN);
 }
 
 HighPrecisionReal::HighPrecisionReal(const double& d, mpfr_prec_t precision) {
@@ -353,6 +354,24 @@ HighPrecisionReal HighPrecisionReal::tan() const {
     return result;
 }
 
+HighPrecisionReal HighPrecisionReal::cot() const {
+    HighPrecisionReal result(mpfr_get_prec(value));
+    mpfr_cot(result.value, value, MPFR_RNDN);
+    return result;
+}
+
+HighPrecisionReal HighPrecisionReal::sec() const {
+    HighPrecisionReal result(mpfr_get_prec(value));
+    mpfr_sec(result.value, value, MPFR_RNDN);
+    return result;
+}
+
+HighPrecisionReal HighPrecisionReal::csc() const {
+    HighPrecisionReal result(mpfr_get_prec(value));
+    mpfr_csc(result.value, value, MPFR_RNDN);
+    return result;
+}
+
 HighPrecisionReal HighPrecisionReal::asin() const {
     if (*this < HighPrecisionReal(-1) || *this > HighPrecisionReal(1)) {
         throw std::domain_error("Argument for asin must be in range [-1, 1]");
@@ -375,6 +394,35 @@ HighPrecisionReal HighPrecisionReal::atan() const {
     HighPrecisionReal result(mpfr_get_prec(value));
     mpfr_atan(result.value, value, MPFR_RNDN);
     return result;
+}
+
+HighPrecisionReal HighPrecisionReal::acot() const {
+    // acot(x) = π/2 - atan(x)
+    HighPrecisionReal result(mpfr_get_prec(value));
+    HighPrecisionReal pi_half = pi(mpfr_get_prec(value)) / HighPrecisionReal(2);
+    HighPrecisionReal atan_val = atan();
+    mpfr_sub(result.value, pi_half.value, atan_val.value, MPFR_RNDN);
+    return result;
+}
+
+HighPrecisionReal HighPrecisionReal::asec() const {
+    // asec(x) = acos(1/x)
+    if (*this == HighPrecisionReal(0)) {
+        throw std::domain_error("Argument for asec cannot be 0");
+    }
+    HighPrecisionReal reciprocal(mpfr_get_prec(value));
+    mpfr_ui_div(reciprocal.value, 1, value, MPFR_RNDN);
+    return reciprocal.acos();
+}
+
+HighPrecisionReal HighPrecisionReal::acsc() const {
+    // acsc(x) = asin(1/x)
+    if (*this == HighPrecisionReal(0)) {
+        throw std::domain_error("Argument for acsc cannot be 0");
+    }
+    HighPrecisionReal reciprocal(mpfr_get_prec(value));
+    mpfr_ui_div(reciprocal.value, 1, value, MPFR_RNDN);
+    return reciprocal.asin();
 }
 
 HighPrecisionReal HighPrecisionReal::atan2(const HighPrecisionReal& y, const HighPrecisionReal& x) {
@@ -403,6 +451,24 @@ HighPrecisionReal HighPrecisionReal::tanh() const {
     return result;
 }
 
+HighPrecisionReal HighPrecisionReal::coth() const {
+    HighPrecisionReal result(mpfr_get_prec(value));
+    mpfr_coth(result.value, value, MPFR_RNDN);
+    return result;
+}
+
+HighPrecisionReal HighPrecisionReal::sech() const {
+    HighPrecisionReal result(mpfr_get_prec(value));
+    mpfr_sech(result.value, value, MPFR_RNDN);
+    return result;
+}
+
+HighPrecisionReal HighPrecisionReal::csch() const {
+    HighPrecisionReal result(mpfr_get_prec(value));
+    mpfr_csch(result.value, value, MPFR_RNDN);
+    return result;
+}
+
 HighPrecisionReal HighPrecisionReal::asinh() const {
     HighPrecisionReal result(mpfr_get_prec(value));
     mpfr_asinh(result.value, value, MPFR_RNDN);
@@ -427,6 +493,16 @@ HighPrecisionReal HighPrecisionReal::atanh() const {
     return result;
 }
 
+HighPrecisionReal HighPrecisionReal::acoth() const {
+    // acoth(x) = atanh(1/x)
+    if (*this >= HighPrecisionReal(-1) && *this <= HighPrecisionReal(1)) {
+        throw std::domain_error("Argument for acoth must be outside range [-1, 1]");
+    }
+    HighPrecisionReal reciprocal(mpfr_get_prec(value));
+    mpfr_ui_div(reciprocal.value, 1, value, MPFR_RNDN);
+    return reciprocal.atanh();
+}
+
 HighPrecisionReal HighPrecisionReal::asech() const {
     if (*this <= HighPrecisionReal(0) || *this > HighPrecisionReal(1)) {
         throw std::domain_error("Argument for asech must be in range (0, 1]");
@@ -445,16 +521,6 @@ HighPrecisionReal HighPrecisionReal::acsch() const {
     HighPrecisionReal reciprocal(mpfr_get_prec(value));
     mpfr_ui_div(reciprocal.value, 1, value, MPFR_RNDN);
     return reciprocal.asinh();
-}
-
-HighPrecisionReal HighPrecisionReal::acoth() const {
-    if (*this <= HighPrecisionReal(-1) && *this >= HighPrecisionReal(1)) {
-        throw std::domain_error("Argument for acoth must be outside range [-1, 1]");
-    }
-    // acoth(x) = atanh(1/x)
-    HighPrecisionReal reciprocal(mpfr_get_prec(value));
-    mpfr_ui_div(reciprocal.value, 1, value, MPFR_RNDN);
-    return reciprocal.atanh();
 }
 
 // Conversion functions
@@ -554,4 +620,875 @@ mpfr_srcptr HighPrecisionReal::getMPFR() const {
     return value;
 }
 
-} // namespace SMTLIBParser 
+// HighPrecisionInteger implementation
+HighPrecisionInteger::HighPrecisionInteger(const mpz_t z) {
+    mpz_set(value.get_mpz_t(), z);
+}
+
+const mpz_t* HighPrecisionInteger::get_mpz_t() const {
+    return (const mpz_t*)value.get_mpz_t();
+}
+
+// Static methods
+HighPrecisionInteger HighPrecisionInteger::factorial(unsigned long n) {
+    HighPrecisionInteger result(1);
+    for (unsigned long i = 2; i <= n; ++i) {
+        result *= HighPrecisionInteger(i);
+    }
+    return result;
+}
+
+HighPrecisionInteger HighPrecisionInteger::fibonacci(unsigned long n) {
+    if (n <= 1) return HighPrecisionInteger(n);
+    HighPrecisionInteger a(0);
+    HighPrecisionInteger b(1);
+    HighPrecisionInteger c;
+    for (unsigned long i = 2; i <= n; ++i) {
+        c = a + b;
+        a = b;
+        b = c;
+    }
+    return b;
+}
+
+HighPrecisionInteger HighPrecisionInteger::gcd(const HighPrecisionInteger& a, const HighPrecisionInteger& b) {
+    HighPrecisionInteger result;
+    mpz_gcd(result.value.get_mpz_t(), a.value.get_mpz_t(), b.value.get_mpz_t());
+    return result;
+}
+
+HighPrecisionInteger HighPrecisionInteger::lcm(const HighPrecisionInteger& a, const HighPrecisionInteger& b) {
+    HighPrecisionInteger result;
+    mpz_lcm(result.value.get_mpz_t(), a.value.get_mpz_t(), b.value.get_mpz_t());
+    return result;
+}
+
+// Constructors
+HighPrecisionInteger::HighPrecisionInteger() : value(0) {}
+
+HighPrecisionInteger::HighPrecisionInteger(int i) : value(i) {}
+
+HighPrecisionInteger::HighPrecisionInteger(long i) : value(i) {}
+
+HighPrecisionInteger::HighPrecisionInteger(unsigned long i) : value(i) {}
+
+HighPrecisionInteger::HighPrecisionInteger(double d) : value(d) {}
+
+HighPrecisionInteger::HighPrecisionInteger(const std::string& s, int base) {
+    try {
+        value = mpz_class(s, base);
+    } catch (const std::exception& e) {
+        throw std::invalid_argument("Cannot convert string to high precision integer");
+    }
+}
+
+HighPrecisionInteger::HighPrecisionInteger(const char* s, int base) {
+    try {
+        value = mpz_class(s, base);
+    } catch (const std::exception& e) {
+        throw std::invalid_argument("Cannot convert string to high precision integer");
+    }
+}
+
+HighPrecisionInteger::HighPrecisionInteger(const HighPrecisionInteger& other) : value(other.value) {}
+
+// Assignment operator
+HighPrecisionInteger& HighPrecisionInteger::operator=(const HighPrecisionInteger& other) {
+    if (this != &other) {
+        value = other.value;
+    }
+    return *this;
+}
+
+// Basic arithmetic operators
+HighPrecisionInteger HighPrecisionInteger::operator+(const HighPrecisionInteger& other) const {
+    HighPrecisionInteger result;
+    result.value = value + other.value;
+    return result;
+}
+
+HighPrecisionInteger HighPrecisionInteger::operator-(const HighPrecisionInteger& other) const {
+    HighPrecisionInteger result;
+    result.value = value - other.value;
+    return result;
+}
+
+HighPrecisionInteger HighPrecisionInteger::operator-() const {
+    HighPrecisionInteger result;
+    result.value = -value;
+    return result;
+}
+
+HighPrecisionInteger HighPrecisionInteger::operator*(const HighPrecisionInteger& other) const {
+    HighPrecisionInteger result;
+    result.value = value * other.value;
+    return result;
+}
+
+HighPrecisionInteger HighPrecisionInteger::operator/(const HighPrecisionInteger& other) const {
+    if (other.value == 0) {
+        throw std::domain_error("Division by zero");
+    }
+    HighPrecisionInteger result;
+    result.value = value / other.value;
+    return result;
+}
+
+HighPrecisionInteger HighPrecisionInteger::operator%(const HighPrecisionInteger& other) const {
+    if (other.value == 0) {
+        throw std::domain_error("Modulo by zero");
+    }
+    HighPrecisionInteger result;
+    result.value = value % other.value;
+    return result;
+}
+
+HighPrecisionInteger& HighPrecisionInteger::operator+=(const HighPrecisionInteger& other) {
+    value += other.value;
+    return *this;
+}
+
+HighPrecisionInteger& HighPrecisionInteger::operator-=(const HighPrecisionInteger& other) {
+    value -= other.value;
+    return *this;
+}
+
+HighPrecisionInteger& HighPrecisionInteger::operator*=(const HighPrecisionInteger& other) {
+    value *= other.value;
+    return *this;
+}
+
+HighPrecisionInteger& HighPrecisionInteger::operator/=(const HighPrecisionInteger& other) {
+    if (other.value == 0) {
+        throw std::domain_error("Division by zero");
+    }
+    value /= other.value;
+    return *this;
+}
+
+HighPrecisionInteger& HighPrecisionInteger::operator%=(const HighPrecisionInteger& other) {
+    if (other.value == 0) {
+        throw std::domain_error("Modulo by zero");
+    }
+    value %= other.value;
+    return *this;
+}
+
+// Increment/decrement operators
+HighPrecisionInteger& HighPrecisionInteger::operator++() {
+    ++value;
+    return *this;
+}
+
+HighPrecisionInteger HighPrecisionInteger::operator++(int) {
+    HighPrecisionInteger temp(*this);
+    ++value;
+    return temp;
+}
+
+HighPrecisionInteger& HighPrecisionInteger::operator--() {
+    --value;
+    return *this;
+}
+
+HighPrecisionInteger HighPrecisionInteger::operator--(int) {
+    HighPrecisionInteger temp(*this);
+    --value;
+    return temp;
+}
+
+// Comparison operators
+bool HighPrecisionInteger::operator==(const HighPrecisionInteger& other) const {
+    return value == other.value;
+}
+
+bool HighPrecisionInteger::operator!=(const HighPrecisionInteger& other) const {
+    return value != other.value;
+}
+
+bool HighPrecisionInteger::operator<(const HighPrecisionInteger& other) const {
+    return value < other.value;
+}
+
+bool HighPrecisionInteger::operator<=(const HighPrecisionInteger& other) const {
+    return value <= other.value;
+}
+
+bool HighPrecisionInteger::operator>(const HighPrecisionInteger& other) const {
+    return value > other.value;
+}
+
+bool HighPrecisionInteger::operator>=(const HighPrecisionInteger& other) const {
+    return value >= other.value;
+}
+
+// Bitwise operators
+HighPrecisionInteger HighPrecisionInteger::operator&(const HighPrecisionInteger& other) const {
+    HighPrecisionInteger result;
+    mpz_and(result.value.get_mpz_t(), value.get_mpz_t(), other.value.get_mpz_t());
+    return result;
+}
+
+HighPrecisionInteger HighPrecisionInteger::operator|(const HighPrecisionInteger& other) const {
+    HighPrecisionInteger result;
+    mpz_ior(result.value.get_mpz_t(), value.get_mpz_t(), other.value.get_mpz_t());
+    return result;
+}
+
+HighPrecisionInteger HighPrecisionInteger::operator^(const HighPrecisionInteger& other) const {
+    HighPrecisionInteger result;
+    mpz_xor(result.value.get_mpz_t(), value.get_mpz_t(), other.value.get_mpz_t());
+    return result;
+}
+
+HighPrecisionInteger HighPrecisionInteger::operator~() const {
+    HighPrecisionInteger result;
+    mpz_com(result.value.get_mpz_t(), value.get_mpz_t());
+    return result;
+}
+
+HighPrecisionInteger HighPrecisionInteger::operator<<(unsigned long bits) const {
+    HighPrecisionInteger result;
+    mpz_mul_2exp(result.value.get_mpz_t(), value.get_mpz_t(), bits);
+    return result;
+}
+
+HighPrecisionInteger HighPrecisionInteger::operator>>(unsigned long bits) const {
+    HighPrecisionInteger result;
+    mpz_fdiv_q_2exp(result.value.get_mpz_t(), value.get_mpz_t(), bits);
+    return result;
+}
+
+// Other operations
+HighPrecisionInteger HighPrecisionInteger::abs() const {
+    HighPrecisionInteger result;
+    mpz_abs(result.value.get_mpz_t(), value.get_mpz_t());
+    return result;
+}
+
+HighPrecisionInteger HighPrecisionInteger::pow(unsigned long exp) const {
+    HighPrecisionInteger result;
+    mpz_pow_ui(result.value.get_mpz_t(), value.get_mpz_t(), exp);
+    return result;
+}
+
+HighPrecisionInteger HighPrecisionInteger::sqrt() const {
+    if (*this < HighPrecisionInteger(0)) {
+        throw std::domain_error("Cannot compute square root of a negative number");
+    }
+    HighPrecisionInteger result;
+    mpz_sqrt(result.value.get_mpz_t(), value.get_mpz_t());
+    return result;
+}
+
+HighPrecisionInteger HighPrecisionInteger::safeSqrt() const {
+    if (*this < HighPrecisionInteger(0)) {
+        return HighPrecisionInteger(0);
+    }
+    HighPrecisionInteger result;
+    mpz_sqrt(result.value.get_mpz_t(), value.get_mpz_t());
+    return result;
+}
+HighPrecisionInteger HighPrecisionInteger::root(unsigned long n) const {
+    if (n == 0) {
+        throw std::domain_error("Cannot compute zeroth root");
+    }
+    if (*this < HighPrecisionInteger(0) && n % 2 == 0) {
+        throw std::domain_error("Cannot compute even root of a negative number");
+    }
+    HighPrecisionInteger result;
+    mpz_root(result.value.get_mpz_t(), value.get_mpz_t(), n);
+    return result;
+}
+
+bool HighPrecisionInteger::isProbablePrime(int reps) const {
+    return mpz_probab_prime_p(value.get_mpz_t(), reps) > 0;
+}
+
+bool HighPrecisionInteger::isDivisibleBy(const HighPrecisionInteger& d) const {
+    if (d.value == 0) {
+        throw std::domain_error("Cannot check divisibility by zero");
+    }
+    return mpz_divisible_p(value.get_mpz_t(), d.value.get_mpz_t()) != 0;
+}
+
+// Conversion functions
+std::string HighPrecisionInteger::toString(int base) const {
+    if (base < 2 || base > 62) {
+        throw std::invalid_argument("Base must be between 2 and 62");
+    }
+    char* str = mpz_get_str(nullptr, base, value.get_mpz_t());
+    std::string result(str);
+    free(str);
+    return result;
+}
+
+int HighPrecisionInteger::toInt() const {
+    if (value > INT_MAX || value < INT_MIN) {
+        throw std::overflow_error("Value does not fit in int");
+    }
+    return value.get_si();
+}
+
+long HighPrecisionInteger::toLong() const {
+    if (!mpz_fits_slong_p(value.get_mpz_t())) {
+        throw std::overflow_error("Value does not fit in long");
+    }
+    return value.get_si();
+}
+
+unsigned long HighPrecisionInteger::toULong() const {
+    if (value < 0 || !mpz_fits_ulong_p(value.get_mpz_t())) {
+        throw std::overflow_error("Value does not fit in unsigned long");
+    }
+    return value.get_ui();
+}
+
+long long HighPrecisionInteger::toLongLong() const {
+    // GMP doesn't directly support conversion to long long
+    // We'll use string conversion for very large numbers
+    if (mpz_fits_slong_p(value.get_mpz_t())) {
+        return value.get_si();
+    } else {
+        try {
+            return std::stoll(toString(10));
+        } catch (const std::exception& e) {
+            throw std::overflow_error("Value does not fit in long long");
+        }
+    }
+}
+
+double HighPrecisionInteger::toDouble() const {
+    return value.get_d();
+}
+
+// Access internal GMP value
+const mpz_class& HighPrecisionInteger::getMPZ() const {
+    return value;
+}
+
+mpz_class& HighPrecisionInteger::getMPZ() {
+    return value;
+}
+
+// Number
+
+// Constructor
+Number::Number() : type(INT_TYPE), intValue(0) {}
+
+Number::Number(const HighPrecisionInteger& i) 
+    : type(INT_TYPE), intValue(i) {}
+
+Number::Number(const HighPrecisionReal& r) 
+    : type(REAL_TYPE), realValue(r) {}
+
+Number::Number(int i) 
+    : type(INT_TYPE), intValue(i) {}
+
+Number::Number(double d, bool asInteger) {
+    if (asInteger) {
+        type = INT_TYPE;
+        intValue = HighPrecisionInteger(d);
+    } else {
+        type = REAL_TYPE;
+        realValue = HighPrecisionReal(d);
+    }
+}
+
+Number::Number(const std::string& s, bool asInteger) {
+    if (asInteger) {
+        type = INT_TYPE;
+        intValue = HighPrecisionInteger(s);
+    } else {
+        type = REAL_TYPE;
+        realValue = HighPrecisionReal(s);
+    }
+}
+
+Number::Number(const Number& other) : type(other.type) {
+    if (type == INT_TYPE) {
+        intValue = other.intValue;
+    } else {
+        realValue = other.realValue;
+    }
+}
+
+// Assignment operator
+Number& Number::operator=(const Number& other) {
+    if (this != &other) {
+        type = other.type;
+        if (type == INT_TYPE) {
+            intValue = other.intValue;
+        } else {
+            realValue = other.realValue;
+        }
+    }
+    return *this;
+}
+
+// Destructor
+Number::~Number() {
+    // No special handling needed, HighPrecisionInteger and HighPrecisionReal will clean up automatically
+}
+
+// Get value
+const HighPrecisionInteger& Number::getInteger() const {
+    if (type != INT_TYPE) {
+        throw std::runtime_error("Number is not an integer");
+    }
+    return intValue;
+}
+
+const HighPrecisionReal& Number::getReal() const {
+    if (type != REAL_TYPE) {
+        throw std::runtime_error("Number is not a real");
+    }
+    return realValue;
+}
+
+// Type conversion
+HighPrecisionInteger Number::toInteger() const {
+    if (type == INT_TYPE) {
+        return intValue;
+    } else {
+        return realValue.toInteger();
+    }
+}
+
+HighPrecisionReal Number::toReal(mpfr_prec_t precision) const {
+    if (type == REAL_TYPE) {
+        return realValue;
+    } else {
+        return HighPrecisionReal(intValue, precision);
+    }
+}
+
+// Basic operations
+Number Number::operator+(const Number& other) const {
+    // If both are integers, the result is an integer
+    if (type == INT_TYPE && other.type == INT_TYPE) {
+        return Number(intValue + other.intValue);
+    }
+    // Otherwise, the result is a real number
+    return Number(toReal() + other.toReal());
+}
+
+Number Number::operator-(const Number& other) const {
+    if (type == INT_TYPE && other.type == INT_TYPE) {
+        return Number(intValue - other.intValue);
+    }
+    return Number(toReal() - other.toReal());
+}
+
+Number Number::operator-() const {
+    if (type == INT_TYPE) {
+        return Number(-intValue);
+    }
+    return Number(-realValue);
+}
+
+Number Number::operator*(const Number& other) const {
+    if (type == INT_TYPE && other.type == INT_TYPE) {
+        return Number(intValue * other.intValue);
+    }
+    return Number(toReal() * other.toReal());
+}
+
+Number Number::operator/(const Number& other) const {
+    // Even if both operands are integers, the result may be a real number
+    // You can choose to always return a real number, or return an integer when divisible
+    if (type == INT_TYPE && other.type == INT_TYPE) {
+        if (intValue % other.intValue == HighPrecisionInteger(0)) {
+            // Divisible
+            return Number(intValue / other.intValue);
+        }
+    }
+    return Number(toReal() / other.toReal());
+}
+
+Number Number::operator%(const Number& other) const {
+    assert(type == INT_TYPE && other.type == INT_TYPE);
+    return Number(intValue % other.intValue);
+}
+
+Number& Number::operator+=(const Number& other) {
+    if (type == INT_TYPE && other.type == INT_TYPE) {
+        intValue += other.intValue;
+    } else {
+        realValue += other.toReal();
+    }
+    return *this;
+}
+
+Number& Number::operator-=(const Number& other) {
+    if (type == INT_TYPE && other.type == INT_TYPE) {
+        intValue -= other.intValue;
+    } else {
+        realValue -= other.toReal();
+    }
+    return *this;
+}
+
+Number& Number::operator*=(const Number& other) {
+    if (type == INT_TYPE && other.type == INT_TYPE) {
+        intValue *= other.intValue;
+    } else {
+        realValue *= other.toReal();
+    }
+    return *this;
+}
+
+Number& Number::operator/=(const Number& other) {
+    if (type == INT_TYPE && other.type == INT_TYPE) {
+        intValue /= other.intValue;
+    } else {
+        realValue /= other.toReal();
+    }
+    return *this;
+}
+
+Number& Number::operator%=(const Number& other) {
+    assert(type == INT_TYPE && other.type == INT_TYPE);
+    intValue %= other.intValue;
+    return *this;
+}
+
+// Comparison operators
+bool Number::operator==(const Number& other) const {
+    if (type == other.type) {
+        if (type == INT_TYPE) {
+            return intValue == other.intValue;
+        } else {
+            return realValue == other.realValue;
+        }
+    }
+    // When types are different, convert to real for comparison
+    return toReal() == other.toReal();
+}
+
+bool Number::operator!=(const Number& other) const {
+    return !(*this == other);
+}
+
+bool Number::operator<(const Number& other) const {
+    if (type == other.type) {
+        if (type == INT_TYPE) {
+            return intValue < other.intValue;
+        } else {
+            return realValue < other.realValue;
+        }
+    }
+    return toReal() < other.toReal();
+}
+
+bool Number::operator<=(const Number& other) const {
+    if (type == other.type) {
+        if (type == INT_TYPE) {
+            return intValue <= other.intValue;
+        } else {
+            return realValue <= other.realValue;
+        }
+    }
+    return toReal() <= other.toReal();
+}
+
+bool Number::operator>(const Number& other) const {
+    return !(*this <= other);
+}
+
+bool Number::operator>=(const Number& other) const {
+    return !(*this < other);
+}
+
+// Convert to string
+std::string Number::toString() const {
+    if (type == INT_TYPE) {
+        return intValue.toString();
+    } else {
+        return realValue.toString();
+    }
+}
+
+// Mathematical functions
+Number Number::abs() const {
+    if (type == INT_TYPE) {
+        return Number(intValue.abs());
+    } else {
+        return Number(realValue.abs());
+    }
+}
+
+Number Number::sqrt() const {
+    // For perfect square integers, you can return an integer result
+    if (type == INT_TYPE) {
+        HighPrecisionInteger root = intValue.sqrt();
+        return Number(root);
+    }
+    // Otherwise, return a real number
+    return Number(toReal().sqrt());
+}
+
+Number Number::safeSqrt() const {
+    if (type == INT_TYPE) {
+        HighPrecisionInteger root = intValue.safeSqrt();
+        return Number(root);
+    }
+    return Number(toReal().safeSqrt());
+}
+
+Number Number::pow(const Number& exp) const {
+    // If the exponent is an integer and the base is also an integer
+    if (type == INT_TYPE && exp.type == INT_TYPE) {
+        // If the exponent is a non-negative integer, you can use integer power
+        if (exp.intValue >= HighPrecisionInteger(0)) {
+            try {
+                unsigned long expVal = exp.intValue.toULong();
+                return Number(intValue.pow(expVal));
+            } catch (const std::overflow_error&) {
+                // The exponent is too large, use real calculation
+            }
+        }
+    }
+    // Otherwise, use real calculation
+    return Number(toReal().pow(exp.toReal()));
+}
+
+// Rounding operations
+Number Number::ceil() const {
+    if (type == INT_TYPE) {
+        return Number(intValue);
+    } else {
+        return Number(realValue.ceil());
+    }
+}
+
+Number Number::floor() const {
+    if (type == INT_TYPE) {
+        return Number(intValue);
+    } else {
+        return Number(realValue.floor());
+    }
+}
+
+Number Number::round() const {
+    if (type == INT_TYPE) {
+        return Number(intValue);
+    } else {
+        return Number(realValue.round());
+    }
+}
+
+// Exponential and logarithmic functions
+Number Number::exp() const{
+    HighPrecisionReal val = realValue;
+    if (type == INT_TYPE) {
+        val = HighPrecisionReal(intValue);
+    }
+    return Number(val.exp());
+}
+Number Number::ln() const{
+    HighPrecisionReal val = realValue;
+    if (type == INT_TYPE) {
+        val = HighPrecisionReal(intValue);
+    }
+    return Number(val.ln());
+}
+Number Number::lg() const{
+    HighPrecisionReal val = realValue;
+    if (type == INT_TYPE) {
+        val = HighPrecisionReal(intValue);
+    }
+    return Number(val.lg());
+}
+Number Number::lb() const{
+    HighPrecisionReal val = realValue;
+    if (type == INT_TYPE) {
+        val = HighPrecisionReal(intValue);
+    }
+    return Number(val.lb());
+}
+Number Number::log(const Number& base) const{
+    HighPrecisionReal val = realValue;
+    if (type == INT_TYPE) {
+        val = HighPrecisionReal(intValue);
+    }
+    return Number(val.log(base.toReal()));
+}
+
+// Trigonometric functions
+Number Number::sin() const{
+    HighPrecisionReal val = realValue;
+    if (type == INT_TYPE) {
+        val = HighPrecisionReal(intValue);
+    }
+    return Number(val.sin());
+}
+Number Number::cos() const{
+    HighPrecisionReal val = realValue;
+    if (type == INT_TYPE) {
+        val = HighPrecisionReal(intValue);
+    }
+    return Number(val.cos());
+}
+Number Number::tan() const{
+    HighPrecisionReal val = realValue;
+    if (type == INT_TYPE) {
+        val = HighPrecisionReal(intValue);
+    }
+    return Number(val.tan());
+}
+Number Number::cot() const{
+    HighPrecisionReal val = realValue;
+    if (type == INT_TYPE) {
+        val = HighPrecisionReal(intValue);
+    }
+    return Number(val.cot());
+}
+Number Number::sec() const{
+    HighPrecisionReal val = realValue;
+    if (type == INT_TYPE) {
+        val = HighPrecisionReal(intValue);
+    }
+    return Number(val.sec());
+}
+Number Number::csc() const{
+    HighPrecisionReal val = realValue;
+    if (type == INT_TYPE) {
+        val = HighPrecisionReal(intValue);
+    }
+    return Number(val.csc());
+}
+Number Number::asin() const{
+    HighPrecisionReal val = realValue;
+    if (type == INT_TYPE) {
+        val = HighPrecisionReal(intValue);
+    }
+    return Number(val.asin());
+}
+Number Number::acos() const{
+    HighPrecisionReal val = realValue;
+    if (type == INT_TYPE) {
+        val = HighPrecisionReal(intValue);
+    }
+    return Number(val.acos());
+}
+Number Number::atan() const{
+    HighPrecisionReal val = realValue;
+    if (type == INT_TYPE) {
+        val = HighPrecisionReal(intValue);
+    }
+    return Number(val.atan());
+}
+Number Number::acot() const{
+    HighPrecisionReal val = realValue;
+    if (type == INT_TYPE) {
+        val = HighPrecisionReal(intValue);
+    }
+    return Number(val.acot());
+}
+Number Number::asec() const{
+    HighPrecisionReal val = realValue;
+    if (type == INT_TYPE) {
+        val = HighPrecisionReal(intValue);
+    }
+    return Number(val.asec());
+}
+Number Number::acsc() const{
+    HighPrecisionReal val = realValue;
+    if (type == INT_TYPE) {
+        val = HighPrecisionReal(intValue);
+    }
+    return Number(val.acsc());
+}
+Number Number::atan2(const Number& y, const Number& x){
+    return Number(HighPrecisionReal::atan2(y.toReal(), x.toReal()));
+}
+
+// Hyperbolic functions
+Number Number::sinh() const{
+    HighPrecisionReal val = realValue;
+    if (type == INT_TYPE) {
+        val = HighPrecisionReal(intValue);
+    }
+    return Number(val.sinh());
+}
+Number Number::cosh() const{
+    HighPrecisionReal val = realValue;
+    if (type == INT_TYPE) {
+        val = HighPrecisionReal(intValue);
+    }
+    return Number(val.cosh());
+}
+Number Number::tanh() const{
+    HighPrecisionReal val = realValue;
+    if (type == INT_TYPE) {
+        val = HighPrecisionReal(intValue);
+    }
+    return Number(val.tanh());
+}
+Number Number::coth() const{
+    HighPrecisionReal val = realValue;
+    if (type == INT_TYPE) {
+        val = HighPrecisionReal(intValue);
+    }
+    return Number(val.coth());
+}
+Number Number::sech() const{
+    HighPrecisionReal val = realValue;
+    if (type == INT_TYPE) {
+        val = HighPrecisionReal(intValue);
+    }
+    return Number(val.sech());
+}
+Number Number::csch() const{
+    HighPrecisionReal val = realValue;
+    if (type == INT_TYPE) {
+        val = HighPrecisionReal(intValue);
+    }
+    return Number(val.csch());
+}
+Number Number::asinh() const{
+    HighPrecisionReal val = realValue;
+    if (type == INT_TYPE) {
+        val = HighPrecisionReal(intValue);
+    }
+    return Number(val.asinh());
+}
+Number Number::acosh() const{
+    HighPrecisionReal val = realValue;
+    if (type == INT_TYPE) {
+        val = HighPrecisionReal(intValue);
+    }
+    return Number(val.acosh());
+}
+Number Number::atanh() const{
+    HighPrecisionReal val = realValue;
+    if (type == INT_TYPE) {
+        val = HighPrecisionReal(intValue);
+    }
+    return Number(val.atanh());
+}
+Number Number::asech() const{
+    HighPrecisionReal val = realValue;
+    if (type == INT_TYPE) {
+        val = HighPrecisionReal(intValue);
+    }
+    return Number(val.tanh());
+}
+Number Number::acsch() const{
+    HighPrecisionReal val = realValue;
+    if (type == INT_TYPE) {
+        val = HighPrecisionReal(intValue);
+    }
+    return Number(val.acsch());
+}
+Number Number::acoth() const{
+    HighPrecisionReal val = realValue;
+    if (type == INT_TYPE) {
+        val = HighPrecisionReal(intValue);
+    }
+    return Number(val.acoth());
+}
+            
+
+} // namespace SMTLIBParser

@@ -844,7 +844,7 @@ namespace SMTLIBParser{
             }
             if(isZero(params[i])){
                 if(options->isIntTheory()){
-                    return mkConstInt("0");
+                    return mkConstInt(0);
                 }
                 else if(options->isRealTheory()){
                     return mkConstReal(0.0);
@@ -2134,7 +2134,7 @@ namespace SMTLIBParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_extract", line_number);
             return mkUnknown();
         }
-        size_t width = toInt(r).get_ui() - toInt(s).get_ui() + 1;
+        size_t width = toInt(r).toULong() - toInt(s).toULong() + 1;
         std::shared_ptr<Sort> new_sort = mkBVSort(width);
 
         return mkOper(new_sort, NODE_KIND::NT_BV_EXTRACT, l, r, s);
@@ -2148,7 +2148,7 @@ namespace SMTLIBParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_repeat", line_number);
             return mkUnknown();
         }
-        size_t width = l->getSort()->getBitWidth() * toInt(r).get_ui();
+        size_t width = l->getSort()->getBitWidth() * toInt(r).toULong();
         std::shared_ptr<Sort> new_sort = mkBVSort(width);
 
         return mkOper(new_sort, NODE_KIND::NT_BV_REPEAT, l, r);
@@ -2162,7 +2162,7 @@ namespace SMTLIBParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_zero_ext", line_number);
             return mkUnknown();
         }
-        size_t width = toInt(r).get_ui();
+        size_t width = toInt(r).toULong();
         std::shared_ptr<Sort> new_sort = mkBVSort(width);
         return mkOper(new_sort, NODE_KIND::NT_BV_ZERO_EXT, l, r);
     }
@@ -2175,7 +2175,7 @@ namespace SMTLIBParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_sign_ext", line_number);
             return mkUnknown();
         }
-        size_t width = toInt(r).get_ui();
+        size_t width = toInt(r).toULong();
         std::shared_ptr<Sort> new_sort = mkBVSort(width);
 
         return mkOper(new_sort, NODE_KIND::NT_BV_SIGN_EXT, l, r);
@@ -2355,7 +2355,7 @@ namespace SMTLIBParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in nat_to_bv", line_number);
             return mkUnknown();
         }
-        std::shared_ptr<Sort> new_sort = mkBVSort(toInt(size).get_ui());
+        std::shared_ptr<Sort> new_sort = mkBVSort(toInt(size).toULong());
         return mkOper(new_sort, NODE_KIND::NT_NAT_TO_BV, param, size);
     }
     /*
@@ -2378,7 +2378,7 @@ namespace SMTLIBParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in int_to_bv", line_number);
             return mkUnknown();
         }
-        std::shared_ptr<Sort> new_sort = mkBVSort(toInt(size).get_ui());
+        std::shared_ptr<Sort> new_sort = mkBVSort(toInt(size).toULong());
         return mkOper(new_sort, NODE_KIND::NT_INT_TO_BV, param, size);
     }
 
@@ -2698,10 +2698,10 @@ namespace SMTLIBParser{
         }
 
         if(param->isCBV() && size->isCBV()){
-            return mkConstBv(fpToUbv(param->toString(), toInt(size)), toInt(size).get_ui());
+            return mkConstBv(fpToUbv(param->toString(), toInt(size)), toInt(size).toULong());
         }
 
-        std::shared_ptr<Sort> new_sort = mkBVSort(toInt(size).get_ui());
+        std::shared_ptr<Sort> new_sort = mkBVSort(toInt(size).toULong());
 
         return mkOper(new_sort, NODE_KIND::NT_FP_TO_UBV, param, size);
     }
@@ -2713,10 +2713,10 @@ namespace SMTLIBParser{
         }
 
         if(param->isCBV() && size->isCBV()){
-            return mkConstBv(fpToSbv(param->toString(), toInt(size)), toInt(size).get_ui());
+            return mkConstBv(fpToSbv(param->toString(), toInt(size)), toInt(size).toULong());
         }
 
-        std::shared_ptr<Sort> new_sort = mkBVSort(toInt(size).get_ui());
+        std::shared_ptr<Sort> new_sort = mkBVSort(toInt(size).toULong());
 
         return mkOper(new_sort, NODE_KIND::NT_FP_TO_SBV, param, size);
     }
@@ -2737,7 +2737,7 @@ namespace SMTLIBParser{
     std::shared_ptr<DAGNode> Parser::mkToFp(std::shared_ptr<DAGNode> eb, std::shared_ptr<DAGNode> sb, std::shared_ptr<DAGNode> param){
         if(eb->isErr() || sb->isErr() || param->isErr()) return eb->isErr()?eb:(sb->isErr()?sb:param);
 
-        std::shared_ptr<Sort> sort = mkFPSort(toInt(eb).get_ui(), toInt(sb).get_ui());
+        std::shared_ptr<Sort> sort = mkFPSort(toInt(eb).toULong(), toInt(sb).toULong());
 
         return mkOper(sort, NODE_KIND::NT_FP_TO_FP, eb, sb, param);
     }

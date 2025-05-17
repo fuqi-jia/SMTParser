@@ -96,7 +96,7 @@ namespace SMTLIBParser{
             }
         }
         else{
-            soft_weights.emplace_back(mkConstInt("1"));
+            soft_weights.emplace_back(mkConstInt(1));
         }
         // add the group id
         if(grp_id != ""){

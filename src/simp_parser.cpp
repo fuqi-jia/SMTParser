@@ -610,7 +610,7 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_STR_FROM_CODE:{
                 if(p->isCInt()){
                     if(toInt(p) >= 0 && toInt(p) <= 127){
-                        return mkConstStr(std::string(1, static_cast<char>(toInt(p).get_ui())));
+                        return mkConstStr(std::string(1, static_cast<char>(toInt(p).toULong())));
                     }
                     else{
                         err_all(p, "String from code on non-ASCII character", line_number);
@@ -993,7 +993,7 @@ namespace SMTLIBParser{
             }
             case NODE_KIND::NT_NAT_TO_BV:{
                 if(l->isCInt() && r->isCInt()){
-                    return mkConstBv(natToBv(toInt(l), toInt(r)), toInt(r).get_ui());
+                    return mkConstBv(natToBv(toInt(l), toInt(r)), toInt(r).toULong());
                 }
                 else{
                     err_all(l, "Natural to bitvector on non-integer", line_number);
@@ -1003,7 +1003,7 @@ namespace SMTLIBParser{
             }
             case NODE_KIND::NT_INT_TO_BV:{
                 if(l->isCInt() && r->isCInt()){
-                    return mkConstBv(intToBv(toInt(l), toInt(r)), toInt(r).get_ui());
+                    return mkConstBv(intToBv(toInt(l), toInt(r)), toInt(r).toULong());
                 }
                 else{
                     err_all(l, "Integer to bitvector on non-integer", line_number);
@@ -1386,7 +1386,7 @@ namespace SMTLIBParser{
             }
             case NODE_KIND::NT_STR_SUBSTR:{
                 if(l->isCStr() && m->isCInt() && r->isCInt()){
-                    return mkConstStr(l->toString().substr(toInt(m).get_ui(), toInt(r).get_ui()));
+                    return mkConstStr(l->toString().substr(toInt(m).toULong(), toInt(r).toULong()));
                 }
                 else{
                     err_all(l, "Substr on non-string", line_number);
@@ -1449,7 +1449,7 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_BV_EXTRACT:{
                 if(l->isCBV() && m->isCInt() && r->isCInt()){
                     Integer size = (toInt(m) - toInt(r));
-                    return mkConstBv(bvExtract(l->toString(), toInt(m), toInt(r)), size.get_ui());
+                    return mkConstBv(bvExtract(l->toString(), toInt(m), toInt(r)), size.toULong());
                 }
                 else{
                     err_all(l, "Extract on non-bitvector", line_number);
