@@ -32,6 +32,7 @@ namespace SMTLIBParser{
 
     void DAGNode::updateFuncDef(std::shared_ptr<Sort> out_sort, std::shared_ptr<DAGNode> body, const std::vector<std::shared_ptr<DAGNode>> &params){
         assert(out_sort == sort);
+        (void)out_sort;
         children.clear();
         children.push_back(body);
         for(auto& p : params){
@@ -43,6 +44,7 @@ namespace SMTLIBParser{
     
     void DAGNode::updateApplyFunc(std::shared_ptr<Sort> out_sort, std::shared_ptr<DAGNode> body, const std::vector<std::shared_ptr<DAGNode>> &params){
         assert(out_sort == sort);
+        (void)out_sort;
         children.clear();
         children.push_back(body);
         for(auto& p : params){
