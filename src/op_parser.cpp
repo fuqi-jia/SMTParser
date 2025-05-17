@@ -639,12 +639,6 @@ namespace SMTLIBParser{
     /*
     (and Bool Bool+ :left-assoc), return Bool
     */
-    std::shared_ptr<DAGNode> Parser::mkAnd(std::shared_ptr<DAGNode> param){
-        return mkAnd({param});
-    }
-    std::shared_ptr<DAGNode> Parser::mkAnd(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        return mkAnd({l, r});
-    }
     std::shared_ptr<DAGNode> Parser::mkAnd(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> m, std::shared_ptr<DAGNode> r){
         return mkAnd({l, m, r});
     }
@@ -694,9 +688,6 @@ namespace SMTLIBParser{
     /*
     (or Bool Bool+ :left-assoc), return Bool
     */
-    std::shared_ptr<DAGNode> Parser::mkOr(std::shared_ptr<DAGNode> param){
-        return mkOr({param});
-    }
     std::shared_ptr<DAGNode> Parser::mkOr(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         return mkOr({l, r});
     }
@@ -790,9 +781,6 @@ namespace SMTLIBParser{
     /*
     (xor Bool Bool+ :left-assoc), return Bool
     */
-    std::shared_ptr<DAGNode> Parser::mkXor(std::shared_ptr<DAGNode> param){
-        return mkXor({param});
-    }
     std::shared_ptr<DAGNode> Parser::mkXor(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         return mkXor({l, r});
     }
