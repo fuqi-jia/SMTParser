@@ -476,6 +476,7 @@ namespace SMTLIBParser{
         // void 	            parseModel(std::string filename, boost::unordered_map<std::string, vType>& recs);
 
         std::shared_ptr<Sort>    mkSort(); // mk unique sort, TODO!!!! for example, bv, fp, and array
+        int                      getOpParamSize(NODE_KIND k) const;
 
         // aux functions
         NODE_KIND getAddOp(std::shared_ptr<Sort> sort); // mk unique add 
