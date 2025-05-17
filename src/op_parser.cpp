@@ -1130,6 +1130,12 @@ namespace SMTLIBParser{
     /*
     (/ Real Real), return Real
     */
+    std::shared_ptr<DAGNode> Parser::mkDiv(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
+        return mkDivReal({l, r});
+    }
+    std::shared_ptr<DAGNode> Parser::mkDiv(const std::vector<std::shared_ptr<DAGNode>> &params){
+        return mkDivReal(params);
+    }
     std::shared_ptr<DAGNode> Parser::mkDivReal(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         
         if(!isRealParam(l) || !isRealParam(r)) {
