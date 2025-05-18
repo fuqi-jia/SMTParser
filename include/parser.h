@@ -1220,44 +1220,415 @@ namespace SMTLIBParser{
         std::shared_ptr<DAGNode> mkDivReal(const std::vector<std::shared_ptr<DAGNode>> &params); // l / r / ...
         
         /** 
+         * @brief Create an mod node
          * 
+         * Creates an mod node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Mod node (l % r)
+         */
         std::shared_ptr<DAGNode> mkMod(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l % r
+        
+        /**
+         * @brief Create an abs node
+         * 
+         * Creates an abs node with the given parameter.
+         * 
+         * @param param Parameter
+         * @return Abs node (|param|)
+         */
         std::shared_ptr<DAGNode> mkAbs(std::shared_ptr<DAGNode> param); // |param|
+        
+        /**
+         * @brief Create an sqrt node
+         * 
+         * Creates an sqrt node with the given parameter.
+         *
+         * @note assert(param >= 0) 
+         *
+         * @param param Parameter
+         * @return Sqrt node (sqrt(param))
+         */
         std::shared_ptr<DAGNode> mkSqrt(std::shared_ptr<DAGNode> param); // sqrt(param)
+        
+        /**
+         * @brief Create an safesqrt node
+         * 
+         * Creates an safesqrt node with the given parameter.
+         * 
+         * @param param Parameter
+         * @return Safesqrt node (safesqrt(param))
+         */
         std::shared_ptr<DAGNode> mkSafeSqrt(std::shared_ptr<DAGNode> param); // safesqrt(param)
+        
+        /**
+         * @brief Create an ceil node
+         * 
+         * Creates an ceil node with the given parameter.
+         * 
+         * @param param Parameter
+         * @return Ceil node (ceil(param))
+         */
         std::shared_ptr<DAGNode> mkCeil(std::shared_ptr<DAGNode> param); // ceil(param)
+        
+        /**
+         * @brief Create an floor node
+         * 
+         * Creates an floor node with the given parameter.
+         * 
+         * @param param Parameter
+         * @return Floor node (floor(param))
+         */
         std::shared_ptr<DAGNode> mkFloor(std::shared_ptr<DAGNode> param); // floor(param)
+        
+        /**
+         * @brief Create an round node
+         * 
+         * Creates an round node with the given parameter.
+         * 
+         * @param param Parameter
+         * @return Round node (round(param))
+         */
         std::shared_ptr<DAGNode> mkRound(std::shared_ptr<DAGNode> param); // round(param)
+        
         // TRANSCENDENTAL ARITHMATIC
+        /**
+         * @brief Create an exp node
+         * 
+         * Creates an exp node with the given parameter.
+         * 
+         * @param param Parameter
+         * @return Exp node (exp(param))
+         */
         std::shared_ptr<DAGNode> mkExp(std::shared_ptr<DAGNode> param); // exp(param)
+        
+        /**
+         * @brief Create an ln node
+         * 
+         * Creates an ln node with the given parameter.
+         * 
+         * @note assert(param > 0)
+         * 
+         * @param param Parameter
+         * @return Ln node (ln(param))
+         */
         std::shared_ptr<DAGNode> mkLn(std::shared_ptr<DAGNode> param); // ln(param)
+        
+        /**
+         * @brief Create an lg node
+         * 
+         * Creates an lg node with the given parameter.
+         * 
+         * @note assert(param > 0)
+         *
+         * @param param Parameter
+         * @return Lg node (lg(param))
+         */
         std::shared_ptr<DAGNode> mkLg(std::shared_ptr<DAGNode> param); // lg(param)
+        
+        /**
+         * @brief Create an lb node
+         * 
+         * Creates an lb node with the given parameter.
+         * 
+         * @note assert(param > 0)
+         *
+         * @param param Parameter
+         * @return Lb node (lb(param))
+         */
         std::shared_ptr<DAGNode> mkLb(std::shared_ptr<DAGNode> param); // lb(param)
+        
+        /**
+         * @brief Create an log node
+         * 
+         * Creates an log node with the given parameters.
+         * 
+         * @note r is the base, l is the argument
+         * @note assert(r > 0 && r != 1 && l > 0)
+         *
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Log node (log_r(l))
+         */
         std::shared_ptr<DAGNode> mkLog(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // log_l(r)
+        
+        /**
+         * @brief Create an sin node
+         * 
+         * Creates an sin node with the given parameter.
+         * 
+         * @param param Parameter
+         * @return Sin node (sin(param))
+         */
         std::shared_ptr<DAGNode> mkSin(std::shared_ptr<DAGNode> param); // sin(param)
+        
+        /**
+         * @brief Create an cos node
+         * 
+         * Creates an cos node with the given parameter.
+         * 
+         * @param param Parameter
+         * @return Cos node (cos(param))
+         */
         std::shared_ptr<DAGNode> mkCos(std::shared_ptr<DAGNode> param); // cos(param)
+        
+        /**
+         * @brief Create an sec node
+         * 
+         * Creates an sec node with the given parameter.
+         * 
+         * @param param Parameter
+         * @return Sec node (sec(param))
+         */
         std::shared_ptr<DAGNode> mkSec(std::shared_ptr<DAGNode> param); // sec(param)
+        
+        /**
+         * @brief Create an csc node
+         * 
+         * Creates an csc node with the given parameter.
+         * 
+         * @param param Parameter
+         * @return Csc node (csc(param))
+         */
         std::shared_ptr<DAGNode> mkCsc(std::shared_ptr<DAGNode> param); // csc(param)
+        
+        /**
+         * @brief Create an tan node
+         * 
+         * Creates an tan node with the given parameter.
+         * 
+         * @param param Parameter
+         * @return Tan node (tan(param))
+         */
         std::shared_ptr<DAGNode> mkTan(std::shared_ptr<DAGNode> param); // tan(param)
+        
+        /**
+         * @brief Create a cot node
+         * 
+         * Creates a cot node with the given parameter.
+         * 
+         * @note assert(sin(param) != 0)
+         * 
+         * @param param Parameter
+         * @return Cot node (cot(param))
+         */
         std::shared_ptr<DAGNode> mkCot(std::shared_ptr<DAGNode> param); // cot(param)
+        
+        /**
+         * @brief Create an asin node
+         * 
+         * Creates an asin node with the given parameter.
+         * 
+         * @note assert(param >= -1 && param <= 1)
+         * 
+         * @param param Parameter
+         * @return Asin node (asin(param))
+         */
         std::shared_ptr<DAGNode> mkAsin(std::shared_ptr<DAGNode> param); // asin(param)
+        
+        /**
+         * @brief Create an acos node
+         * 
+         * Creates an acos node with the given parameter.
+         * 
+         * @note assert(param >= -1 && param <= 1)
+         * 
+         * @param param Parameter
+         * @return Acos node (acos(param))
+         */
         std::shared_ptr<DAGNode> mkAcos(std::shared_ptr<DAGNode> param); // acos(param)
+        
+        /**
+         * @brief Create an asec node
+         * 
+         * Creates an asec node with the given parameter.
+         * 
+         * @note assert(param <= -1 || param >= 1)
+         * 
+         * @param param Parameter
+         * @return Asec node (asec(param))
+         */
         std::shared_ptr<DAGNode> mkAsec(std::shared_ptr<DAGNode> param); // asec(param)
+        
+        /**
+         * @brief Create an acsc node
+         * 
+         * Creates an acsc node with the given parameter.
+         * 
+         * @note assert(param <= -1 || param >= 1)
+         * 
+         * @param param Parameter
+         * @return Acsc node (acsc(param))
+         */
         std::shared_ptr<DAGNode> mkAcsc(std::shared_ptr<DAGNode> param); // acsc(param)
+        
+        /**
+         * @brief Create an atan node
+         * 
+         * Creates an atan node with the given parameter.
+         * 
+         * @param param Parameter
+         * @return Atan node (atan(param))
+         */
         std::shared_ptr<DAGNode> mkAtan(std::shared_ptr<DAGNode> param); // atan(param)
+        
+        /**
+         * @brief Create an acot node
+         * 
+         * Creates an acot node with the given parameter.
+         * 
+         * @param param Parameter
+         * @return Acot node (acot(param))
+         */
         std::shared_ptr<DAGNode> mkAcot(std::shared_ptr<DAGNode> param); // acot(param)
+        
+        /**
+         * @brief Create a sinh node
+         * 
+         * Creates a sinh node with the given parameter.
+         * 
+         * @param param Parameter
+         * @return Sinh node (sinh(param))
+         */
         std::shared_ptr<DAGNode> mkSinh(std::shared_ptr<DAGNode> param); // sinh(param)
+        
+        /**
+         * @brief Create a cosh node
+         * 
+         * Creates a cosh node with the given parameter.
+         * 
+         * @param param Parameter
+         * @return Cosh node (cosh(param))
+         */
         std::shared_ptr<DAGNode> mkCosh(std::shared_ptr<DAGNode> param); // cosh(param)
+        
+        /**
+         * @brief Create a tanh node
+         * 
+         * Creates a tanh node with the given parameter.
+         * 
+         * @param param Parameter
+         * @return Tanh node (tanh(param))
+         */
         std::shared_ptr<DAGNode> mkTanh(std::shared_ptr<DAGNode> param); // tanh(param)
+        
+        /**
+         * @brief Create a sech node
+         * 
+         * Creates a sech node with the given parameter.
+         * 
+         * @param param Parameter
+         * @return Sech node (sech(param))
+         */
         std::shared_ptr<DAGNode> mkSech(std::shared_ptr<DAGNode> param); // sech(param)
+        
+        /**
+         * @brief Create a csch node
+         * 
+         * Creates a csch node with the given parameter.
+         * 
+         * @note assert(param != 0)
+         * 
+         * @param param Parameter
+         * @return Csch node (csch(param))
+         */
         std::shared_ptr<DAGNode> mkCsch(std::shared_ptr<DAGNode> param); // csch(param)
+        
+        /**
+         * @brief Create a coth node
+         * 
+         * Creates a coth node with the given parameter.
+         * 
+         * @note assert(param != 0)
+         * 
+         * @param param Parameter
+         * @return Coth node (coth(param))
+         */
         std::shared_ptr<DAGNode> mkCoth(std::shared_ptr<DAGNode> param); // coth(param)
+        
+        /**
+         * @brief Create an asinh node
+         * 
+         * Creates an asinh node with the given parameter.
+         * 
+         * @param param Parameter
+         * @return Asinh node (asinh(param))
+         */
         std::shared_ptr<DAGNode> mkAsinh(std::shared_ptr<DAGNode> param); // asinh(param)
+        
+        /**
+         * @brief Create an acosh node
+         * 
+         * Creates an acosh node with the given parameter.
+         * 
+         * @note assert(param >= 1)
+         * 
+         * @param param Parameter
+         * @return Acosh node (acosh(param))
+         */
         std::shared_ptr<DAGNode> mkAcosh(std::shared_ptr<DAGNode> param); // acosh(param)
+        
+        /**
+         * @brief Create an atanh node
+         * 
+         * Creates an atanh node with the given parameter.
+         * 
+         * @note assert(param > -1 && param < 1)
+         * 
+         * @param param Parameter
+         * @return Atanh node (atanh(param))
+         */
         std::shared_ptr<DAGNode> mkAtanh(std::shared_ptr<DAGNode> param); // atanh(param)
+        
+        /**
+         * @brief Create an asech node
+         * 
+         * Creates an asech node with the given parameter.
+         * 
+         * @note assert(param > 0 && param <= 1)
+         * 
+         * @param param Parameter
+         * @return Asech node (asech(param))
+         */
         std::shared_ptr<DAGNode> mkAsech(std::shared_ptr<DAGNode> param); // asech(param)
+        
+        /**
+         * @brief Create an acsch node
+         * 
+         * Creates an acsch node with the given parameter.
+         * 
+         * @note assert(param != 0)
+         * 
+         * @param param Parameter
+         * @return Acsch node (acsch(param))
+         */
         std::shared_ptr<DAGNode> mkAcsch(std::shared_ptr<DAGNode> param); // acsch(param)
+        
+        /**
+         * @brief Create an acoth node
+         * 
+         * Creates an acoth node with the given parameter.
+         * 
+         * @note assert(param < -1 || param > 1)
+         * 
+         * @param param Parameter
+         * @return Acoth node (acoth(param))
+         */
         std::shared_ptr<DAGNode> mkAcoth(std::shared_ptr<DAGNode> param); // acoth(param)
+        
+        /**
+         * @brief Create an atan2 node
+         * 
+         * Creates an atan2 node with the given parameters.
+         * 
+         * @note Represents the angle in radians between the positive x-axis and the ray to point (r, l)
+         * @note atan2(l, r) = atan(l/r) with appropriate quadrant adjustment
+         * 
+         * @param l Left parameter (y-coordinate)
+         * @param r Right parameter (x-coordinate)
+         * @return Atan2 node (atan2(l, r))
+         */
         std::shared_ptr<DAGNode> mkAtan2(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r);
         // ARITHMATIC COMP
         std::shared_ptr<DAGNode> mkLe(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l <= r

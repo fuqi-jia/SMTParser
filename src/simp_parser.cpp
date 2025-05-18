@@ -899,8 +899,8 @@ namespace SMTLIBParser{
             }
             case NODE_KIND::NT_LOG:{
                 if(getEvaluateUseFloating()){
-                    // log_l(r)
-                    return mkConstReal(toReal(r).log(toReal(l)));
+                    // log_r(l)
+                    return mkConstReal(toReal(l).log(toReal(r)));
                 }
                 else{
                     // simple evaluation
