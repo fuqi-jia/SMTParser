@@ -314,14 +314,14 @@ namespace SMTLIBParser{
         bool isAcsch() 				const { return (kind == NODE_KIND::NT_ACSCH); };
         bool isAcoth() 				const { return (kind == NODE_KIND::NT_ACOTH); };
         bool isAtan2() 				const { return (kind == NODE_KIND::NT_ATAN2); };
-        bool isTranscendentalOp() 	const { return (isExp() || isLog() || isSin() || isCos() || isSec() || isCsc() || isTan() || isCot() || isAsin() || isAcos() || isAsec() || isAcsc() || isAtan() || isAcot() || isSinh() || isCosh() || isTanh() || isSech() || isCsch() || isCoth() || isAsinh() || isAcosh() || isAtanh() || isAsech() || isAcsch() || isAcoth() || isAtan2()); };
+        bool isTranscendentalOp() 	const { return (isExp() || isLog() || isLn() || isLb() || isLg() || isSin() || isCos() || isSec() || isCsc() || isTan() || isCot() || isAsin() || isAcos() || isAsec() || isAcsc() || isAtan() || isAcot() || isSinh() || isCosh() || isTanh() || isSech() || isCsch() || isCoth() || isAsinh() || isAcosh() || isAtanh() || isAsech() || isAcsch() || isAcoth() || isAtan2()); };
 
         // check arithmetic comparison
         bool isLe() 				const { return (kind == NODE_KIND::NT_LE); };
         bool isLt() 				const { return (kind == NODE_KIND::NT_LT); };
         bool isGe() 				const { return (kind == NODE_KIND::NT_GE); };
         bool isGt() 				const { return (kind == NODE_KIND::NT_GT); };
-        bool isArithTerm() 			const { return (isArithOp() || isArithConv() || isTranscendentalOp() || 
+        bool isArithTerm() 			const { return (isArithOp() || isArithConv() || isRealNonlinearOp() || isTranscendentalOp() || 
                                                     (isVar() && (isVInt() || isVReal())) ||
                                                     (isConst() && (isCInt() || isCReal()))); };
         bool isArithComp() 			const { return ((isEq() && getChild(0)->isArithTerm() && getChild(1)->isArithTerm())|| 
