@@ -554,14 +554,13 @@ std::string HighPrecisionReal::toString() const {
     }
     
     mpfr_free_str(str);
-    // remove trailing zeros and leave the first zero
+
+    // 1.20000000000000000000000000000000000000 -> 1.2
     size_t pos = result.find_last_not_of('0');
-    if(pos < result.size() - 2){
-        result.erase(pos + 2);
-    }
-    else if(pos < result.size() - 1){
-        // pos = result.size() - 2
-        result.erase(pos + 1);
+    if(pos != std::string::npos){
+        if(result[pos] == '.'){
+            result = result.substr(0, pos);
+        }
     }
     return result;
 }
