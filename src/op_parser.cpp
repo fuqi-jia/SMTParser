@@ -629,10 +629,15 @@ namespace SMTLIBParser{
         return mkAnd({l, m, r});
     }
     std::shared_ptr<DAGNode> Parser::mkAnd(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) {
-            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for AND", line_number);
-            return mkUnknown();
+        if(params.size() == 0){
+            std::cerr << "AND on empty parameters, return true" << std::endl;
+            return mkTrue();
         }
+        else if(params.size() == 1){
+            return params[0];
+        }
+        
+
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
         for(size_t i=0;i<params.size();i++){
@@ -680,9 +685,12 @@ namespace SMTLIBParser{
         return mkOr({l, m, r});
     }
     std::shared_ptr<DAGNode> Parser::mkOr(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) {
-            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for OR", line_number);
-            return mkUnknown();
+        if(params.size() == 0){
+            std::cerr << "OR on empty parameters, return false" << std::endl;
+            return mkFalse();
+        }
+        else if(params.size() == 1){
+            return params[0];
         }
             
         std::vector<std::shared_ptr<DAGNode>> new_params;
@@ -773,9 +781,12 @@ namespace SMTLIBParser{
         return mkXor({l, m, r});
     }
     std::shared_ptr<DAGNode> Parser::mkXor(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) {
-            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for xor", line_number);
-            return mkUnknown();
+        if(params.size() == 0){
+            std::cerr << "XOR on empty parameters, return false" << std::endl;
+            return mkFalse();
+        }
+        else if(params.size() == 1){
+            return params[0];
         }
 
         std::vector<std::shared_ptr<DAGNode>> new_params;
@@ -830,11 +841,11 @@ namespace SMTLIBParser{
         return mkAdd({l, m, r});
     }
     std::shared_ptr<DAGNode> Parser::mkAdd(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) {
+        if(params.size() == 0){
             err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for add", line_number);
             return mkUnknown();
         }
-        if(params.size() == 1){
+        else if(params.size() == 1){
             return params[0];
         }
         assert(params.size() >= 2);
@@ -1728,9 +1739,12 @@ namespace SMTLIBParser{
         return mkOper(l->getSort(), NODE_KIND::NT_BV_AND, l, r);
     }
     std::shared_ptr<DAGNode> Parser::mkBvAnd(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) {
-            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for bv_and", line_number);
-            return mkUnknown();
+        if(params.size() == 0){
+            std::cerr << "BVAND on empty parameters, return true" << std::endl;
+            return mkTrue();
+        }
+        else if(params.size() == 1){
+            return params[0];
         }
         std::shared_ptr<Sort> sort = getSort(params);
 
@@ -1770,9 +1784,12 @@ namespace SMTLIBParser{
     (bvor Bv Bv+), return Bv
     */
     std::shared_ptr<DAGNode> Parser::mkBvOr(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) {
-            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for bv_or", line_number);
-            return mkUnknown();
+        if(params.size() == 0){
+            std::cerr << "BVOR on empty parameters, return false" << std::endl;
+            return mkFalse();
+        }
+        else if(params.size() == 1){
+            return params[0];
         }
         std::shared_ptr<Sort> sort = getSort(params);
 
@@ -1807,9 +1824,12 @@ namespace SMTLIBParser{
         return mkOper(l->getSort(), NODE_KIND::NT_BV_XOR, l, r);
     }
     std::shared_ptr<DAGNode> Parser::mkBvXor(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) {
-            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for bv_xor", line_number);
-            return mkUnknown();
+        if(params.size() == 0){
+            std::cerr << "BVXOR on empty parameters, return false" << std::endl;
+            return mkFalse();
+        }
+        else if(params.size() == 1){
+            return params[0];
         }
         std::shared_ptr<Sort> sort = getSort(params);
 
@@ -1846,9 +1866,12 @@ namespace SMTLIBParser{
         return mkOper(l->getSort(), NODE_KIND::NT_BV_NAND, l, r);
     }
     std::shared_ptr<DAGNode> Parser::mkBvNand(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) {
-            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for bv_nand", line_number);
-            return mkUnknown();
+        if(params.size() == 0){
+            std::cerr << "BVNAND on empty parameters, return false" << std::endl;
+            return mkFalse();
+        }
+        else if(params.size() == 1){
+            return params[0];
         }
         std::shared_ptr<Sort> sort = getSort(params);
 
@@ -1885,9 +1908,12 @@ namespace SMTLIBParser{
         return mkOper(l->getSort(), NODE_KIND::NT_BV_NOR, l, r);
     }
     std::shared_ptr<DAGNode> Parser::mkBvNor(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) {
-            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for bv_nor", line_number);
-            return mkUnknown();
+        if(params.size() == 0){
+            std::cerr << "BVNOR on empty parameters, return true" << std::endl;
+            return mkTrue();
+        }
+        else if(params.size() == 1){
+            return params[0];
         }
         std::shared_ptr<Sort> sort = getSort(params);
 
@@ -1924,9 +1950,12 @@ namespace SMTLIBParser{
         return mkOper(l->getSort(), NODE_KIND::NT_BV_XNOR, l, r);
     }
     std::shared_ptr<DAGNode> Parser::mkBvXnor(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) {
-            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for bv_xnor", line_number);
-            return mkUnknown();
+        if(params.size() == 0){
+            std::cerr << "BVXNOR on empty parameters, return false" << std::endl;
+            return mkFalse();
+        }
+        else if(params.size() == 1){
+            return params[0];
         }
         std::shared_ptr<Sort> sort = getSort(params);
 
@@ -1983,9 +2012,12 @@ namespace SMTLIBParser{
         return mkOper(l->getSort(), NODE_KIND::NT_BV_ADD, l, r);
     }
     std::shared_ptr<DAGNode> Parser::mkBvAdd(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) {
+        if(params.size() == 0){
             err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for bv_add", line_number);
             return mkUnknown();
+        }
+        else if(params.size() == 1){
+            return params[0];
         }
         std::shared_ptr<Sort> sort = getSort(params);
         std::vector<std::shared_ptr<DAGNode>> new_params;
@@ -2021,9 +2053,12 @@ namespace SMTLIBParser{
         return mkOper(l->getSort(), NODE_KIND::NT_BV_SUB, l, r);
     }
     std::shared_ptr<DAGNode> Parser::mkBvSub(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) {
+        if(params.size() == 0){
             err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for bv_sub", line_number);
             return mkUnknown();
+        }
+        else if(params.size() == 1){
+            return params[0];
         }
         std::shared_ptr<Sort> sort = getSort(params);
         std::vector<std::shared_ptr<DAGNode>> new_params;
@@ -2059,9 +2094,12 @@ namespace SMTLIBParser{
         return mkOper(l->getSort(), NODE_KIND::NT_BV_MUL, l, r);
     }
     std::shared_ptr<DAGNode> Parser::mkBvMul(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) {
+        if(params.size() == 0){
             err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for bv_mul", line_number);
             return mkUnknown();
+        }
+        else if(params.size() == 1){
+            return params[0];
         }
         std::shared_ptr<Sort> sort = getSort(params);
         std::vector<std::shared_ptr<DAGNode>> new_params;
@@ -2188,9 +2226,12 @@ namespace SMTLIBParser{
     (bvconcat Bv Bv+), return Bv
     */
     std::shared_ptr<DAGNode> Parser::mkBvConcat(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) {
+        if(params.size() == 0){
             err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for bv_concat", line_number);
             return mkUnknown();
+        }
+        else if(params.size() == 1){
+            return params[0];
         }
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
@@ -2471,9 +2512,12 @@ namespace SMTLIBParser{
     (fp.add Fp Fp+), return Fp
     */
     std::shared_ptr<DAGNode> Parser::mkFpAdd(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) {
+        if(params.size() == 0){
             err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for fp_add", line_number);
             return mkUnknown();
+        }
+        else if(params.size() == 1){
+            return params[0];
         }
         std::shared_ptr<Sort> sort = getSort(params);
         std::vector<std::shared_ptr<DAGNode>> new_params;
@@ -2497,9 +2541,12 @@ namespace SMTLIBParser{
     (fp.sub Fp Fp+), return Fp
     */
     std::shared_ptr<DAGNode> Parser::mkFpSub(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) {
+        if(params.size() == 0){
             err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for fp_sub", line_number);
             return mkUnknown();
+        }
+        else if(params.size() == 1){
+            return params[0];
         }
         std::shared_ptr<Sort> sort = getSort(params);
         std::vector<std::shared_ptr<DAGNode>> new_params;
@@ -2523,9 +2570,12 @@ namespace SMTLIBParser{
     (fp.mul Fp Fp+), return Fp
     */
     std::shared_ptr<DAGNode> Parser::mkFpMul(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) {
+        if(params.size() == 0){
             err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for fp_mul", line_number);
             return mkUnknown();
+        }
+        else if(params.size() == 1){
+            return params[0];
         }
         std::shared_ptr<Sort> sort = getSort(params);
         std::vector<std::shared_ptr<DAGNode>> new_params;
@@ -2549,9 +2599,12 @@ namespace SMTLIBParser{
     (fp.div Fp Fp), return Fp
     */
     std::shared_ptr<DAGNode> Parser::mkFpDiv(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) {
+        if(params.size() == 0){
             err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for fp_div", line_number);
             return mkUnknown();
+        }
+        else if(params.size() == 1){
+            return params[0];
         }
         std::shared_ptr<Sort> sort = getSort(params);
         std::vector<std::shared_ptr<DAGNode>> new_params;
@@ -2661,9 +2714,12 @@ namespace SMTLIBParser{
     (fp.min Fp+), return Fp
     */
     std::shared_ptr<DAGNode> Parser::mkFpMin(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) {
+        if(params.size() == 0){
             err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for fp_min", line_number);
             return mkUnknown();
+        }
+        else if(params.size() == 1){
+            return params[0];
         }
         std::shared_ptr<Sort> sort = getSort(params);
         std::vector<std::shared_ptr<DAGNode>> new_params;
@@ -2687,9 +2743,12 @@ namespace SMTLIBParser{
     (fp.max Fp+), return Fp
     */
     std::shared_ptr<DAGNode> Parser::mkFpMax(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) {
+        if(params.size() == 0){
             err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for fp_max", line_number);
             return mkUnknown();
+        }
+        else if(params.size() == 1){
+            return params[0];
         }
         std::shared_ptr<Sort> sort = getSort(params);
         std::vector<std::shared_ptr<DAGNode>> new_params;
@@ -2950,9 +3009,12 @@ namespace SMTLIBParser{
     (str.++ Str Str+), return Str
     */
     std::shared_ptr<DAGNode> Parser::mkStrConcat(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) {
+        if(params.size() == 0){
             err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for str_concat", line_number);
             return mkUnknown();
+        }
+        else if(params.size() == 1){
+            return params[0];
         }
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
@@ -3280,9 +3342,12 @@ namespace SMTLIBParser{
     (re.++ Reg Reg+), return Reg
     */
     std::shared_ptr<DAGNode> Parser::mkRegConcat(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) {
+        if(params.size() == 0){
             err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for reg_concat", line_number);
             return mkUnknown();
+        }
+        else if(params.size() == 1){
+            return params[0];
         }
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
@@ -3301,9 +3366,12 @@ namespace SMTLIBParser{
     (re.union Reg Reg+), return Reg
     */
     std::shared_ptr<DAGNode> Parser::mkRegUnion(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) {
+        if(params.size() == 0){
             err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for reg_union", line_number);
             return mkUnknown();
+        }
+        else if(params.size() == 1){
+            return params[0];
         }
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
@@ -3322,9 +3390,12 @@ namespace SMTLIBParser{
     (re.inter Reg Reg+), return Reg
     */
     std::shared_ptr<DAGNode> Parser::mkRegInter(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 2) {
+        if(params.size() == 0){
             err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for reg_inter", line_number);
             return mkUnknown();
+        }
+        else if(params.size() == 1){
+            return params[0];
         }
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
