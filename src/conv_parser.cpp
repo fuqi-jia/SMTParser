@@ -416,51 +416,17 @@ namespace SMTLIBParser {
 
     // convert a list of expressions to CNF (a large AND node, whose children are all OR clauses)
     std::shared_ptr<DAGNode> Parser::toCNF(std::vector<std::shared_ptr<DAGNode>> exprs) {
-        std::vector<std::shared_ptr<DAGNode>> clauses;
-        // collect all atoms
-        boost::unordered_set<std::shared_ptr<DAGNode>> atoms;
-        for (auto& expr : exprs) {
-            collectAtoms(expr, atoms);
-        }
-
-        // create a new variable for each atom
-        boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> atom_map;
-        for (auto& atom : atoms) {
-            std::shared_ptr<DAGNode> new_var = mkTempVar(BOOL_SORT);
-            atom_map[atom] = new_var;
-        }
-
-        // use Tseitin transformation for each atom
-        for(auto& atom : atoms){
-            // not(atom) -> (new_var)
-            clauses.emplace_back(mkOr({mkNot(atom), atom_map[atom]}));
-            // (new_var) -> (atom)
-            clauses.emplace_back(mkOr({mkNot(atom_map[atom]), atom}));
-        }
-
-        // create a new formula with Tseitin variables
-        std::vector<std::shared_ptr<DAGNode>> new_exprs;
-        for(auto& expr : exprs){
-            std::shared_ptr<DAGNode> new_expr = replaceAtoms(expr, atom_map);
-            new_exprs.emplace_back(new_expr);
-        }
-
-        // currently, the new formula has only boolean variables
-        for (auto& expr : new_exprs) {
-            std::shared_ptr<DAGNode> tseitin_cnf = toTseitinCNF(expr, clauses);
-            clauses.emplace_back(tseitin_cnf);
-        }
-
-        // if there is only one clause, return it directly
-        if (clauses.size() == 1) {
-            return clauses[0];
-        }
-        // otherwise, create an AND node, containing all OR clauses
-        return mkAnd(clauses);
+        std::shared_ptr<DAGNode> result = mkAnd(exprs);
+        std::shared_ptr<DAGNode> cnf = toCNF(result);
+        cnf_map[result] = cnf;
+        return cnf;
     }
 
     // convert a single expression to CNF
     std::shared_ptr<DAGNode> Parser::toCNF(std::shared_ptr<DAGNode> expr) {
+        if(cnf_map.find(expr) != cnf_map.end()){
+            return cnf_map[expr];
+        }
         std::vector<std::shared_ptr<DAGNode>> clauses;
         // collect all atoms
         boost::unordered_set<std::shared_ptr<DAGNode>> atoms;
@@ -490,16 +456,21 @@ namespace SMTLIBParser {
 
         // if there is only one clause, return it directly
         if (clauses.size() == 1) {
+            cnf_map[expr] = clauses[0];
             return clauses[0];
         }
         // otherwise, create an AND node, containing all OR clauses
-        return mkAnd(clauses);
+        std::shared_ptr<DAGNode> cnf = mkAnd(clauses);
+        cnf_map[expr] = cnf;
+        return cnf;
     }
 
     // convert a list of expressions to DNF (a large OR node, whose children are all AND terms)
     std::shared_ptr<DAGNode> Parser::toDNF(std::vector<std::shared_ptr<DAGNode>> exprs) {
         std::shared_ptr<DAGNode> result = mkAnd(exprs);
-        return toDNF(result);
+        std::shared_ptr<DAGNode> dnf = toDNF(result);
+        dnf_map[result] = dnf;
+        return dnf;
     }
 
     // convert a single expression to DNF
@@ -507,7 +478,9 @@ namespace SMTLIBParser {
         // eliminate xor, implies, ite, eq, distinct
         expr = toDNFEliminateAll(expr);
         expr = toNNF(expr);
-        return applyDNFDistributiveLaw(expr);
+        std::shared_ptr<DAGNode> dnf = applyDNFDistributiveLaw(expr);
+        dnf_map[expr] = dnf;
+        return dnf;
     }
 
     // eliminate xor, implies, ite, eq, distinct
@@ -986,16 +959,10 @@ namespace SMTLIBParser {
 
     // convert a list of expressions to NNF
     std::shared_ptr<DAGNode> Parser::toNNF(std::vector<std::shared_ptr<DAGNode>> exprs) {
-        std::vector<std::shared_ptr<DAGNode>> nnf_nodes;
-        for (auto& expr : exprs) {
-            nnf_nodes.emplace_back(toNNF(expr));
-        }
-        // if there is only one expression, return it directly
-        if (nnf_nodes.size() == 1) {
-            return nnf_nodes[0];
-        }
-        // otherwise, create an AND node, containing all NNF expressions
-        return mkAnd(nnf_nodes);
+        std::shared_ptr<DAGNode> target = mkAnd(exprs);
+        std::shared_ptr<DAGNode> result = toNNF(target);
+        nnf_map[target] = result;
+        return result;
     }
 
     // convert a single expression to NNF
@@ -1090,6 +1057,11 @@ namespace SMTLIBParser {
 
     // convert a single expression to NNF
     std::shared_ptr<DAGNode> Parser::toNNF(std::shared_ptr<DAGNode> expr) {
-        return toNNF(expr, false);
+        if(nnf_map.find(expr) != nnf_map.end()){
+            return nnf_map[expr];
+        }
+        std::shared_ptr<DAGNode> result = toNNF(expr, false);
+        nnf_map[expr] = result;
+        return result;
     }
 }

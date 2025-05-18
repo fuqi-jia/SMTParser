@@ -142,6 +142,13 @@ namespace SMTLIBParser{
         // (define-objective name single_opt)
         boost::unordered_map<std::string, std::shared_ptr<Objective>> 
                                                         objective_map;
+        // conversion map
+        boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>
+                                                        cnf_map;
+        boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>
+                                                        dnf_map;
+        boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>
+                                                        nnf_map;
 
     public:
         std::vector<std::shared_ptr<DAGNode>>               assertions;
