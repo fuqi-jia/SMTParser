@@ -1,0 +1,16 @@
+<map id="include/kind.h" name="include/kind.h">
+<area shape="rect" id="Node000001" title=" " alt="" coords="239,5,342,31"/>
+<area shape="rect" id="Node000002" href="$include_2number_8h.html" title=" " alt="" coords="176,79,251,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="280,33,238,71,234,67,276,29"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="267,152,322,177"/>
+<area shape="poly" id="edge7_Node000001_Node000006" title=" " alt="" coords="294,31,297,138,291,138,288,31"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="329,79,394,104"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="304,29,342,67,338,71,300,33"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="5,152,64,177"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="186,107,77,149,75,144,184,102"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="88,152,160,177"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="201,106,151,145,148,141,197,102"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="184,152,243,177"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="216,104,216,138,211,138,211,104"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="228,102,273,141,269,145,225,106"/>
+</map>

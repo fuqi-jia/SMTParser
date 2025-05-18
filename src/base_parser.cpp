@@ -2210,6 +2210,9 @@ namespace SMTLIBParser{
 			return NODE_KIND::NT_ERROR;
 		}
 	}
+	NODE_KIND Parser::getOppositeKind(NODE_KIND kind){
+		return SMTLIBParser::getOppositeKind(kind);
+	}
 	std::shared_ptr<DAGNode> Parser::getZero(std::shared_ptr<Sort> sort){
 		if(sort == INT_SORT){
 			return mkConstInt(0);
@@ -2398,6 +2401,14 @@ namespace SMTLIBParser{
 
 	std::string Parser::toString(std::shared_ptr<DAGNode> expr){
 		return dumpSMTLIB2(expr);
+	}
+
+	std::string Parser::toString(std::shared_ptr<Sort> sort){
+		return sort->toString();
+	}
+
+	std::string Parser::toString(const NODE_KIND& kind){
+		return kindToString(kind);
 	}
 
 	/*

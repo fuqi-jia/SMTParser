@@ -398,6 +398,20 @@ namespace SMTLIBParser{
 
         /**
          * @brief Simplify an operation
+         
+         * Simplifies an operation with the given kind and parameters.
+         * 
+         * @note The parameters are assumed to be constant.
+         * 
+         * @param t Operation kind
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Simplified operation node
+         */
+        std::shared_ptr<DAGNode> simp_oper(const NODE_KIND& t, std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r);
+
+        /**
+         * @brief Simplify an operation
          * 
          * Simplifies an operation with the given kind and parameters.
          * 
@@ -902,6 +916,16 @@ namespace SMTLIBParser{
          */
         std::shared_ptr<DAGNode> mkAnd(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> m, std::shared_ptr<DAGNode> r);
         
+        /**
+         * @brief Create an and node
+         * 
+         * Creates an and node with the given parameters.
+         * 
+         * @param params Parameters
+         * @return And node
+         */
+        std::shared_ptr<DAGNode> mkAnd(const std::vector<std::shared_ptr<DAGNode>> &params);
+
         /**
          * @brief Create an and node
          * 
@@ -3320,6 +3344,16 @@ namespace SMTLIBParser{
         NODE_KIND                getAddOp(std::shared_ptr<Sort> sort); // mk unique add 
 
         /**
+         * @brief Get the opposite kind of a node kind
+         * 
+         * Returns the opposite kind of a node kind.
+         * 
+         * @param kind Node kind
+         * @return Opposite kind of the node kind
+         */
+        NODE_KIND                getOppositeKind(NODE_KIND kind);
+
+        /**
          * @brief Get the zero for a sort
          * 
          * Returns the zero for a sort.
@@ -3417,6 +3451,18 @@ namespace SMTLIBParser{
          * @return Evaluated expression
          */
         std::shared_ptr<DAGNode>                evaluate(std::shared_ptr<DAGNode> expr, const std::shared_ptr<Model> &model);
+        
+
+        /**
+         * @brief Evaluate an expression
+         * 
+         * Evaluates an expression.
+         * 
+         * @param expr Expression to evaluate
+         * @param model Model
+         * @return Evaluated expression
+         */
+        std::shared_ptr<DAGNode>                evaluate(std::shared_ptr<DAGNode> expr, const Model &model);
 
         /**
          * @brief Evaluate an expression
@@ -3576,6 +3622,27 @@ namespace SMTLIBParser{
          * @return String representation of the expression
          */
         std::string                             toString(std::shared_ptr<DAGNode> expr);
+        
+        /**
+         * @brief Print a node kind
+         * 
+         * Prints a node kind.
+         * 
+         * @param kind Node kind to print
+         * @return String representation of the node kind
+         */
+        std::string                             toString(const NODE_KIND& kind);
+
+        /**
+         * @brief Print a sort
+         * 
+         * Prints a sort.
+         * 
+         * @param sort Sort to print
+         * @return String representation of the sort
+         */
+        std::string                             toString(std::shared_ptr<Sort> sort);
+
     private:
         // parse smt-lib2 file
         std::string	                            getSymbol();

@@ -541,20 +541,99 @@ namespace SMTLIBParser{
         std::string toString()      const { return name; };
 
         // other functions
+        /**
+         * @brief Get the sort of the node
+         * 
+         * Gets the sort of the node.
+         * 
+         * @return The sort of the node
+         */
         std::shared_ptr<Sort> getSort()
                                     const { return sort; };
-        NODE_KIND getKind()         const { return kind; };
+        /**
+         * @brief Get the name of the node
+         * 
+         * Gets the name of the node.
+         * 
+         * @return The name of the node
+         */
         std::string getName()       const { return name; };
+
+        /**
+         * @brief Get the kind of the node
+         * 
+         * Gets the kind of the node.
+         * 
+         * @return The kind of the node
+         */
+        NODE_KIND getKind()           const { return kind; };
+
+        /**
+         * @brief Get the value of the node
+         * 
+         * Gets the value of the node.
+         * 
+         * @return The value of the node
+         */
         Number getValue()           const { return value; };
+
+        /**
+         * @brief Set the value of the node
+         * 
+         * Sets the value of the node.
+         * 
+         * @param v The value to set
+         */
         void setValue(Number v)           { value = v; };
+
+        /**
+         * @brief Get the number of children of the node
+         * 
+         * Gets the number of children of the node.
+         * 
+         * @return The number of children of the node
+         */
         size_t getChildrenSize()    const { return children.size(); };
+
+        /**
+         * @brief Get the children of the node
+         * 
+         * Gets the children of the node.
+         * 
+         * @return The children of the node
+         */
         std::vector<std::shared_ptr<DAGNode>> getChildren() 
                                     const { return children; };
+
+        /**
+         * @brief Get the child of the node
+         * 
+         * Gets the child of the node.
+         * 
+         * @param i The index of the child
+         * @return The child of the node
+         */
         std::shared_ptr<DAGNode> getChild(int i) 
                                     const { return children[i]; };
         // NOTE: function body is the first child
+
+        /**
+         * @brief Get the body of the function
+         * 
+         * Gets the body of the function.
+         * 
+         * @return The body of the function
+         */
         std::shared_ptr<DAGNode> getFuncBody() 
                                     const { return children[0]; };
+
+        /**
+         * @brief Get the parameters of the function
+         * 
+         * Gets the parameters of the function.
+         * 
+         * @return The parameters of the function
+         */
         std::vector<std::shared_ptr<DAGNode>> getFuncParams() const{
             std::vector<std::shared_ptr<DAGNode>> res;
             for(size_t i = 1;i<getChildrenSize();i++){
@@ -562,11 +641,24 @@ namespace SMTLIBParser{
             }
             return res;
         }
-        void updateFuncDef(std::shared_ptr<Sort> out_sort, std::shared_ptr<DAGNode> body, const std::vector<std::shared_ptr<DAGNode>> &params);
-        void updateApplyFunc(std::shared_ptr<Sort> out_sort, std::shared_ptr<DAGNode> body, const std::vector<std::shared_ptr<DAGNode>> &params);
-        
 
+        // get quant body
+        /**
+         * @brief Get the body of the quantifier
+         * 
+         * Gets the body of the quantifier.
+         * 
+         * @return The body of the quantifier
+         */
         std::shared_ptr<DAGNode> getQuantBody() const { return children[0]; };
+
+        /**
+         * @brief Get the variables of the quantifier
+         * 
+         * Gets the variables of the quantifier.
+         * 
+         * @return The variables of the quantifier
+         */
         std::vector<std::shared_ptr<DAGNode>> getQuantVars() const{
             std::vector<std::shared_ptr<DAGNode>> res;
             for(size_t i = 1;i<getChildrenSize();i++){
@@ -576,6 +668,14 @@ namespace SMTLIBParser{
         }
 
         // is really equal to another node
+        /**
+         * @brief Check if the node is equivalent to another node
+         * 
+         * Checks if the node is equivalent to another node.
+         * 
+         * @param other The other node
+         * @return True if the node is equivalent to the other node, false otherwise
+         */
         bool isEquivalentTo(const DAGNode& other) const {
             if(hashString() != other.hashString()) {
                 return false;
@@ -592,13 +692,53 @@ namespace SMTLIBParser{
             return true;
         }
 
+        /**
+         * @brief Get the hash code of the node
+         * 
+         * Gets the hash code of the node.
+         * 
+         * @return The hash code of the node
+         */
+        std::size_t hashCode() const{
+            return std::hash<std::string>{}(hashString());
+        }
+
+        /**
+         * @brief Get the hash string of the node
+         * 
+         * Gets the hash string of the node.
+         * 
+         * @return The hash string of the node
+         */
         std::string hashString() const {
             return sha256(sort->toString() + "__" + kindToString(kind) + "__" + name + "__" + std::to_string(children.size()) + "__" + children_hash);
         }
 
-        std::size_t hashCode() const{
-            return std::hash<std::string>{}(hashString());
-        }
+        /**
+         * @brief Update the function definition
+         * 
+         * Updates the function definition.
+         * 
+         * @note This function is only used to update the function definition.
+         * 
+         * @param out_sort The output sort
+         * @param body The body of the function
+         * @param params The parameters of the function
+         */
+        void updateFuncDef(std::shared_ptr<Sort> out_sort, std::shared_ptr<DAGNode> body, const std::vector<std::shared_ptr<DAGNode>> &params);
+
+        /**
+         * @brief Update the function application
+         * 
+         * Updates the function application.
+         *
+         * @note This function is only used to update the function application.
+         * 
+         * @param out_sort The output sort
+         * @param body The body of the function
+         * @param params The parameters of the function
+         */
+        void updateApplyFunc(std::shared_ptr<Sort> out_sort, std::shared_ptr<DAGNode> body, const std::vector<std::shared_ptr<DAGNode>> &params);
     };
 
     inline const std::shared_ptr<DAGNode> NULL_NODE = std::make_shared<DAGNode>(NULL_SORT, NODE_KIND::NT_NULL, "null");
