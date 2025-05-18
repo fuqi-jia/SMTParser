@@ -411,112 +411,58 @@ namespace SMTLIBParser{
         }
     }
     // CONST
-    std::shared_ptr<DAGNode>	Parser::mkConst(const std::shared_ptr<Sort>& sort, const std::string &v){
-        if(constants.find(v)!=constants.end()){
-            return node_list[constants[v]];
-        }
-        else if(v == "e" || v == "pi"){
-            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(sort, v== "e" ? NODE_KIND::NT_CONST_E : NODE_KIND::NT_CONST_PI, v);
-            constants.insert(std::pair<std::string, size_t>(v, node_list.size()));
-            node_list.emplace_back(newconst);
-            return newconst;
-        }
-        else{
-            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(sort, NODE_KIND::NT_CONST, v);
-            constants.insert(std::pair<std::string, size_t>(v, node_list.size()));
-            node_list.emplace_back(newconst);
-            return newconst;
-        }
-    }
-    std::shared_ptr<DAGNode> Parser::mkConst(const std::shared_ptr<Sort>& sort, const int& v){
-        std::string v_str = SMTLIBParser::toString(v);
-        if(constants.find(v_str) != constants.end()){
-            return node_list[constants[v_str]];
-        }
-        else{
-            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(sort, v);
-            constants.insert(std::pair<std::string, size_t>(v_str, node_list.size()));
-            node_list.emplace_back(newconst);
-            return newconst;
-        }
-    }
-    std::shared_ptr<DAGNode> Parser::mkConst(const std::shared_ptr<Sort>& sort, const double& v){
-        std::string v_str = SMTLIBParser::toString(v);
-        if(constants.find(v_str) != constants.end()){
-            return node_list[constants[v_str]];
-        }
-        else{
-            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(sort, v);
-            constants.insert(std::pair<std::string, size_t>(v_str, node_list.size()));
-            node_list.emplace_back(newconst);
-            return newconst;
-        }
-    }
-    std::shared_ptr<DAGNode> Parser::mkConst(const std::shared_ptr<Sort>& sort, const Real& v){
-        std::string v_str = SMTLIBParser::toString(v);
-        if(constants.find(v_str) != constants.end()){
-            return node_list[constants[v_str]];
-        }
-        else{
-            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(sort, v);
-            constants.insert(std::pair<std::string, size_t>(v_str, node_list.size()));
-            node_list.emplace_back(newconst);
-            return newconst;
-        }
-    }
-    std::shared_ptr<DAGNode> Parser::mkConst(const std::shared_ptr<Sort>& sort, const Integer& v){
-        std::string v_str = SMTLIBParser::toString(v);
-        if(constants.find(v_str) != constants.end()){
-            return node_list[constants[v_str]];
-        }
-        else{
-            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(sort, v);
-            constants.insert(std::pair<std::string, size_t>(v_str, node_list.size()));
-            node_list.emplace_back(newconst);
-            return newconst;
-        }
-    }
-    std::shared_ptr<DAGNode> Parser::mkConst(const std::shared_ptr<Sort>& sort, const bool& v){
-        std::string v_str = v ? "true" : "false";
-        if(constants.find(v_str) != constants.end()){
-            return node_list[constants[v_str]];
-        }
-        else{
-            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(sort, v);
-            constants.insert(std::pair<std::string, size_t>(v_str, node_list.size()));
-            node_list.emplace_back(newconst);
-            return newconst;
-        }
-    }
-    std::shared_ptr<DAGNode> Parser::mkConstBool(const bool &v){
-        return mkConst(BOOL_SORT, v);
-    }
-    std::shared_ptr<DAGNode> Parser::mkConstBool(const int& v){
-        return mkConst(BOOL_SORT, v == 0 ? false : true);
-    }
     std::shared_ptr<DAGNode> Parser::mkConstInt(const Integer &v){
-        return mkConst(INTOREAL_SORT, v);
+        std::string v_str = SMTLIBParser::toString(v);
+        if(constants_int.find(v_str) != constants_int.end()){
+            return node_list[constants_int[v_str]];
+        }
+        else{
+            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(INTOREAL_SORT, v);
+            constants_int.insert(std::pair<std::string, size_t>(v_str, node_list.size()));
+            node_list.emplace_back(newconst);
+            return newconst;
+        }
     }
     std::shared_ptr<DAGNode> Parser::mkConstInt(const std::string &v){
-        return mkConst(INTOREAL_SORT, v);
+        return mkConstInt(Integer(v));
     }
     std::shared_ptr<DAGNode> Parser::mkConstInt(const int& v){
-        return mkConst(INTOREAL_SORT, v);
+        return mkConstInt(Integer(v));
     }
     std::shared_ptr<DAGNode> Parser::mkConstReal(const std::string &v){
-        return mkConst(REAL_SORT, v);
+        assert(isRealUtil(v) || v == "e" || v == "pi");
+        if(v == "e") return E_NODE;
+        if(v == "pi") return PI_NODE;
+        return mkConstReal(Real(v));
     }
     std::shared_ptr<DAGNode> Parser::mkConstReal(const Real &v){
-        return mkConst(REAL_SORT, v);
+        std::string v_str = SMTLIBParser::toString(v);
+        if(constants_real.find(v_str) != constants_real.end()){
+            return node_list[constants_real[v_str]];
+        }
+        else{
+            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(REAL_SORT, v);
+            constants_real.insert(std::pair<std::string, size_t>(v_str, node_list.size()));
+            node_list.emplace_back(newconst);
+            return newconst;
+        }
     }
     std::shared_ptr<DAGNode> Parser::mkConstReal(const double &v){
-        return mkConst(REAL_SORT, v);
+        return mkConstReal(Real(v));
     }
     std::shared_ptr<DAGNode> Parser::mkConstReal(const Integer &v){
-        return mkConst(REAL_SORT, v);
+        return mkConstReal(Real(v));
     }
     std::shared_ptr<DAGNode> Parser::mkConstStr(const std::string &v){
-        return mkConst(STR_SORT, v);
+        if(constants_str.find(v) != constants_str.end()){
+            return node_list[constants_str[v]];
+        }
+        else{
+            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(STR_SORT, NODE_KIND::NT_CONST, v);
+            constants_str.insert(std::pair<std::string, size_t>(v, node_list.size()));
+            node_list.emplace_back(newconst);
+            return newconst;
+        }
     }
     std::shared_ptr<DAGNode> Parser::mkConstBv(const std::string &v, const size_t& width){
         std::string sort_key_name = "BV_" + std::to_string(width);
@@ -529,7 +475,16 @@ namespace SMTLIBParser{
             sort = sort_key_map[sort_key_name];
         }
         std::string bv_v = natToBv(v, width);
-        return mkConst(sort, bv_v);
+
+        if(constants_bv.find(bv_v) != constants_bv.end()){
+            return node_list[constants_bv[bv_v]];
+        }
+        else{
+            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(sort, NODE_KIND::NT_CONST, bv_v);
+            constants_bv.insert(std::pair<std::string, size_t>(bv_v, node_list.size()));
+            node_list.emplace_back(newconst);
+            return newconst;
+        }
     }
     std::shared_ptr<DAGNode> Parser::mkConstFp(const std::string &v, const size_t& e, const size_t& s){
         std::string sort_key_name = "FP_" + std::to_string(e) + "_" + std::to_string(s);
@@ -541,10 +496,27 @@ namespace SMTLIBParser{
         else{
             sort = sort_key_map[sort_key_name];
         }
-        return mkConst(sort, v);
+
+        if(constants_fp.find(v) != constants_fp.end()){
+            return node_list[constants_fp[v]];
+        }
+        else{
+            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(sort, NODE_KIND::NT_CONST, v);
+            constants_fp.insert(std::pair<std::string, size_t>(v, node_list.size()));
+            node_list.emplace_back(newconst);
+            return newconst;
+        }
     }
     std::shared_ptr<DAGNode> Parser::mkConstReg(const std::string &v){
-        return mkConst(REG_SORT, v);
+        if(constants_reg.find(v) != constants_reg.end()){
+            return node_list[constants_reg[v]];
+        }
+        else{
+            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(REG_SORT, NODE_KIND::NT_CONST, v);
+            constants_reg.insert(std::pair<std::string, size_t>(v, node_list.size()));
+            node_list.emplace_back(newconst);
+            return newconst;
+        }
     }
     
     // VAR
@@ -1670,64 +1642,19 @@ namespace SMTLIBParser{
     }
     // ARITHMATIC CONSTANTS
     std::shared_ptr<DAGNode> Parser::mkPi(){
-        std::string v = "pi";
-        if(constants.find(v)!=constants.end()){
-            return node_list[constants[v]];
-        }
-        else{
-            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(REAL_SORT, NODE_KIND::NT_CONST_PI, v);
-            constants.insert(std::pair<std::string, size_t>(v, node_list.size()));
-            node_list.emplace_back(newconst);
-            return newconst;
-        }
+        return PI_NODE;
     }
     std::shared_ptr<DAGNode> Parser::mkE(){
-        std::string v = "e";
-        if(constants.find(v)!=constants.end()){
-            return node_list[constants[v]];
-        }
-        else{
-            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(REAL_SORT, NODE_KIND::NT_CONST_E, v);
-            constants.insert(std::pair<std::string, size_t>(v, node_list.size()));
-            node_list.emplace_back(newconst);
-            return newconst;
-        }
+        return E_NODE;
     }
     std::shared_ptr<DAGNode> Parser::mkInfinity(){
-        std::string v = "INF";
-        if(constants.find(v)!=constants.end()){
-            return node_list[constants[v]];
-        }
-        else{
-            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(EXT_SORT, NODE_KIND::NT_INFINITY, v);
-            constants.insert(std::pair<std::string, size_t>(v, node_list.size()));
-            node_list.emplace_back(newconst);
-            return newconst;
-        }
+        return INF_NODE;
     }
     std::shared_ptr<DAGNode> Parser::mkNan(){
-        std::string v = "NaN";
-        if(constants.find(v)!=constants.end()){
-            return node_list[constants[v]];
-        }
-        else{
-            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(EXT_SORT, NODE_KIND::NT_NAN, v);
-            constants.insert(std::pair<std::string, size_t>(v, node_list.size()));
-            node_list.emplace_back(newconst);
-            return newconst;
-        }
+        return NAN_NODE;
     }
     std::shared_ptr<DAGNode> Parser::mkEpsilon(){
-        std::string v = "EPSILON";
-        if(constants.find(v)!=constants.end()){
-            return node_list[constants[v]];
-        }
-        else{
-            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(EXT_SORT, NODE_KIND::NT_EPSILON, v);
-            constants.insert(std::pair<std::string, size_t>(v, node_list.size()));
-            node_list.emplace_back(newconst);
-            return newconst;
-        }
+        return EPSILON_NODE;
     }
     // ARITHMATIC FUNCTIONS
     // /*

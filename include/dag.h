@@ -745,8 +745,12 @@ namespace SMTLIBParser{
     inline const std::shared_ptr<DAGNode> UNKNOWN_NODE = std::make_shared<DAGNode>(UNKNOWN_SORT, NODE_KIND::NT_UNKNOWN, "unknown");
     inline const std::shared_ptr<DAGNode> TRUE_NODE = std::make_shared<DAGNode>(BOOL_SORT, NODE_KIND::NT_CONST_TRUE, "true");
     inline const std::shared_ptr<DAGNode> FALSE_NODE = std::make_shared<DAGNode>(BOOL_SORT, NODE_KIND::NT_CONST_FALSE, "false");
-
-
+    inline const std::shared_ptr<DAGNode> E_NODE = std::make_shared<DAGNode>(REAL_SORT, NODE_KIND::NT_CONST_E, "e");
+    inline const std::shared_ptr<DAGNode> PI_NODE = std::make_shared<DAGNode>(REAL_SORT, NODE_KIND::NT_CONST_PI, "pi");
+    inline const std::shared_ptr<DAGNode> INF_NODE = std::make_shared<DAGNode>(EXT_SORT, NODE_KIND::NT_INFINITY, "INF");
+    inline const std::shared_ptr<DAGNode> NAN_NODE = std::make_shared<DAGNode>(EXT_SORT, NODE_KIND::NT_NAN, "NaN");
+    inline const std::shared_ptr<DAGNode> EPSILON_NODE = std::make_shared<DAGNode>(EXT_SORT, NODE_KIND::NT_EPSILON, "EPSILON");
+    
     struct NodeHash {
         size_t operator()(const std::shared_ptr<DAGNode>& node) const {
             return std::hash<std::string>{}(node->hashString());

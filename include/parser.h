@@ -128,7 +128,20 @@ namespace SMTLIBParser{
         // variable name list
         boost::unordered_map<std::string, size_t>       var_names;
         // const node
-        boost::unordered_map<std::string, size_t>       constants;
+        boost::unordered_map<std::string, size_t>       constants_real;
+        boost::unordered_map<std::string, size_t>       constants_int;
+        boost::unordered_map<std::string, size_t>       constants_str;
+        boost::unordered_map<std::string, size_t>       constants_bv;
+        boost::unordered_map<std::string, size_t>       constants_fp;
+        boost::unordered_map<std::string, size_t>       constants_reg;
+        boost::unordered_map<std::string, size_t>       constants_array;
+        boost::unordered_map<std::string, size_t>       constants_map;
+        boost::unordered_map<std::string, size_t>       constants_seq;
+        boost::unordered_map<std::string, size_t>       constants_tuple;
+        boost::unordered_map<std::string, size_t>       constants_record;
+        boost::unordered_map<std::string, size_t>       constants_union;
+        
+
         // temp var name list
         size_t temp_var_counter;
         boost::unordered_map<std::string, size_t>       temp_var_names;
@@ -544,113 +557,6 @@ namespace SMTLIBParser{
         std::shared_ptr<DAGNode> mkDistinct(const std::vector<std::shared_ptr<DAGNode>> &params); // l != r != ...
         
         // CONST
-        /**
-         * @brief Create a constant node
-         * 
-         * Creates a constant node with the given sort and value.
-         * 
-         * @param sort Sort
-         * @param v Value (string)
-         * @return Constant node
-         */
-        std::shared_ptr<DAGNode> mkConst(const std::shared_ptr<Sort>& sort, const std::string &v); // CONST
-
-        
-        /**
-         * @brief Create an integer constant
-         *
-         * Creates a constant node with the given sort and integer value.
-         *
-         * @param sort Sort
-         * @param v Value (int)
-         * @return Constant node
-         */
-        std::shared_ptr<DAGNode> mkConst(const std::shared_ptr<Sort>& sort, const int& v); // CONST_INT
-
-        /**
-         * @brief Create a real constant from double
-         *
-         * Creates a constant node with the given sort and double value.
-         *
-         * @param sort Sort
-         * @param v Value (double)
-         * @return Constant node
-         */
-        std::shared_ptr<DAGNode> mkConst(const std::shared_ptr<Sort>& sort, const double& v); // CONST_REAL
-
-        /**
-         * @brief Create a real constant
-         *
-         * Creates a constant node with the given sort and high-precision real value.
-         *
-         * @param sort Sort
-         * @param v Value (double)
-         * @return Constant node
-         */
-        std::shared_ptr<DAGNode> mkConst(const std::shared_ptr<Sort>& sort, const Real& v); // CONST_REAL
-
-        /**
-         * @brief Create a numeric constant
-         *
-         * Creates a constant node with the given sort and arbitrary-precision integer value.
-         *
-         * @param sort Sort
-         * @param v Value (Integer)
-         * @return Constant node
-         */
-        std::shared_ptr<DAGNode> mkConst(const std::shared_ptr<Sort>& sort, const Integer& v); // CONST_REAL/INT
-
-        /**
-         * @brief Create a boolean constant
-         *
-         * Creates a constant node with the given sort and boolean value.
-         *
-         * @param sort Sort
-         * @param v Value (bool)
-         * @return Constant node
-         */
-        std::shared_ptr<DAGNode> mkConst(const std::shared_ptr<Sort>& sort, const bool& v); // CONST_BOOL
-        
-        /**
-         * @brief Create a boolean constant
-         *
-         * Creates a boolean constant node with the given boolean value.
-         *
-         * @param v Value (bool)
-         * @return Boolean constant node
-         */
-        std::shared_ptr<DAGNode> mkConstBool(const bool &v); // CONST_BOOL
-        
-        /**
-         * @brief Create a boolean constant from integer
-         *
-         * Creates a boolean constant node from an integer value (0 = false, non-0 = true).
-         *
-         * @param v Value (int)
-         * @return Boolean constant node
-         */
-        std::shared_ptr<DAGNode> mkConstBool(const int& v); // CONST_BOOL
-        
-        /**
-         * @brief Create a boolean constant from string
-         *
-         * Creates a boolean constant node from a string ("true"/"false").
-         *
-         * @param v Value (string)
-         * @return Boolean constant node
-         */
-        std::shared_ptr<DAGNode> mkConstBool(const std::string &v); // CONST_BOOL
-        
-        /**
-         * @brief Create a boolean constant from double
-         *
-         * Creates a boolean constant node from a double value (0.0 = false, non-0 = true).
-         *
-         * @param v Value (double)
-         * @return Boolean constant node
-         */
-        std::shared_ptr<DAGNode> mkConstBool(const double &v); // CONST_BOOL
-        
         /**
          * @brief Create an integer constant from string
          *

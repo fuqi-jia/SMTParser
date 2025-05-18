@@ -39,13 +39,15 @@ namespace SMTLIBParser{
 		scan_mode = SCAN_MODE::SM_COMMON;
 		temp_var_counter = 0;
 
-		constants.insert(std::pair<std::string, size_t>("false", node_list.size()));
 		node_list.emplace_back(FALSE_NODE);
-		constants.insert(std::pair<std::string, size_t>("true", node_list.size()));
 		node_list.emplace_back(TRUE_NODE);
-		constants.insert(std::pair<std::string, size_t>("unknown", node_list.size()));
 		node_list.emplace_back(UNKNOWN_NODE);
-
+		node_list.emplace_back(E_NODE);
+		node_list.emplace_back(PI_NODE);
+		node_list.emplace_back(INF_NODE);
+		node_list.emplace_back(NAN_NODE);
+		node_list.emplace_back(EPSILON_NODE);
+		
 		options = std::make_shared<GlobalOptions>();
 	}
 
@@ -62,13 +64,15 @@ namespace SMTLIBParser{
 		scan_mode = SCAN_MODE::SM_COMMON;
 		temp_var_counter = 0;
 
-		constants.insert(std::pair<std::string, size_t>("false", node_list.size()));
 		node_list.emplace_back(FALSE_NODE);
-		constants.insert(std::pair<std::string, size_t>("true", node_list.size()));
 		node_list.emplace_back(TRUE_NODE);
-		constants.insert(std::pair<std::string, size_t>("unknown", node_list.size()));
 		node_list.emplace_back(UNKNOWN_NODE);
-		
+		node_list.emplace_back(E_NODE);
+		node_list.emplace_back(PI_NODE);
+		node_list.emplace_back(INF_NODE);
+		node_list.emplace_back(NAN_NODE);
+		node_list.emplace_back(EPSILON_NODE);
+
 		options = std::make_shared<GlobalOptions>();
 
 		parseSmtlib2File(filename);
@@ -425,13 +429,6 @@ namespace SMTLIBParser{
 			if (parseCommand() == CMD_TYPE::CT_EXIT) break;
 			parseRpar();
 		}
-
-		// parse finished
-		// let_key_map.clear();
-		// fun_key_map.clear();
-		// sort_key_map.clear();
-		// var_names.clear();
-		// constants.clear();
 		bufptr = nullptr;
 		delete[] buffer;
 		return true;
