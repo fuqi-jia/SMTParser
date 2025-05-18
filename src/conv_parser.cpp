@@ -1003,6 +1003,10 @@ namespace SMTLIBParser {
             }
             return expr;
         }
+
+        if(expr->isLet()){
+            return toNNF(expandLet(expr), is_not);
+        }
         
         // handle NOT node
         if(expr->isNot()){

@@ -3427,6 +3427,16 @@ namespace SMTLIBParser{
 
         // Format conversion
         /**
+         * @brief Expand a let expression
+         * 
+         * Expands a let expression.
+         * 
+         * @param expr Let expression to expand
+         * @return Expanded expression
+         */
+        std::shared_ptr<DAGNode>                expandLet(std::shared_ptr<DAGNode> expr);
+
+        /**
          * @brief Collect atoms from an expression
          * 
          * Collects atoms from an expression.
@@ -3825,6 +3835,7 @@ namespace SMTLIBParser{
         bool		evaluateRegRepeat(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
         bool		evaluateRegComplement(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
         bool		evaluateApplyFun(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
+        bool		evaluateLet(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
     };
 
 

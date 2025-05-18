@@ -540,6 +540,9 @@ namespace SMTLIBParser{
         else if(expr->isFuncApply()){
             return evaluateApplyFun(expr, model, result);
         }
+        else if(expr->isLet()){
+            return evaluateLet(expr, model, result);
+        }
         result = expr;
         return false;
     }
@@ -1707,6 +1710,14 @@ namespace SMTLIBParser{
 		not_implemented_warning("function-apply");
         result = expr;
         return false;
+    }
+    bool Parser::evaluateLet(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode>& result){
+        std::shared_ptr<DAGNode> body = expandLet(expr);
+        return evaluate(body, model, result);
+    }
+
+    std::shared_ptr<DAGNode> Parser::expandLet(std::shared_ptr<DAGNode> expr){
+        return expr->getLetBody();
     }
 }
 

@@ -667,6 +667,14 @@ namespace SMTLIBParser{
             return res;
         }
 
+        std::shared_ptr<DAGNode> getLetBody() const{
+            std::shared_ptr<DAGNode> body = getChild(0);
+            while(body->isLet()){
+                body = body->getChild(0);
+            }
+            return body;
+        }
+
         // is really equal to another node
         /**
          * @brief Check if the node is equivalent to another node
