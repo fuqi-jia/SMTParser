@@ -64,3 +64,7 @@ conaninfo.txt
 *.cmake
 !CMakeLists.txt
 !cmake/*.cmake 
+
+# Doxygen 文档
+docs/
+

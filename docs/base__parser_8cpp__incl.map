@@ -1,9 +1,0 @@
-<map id="src/base_parser.cpp" name="src/base_parser.cpp">
-<area shape="rect" id="Node000001" title=" " alt="" coords="57,5,195,31"/>
-<area shape="rect" id="Node000002" title=" " alt="" coords="5,79,73,104"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="114,33,66,72,62,68,110,29"/>
-<area shape="rect" id="Node000003" title=" " alt="" coords="97,79,155,104"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="129,31,129,65,123,65,123,31"/>
-<area shape="rect" id="Node000004" title=" " alt="" coords="179,79,233,104"/>
-<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="141,29,185,68,181,72,137,33"/>
-</map>
