@@ -214,8 +214,6 @@ namespace SMTLIBParser{
         /**
          * @brief Get all assertions
          * 
-         * Returns a vector of all assertions.
-         * 
          * @return Vector of all assertions
          */
         std::vector<std::shared_ptr<DAGNode>> getAssertions() const;
@@ -252,8 +250,6 @@ namespace SMTLIBParser{
         /**
          * @brief Get soft assertion weights
          * 
-         * Returns a vector of all soft assertion weights.
-         * 
          * @return Vector of all soft assertion weights
          */
         std::vector<std::shared_ptr<DAGNode>> getSoftWeights() const;
@@ -270,8 +266,6 @@ namespace SMTLIBParser{
         /**
          * @brief Get objectives
          * 
-         * Returns a vector of all objectives.
-         * 
          * @return Vector of all objectives
          */
         std::vector<std::shared_ptr<Objective>> getObjectives() const;
@@ -279,16 +273,12 @@ namespace SMTLIBParser{
         /**
          * @brief Get global options
          * 
-         * Returns a pointer to the global options.
-         * 
          * @return Pointer to global options
          */
         std::shared_ptr<GlobalOptions> getOptions() const;
 
         /**
          * @brief Get variables
-         * 
-         * Returns a vector of all variables.
          * 
          * @return Vector of all variables
          */
@@ -307,8 +297,6 @@ namespace SMTLIBParser{
         /**
          * @brief Get sort
          * 
-         * Returns a sort for the given parameters.
-         * 
          * @param params Vector of parameters
          * @return Sort
          */
@@ -316,8 +304,6 @@ namespace SMTLIBParser{
 
         /**
          * @brief Get sort
-         * 
-         * Returns a sort for the given parameter.
          * 
          * @param param Parameter
          * @return Sort
@@ -327,8 +313,6 @@ namespace SMTLIBParser{
         /**
          * @brief Get sort
          * 
-         * Returns a sort for the given parameters.
-         * 
          * @param params Vector of parameters
          * @return Sort
          */
@@ -336,8 +320,6 @@ namespace SMTLIBParser{
 
         /**
          * @brief Get sort
-         * 
-         * Returns a sort for the given parameters.
          * 
          * @param params Vector of parameters
          * @return Sort
@@ -347,8 +329,6 @@ namespace SMTLIBParser{
         // mk oper 
         /**
          * @brief Create an operation
-         * 
-         * Creates an operation with the given sort and parameters.
          * 
          * @param sort Sort
          * @param t Operation kind
@@ -360,8 +340,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create an operation
          * 
-         * Creates an operation with the given sort and parameters.
-         * 
          * @param sort Sort
          * @param t Operation kind
          * @param l Left parameter
@@ -372,8 +350,6 @@ namespace SMTLIBParser{
 
         /**
          * @brief Create an operation
-         * 
-         * Creates an operation with the given sort and parameters.
          * 
          * @param sort Sort
          * @param t Operation kind
@@ -387,8 +363,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create an operation
          * 
-         * Creates an operation with the given sort and parameters.
-         * 
          * @param sort Sort
          * @param t Operation kind
          * @param p Parameters
@@ -398,8 +372,6 @@ namespace SMTLIBParser{
 
         /**
          * @brief Simplify an operation
-         * 
-         * Simplifies an operation with the given kind and parameters.
          * 
          * @note The parameters are assumed to be constant.
          * 
@@ -411,8 +383,6 @@ namespace SMTLIBParser{
 
         /**
          * @brief Simplify an operation
-         
-         * Simplifies an operation with the given kind and parameters.
          * 
          * @note The parameters are assumed to be constant.
          * 
@@ -425,8 +395,6 @@ namespace SMTLIBParser{
 
         /**
          * @brief Simplify an operation
-         * 
-         * Simplifies an operation with the given kind and parameters.
          * 
          * @note The parameters are assumed to be constant.
          * 
@@ -441,8 +409,6 @@ namespace SMTLIBParser{
         /**
          * @brief Simplify an operation
          * 
-         * Simplifies an operation with the given kind and parameters.
-         * 
          * @param t Operation kind
          * @param p Parameters
          * @return Simplified operation node
@@ -453,8 +419,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a function declaration
          * 
-         * Creates a function declaration with the given name, parameters, and output sort.
-         * 
          * @param name Function name
          * @param params Parameters
          * @param out_sort Output sort
@@ -464,8 +428,6 @@ namespace SMTLIBParser{
 
         /**
          * @brief Create a function definition
-         * 
-         * Creates a function definition with the given name, parameters, output sort, and body.
          * 
          * @param name Function name
          * @param params Parameters
@@ -479,8 +441,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a sort declaration
          * 
-         * Creates a sort declaration with the given name and arity.
-         * 
          * @param name Sort name
          * @param arity Arity
          * @return Sort declaration node
@@ -490,16 +450,12 @@ namespace SMTLIBParser{
         /**
          * @brief Create a true node
          * 
-         * Creates a true node.
-         * 
          * @return True node
          */
         std::shared_ptr<DAGNode>	mkTrue(); // true
 
         /**
          * @brief Create a false node
-         * 
-         * Creates a false node.
          * 
          * @return False node
          */
@@ -508,16 +464,12 @@ namespace SMTLIBParser{
         /**
          * @brief Create an unknown node
          * 
-         * Creates an unknown node.
-         * 
          * @return Unknown node
          */
         std::shared_ptr<DAGNode>    mkUnknown(); // unknown
         // CORE OPERATORS
         /**
          * @brief Create an equality node
-         * 
-         * Creates an equality node with the given parameters.
          * 
          * @param l Left parameter
          * @param r Right parameter
@@ -528,8 +480,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create an equality node
          * 
-         * Creates an equality node with the given parameters.
-         * 
          * @param params Parameters
          * @return Equality node
          */
@@ -537,8 +487,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a distinct node
-         * 
-         * Creates a distinct node with the given parameters.
          * 
          * @param l Left parameter
          * @param r Right parameter
@@ -549,8 +497,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a distinct node
          * 
-         * Creates a distinct node with the given parameters.
-         * 
          * @param params Parameters
          * @return Distinct node
          */
@@ -560,8 +506,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create an integer constant from string
          *
-         * Creates an integer constant node from a string representation.
-         *
          * @param v Value (string)
          * @return Integer constant node
          */
@@ -569,8 +513,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create an integer constant
-         *
-         * Creates an integer constant node from an integer value.
          *
          * @param v Value (int)
          * @return Integer constant node
@@ -580,8 +522,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create an integer constant
          *
-         * Creates an integer constant node from an arbitrary-precision integer value.
-         *
          * @param v Value (Integer)
          * @return Integer constant node
          */
@@ -589,8 +529,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a real constant from string
-         *
-         * Creates a real constant node from a string representation.
          *
          * @param v Value (string)
          * @return Real constant node
@@ -600,8 +538,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a real constant
          *
-         * Creates a real constant node from a high-precision real value.
-         *
          * @param v Value (Real)
          * @return Real constant node
          */
@@ -609,8 +545,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a real constant from double
-         *
-         * Creates a real constant node from a double value.
          *
          * @param v Value (double)
          * @return Real constant node
@@ -620,8 +554,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a real constant from integer
          *
-         * Creates a real constant node from an arbitrary-precision integer value.
-         *
          * @param v Value (Integer)
          * @return Real constant node
          */
@@ -629,8 +561,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a string constant
-         *
-         * Creates a string constant node.
          *
          * @param v Value (string)
          * @return String constant node
@@ -640,8 +570,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a bit-vector constant
          *
-         * Creates a bit-vector constant node with the given value and width.
-         *
          * @param v Value (string)
          * @param width Width of the bit-vector
          * @return Bit-vector constant node
@@ -650,8 +578,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a floating-point constant
-         *
-         * Creates a floating-point constant node with the given value and format.
          *
          * @param v Value (string)
          * @param e Exponent size
@@ -663,8 +589,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a regular expression constant
          *
-         * Creates a regular expression constant node.
-         *
          * @param v Value (string)
          * @return Regular expression constant node
          */
@@ -673,8 +597,6 @@ namespace SMTLIBParser{
         // VAR
         /**
          * @brief Create a variable
-         *
-         * Creates a variable node with the given sort and name.
          *
          * @param sort Sort
          * @param name Variable name
@@ -685,8 +607,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a temporary variable
          *
-         * Creates a temporary variable node with the given sort.
-         *
          * @param sort Sort
          * @return Temporary variable node
          */
@@ -694,8 +614,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a boolean variable
-         *
-         * Creates a boolean variable node with the given name.
          *
          * @param name Variable name
          * @return Boolean variable node
@@ -705,8 +623,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create an integer variable
          *
-         * Creates an integer variable node with the given name.
-         *
          * @param name Variable name
          * @return Integer variable node
          */
@@ -714,8 +630,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a real variable
-         *
-         * Creates a real variable node with the given name.
          *
          * @param name Variable name
          * @return Real variable node
@@ -725,8 +639,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a bit-vector variable
          *
-         * Creates a bit-vector variable node with the given name and width.
-         *
          * @param name Variable name
          * @param width Width of the bit-vector
          * @return Bit-vector variable node
@@ -735,8 +647,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a floating-point variable
-         *
-         * Creates a floating-point variable node with the given name and format.
          *
          * @param name Variable name
          * @param e Exponent size
@@ -748,8 +658,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a string variable
          *
-         * Creates a string variable node with the given name.
-         *
          * @param name Variable name
          * @return String variable node
          */
@@ -757,8 +665,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a regular expression variable
-         *
-         * Creates a regular expression variable node with the given name.
          *
          * @param name Variable name
          * @return Regular expression variable node
@@ -768,8 +674,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a function parameter variable
          *
-         * Creates a function parameter variable node with the given sort and name.
-         *
          * @param sort Sort
          * @param name Variable name
          * @return Function parameter variable node
@@ -778,8 +682,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create an array
-         *
-         * Creates an array node with the given name, index sort, and element sort.
          *
          * @param name Array name
          * @param index Index sort
@@ -792,159 +694,132 @@ namespace SMTLIBParser{
         /**
          * @brief Create a not node
          * 
-         * Creates a not node with the given parameter.
-         * 
          * @param param Parameter
-         * @return Not node
+         * @return Not node (not param)
          */
         std::shared_ptr<DAGNode> mkNot(std::shared_ptr<DAGNode> param);
         
         /**
          * @brief Create an and node
          * 
-         * Creates an and node with the given parameters.
-         * 
          * @param l Left parameter
          * @param r Right parameter
-         * @return And node
+         * @return And node (l and r)
          */
         std::shared_ptr<DAGNode> mkAnd(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r);
         
         /**
          * @brief Create an and node
          * 
-         * Creates an and node with the given parameters.
-         * 
          * @param l Left parameter
          * @param m Middle parameter
          * @param r Right parameter
-         * @return And node
+         * @return And node (l and m and r)
          */
         std::shared_ptr<DAGNode> mkAnd(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> m, std::shared_ptr<DAGNode> r);
         
         /**
          * @brief Create an and node
          * 
-         * Creates an and node with the given parameters.
-         * 
          * @param params Parameters
-         * @return And node
+         * @return And node (l and m and r and ...)
          */
         std::shared_ptr<DAGNode> mkAnd(const std::vector<std::shared_ptr<DAGNode>> &params);
 
         /**
          * @brief Create an and node
          * 
-         * Creates an and node with the given parameters.
-         * 
          * @param params Parameters
-         * @return And node
+         * @return And node (l or r)
          */
         std::shared_ptr<DAGNode> mkOr(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r);
         
         /**
          * @brief Create an or node
          * 
-         * Creates an or node with the given parameters.
-         * 
          * @param l Left parameter
          * @param m Middle parameter
          * @param r Right parameter
-         * @return Or node
+         * @return Or node (l or m or r)
          */
         std::shared_ptr<DAGNode> mkOr(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> m, std::shared_ptr<DAGNode> r);
         
         /**
          * @brief Create an or node
          * 
-         * Creates an or node with the given parameters.
-         * 
          * @param params Parameters
-         * @return Or node
+         * @return Or node (l or m or r or ...)
          */
         std::shared_ptr<DAGNode> mkOr(const std::vector<std::shared_ptr<DAGNode>> &params);
         
         /**
          * @brief Create an implies node
          * 
-         * Creates an implies node with the given parameters.
-         * 
          * @param l Left parameter
          * @param r Right parameter
-         * @return Implies node
+         * @return Implies node (l -> r)
          */
         std::shared_ptr<DAGNode> mkImplies(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r);
         
         /**
          * @brief Create an implies node
          * 
-         * Creates an implies node with the given parameters.
-         * 
          * @param params Parameters
-         * @return Implies node
+         * @return Implies node (l -> r -> ...)
          */
         std::shared_ptr<DAGNode> mkImplies(const std::vector<std::shared_ptr<DAGNode>> &params);
         
         /**
          * @brief Create an xor node
          * 
-         * Creates an xor node with the given parameters.
-         * 
          * @param l Left parameter
          * @param r Right parameter
-         * @return Xor node
+         * @return Xor node (l xor r)
          */
         std::shared_ptr<DAGNode> mkXor(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r);
         
         /**
          * @brief Create an xor node
          * 
-         * Creates an xor node with the given parameters.
-         * 
          * @param l Left parameter
          * @param m Middle parameter
          * @param r Right parameter
-         * @return Xor node
+         * @return Xor node (l xor m xor r)
          */
         std::shared_ptr<DAGNode> mkXor(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> m, std::shared_ptr<DAGNode> r);
         
         /**
          * @brief Create an xor node
          * 
-         * Creates an xor node with the given parameters.
-         * 
          * @param params Parameters
-         * @return Xor node
+         * @return Xor node (l xor m xor r xor ...)
          */
         std::shared_ptr<DAGNode> mkXor(const std::vector<std::shared_ptr<DAGNode>> &params);
         
         /**
          * @brief Create an ite node
          * 
-         * Creates an ite node with the given parameters.
-         * 
          * @param cond Condition
          * @param l Left parameter
          * @param r Right parameter
-         * @return Ite node
+         * @return Ite node (cond ? l : r)
          */
         std::shared_ptr<DAGNode> mkIte(std::shared_ptr<DAGNode> cond, std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r);
         
         /**
          * @brief Create an ite node
-         * 
-         * Creates an ite node with the given parameters.
+         *
+         * @note It only accepts 3 parameters.
          * 
          * @param params Parameters
-         * @return Ite node
+         * @return Ite node (cond ? l : r)
          */
         std::shared_ptr<DAGNode> mkIte(const std::vector<std::shared_ptr<DAGNode>> &params);
+        
         // ARITHMATIC COMMON OPERATORS
 
         /**
          * @brief Create an add node
-         * 
-         * Creates an add node with the given parameters.
          * 
          * @param l Left parameter
          * @param r Right parameter
@@ -954,8 +829,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create an add node
-         * 
-         * Creates an add node with the given parameters.
          * 
          * @param l Left parameter
          * @param m Middle parameter
@@ -967,8 +840,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create an add node
          * 
-         * Creates an add node with the given parameters.
-         * 
          * @param params Parameters
          * @return Add node (l + r + ...)
          */
@@ -976,8 +847,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create an mul node
-         * 
-         * Creates an mul node with the given parameters.
          * 
          * @param l Left parameter
          * @param r Right parameter
@@ -987,8 +856,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create an mul node
-         * 
-         * Creates an mul node with the given parameters.
          * 
          * @param l Left parameter
          * @param m Middle parameter
@@ -1000,8 +867,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create an mul node
          *  
-         * Creates an mul node with the given parameters.
-         * 
          * @param params Parameters
          * @return Mul node (l * r * ...)
          */
@@ -1009,8 +874,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create an iand node
-         * 
-         * Creates an iand node with the given parameters.
          * 
          * @param params Parameters
          * @return Iand node (l & r & ...)
@@ -1020,8 +883,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create an pow2 node
          * 
-         * Creates an pow2 node with the given parameter.
-         * 
          * @param param Parameter
          * @return Pow2 node (2^param)
          */
@@ -1029,8 +890,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create an pow node
-         * 
-         * Creates an pow node with the given parameters.
          * 
          * @param l Left parameter
          * @param r Right parameter
@@ -1041,8 +900,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create an sub node
          * 
-         * Creates an sub node with the given parameters.
-         * 
          * @param l Left parameter
          * @param r Right parameter
          * @return Sub node (l - r)
@@ -1051,8 +908,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create an sub node
-         * 
-         * Creates an sub node with the given parameters.
          * 
          * @param l Left parameter
          * @param m Middle parameter
@@ -1064,8 +919,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create an sub node
          * 
-         * Creates an sub node with the given parameters.
-         * 
          * @param params Parameters
          * @return Sub node (l - r - ...)
          */
@@ -1074,8 +927,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create an neg node
          * 
-         * Creates an neg node with the given parameter.
-         * 
          * @param param Parameter
          * @return Neg node (-param)
          */
@@ -1083,8 +934,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create an div node
-         * 
-         * Creates an div node with the given parameters.
          * 
          * @note This is the real division operator.
          * 
@@ -1097,8 +946,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create an div node
          * 
-         * Creates an div node with the given parameters.
-         * 
          * @note This is the real division operator.
          * 
          * @param l Left parameter
@@ -1110,8 +957,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create an div node
          * 
-         * Creates an div node with the given parameters.
-         * 
          * @param l Left parameter
          * @param r Right parameter
          * @return Div node (l / r)
@@ -1121,8 +966,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create an div node
          * 
-         * Creates an div node with the given parameters.
-         * 
          * @param params Parameters
          * @return Div node (l / r / ...)
          */
@@ -1130,8 +973,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create an div node
-         * 
-         * Creates an div node with the given parameters.
          * 
          * @param l Left parameter
          * @param r Right parameter
@@ -1142,8 +983,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create an div node
          * 
-         * Creates an div node with the given parameters.
-         * 
          * @param params Parameters
          * @return Div node (l / r / ...)
          */
@@ -1151,8 +990,6 @@ namespace SMTLIBParser{
         
         /** 
          * @brief Create an mod node
-         * 
-         * Creates an mod node with the given parameters.
          * 
          * @param l Left parameter
          * @param r Right parameter
@@ -1163,8 +1000,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create an abs node
          * 
-         * Creates an abs node with the given parameter.
-         * 
          * @param param Parameter
          * @return Abs node (|param|)
          */
@@ -1173,8 +1008,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create an sqrt node
          * 
-         * Creates an sqrt node with the given parameter.
-         *
          * @note assert(param >= 0) 
          *
          * @param param Parameter
@@ -1185,7 +1018,7 @@ namespace SMTLIBParser{
         /**
          * @brief Create an safesqrt node
          * 
-         * Creates an safesqrt node with the given parameter.
+         * @note if param < 0, return 0
          * 
          * @param param Parameter
          * @return Safesqrt node (safesqrt(param))
@@ -1195,8 +1028,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create an ceil node
          * 
-         * Creates an ceil node with the given parameter.
-         * 
          * @param param Parameter
          * @return Ceil node (ceil(param))
          */
@@ -1205,8 +1036,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create an floor node
          * 
-         * Creates an floor node with the given parameter.
-         * 
          * @param param Parameter
          * @return Floor node (floor(param))
          */
@@ -1214,8 +1043,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create an round node
-         * 
-         * Creates an round node with the given parameter.
          * 
          * @param param Parameter
          * @return Round node (round(param))
@@ -1226,8 +1053,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create an exp node
          * 
-         * Creates an exp node with the given parameter.
-         * 
          * @param param Parameter
          * @return Exp node (exp(param))
          */
@@ -1235,8 +1060,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create an ln node
-         * 
-         * Creates an ln node with the given parameter.
          * 
          * @note assert(param > 0)
          * 
@@ -1246,9 +1069,7 @@ namespace SMTLIBParser{
         std::shared_ptr<DAGNode> mkLn(std::shared_ptr<DAGNode> param); // ln(param)
         
         /**
-         * @brief Create an lg node
-         * 
-         * Creates an lg node with the given parameter.
+         * @brief Create an lg/log10 node
          * 
          * @note assert(param > 0)
          *
@@ -1258,9 +1079,7 @@ namespace SMTLIBParser{
         std::shared_ptr<DAGNode> mkLg(std::shared_ptr<DAGNode> param); // lg(param)
         
         /**
-         * @brief Create an lb node
-         * 
-         * Creates an lb node with the given parameter.
+         * @brief Create an lb/log2 node
          * 
          * @note assert(param > 0)
          *
@@ -1271,8 +1090,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create an log node
-         * 
-         * Creates an log node with the given parameters.
          * 
          * @note r is the base, l is the argument
          * @note assert(r > 0 && r != 1 && l > 0)
@@ -1286,8 +1103,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create an sin node
          * 
-         * Creates an sin node with the given parameter.
-         * 
          * @param param Parameter
          * @return Sin node (sin(param))
          */
@@ -1295,8 +1110,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create an cos node
-         * 
-         * Creates an cos node with the given parameter.
          * 
          * @param param Parameter
          * @return Cos node (cos(param))
@@ -1306,8 +1119,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create an sec node
          * 
-         * Creates an sec node with the given parameter.
-         * 
          * @param param Parameter
          * @return Sec node (sec(param))
          */
@@ -1316,8 +1127,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create an csc node
          * 
-         * Creates an csc node with the given parameter.
-         * 
          * @param param Parameter
          * @return Csc node (csc(param))
          */
@@ -1325,8 +1134,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create an tan node
-         * 
-         * Creates an tan node with the given parameter.
          * 
          * @note assert(param != (pi/2) + k*pi)
          * 
@@ -1338,8 +1145,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a cot node
          * 
-         * Creates a cot node with the given parameter.
-         * 
          * @note assert(param != k*pi)
          * 
          * @param param Parameter
@@ -1349,8 +1154,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create an asin node
-         * 
-         * Creates an asin node with the given parameter.
          * 
          * @note assert(param >= -1 && param <= 1)
          * 
@@ -1362,8 +1165,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create an acos node
          * 
-         * Creates an acos node with the given parameter.
-         * 
          * @note assert(param >= -1 && param <= 1)
          * 
          * @param param Parameter
@@ -1373,8 +1174,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create an asec node
-         * 
-         * Creates an asec node with the given parameter.
          * 
          * @note assert(param <= -1 || param >= 1)
          * 
@@ -1386,8 +1185,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create an acsc node
          * 
-         * Creates an acsc node with the given parameter.
-         * 
          * @note assert(param <= -1 || param >= 1)
          * 
          * @param param Parameter
@@ -1398,8 +1195,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create an atan node
          * 
-         * Creates an atan node with the given parameter.
-         * 
          * @param param Parameter
          * @return Atan node (atan(param))
          */
@@ -1407,8 +1202,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create an acot node
-         * 
-         * Creates an acot node with the given parameter.
          * 
          * @param param Parameter
          * @return Acot node (acot(param))
@@ -1418,8 +1211,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a sinh node
          * 
-         * Creates a sinh node with the given parameter.
-         * 
          * @param param Parameter
          * @return Sinh node (sinh(param))
          */
@@ -1427,8 +1218,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a cosh node
-         * 
-         * Creates a cosh node with the given parameter.
          * 
          * @param param Parameter
          * @return Cosh node (cosh(param))
@@ -1438,8 +1227,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a tanh node
          * 
-         * Creates a tanh node with the given parameter.
-         * 
          * @param param Parameter
          * @return Tanh node (tanh(param))
          */
@@ -1448,8 +1235,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a sech node
          * 
-         * Creates a sech node with the given parameter.
-         * 
          * @param param Parameter
          * @return Sech node (sech(param))
          */
@@ -1457,8 +1242,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a csch node
-         * 
-         * Creates a csch node with the given parameter.
          * 
          * @note assert(param != 0)
          * 
@@ -1470,8 +1253,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a coth node
          * 
-         * Creates a coth node with the given parameter.
-         * 
          * @note assert(param < -1 || param > 1)
          * 
          * @param param Parameter
@@ -1482,8 +1263,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create an asinh node
          * 
-         * Creates an asinh node with the given parameter.
-         * 
          * @param param Parameter
          * @return Asinh node (asinh(param))
          */
@@ -1491,8 +1270,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create an acosh node
-         * 
-         * Creates an acosh node with the given parameter.
          * 
          * @note assert(param >= 1)
          * 
@@ -1504,8 +1281,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create an atanh node
          * 
-         * Creates an atanh node with the given parameter.
-         * 
          * @note assert(param > -1 && param < 1)
          * 
          * @param param Parameter
@@ -1515,8 +1290,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create an asech node
-         * 
-         * Creates an asech node with the given parameter.
          * 
          * @note assert(param > 0 && param <= 1)
          * 
@@ -1528,8 +1301,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create an acsch node
          * 
-         * Creates an acsch node with the given parameter.
-         * 
          * @note assert(param != 0)
          * 
          * @param param Parameter
@@ -1540,8 +1311,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create an acoth node
          * 
-         * Creates an acoth node with the given parameter.
-         * 
          * @note assert(param < -1 || param > 1)
          * 
          * @param param Parameter
@@ -1551,8 +1320,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create an atan2 node
-         * 
-         * Creates an atan2 node with the given parameters.
          * 
          * @note Represents the angle in radians between the positive x-axis and the ray to point (r, l)
          * @note atan2(l, r) = atan(l/r) with appropriate quadrant adjustment
@@ -1567,8 +1334,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a le node
          * 
-         * Creates a le node with the given parameters.
-         * 
          * @param l Left parameter
          * @param r Right parameter
          * @return Le node (l <= r)
@@ -1577,8 +1342,6 @@ namespace SMTLIBParser{
 
         /**
          * @brief Create a lt node
-         * 
-         * Creates a lt node with the given parameters.
          * 
          * @param l Left parameter
          * @param r Right parameter
@@ -1589,8 +1352,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a ge node
          * 
-         * Creates a ge node with the given parameters.
-         * 
          * @param l Left parameter
          * @param r Right parameter
          * @return Ge node (l >= r)
@@ -1600,8 +1361,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a gt node
          *
-         * Creates a gt node with the given parameters.
-         * 
          * @param l Left parameter
          * @param r Right parameter
          * @return Gt node (l > r)
@@ -1611,8 +1370,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a le node
          * 
-         * Creates a le node with the given parameters.
-         * 
          * @param params Parameters
          * @return Le node (l <= r <= ... <= s)
          */
@@ -1620,8 +1377,6 @@ namespace SMTLIBParser{
 
         /**
          * @brief Create a lt node
-         * 
-         * Creates a lt node with the given parameters.
          * 
          * @param params Parameters
          * @return Lt node (l < r < ... < s)
@@ -1631,8 +1386,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a ge node
          * 
-         * Creates a ge node with the given parameters.
-         * 
          * @param params Parameters
          * @return Ge node (l >= r >= ... >= s)
          */
@@ -1640,8 +1393,6 @@ namespace SMTLIBParser{
 
         /**
          * @brief Create a gt node
-         * 
-         * Creates a gt node with the given parameters.
          * 
          * @param params Parameters
          * @return Gt node (l > r > ... > s)
@@ -1653,8 +1404,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a to_int node
          * 
-         * Creates a to_int node with the given parameter.
-         * 
          * @param param Parameter
          * @return To_int node (to_int(param))
          */
@@ -1662,8 +1411,6 @@ namespace SMTLIBParser{
 
         /**
          * @brief Create a to_real node
-         * 
-         * Creates a to_real node with the given parameter.
          * 
          * @param param Parameter
          * @return To_real node (to_real(param))
@@ -1674,8 +1421,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a is_int node
          * 
-         * Creates a is_int node with the given parameter.
-         * 
          * @param param Parameter
          * @return Is_int node (is_int(param))
          */
@@ -1683,8 +1428,6 @@ namespace SMTLIBParser{
 
         /**
          * @brief Create a is_divisible node
-         * 
-         * Creates a is_divisible node with the given parameters.
          * 
          * @param l Left parameter
          * @param r Right parameter
@@ -1695,8 +1438,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a is_prime node
          * 
-         * Creates a is_prime node with the given parameter.
-         * 
          * @param param Parameter
          * @return Is_prime node (is_prime(param))
          */
@@ -1705,8 +1446,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a is_even node
          * 
-         * Creates a is_even node with the given parameter.
-         * 
          * @param param Parameter
          * @return Is_even node (is_even(param))
          */
@@ -1714,8 +1453,6 @@ namespace SMTLIBParser{
 
         /**
          * @brief Create a is_odd node
-         * 
-         * Creates a is_odd node with the given parameter.
          * 
          * @param param Parameter
          * @return Is_odd node (is_odd(param))
@@ -1727,16 +1464,12 @@ namespace SMTLIBParser{
         /**
          * @brief Create a pi node
          * 
-         * Creates a pi node.
-         * 
          * @return Pi node (pi, i.e., the ratio of the circumference of a circle to its diameter)
          */
         std::shared_ptr<DAGNode> mkPi(); // pi
 
         /**
          * @brief Create a e node
-         * 
-         * Creates a e node.
          * 
          * @return E node (e, i.e., the base of the natural logarithm)
          */
@@ -1745,16 +1478,12 @@ namespace SMTLIBParser{
         /**
          * @brief Create a infinity node
          * 
-         * Creates a infinity node.
-         * 
          * @return Infinity node (infinity)
          */
         std::shared_ptr<DAGNode> mkInfinity(); // infinity
 
         /**
          * @brief Create a nan node
-         * 
-         * Creates a nan node.
          * 
          * @return NaN node (nan, i.e., Not a Number)
          */
@@ -1763,9 +1492,7 @@ namespace SMTLIBParser{
         /**
          * @brief Create a epsilon node
          * 
-         * Creates a epsilon node.
-         * 
-         * @return Epsilon node (epsilon, i.e., a very small number, )
+         * @return Epsilon node (epsilon, i.e., a infinitesimal number)
          */
         std::shared_ptr<DAGNode> mkEpsilon(); // epsilon
         
@@ -1773,8 +1500,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a gcd node
-         * 
-         * Creates a greatest common divisor node with the given parameters.
          * 
          * @note assert(l != 0 || r != 0)
          * 
@@ -1787,8 +1512,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a lcm node
          * 
-         * Creates a least common multiple node with the given parameters.
-         * 
          * @note assert(l != 0 && r != 0)
          * 
          * @param l Left parameter
@@ -1799,8 +1522,6 @@ namespace SMTLIBParser{
 
         /**
          * @brief Create a factorial node
-         * 
-         * Creates a factorial node with the given parameter.
          * 
          * @note assert(param >= 0)
          * 
@@ -1813,8 +1534,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a bitvector not node
          * 
-         * Creates a bitvector not node with the given parameter.
-         * 
          * @param param Parameter
          * @return Bitvector not node (~param)
          */
@@ -1822,8 +1541,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a bitvector and node
-         * 
-         * Creates a bitvector and node with the given parameters.
          * 
          * @param l Left parameter
          * @param r Right parameter
@@ -1834,8 +1551,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a bitvector and node
          * 
-         * Creates a bitvector and node with the given parameters.
-         * 
          * @param params Parameters
          * @return Bitvector and node (l & r & ...)
          */
@@ -1843,8 +1558,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a bitvector or node
-         * 
-         * Creates a bitvector or node with the given parameters.
          * 
          * @param l Left parameter
          * @param r Right parameter
@@ -1855,8 +1568,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a bitvector or node
          * 
-         * Creates a bitvector or node with the given parameters.
-         * 
          * @param params Parameters
          * @return Bitvector or node (l | r | ...)
          */
@@ -1864,8 +1575,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a bitvector xor node
-         * 
-         * Creates a bitvector xor node with the given parameters.
          * 
          * @param l Left parameter
          * @param r Right parameter
@@ -1876,8 +1585,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a bitvector xor node
          * 
-         * Creates a bitvector xor node with the given parameters.
-         * 
          * @param params Parameters
          * @return Bitvector xor node (l ^ r ^ ...)
          */
@@ -1885,8 +1592,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a bitvector nand node
-         * 
-         * Creates a bitvector nand node with the given parameters.
          * 
          * @param l Left parameter
          * @param r Right parameter
@@ -1897,8 +1602,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a bitvector nand node
          * 
-         * Creates a bitvector nand node with the given parameters.
-         * 
          * @param params Parameters
          * @return Bitvector nand node (~(l & r & ...))
          */
@@ -1906,8 +1609,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a bitvector nor node
-         * 
-         * Creates a bitvector nor node with the given parameters.
          * 
          * @param l Left parameter
          * @param r Right parameter
@@ -1918,8 +1619,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a bitvector nor node
          * 
-         * Creates a bitvector nor node with the given parameters.
-         * 
          * @param params Parameters
          * @return Bitvector nor node (~(l | r | ...))
          */
@@ -1927,8 +1626,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a bitvector xnor node
-         * 
-         * Creates a bitvector xnor node with the given parameters.
          * 
          * @param l Left parameter
          * @param r Right parameter
@@ -1939,8 +1636,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a bitvector comparison node
          * 
-         * Creates a bitvector comparison node that returns 1 if equal, 0 otherwise.
-         * 
          * @param l Left parameter
          * @param r Right parameter
          * @return Bitvector comparison node (l = r ? #b1 : #b0)
@@ -1950,8 +1645,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a bitvector xnor node
          * 
-         * Creates a bitvector xnor node with the given parameters.
-         * 
          * @param params Parameters
          * @return Bitvector xnor node (~(l ^ r ^ ...))
          */
@@ -1960,8 +1653,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a bitvector negation node
          * 
-         * Creates a bitvector negation node with the given parameter.
-         * 
          * @param param Parameter
          * @return Bitvector negation node (-param)
          */
@@ -1969,8 +1660,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a bitvector addition node
-         * 
-         * Creates a bitvector addition node with the given parameters.
          * 
          * @param l Left parameter
          * @param r Right parameter
@@ -1981,8 +1670,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a bitvector addition node
          * 
-         * Creates a bitvector addition node with the given parameters.
-         * 
          * @param params Parameters
          * @return Bitvector addition node (l + r + ...)
          */
@@ -1990,8 +1677,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a bitvector subtraction node
-         * 
-         * Creates a bitvector subtraction node with the given parameters.
          * 
          * @param l Left parameter
          * @param r Right parameter
@@ -2002,8 +1687,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a bitvector subtraction node
          * 
-         * Creates a bitvector subtraction node with the given parameters.
-         * 
          * @param params Parameters
          * @return Bitvector subtraction node (l - r - ...)
          */
@@ -2011,8 +1694,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a bitvector multiplication node
-         * 
-         * Creates a bitvector multiplication node with the given parameters.
          * 
          * @param l Left parameter
          * @param r Right parameter
@@ -2023,8 +1704,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a bitvector multiplication node
          * 
-         * Creates a bitvector multiplication node with the given parameters.
-         * 
          * @param params Parameters
          * @return Bitvector multiplication node (l * r * ...)
          */
@@ -2032,8 +1711,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a bitvector unsigned division node
-         * 
-         * Creates a bitvector unsigned division node with the given parameters.
          * 
          * @note if r == 0, then return all ones bit-vector
          * 
@@ -2046,8 +1723,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a bitvector unsigned remainder node
          * 
-         * Creates a bitvector unsigned remainder node with the given parameters.
-         * 
          * @note if r == 0, then return l
          * 
          * @param l Left parameter
@@ -2058,8 +1733,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a bitvector unsigned modulo node
-         * 
-         * Creates a bitvector unsigned modulo node with the given parameters.
          * 
          * @note if r == 0, then return l
          * 
@@ -2072,8 +1745,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a bitvector signed division node
          * 
-         * Creates a bitvector signed division node with the given parameters.
-         * 
          * @note if r == 0, then return all ones bit-vector if l is positive, otherwise 1
          * 
          * @param l Left parameter
@@ -2084,8 +1755,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a bitvector signed remainder node
-         * 
-         * Creates a bitvector signed remainder node with the given parameters.
          * 
          * @note if r == 0, then return l
          * 
@@ -2098,8 +1767,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a bitvector signed modulo node
          * 
-         * Creates a bitvector signed modulo node with the given parameters.
-         * 
          * @note if r == 0, then return l
          * 
          * @param l Left parameter
@@ -2111,8 +1778,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a bitvector shift left node
          * 
-         * Creates a bitvector shift left node with the given parameters.
-         * 
          * @param l Left parameter
          * @param r Right parameter
          * @return Bitvector shift left node (l << r)
@@ -2121,8 +1786,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a bitvector logical shift right node
-         * 
-         * Creates a bitvector logical shift right node with the given parameters.
          * 
          * @param l Left parameter
          * @param r Right parameter
@@ -2133,8 +1796,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a bitvector arithmetic shift right node
          * 
-         * Creates a bitvector arithmetic shift right node with the given parameters.
-         * 
          * @param l Left parameter
          * @param r Right parameter
          * @return Bitvector arithmetic shift right node (l >> r)
@@ -2143,8 +1804,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a bitvector concatenation node
-         * 
-         * Creates a bitvector concatenation node with the given parameters.
          * 
          * @param params Parameters
          * @return Bitvector concatenation node (l ++ r ++ ...)
@@ -2203,8 +1862,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a bitvector rotate left node
          * 
-         * Creates a bitvector rotate left node with the given parameters.
-         * 
          * @param l Source bitvector
          * @param r Rotation amount
          * @return Bitvector rotate left node (l <<< r)
@@ -2213,8 +1870,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a bitvector rotate right node
-         * 
-         * Creates a bitvector rotate right node with the given parameters.
          * 
          * @param l Source bitvector
          * @param r Rotation amount
@@ -2226,8 +1881,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a bitvector unsigned less than node
          * 
-         * Creates a bitvector unsigned less than node with the given parameters.
-         * 
          * @param l Left parameter
          * @param r Right parameter
          * @return Bitvector unsigned less than node (l < r)
@@ -2236,8 +1889,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a bitvector unsigned less than or equal node
-         * 
-         * Creates a bitvector unsigned less than or equal node with the given parameters.
          * 
          * @param l Left parameter
          * @param r Right parameter
@@ -2248,8 +1899,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a bitvector unsigned greater than node
          * 
-         * Creates a bitvector unsigned greater than node with the given parameters.
-         * 
          * @param l Left parameter
          * @param r Right parameter
          * @return Bitvector unsigned greater than node (l > r)
@@ -2258,8 +1907,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a bitvector unsigned greater than or equal node
-         * 
-         * Creates a bitvector unsigned greater than or equal node with the given parameters.
          * 
          * @param l Left parameter
          * @param r Right parameter
@@ -2270,8 +1917,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a bitvector signed less than node
          * 
-         * Creates a bitvector signed less than node with the given parameters.
-         * 
          * @param l Left parameter
          * @param r Right parameter
          * @return Bitvector signed less than node (l < r)
@@ -2280,8 +1925,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a bitvector signed less than or equal node
-         * 
-         * Creates a bitvector signed less than or equal node with the given parameters.
          * 
          * @param l Left parameter
          * @param r Right parameter
@@ -2292,8 +1935,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a bitvector signed greater than node
          * 
-         * Creates a bitvector signed greater than node with the given parameters.
-         * 
          * @param l Left parameter
          * @param r Right parameter
          * @return Bitvector signed greater than node (l > r)
@@ -2302,8 +1943,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a bitvector signed greater than or equal node
-         * 
-         * Creates a bitvector signed greater than or equal node with the given parameters.
          * 
          * @param l Left parameter
          * @param r Right parameter
@@ -2315,8 +1954,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a bitvector to natural number conversion node
          * 
-         * Creates a bitvector to natural number conversion node with the given parameter.
-         * 
          * @param param Parameter
          * @return Bitvector to natural number conversion node (to_nat(param))
          */
@@ -2324,8 +1961,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a natural number to bitvector conversion node
-         * 
-         * Creates a natural number to bitvector conversion node with the given parameters.
          * 
          * @note assert(param >= 0 && width > 0 && param < 2^width)
          * 
@@ -2338,8 +1973,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a bitvector to integer conversion node
          * 
-         * Creates a bitvector to integer conversion node with the given parameter.
-         * 
          * @param param Parameter
          * @return Bitvector to integer conversion node (to_int(param))
          */
@@ -2347,8 +1980,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create an integer to bitvector conversion node
-         * 
-         * Creates an integer to bitvector conversion node with the given parameters.
          * 
          * @note assert(width > 0 && param >= -2^(width-1) && param < 2^(width-1))
          * 
@@ -2362,8 +1993,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a floating-point addition node
          * 
-         * Creates a floating-point addition node with the given parameters.
-         * 
          * @param params Parameters
          * @return Floating-point addition node (fp.add(l, r, ...))
          */
@@ -2371,8 +2000,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a floating-point subtraction node
-         * 
-         * Creates a floating-point subtraction node with the given parameters.
          * 
          * @param params Parameters
          * @return Floating-point subtraction node (fp.sub(l, r, ...))
@@ -2382,8 +2009,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a floating-point multiplication node
          * 
-         * Creates a floating-point multiplication node with the given parameters.
-         * 
          * @param params Parameters
          * @return Floating-point multiplication node (fp.mul(l, r, ...))
          */
@@ -2391,8 +2016,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a floating-point division node
-         * 
-         * Creates a floating-point division node with the given parameters.
          * 
          * @note Division by zero results in appropriate IEEE-754 behavior
          * 
@@ -2404,8 +2027,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a floating-point absolute value node
          * 
-         * Creates a floating-point absolute value node with the given parameter.
-         * 
          * @param param Parameter
          * @return Floating-point absolute value node (fp.abs(param))
          */
@@ -2414,8 +2035,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a floating-point negation node
          * 
-         * Creates a floating-point negation node with the given parameter.
-         * 
          * @param param Parameter
          * @return Floating-point negation node (fp.neg(param))
          */
@@ -2423,8 +2042,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a floating-point remainder node
-         * 
-         * Creates a floating-point remainder node with the given parameters.
          * 
          * @note IEEE-754 remainder operation
          * 
@@ -2437,8 +2054,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a floating-point fused multiply-add node
          * 
-         * Creates a floating-point fused multiply-add node with the given parameters.
-         * 
          * @note The operation (a * b + c) performed with only one rounding
          * 
          * @param params Parameters (should have exactly 3 elements)
@@ -2448,8 +2063,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a floating-point square root node
-         * 
-         * Creates a floating-point square root node with the given parameter.
          * 
          * @note Returns NaN for negative values
          * 
@@ -2461,8 +2074,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a floating-point round to integral node
          * 
-         * Creates a floating-point round to integral node with the given parameter.
-         * 
          * @param param Parameter
          * @return Floating-point round to integral node (fp.roundToIntegral(param))
          */
@@ -2471,8 +2082,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a floating-point minimum node
          * 
-         * Creates a floating-point minimum node with the given parameters.
-         * 
          * @param params Parameters
          * @return Floating-point minimum node (fp.min(params))
          */
@@ -2480,8 +2089,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a floating-point maximum node
-         * 
-         * Creates a floating-point maximum node with the given parameters.
          * 
          * @param params Parameters
          * @return Floating-point maximum node (fp.max(params))
@@ -2492,8 +2099,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a floating-point less than or equal node
          * 
-         * Creates a floating-point less than or equal node with the given parameters.
-         * 
          * @param l Left parameter
          * @param r Right parameter
          * @return Floating-point less than or equal node (fp.leq(l, r))
@@ -2502,8 +2107,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a floating-point less than node
-         * 
-         * Creates a floating-point less than node with the given parameters.
          * 
          * @param l Left parameter
          * @param r Right parameter
@@ -2514,8 +2117,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a floating-point greater than or equal node
          * 
-         * Creates a floating-point greater than or equal node with the given parameters.
-         * 
          * @param l Left parameter
          * @param r Right parameter
          * @return Floating-point greater than or equal node (fp.geq(l, r))
@@ -2525,8 +2126,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a floating-point greater than node
          * 
-         * Creates a floating-point greater than node with the given parameters.
-         * 
          * @param l Left parameter
          * @param r Right parameter
          * @return Floating-point greater than node (fp.gt(l, r))
@@ -2535,8 +2134,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a floating-point equality node
-         * 
-         * Creates a floating-point equality node with the given parameters.
          * 
          * @note This is IEEE-754 equality (NaN != NaN)
          * 
@@ -2550,8 +2147,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a floating-point to unsigned bitvector conversion node
          * 
-         * Creates a floating-point to unsigned bitvector conversion node with the given parameters.
-         * 
          * @note Rounds toward zero, returns max representable value if out of range
          * 
          * @param param Floating-point value
@@ -2562,8 +2157,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a floating-point to signed bitvector conversion node
-         * 
-         * Creates a floating-point to signed bitvector conversion node with the given parameters.
          * 
          * @note Rounds toward zero, returns max/min representable value if out of range
          * 
@@ -2576,8 +2169,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a floating-point to real conversion node
          * 
-         * Creates a floating-point to real conversion node with the given parameter.
-         * 
          * @note NaN and infinity cannot be converted to real
          * 
          * @param param Floating-point value
@@ -2587,8 +2178,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a value to floating-point conversion node
-         * 
-         * Creates a value to floating-point conversion node with the given parameters.
          * 
          * @param eb Exponent bit width
          * @param sb Significand bit width
@@ -2601,8 +2190,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a floating-point is-normal check node
          * 
-         * Creates a node that checks if a floating-point value is normal.
-         * 
          * @param param Parameter to check
          * @return Is-normal check node (fp.isNormal(param))
          */
@@ -2610,8 +2197,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a floating-point is-subnormal check node
-         * 
-         * Creates a node that checks if a floating-point value is subnormal.
          * 
          * @param param Parameter to check
          * @return Is-subnormal check node (fp.isSubnormal(param))
@@ -2621,8 +2206,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a floating-point is-zero check node
          * 
-         * Creates a node that checks if a floating-point value is zero.
-         * 
          * @param param Parameter to check
          * @return Is-zero check node (fp.isZero(param))
          */
@@ -2630,8 +2213,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a floating-point is-infinity check node
-         * 
-         * Creates a node that checks if a floating-point value is infinity.
          * 
          * @param param Parameter to check
          * @return Is-infinity check node (fp.isInf(param))
@@ -2641,8 +2222,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a floating-point is-NaN check node
          * 
-         * Creates a node that checks if a floating-point value is NaN.
-         * 
          * @param param Parameter to check
          * @return Is-NaN check node (fp.isNaN(param))
          */
@@ -2651,8 +2230,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a floating-point is-negative check node
          * 
-         * Creates a node that checks if a floating-point value is negative.
-         * 
          * @param param Parameter to check
          * @return Is-negative check node (fp.isNegative(param))
          */
@@ -2660,8 +2237,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a floating-point is-positive check node
-         * 
-         * Creates a node that checks if a floating-point value is positive.
          * 
          * @param param Parameter to check
          * @return Is-positive check node (fp.isPositive(param))
@@ -2672,8 +2247,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create an array select node
          * 
-         * Creates an array select node that returns the element at the specified index.
-         * 
          * @param l Array
          * @param r Index
          * @return Array select node (l[r])
@@ -2682,8 +2255,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create an array store node
-         * 
-         * Creates an array store node that updates the array with a new value at the specified index.
          * 
          * @note Returns a new array, the original array is not modified
          * 
@@ -2698,8 +2269,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a string length node
          * 
-         * Creates a string length node that returns the length of the string.
-         * 
          * @param param String
          * @return String length node (str.len(param))
          */
@@ -2708,8 +2277,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a string concatenation node
          * 
-         * Creates a string concatenation node that concatenates multiple strings.
-         * 
          * @param params Strings to concatenate
          * @return String concatenation node (str.++(param1, param2, ...))
          */
@@ -2717,8 +2284,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a string substring node
-         * 
-         * Creates a string substring node that extracts a substring.
          * 
          * @param l String
          * @param r Start index
@@ -2730,8 +2295,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a string prefix check node
          * 
-         * Creates a node that checks if the first string is a prefix of the second string.
-         * 
          * @param l Prefix
          * @param r String
          * @return String prefix check node (str.prefixof(l, r))
@@ -2741,8 +2304,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a string suffix check node
          * 
-         * Creates a node that checks if the first string is a suffix of the second string.
-         * 
          * @param l Suffix
          * @param r String
          * @return String suffix check node (str.suffixof(l, r))
@@ -2751,8 +2312,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a string index-of node
-         * 
-         * Creates a node that returns the index of the first occurrence of a substring.
          * 
          * @param l String
          * @param r Substring to find
@@ -2764,8 +2323,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a string char-at node
          * 
-         * Creates a node that returns the character at the specified index.
-         * 
          * @param l String
          * @param r Index
          * @return String char-at node (str.at(l, r))
@@ -2774,8 +2331,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a string update node
-         * 
-         * Creates a node that updates a string at the specified index.
          * 
          * @param l String
          * @param r Index
@@ -2787,8 +2342,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a string replace node
          * 
-         * Creates a node that replaces the first occurrence of a substring.
-         * 
          * @param l String
          * @param r Substring to replace
          * @param v Replacement string
@@ -2798,8 +2351,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a string replace-all node
-         * 
-         * Creates a node that replaces all occurrences of a substring.
          * 
          * @param l String
          * @param r Substring to replace
@@ -2811,8 +2362,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a string to-lower node
          * 
-         * Creates a node that converts a string to lowercase.
-         * 
          * @param param String
          * @return String to-lower node (str.to_lower(param))
          */
@@ -2820,8 +2369,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a string to-upper node
-         * 
-         * Creates a node that converts a string to uppercase.
          * 
          * @param param String
          * @return String to-upper node (str.to_upper(param))
@@ -2831,8 +2378,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a string reverse node
          * 
-         * Creates a node that reverses a string.
-         * 
          * @param param String
          * @return String reverse node (str.rev(param))
          */
@@ -2840,8 +2385,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a string split node
-         * 
-         * Creates a node that splits a string by a delimiter.
          * 
          * @param l String
          * @param r Delimiter
@@ -2853,8 +2396,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a string less-than node
          * 
-         * Creates a node that checks if the first string is lexicographically less than the second string.
-         * 
          * @param l Left string
          * @param r Right string
          * @return String less-than node (str.<(l, r))
@@ -2863,8 +2404,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a string less-than-or-equal node
-         * 
-         * Creates a node that checks if the first string is lexicographically less than or equal to the second string.
          * 
          * @param l Left string
          * @param r Right string
@@ -2875,8 +2414,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a string greater-than node
          * 
-         * Creates a node that checks if the first string is lexicographically greater than the second string.
-         * 
          * @param l Left string
          * @param r Right string
          * @return String greater-than node (str.>(l, r))
@@ -2885,8 +2422,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a string greater-than-or-equal node
-         * 
-         * Creates a node that checks if the first string is lexicographically greater than or equal to the second string.
          * 
          * @param l Left string
          * @param r Right string
@@ -2898,8 +2433,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a string in-regex check node
          * 
-         * Creates a node that checks if a string matches a regular expression.
-         * 
          * @param l String
          * @param r Regular expression
          * @return String in-regex check node (str.in_re(l, r))
@@ -2908,8 +2441,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a string contains check node
-         * 
-         * Creates a node that checks if a string contains a substring.
          * 
          * @param l String
          * @param r Substring
@@ -2920,8 +2451,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a string is-digit check node
          * 
-         * Creates a node that checks if a string consists of only digits.
-         * 
          * @param param String
          * @return String is-digit check node (str.is_digit(param))
          */
@@ -2931,8 +2460,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a string from-integer conversion node
          * 
-         * Creates a node that converts an integer to a string.
-         * 
          * @param param Integer
          * @return String from-integer conversion node (str.from_int(param))
          */
@@ -2940,8 +2467,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a string to-integer conversion node
-         * 
-         * Creates a node that converts a string to an integer.
          * 
          * @note Returns -1 if the string does not represent a valid integer
          * 
@@ -2952,8 +2477,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create a string to-regex conversion node
-         * 
-         * Creates a node that converts a string to a regular expression.
          * 
          * @param param String
          * @return String to-regex conversion node (str.to_reg(param))
@@ -3165,8 +2688,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a let node
          * 
-         * Creates a let node that binds variables to values.
-         * 
          * @param params List of (key, value) pairs
          * @return Let node (let((key1, val1), (key2, val2), ...))
          */
@@ -3175,8 +2696,6 @@ namespace SMTLIBParser{
         // QUANTIFIERS
         /**
          * @brief Create a quantifier variable node
-         * 
-         * Creates a quantifier variable node that binds a variable to a sort.
          * 
          * @param name Variable name
          * @param sort Variable sort
@@ -3187,8 +2706,6 @@ namespace SMTLIBParser{
         /**
          * @brief Create a forall node
          * 
-         * Creates a forall node that binds variables to a sort and a body.
-         * 
          * @param params List of (variable, sort) pairs
          * @return Forall node (forall((var1, sort1), (var2, sort2), ..., body))
          */
@@ -3196,8 +2713,6 @@ namespace SMTLIBParser{
         
         /**
          * @brief Create an exists node
-         * 
-         * Creates an exists node that binds variables to a sort and a body.
          * 
          * @param params List of (variable, sort) pairs
          * @return Exists node (exists((var1, sort1), (var2, sort2), ..., body))
@@ -3207,8 +2722,6 @@ namespace SMTLIBParser{
         // FUNCTION
         /**
          * @brief Create a function application node
-         * 
-         * Creates a function application node that applies a function to a list of parameters.
          * 
          * @param fun Function node
          * @param params List of parameters
@@ -3231,8 +2744,6 @@ namespace SMTLIBParser{
         /**
          * @brief Get the arity of a node kind
          * 
-         * Returns the arity of a node kind.
-         * 
          * @param k Node kind
          * @return Arity of the node kind
          */
@@ -3242,8 +2753,6 @@ namespace SMTLIBParser{
         /**
          * @brief Get the add operator for a sort
          * 
-         * Returns the add operator for a sort.
-         * 
          * @param sort Sort
          * @return Add operator for the sort
          */ 
@@ -3251,8 +2760,6 @@ namespace SMTLIBParser{
 
         /**
          * @brief Get the opposite kind of a node kind
-         * 
-         * Returns the opposite kind of a node kind.
          * 
          * @param kind Node kind
          * @return Opposite kind of the node kind
@@ -3262,8 +2769,6 @@ namespace SMTLIBParser{
         /**
          * @brief Get the zero for a sort
          * 
-         * Returns the zero for a sort.
-         * 
          * @param sort Sort
          * @return Zero for the sort
          */
@@ -3272,8 +2777,6 @@ namespace SMTLIBParser{
         // additional functions
         /**
          * @brief Substitute variables in an expression
-         * 
-         * Substitutes variables in an expression with their corresponding values.
          *
          * @note This function is used to substitute variables in an expression but not simplify the expression.
          * 
@@ -3287,8 +2790,6 @@ namespace SMTLIBParser{
         /**
          * @brief Apply a function to a list of parameters
          * 
-         * Applies a function to a list of parameters.
-         * 
          * @param fun Function node
          * @param params List of parameters
          * @return Applied function (fun(p1, p2, ..., pn))
@@ -3298,8 +2799,6 @@ namespace SMTLIBParser{
         // negate an atom
         /**
          * @brief Negate an atom
-         * 
-         * Negates an atom.
          * 
          * @note This function is used to negate an atom (for example, negateAtom(x = y) <=> x != y).
          * 
@@ -3312,16 +2811,12 @@ namespace SMTLIBParser{
         /**
          * @brief Set the precision for evaluation
          * 
-         * Sets the precision for evaluation.
-         * 
          * @param precision Precision
          */
         void                                    setEvaluatePrecision(mpfr_prec_t precision);
 
         /**
          * @brief Get the precision for evaluation
-         * 
-         * Gets the precision for evaluation.
          * 
          * @return Precision
          */
@@ -3330,8 +2825,6 @@ namespace SMTLIBParser{
         /**
          * @brief Set the use floating for evaluation
          * 
-         * Sets the use floating for evaluation.
-         * 
          * @param use_floating Use floating
          */
         void                                    setEvaluateUseFloating(bool use_floating);
@@ -3339,16 +2832,12 @@ namespace SMTLIBParser{
         /**
          * @brief Get the use floating for evaluation
          * 
-         * Gets the use floating for evaluation.
-         * 
          * @return Use floating
          */
         bool                                    getEvaluateUseFloating() const;
 
         /**
          * @brief Evaluate an expression
-         * 
-         * Evaluates an expression.
          * 
          * @note The model can be a partial model and this function will simplify the expression.
          * 
@@ -3362,8 +2851,6 @@ namespace SMTLIBParser{
         /**
          * @brief Evaluate an expression
          * 
-         * Evaluates an expression.
-         * 
          * @param expr Expression to evaluate
          * @param model Model
          * @return Evaluated expression
@@ -3372,8 +2859,6 @@ namespace SMTLIBParser{
 
         /**
          * @brief Evaluate an expression
-         * 
-         * Evaluates an expression.
          * 
          * @note The model can be a partial model and this function will simplify the expression.
          * 
@@ -3388,8 +2873,6 @@ namespace SMTLIBParser{
         /**
          * @brief Convert an expression to a real
          * 
-         * Converts an expression to a real.
-         * 
          * @param expr Expression to convert
          * @return Real
          */
@@ -3397,8 +2880,6 @@ namespace SMTLIBParser{
 
         /**
          * @brief Convert an expression to an integer
-         * 
-         * Converts an expression to an integer.
          * 
          * @param expr Expression to convert
          * @return Integer
@@ -3408,8 +2889,6 @@ namespace SMTLIBParser{
         /**
          * @brief Check if an expression is zero
          * 
-         * Checks if an expression is zero.
-         * 
          * @param expr Expression to check
          * @return true if the expression is zero, false otherwise
          */
@@ -3417,8 +2896,6 @@ namespace SMTLIBParser{
 
         /**
          * @brief Check if an expression is one
-         * 
-         * Checks if an expression is one.
          * 
          * @param expr Expression to check
          * @return true if the expression is one, false otherwise
@@ -3429,8 +2906,6 @@ namespace SMTLIBParser{
         /**
          * @brief Expand a let expression
          * 
-         * Expands a let expression.
-         * 
          * @param expr Let expression to expand
          * @return Expanded expression
          */
@@ -3439,8 +2914,6 @@ namespace SMTLIBParser{
         /**
          * @brief Collect atoms from an expression
          * 
-         * Collects atoms from an expression.
-         * 
          * @param expr Expression to collect atoms from
          * @param atoms Atoms (stored in a set)
          */
@@ -3448,8 +2921,6 @@ namespace SMTLIBParser{
 
         /**
          * @brief Replace atoms in an expression
-         * 
-         * Replaces atoms in an expression.
          * 
          * @param expr Expression to replace atoms in
          * @param atom_map Atom map (stored in a map)
@@ -3460,8 +2931,6 @@ namespace SMTLIBParser{
         /**
          * @brief Convert an expression to Tseitin CNF
          * 
-         * Converts an expression to Tseitin CNF.
-         * 
          * @param expr Expression to convert
          * @param clauses Clauses (stored in a vector)
          * @return Expression in Tseitin CNF
@@ -3471,8 +2940,6 @@ namespace SMTLIBParser{
         /**
          * @brief Convert an expression to CNF
          * 
-         * Converts an expression to CNF.
-         * 
          * @param expr Expression to convert
          * @return Expression in CNF
          */
@@ -3480,8 +2947,6 @@ namespace SMTLIBParser{
 
         /**
          * @brief Convert a vector of expressions to CNF
-         * 
-         * Converts a vector of expressions to CNF.
          * 
          * @param exprs Expressions to convert
          * @return Expressions in CNF
@@ -3491,8 +2956,6 @@ namespace SMTLIBParser{
         /**
          * @brief Convert an expression to DNF
          * 
-         * Converts an expression to DNF.
-         * 
          * @param expr Expression to convert
          * @return Expression in DNF
          */
@@ -3500,8 +2963,6 @@ namespace SMTLIBParser{
 
         /**
          * @brief Convert a vector of expressions to DNF
-         * 
-         * Converts a vector of expressions to DNF.
          * 
          * @param exprs Expressions to convert
          * @return Expressions in DNF
@@ -3511,8 +2972,6 @@ namespace SMTLIBParser{
         /**
          * @brief Convert an expression to NNF
          * 
-         * Converts an expression to NNF.
-         * 
          * @param expr Expression to convert
          * @return Expression in NNF
          */
@@ -3520,8 +2979,6 @@ namespace SMTLIBParser{
 
         /**
          * @brief Convert a vector of expressions to NNF
-         * 
-         * Converts a vector of expressions to NNF.
          * 
          * @param exprs Expressions to convert
          * @return Expressions in NNF
@@ -3532,8 +2989,6 @@ namespace SMTLIBParser{
         /**
          * @brief Print an expression
          * 
-         * Prints an expression.
-         * 
          * @param expr Expression to print
          * @return String representation of the expression
          */
@@ -3542,8 +2997,6 @@ namespace SMTLIBParser{
         /**
          * @brief Print a node kind
          * 
-         * Prints a node kind.
-         * 
          * @param kind Node kind to print
          * @return String representation of the node kind
          */
@@ -3551,8 +3004,6 @@ namespace SMTLIBParser{
 
         /**
          * @brief Print a sort
-         * 
-         * Prints a sort.
          * 
          * @param sort Sort to print
          * @return String representation of the sort

@@ -544,16 +544,12 @@ namespace SMTLIBParser{
         /**
          * @brief Get the sort of the node
          * 
-         * Gets the sort of the node.
-         * 
          * @return The sort of the node
          */
         std::shared_ptr<Sort> getSort()
                                     const { return sort; };
         /**
          * @brief Get the name of the node
-         * 
-         * Gets the name of the node.
          * 
          * @return The name of the node
          */
@@ -562,16 +558,12 @@ namespace SMTLIBParser{
         /**
          * @brief Get the kind of the node
          * 
-         * Gets the kind of the node.
-         * 
          * @return The kind of the node
          */
         NODE_KIND getKind()           const { return kind; };
 
         /**
          * @brief Get the value of the node
-         * 
-         * Gets the value of the node.
          * 
          * @return The value of the node
          */
@@ -580,16 +572,12 @@ namespace SMTLIBParser{
         /**
          * @brief Set the value of the node
          * 
-         * Sets the value of the node.
-         * 
          * @param v The value to set
          */
         void setValue(Number v)           { value = v; };
 
         /**
          * @brief Get the number of children of the node
-         * 
-         * Gets the number of children of the node.
          * 
          * @return The number of children of the node
          */
@@ -598,8 +586,6 @@ namespace SMTLIBParser{
         /**
          * @brief Get the children of the node
          * 
-         * Gets the children of the node.
-         * 
          * @return The children of the node
          */
         std::vector<std::shared_ptr<DAGNode>> getChildren() 
@@ -607,8 +593,6 @@ namespace SMTLIBParser{
 
         /**
          * @brief Get the child of the node
-         * 
-         * Gets the child of the node.
          * 
          * @param i The index of the child
          * @return The child of the node
@@ -620,8 +604,6 @@ namespace SMTLIBParser{
         /**
          * @brief Get the body of the function
          * 
-         * Gets the body of the function.
-         * 
          * @return The body of the function
          */
         std::shared_ptr<DAGNode> getFuncBody() 
@@ -629,8 +611,6 @@ namespace SMTLIBParser{
 
         /**
          * @brief Get the parameters of the function
-         * 
-         * Gets the parameters of the function.
          * 
          * @return The parameters of the function
          */
@@ -646,16 +626,12 @@ namespace SMTLIBParser{
         /**
          * @brief Get the body of the quantifier
          * 
-         * Gets the body of the quantifier.
-         * 
          * @return The body of the quantifier
          */
         std::shared_ptr<DAGNode> getQuantBody() const { return children[0]; };
 
         /**
          * @brief Get the variables of the quantifier
-         * 
-         * Gets the variables of the quantifier.
          * 
          * @return The variables of the quantifier
          */
@@ -679,8 +655,6 @@ namespace SMTLIBParser{
         /**
          * @brief Check if the node is equivalent to another node
          * 
-         * Checks if the node is equivalent to another node.
-         * 
          * @param other The other node
          * @return True if the node is equivalent to the other node, false otherwise
          */
@@ -703,8 +677,6 @@ namespace SMTLIBParser{
         /**
          * @brief Get the hash code of the node
          * 
-         * Gets the hash code of the node.
-         * 
          * @return The hash code of the node
          */
         std::size_t hashCode() const{
@@ -714,8 +686,6 @@ namespace SMTLIBParser{
         /**
          * @brief Get the hash string of the node
          * 
-         * Gets the hash string of the node.
-         * 
          * @return The hash string of the node
          */
         std::string hashString() const {
@@ -724,8 +694,6 @@ namespace SMTLIBParser{
 
         /**
          * @brief Update the function definition
-         * 
-         * Updates the function definition.
          * 
          * @note This function is only used to update the function definition.
          * 
@@ -737,8 +705,6 @@ namespace SMTLIBParser{
 
         /**
          * @brief Update the function application
-         * 
-         * Updates the function application.
          *
          * @note This function is only used to update the function application.
          * 
