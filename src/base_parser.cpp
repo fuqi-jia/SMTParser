@@ -1146,10 +1146,10 @@ namespace SMTLIBParser{
 		else if (s == "xor") {
 			return mkXor(params);
 		}
-		else if (s == "=") {
+		else if (s == "=" || s == "==" || s == "<->" || s == "iff" || s == "<=>") {
 			return mkEq(params);
 		}
-		else if (s == "distinct" || s == "!=") {
+		else if (s == "distinct" || s == "!=" || s == "<>") {
 			return mkDistinct(params);
 		}
 		else if (s == "ite") {
