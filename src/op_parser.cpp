@@ -622,8 +622,17 @@ namespace SMTLIBParser{
     /*
     (and Bool Bool+ :left-assoc), return Bool
     */
+    std::shared_ptr<DAGNode> Parser::mkAnd(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
+        return mkAnd({l, r});
+    }
+    std::shared_ptr<DAGNode> Parser::mkAnd(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> m, std::shared_ptr<DAGNode> r){
+        return mkAnd({l, m, r});
+    }
     std::shared_ptr<DAGNode> Parser::mkAnd(const std::vector<std::shared_ptr<DAGNode>> &params){
-            
+        if(params.size() < 2) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for AND", line_number);
+            return mkUnknown();
+        }
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
         for(size_t i=0;i<params.size();i++){
