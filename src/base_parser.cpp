@@ -1635,6 +1635,14 @@ namespace SMTLIBParser{
 			assert(params.size() == 3);
 			return mkStrReplaceAll(params[0], params[1], params[2]);
 		}
+		else if (s == "str.replace_re") {
+			assert(params.size() == 3);
+			return mkReplaceReg(params[0], params[1], params[2]);
+		}
+		else if (s == "str.replace_all_re") {
+			assert(params.size() == 3);
+			return mkReplaceRegAll(params[0], params[1], params[2]);
+		}
 		else if (s == "str.to_lower") {
 			assert(params.size() == 1);
 			return mkStrToLower(params[0]);

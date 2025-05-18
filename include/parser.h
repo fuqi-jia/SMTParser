@@ -1398,6 +1398,8 @@ namespace SMTLIBParser{
          * 
          * Creates an tan node with the given parameter.
          * 
+         * @note assert(param != (pi/2) + k*pi)
+         * 
          * @param param Parameter
          * @return Tan node (tan(param))
          */
@@ -1408,7 +1410,7 @@ namespace SMTLIBParser{
          * 
          * Creates a cot node with the given parameter.
          * 
-         * @note assert(sin(param) != 0)
+         * @note assert(param != k*pi)
          * 
          * @param param Parameter
          * @return Cot node (cot(param))
@@ -1540,7 +1542,7 @@ namespace SMTLIBParser{
          * 
          * Creates a coth node with the given parameter.
          * 
-         * @note assert(param != 0)
+         * @note assert(param < -1 || param > 1)
          * 
          * @param param Parameter
          * @return Coth node (coth(param))
@@ -1631,263 +1633,1948 @@ namespace SMTLIBParser{
          */
         std::shared_ptr<DAGNode> mkAtan2(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r);
         // ARITHMATIC COMP
+
+        /**
+         * @brief Create a le node
+         * 
+         * Creates a le node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Le node (l <= r)
+         */
         std::shared_ptr<DAGNode> mkLe(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l <= r
+
+        /**
+         * @brief Create a lt node
+         * 
+         * Creates a lt node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Lt node (l < r)
+         */
         std::shared_ptr<DAGNode> mkLt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l < r
+        
+        /**
+         * @brief Create a ge node
+         * 
+         * Creates a ge node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Ge node (l >= r)
+         */
         std::shared_ptr<DAGNode> mkGe(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l >= r
+
+        /**
+         * @brief Create a gt node
+         *
+         * Creates a gt node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Gt node (l > r)
+         */
         std::shared_ptr<DAGNode> mkGt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l > r
+        
+        /**
+         * @brief Create a le node
+         * 
+         * Creates a le node with the given parameters.
+         * 
+         * @param params Parameters
+         * @return Le node (l <= r <= ... <= s)
+         */
         std::shared_ptr<DAGNode> mkLe(const std::vector<std::shared_ptr<DAGNode>>& params); // l <= r
+
+        /**
+         * @brief Create a lt node
+         * 
+         * Creates a lt node with the given parameters.
+         * 
+         * @param params Parameters
+         * @return Lt node (l < r < ... < s)
+         */
         std::shared_ptr<DAGNode> mkLt(const std::vector<std::shared_ptr<DAGNode>>& params); // l < r
-        std::shared_ptr<DAGNode> mkGe(const std::vector<std::shared_ptr<DAGNode>>& params); // l >= r
-        std::shared_ptr<DAGNode> mkGt(const std::vector<std::shared_ptr<DAGNode>>& params); // l > r
+
+        /**
+         * @brief Create a ge node
+         * 
+         * Creates a ge node with the given parameters.
+         * 
+         * @param params Parameters
+         * @return Ge node (l >= r >= ... >= s)
+         */
+        std::shared_ptr<DAGNode> mkGe(const std::vector<std::shared_ptr<DAGNode>>& params); // l >= r >= ... >= s
+
+        /**
+         * @brief Create a gt node
+         * 
+         * Creates a gt node with the given parameters.
+         * 
+         * @param params Parameters
+         * @return Gt node (l > r > ... > s)
+         */
+        std::shared_ptr<DAGNode> mkGt(const std::vector<std::shared_ptr<DAGNode>>& params); // l > r > ... > s
+        
         // ARITHMATIC CONVERSION
+
+        /**
+         * @brief Create a to_int node
+         * 
+         * Creates a to_int node with the given parameter.
+         * 
+         * @param param Parameter
+         * @return To_int node (to_int(param))
+         */
         std::shared_ptr<DAGNode> mkToInt(std::shared_ptr<DAGNode> param); // to_int(param)
+
+        /**
+         * @brief Create a to_real node
+         * 
+         * Creates a to_real node with the given parameter.
+         * 
+         * @param param Parameter
+         * @return To_real node (to_real(param))
+         */
         std::shared_ptr<DAGNode> mkToReal(std::shared_ptr<DAGNode> param); // to_real(param)
+
         // ARITHMATIC PROPERTIES
+        /**
+         * @brief Create a is_int node
+         * 
+         * Creates a is_int node with the given parameter.
+         * 
+         * @param param Parameter
+         * @return Is_int node (is_int(param))
+         */
         std::shared_ptr<DAGNode> mkIsInt(std::shared_ptr<DAGNode> param); // is_int(param)
+
+        /**
+         * @brief Create a is_divisible node
+         * 
+         * Creates a is_divisible node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Is_divisible node (is_divisible(l, r), l divides r)
+         */
         std::shared_ptr<DAGNode> mkIsDivisible(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // is_divisible(l, r)
+
+        /**
+         * @brief Create a is_prime node
+         * 
+         * Creates a is_prime node with the given parameter.
+         * 
+         * @param param Parameter
+         * @return Is_prime node (is_prime(param))
+         */
         std::shared_ptr<DAGNode> mkIsPrime(std::shared_ptr<DAGNode> param); // is_prime(param)
+
+        /**
+         * @brief Create a is_even node
+         * 
+         * Creates a is_even node with the given parameter.
+         * 
+         * @param param Parameter
+         * @return Is_even node (is_even(param))
+         */
         std::shared_ptr<DAGNode> mkIsEven(std::shared_ptr<DAGNode> param); // is_even(param)
+
+        /**
+         * @brief Create a is_odd node
+         * 
+         * Creates a is_odd node with the given parameter.
+         * 
+         * @param param Parameter
+         * @return Is_odd node (is_odd(param))
+         */
         std::shared_ptr<DAGNode> mkIsOdd(std::shared_ptr<DAGNode> param); // is_odd(param)
+
         // ARITHMATIC CONSTANTS
+
+        /**
+         * @brief Create a pi node
+         * 
+         * Creates a pi node.
+         * 
+         * @return Pi node (pi, i.e., the ratio of the circumference of a circle to its diameter)
+         */
         std::shared_ptr<DAGNode> mkPi(); // pi
+
+        /**
+         * @brief Create a e node
+         * 
+         * Creates a e node.
+         * 
+         * @return E node (e, i.e., the base of the natural logarithm)
+         */
         std::shared_ptr<DAGNode> mkE(); // e
+
+        /**
+         * @brief Create a infinity node
+         * 
+         * Creates a infinity node.
+         * 
+         * @return Infinity node (infinity)
+         */
         std::shared_ptr<DAGNode> mkInfinity(); // infinity
+
+        /**
+         * @brief Create a nan node
+         * 
+         * Creates a nan node.
+         * 
+         * @return NaN node (nan, i.e., Not a Number)
+         */
         std::shared_ptr<DAGNode> mkNan(); // nan
+
+        /**
+         * @brief Create a epsilon node
+         * 
+         * Creates a epsilon node.
+         * 
+         * @return Epsilon node (epsilon, i.e., a very small number, )
+         */
         std::shared_ptr<DAGNode> mkEpsilon(); // epsilon
+        
         // ARITHMATIC FUNCTIONS
-        // std::shared_ptr<DAGNode> mkSum(const std::vector<std::shared_ptr<DAGNode>> &params); // \Sigma params
-        // std::shared_ptr<DAGNode> mkProd(const std::vector<std::shared_ptr<DAGNode>> &params); // \Prod params
+        
+        /**
+         * @brief Create a gcd node
+         * 
+         * Creates a greatest common divisor node with the given parameters.
+         * 
+         * @note assert(l != 0 || r != 0)
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Gcd node (gcd(l, r))
+         */
         std::shared_ptr<DAGNode> mkGcd(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // gcd(l, r)
+
+        /**
+         * @brief Create a lcm node
+         * 
+         * Creates a least common multiple node with the given parameters.
+         * 
+         * @note assert(l != 0 && r != 0)
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Lcm node (lcm(l, r))
+         */
         std::shared_ptr<DAGNode> mkLcm(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // lcm(l, r)
+
+        /**
+         * @brief Create a factorial node
+         * 
+         * Creates a factorial node with the given parameter.
+         * 
+         * @note assert(param >= 0)
+         * 
+         * @param param Parameter
+         * @return Factorial node (factorial(param))
+         */
         std::shared_ptr<DAGNode> mkFact(std::shared_ptr<DAGNode> param); // factorial(param)
+        
         // BITVECTOR COMMON OPERATORS
+        /**
+         * @brief Create a bitvector not node
+         * 
+         * Creates a bitvector not node with the given parameter.
+         * 
+         * @param param Parameter
+         * @return Bitvector not node (~param)
+         */
         std::shared_ptr<DAGNode> mkBvNot(std::shared_ptr<DAGNode> param); // ~param
+        
+        /**
+         * @brief Create a bitvector and node
+         * 
+         * Creates a bitvector and node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Bitvector and node (l & r)
+         */
         std::shared_ptr<DAGNode> mkBvAnd(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l & r
+        
+        /**
+         * @brief Create a bitvector and node
+         * 
+         * Creates a bitvector and node with the given parameters.
+         * 
+         * @param params Parameters
+         * @return Bitvector and node (l & r & ...)
+         */
         std::shared_ptr<DAGNode> mkBvAnd(const std::vector<std::shared_ptr<DAGNode>> &params); // l & r & ...
+        
+        /**
+         * @brief Create a bitvector or node
+         * 
+         * Creates a bitvector or node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Bitvector or node (l | r)
+         */
         std::shared_ptr<DAGNode> mkBvOr(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l | r
+        
+        /**
+         * @brief Create a bitvector or node
+         * 
+         * Creates a bitvector or node with the given parameters.
+         * 
+         * @param params Parameters
+         * @return Bitvector or node (l | r | ...)
+         */
         std::shared_ptr<DAGNode> mkBvOr(const std::vector<std::shared_ptr<DAGNode>> &params); // l | r | ...
+        
+        /**
+         * @brief Create a bitvector xor node
+         * 
+         * Creates a bitvector xor node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Bitvector xor node (l ^ r)
+         */
         std::shared_ptr<DAGNode> mkBvXor(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l ^ r
+        
+        /**
+         * @brief Create a bitvector xor node
+         * 
+         * Creates a bitvector xor node with the given parameters.
+         * 
+         * @param params Parameters
+         * @return Bitvector xor node (l ^ r ^ ...)
+         */
         std::shared_ptr<DAGNode> mkBvXor(const std::vector<std::shared_ptr<DAGNode>> &params); // l ^ r ^ ...
+        
+        /**
+         * @brief Create a bitvector nand node
+         * 
+         * Creates a bitvector nand node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Bitvector nand node (~(l & r))
+         */
         std::shared_ptr<DAGNode> mkBvNand(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // ~(l & r)
+        
+        /**
+         * @brief Create a bitvector nand node
+         * 
+         * Creates a bitvector nand node with the given parameters.
+         * 
+         * @param params Parameters
+         * @return Bitvector nand node (~(l & r & ...))
+         */
         std::shared_ptr<DAGNode> mkBvNand(const std::vector<std::shared_ptr<DAGNode>> &params); // ~(l & r & ...)
+        
+        /**
+         * @brief Create a bitvector nor node
+         * 
+         * Creates a bitvector nor node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Bitvector nor node (~(l | r))
+         */
         std::shared_ptr<DAGNode> mkBvNor(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // ~(l | r)
+        
+        /**
+         * @brief Create a bitvector nor node
+         * 
+         * Creates a bitvector nor node with the given parameters.
+         * 
+         * @param params Parameters
+         * @return Bitvector nor node (~(l | r | ...))
+         */
         std::shared_ptr<DAGNode> mkBvNor(const std::vector<std::shared_ptr<DAGNode>> &params); // ~(l | r | ...)
+        
+        /**
+         * @brief Create a bitvector xnor node
+         * 
+         * Creates a bitvector xnor node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Bitvector xnor node (~(l ^ r))
+         */
         std::shared_ptr<DAGNode> mkBvXnor(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // ~(l ^ r)
+        
+        /**
+         * @brief Create a bitvector comparison node
+         * 
+         * Creates a bitvector comparison node that returns 1 if equal, 0 otherwise.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Bitvector comparison node (l = r ? #b1 : #b0)
+         */
         std::shared_ptr<DAGNode> mkBvComp(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l = r
+        
+        /**
+         * @brief Create a bitvector xnor node
+         * 
+         * Creates a bitvector xnor node with the given parameters.
+         * 
+         * @param params Parameters
+         * @return Bitvector xnor node (~(l ^ r ^ ...))
+         */
         std::shared_ptr<DAGNode> mkBvXnor(const std::vector<std::shared_ptr<DAGNode>> &params); // ~(l ^ r ^ ...)
+        
+        /**
+         * @brief Create a bitvector negation node
+         * 
+         * Creates a bitvector negation node with the given parameter.
+         * 
+         * @param param Parameter
+         * @return Bitvector negation node (-param)
+         */
         std::shared_ptr<DAGNode> mkBvNeg(std::shared_ptr<DAGNode> param); // -param
+        
+        /**
+         * @brief Create a bitvector addition node
+         * 
+         * Creates a bitvector addition node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Bitvector addition node (l + r)
+         */
         std::shared_ptr<DAGNode> mkBvAdd(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l + r
+        
+        /**
+         * @brief Create a bitvector addition node
+         * 
+         * Creates a bitvector addition node with the given parameters.
+         * 
+         * @param params Parameters
+         * @return Bitvector addition node (l + r + ...)
+         */
         std::shared_ptr<DAGNode> mkBvAdd(const std::vector<std::shared_ptr<DAGNode>> &params); // l + r + ...
+        
+        /**
+         * @brief Create a bitvector subtraction node
+         * 
+         * Creates a bitvector subtraction node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Bitvector subtraction node (l - r)
+         */
         std::shared_ptr<DAGNode> mkBvSub(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l - r
+        
+        /**
+         * @brief Create a bitvector subtraction node
+         * 
+         * Creates a bitvector subtraction node with the given parameters.
+         * 
+         * @param params Parameters
+         * @return Bitvector subtraction node (l - r - ...)
+         */
         std::shared_ptr<DAGNode> mkBvSub(const std::vector<std::shared_ptr<DAGNode>> &params); // l - r - ...
+        
+        /**
+         * @brief Create a bitvector multiplication node
+         * 
+         * Creates a bitvector multiplication node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Bitvector multiplication node (l * r)
+         */
         std::shared_ptr<DAGNode> mkBvMul(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l * r
+        
+        /**
+         * @brief Create a bitvector multiplication node
+         * 
+         * Creates a bitvector multiplication node with the given parameters.
+         * 
+         * @param params Parameters
+         * @return Bitvector multiplication node (l * r * ...)
+         */
         std::shared_ptr<DAGNode> mkBvMul(const std::vector<std::shared_ptr<DAGNode>> &params); // l * r * ...
+        
+        /**
+         * @brief Create a bitvector unsigned division node
+         * 
+         * Creates a bitvector unsigned division node with the given parameters.
+         * 
+         * @note if r == 0, then return all ones bit-vector
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Bitvector unsigned division node (l / r)
+         */
         std::shared_ptr<DAGNode> mkBvUdiv(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l / r
+        
+        /**
+         * @brief Create a bitvector unsigned remainder node
+         * 
+         * Creates a bitvector unsigned remainder node with the given parameters.
+         * 
+         * @note if r == 0, then return l
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Bitvector unsigned remainder node (l % r)
+         */
         std::shared_ptr<DAGNode> mkBvUrem(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l % r
+        
+        /**
+         * @brief Create a bitvector unsigned modulo node
+         * 
+         * Creates a bitvector unsigned modulo node with the given parameters.
+         * 
+         * @note if r == 0, then return l
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Bitvector unsigned modulo node (l % r)
+         */
         std::shared_ptr<DAGNode> mkBvUmod(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l % r
+        
+        /**
+         * @brief Create a bitvector signed division node
+         * 
+         * Creates a bitvector signed division node with the given parameters.
+         * 
+         * @note if r == 0, then return all ones bit-vector if l is positive, otherwise 1
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Bitvector signed division node (l / r)
+         */
         std::shared_ptr<DAGNode> mkBvSdiv(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l / r
+        
+        /**
+         * @brief Create a bitvector signed remainder node
+         * 
+         * Creates a bitvector signed remainder node with the given parameters.
+         * 
+         * @note if r == 0, then return l
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Bitvector signed remainder node (l % r)
+         */
         std::shared_ptr<DAGNode> mkBvSrem(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l % r
+        
+        /**
+         * @brief Create a bitvector signed modulo node
+         * 
+         * Creates a bitvector signed modulo node with the given parameters.
+         * 
+         * @note if r == 0, then return l
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Bitvector signed modulo node (l % r)
+         */
         std::shared_ptr<DAGNode> mkBvSmod(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l % r
+        
+        /**
+         * @brief Create a bitvector shift left node
+         * 
+         * Creates a bitvector shift left node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Bitvector shift left node (l << r)
+         */
         std::shared_ptr<DAGNode> mkBvShl(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l << r
+        
+        /**
+         * @brief Create a bitvector logical shift right node
+         * 
+         * Creates a bitvector logical shift right node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Bitvector logical shift right node (l >> r)
+         */
         std::shared_ptr<DAGNode> mkBvLshr(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l >> r
+        
+        /**
+         * @brief Create a bitvector arithmetic shift right node
+         * 
+         * Creates a bitvector arithmetic shift right node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Bitvector arithmetic shift right node (l >> r)
+         */
         std::shared_ptr<DAGNode> mkBvAshr(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l >> r
+        
+        /**
+         * @brief Create a bitvector concatenation node
+         * 
+         * Creates a bitvector concatenation node with the given parameters.
+         * 
+         * @param params Parameters
+         * @return Bitvector concatenation node (l ++ r ++ ...)
+         */
         std::shared_ptr<DAGNode> mkBvConcat(const std::vector<std::shared_ptr<DAGNode>> &params); // l ++ r ++ ...
+        
+        /**
+         * @brief Create a bitvector extract node
+         * 
+         * Creates a bitvector extract node that extracts a range of bits.
+         * 
+         * @note assert(r >= s && r < bitwidth(l))
+         * 
+         * @param l Source bitvector
+         * @param r Upper index (inclusive)
+         * @param s Lower index (inclusive)
+         * @return Bitvector extract node (l[r:s])
+         */
         std::shared_ptr<DAGNode> mkBvExtract(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> s); // l[r:s]
+        
+        /**
+         * @brief Create a bitvector repeat node
+         * 
+         * Creates a bitvector repeat node that repeats the bitvector r times.
+         * 
+         * @note assert(r > 0)
+         * 
+         * @param l Source bitvector
+         * @param r Repeat count
+         * @return Bitvector repeat node (l repeated r times)
+         */
         std::shared_ptr<DAGNode> mkBvRepeat(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l * r
+        
+        /**
+         * @brief Create a bitvector zero extension node
+         * 
+         * Creates a bitvector zero extension node that extends the bitvector with r zero bits.
+         * 
+         * @param l Source bitvector
+         * @param r Number of bits to extend
+         * @return Bitvector zero extension node (l zero_extend r)
+         */
         std::shared_ptr<DAGNode> mkBvZeroExt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l zero_extend r
+        
+        /**
+         * @brief Create a bitvector sign extension node
+         * 
+         * Creates a bitvector sign extension node that extends the bitvector with r sign bits.
+         * 
+         * @param l Source bitvector
+         * @param r Number of bits to extend
+         * @return Bitvector sign extension node (l sign_extend r)
+         */
         std::shared_ptr<DAGNode> mkBvSignExt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l sign_extend r
+        
+        /**
+         * @brief Create a bitvector rotate left node
+         * 
+         * Creates a bitvector rotate left node with the given parameters.
+         * 
+         * @param l Source bitvector
+         * @param r Rotation amount
+         * @return Bitvector rotate left node (l <<< r)
+         */
         std::shared_ptr<DAGNode> mkBvRotateLeft(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l <<< r
+        
+        /**
+         * @brief Create a bitvector rotate right node
+         * 
+         * Creates a bitvector rotate right node with the given parameters.
+         * 
+         * @param l Source bitvector
+         * @param r Rotation amount
+         * @return Bitvector rotate right node (l >>> r)
+         */
         std::shared_ptr<DAGNode> mkBvRotateRight(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l >>> r
+        
         // BITVECTOR COMP
+        /**
+         * @brief Create a bitvector unsigned less than node
+         * 
+         * Creates a bitvector unsigned less than node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Bitvector unsigned less than node (l < r)
+         */
         std::shared_ptr<DAGNode> mkBvUlt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l < r
+        
+        /**
+         * @brief Create a bitvector unsigned less than or equal node
+         * 
+         * Creates a bitvector unsigned less than or equal node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Bitvector unsigned less than or equal node (l <= r)
+         */
         std::shared_ptr<DAGNode> mkBvUle(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l <= r
+        
+        /**
+         * @brief Create a bitvector unsigned greater than node
+         * 
+         * Creates a bitvector unsigned greater than node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Bitvector unsigned greater than node (l > r)
+         */
         std::shared_ptr<DAGNode> mkBvUgt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l > r
+        
+        /**
+         * @brief Create a bitvector unsigned greater than or equal node
+         * 
+         * Creates a bitvector unsigned greater than or equal node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Bitvector unsigned greater than or equal node (l >= r)
+         */
         std::shared_ptr<DAGNode> mkBvUge(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l >= r
+        
+        /**
+         * @brief Create a bitvector signed less than node
+         * 
+         * Creates a bitvector signed less than node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Bitvector signed less than node (l < r)
+         */
         std::shared_ptr<DAGNode> mkBvSlt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l < r
+        
+        /**
+         * @brief Create a bitvector signed less than or equal node
+         * 
+         * Creates a bitvector signed less than or equal node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Bitvector signed less than or equal node (l <= r)
+         */
         std::shared_ptr<DAGNode> mkBvSle(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l <= r
+        
+        /**
+         * @brief Create a bitvector signed greater than node
+         * 
+         * Creates a bitvector signed greater than node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Bitvector signed greater than node (l > r)
+         */
         std::shared_ptr<DAGNode> mkBvSgt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l > r
+        
+        /**
+         * @brief Create a bitvector signed greater than or equal node
+         * 
+         * Creates a bitvector signed greater than or equal node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Bitvector signed greater than or equal node (l >= r)
+         */
         std::shared_ptr<DAGNode> mkBvSge(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l >= r
+        
         // BITVECTOR CONVERSION
+        /**
+         * @brief Create a bitvector to natural number conversion node
+         * 
+         * Creates a bitvector to natural number conversion node with the given parameter.
+         * 
+         * @param param Parameter
+         * @return Bitvector to natural number conversion node (to_nat(param))
+         */
         std::shared_ptr<DAGNode> mkBvToNat(std::shared_ptr<DAGNode> param); // to_nat(param)
+        
+        /**
+         * @brief Create a natural number to bitvector conversion node
+         * 
+         * Creates a natural number to bitvector conversion node with the given parameters.
+         * 
+         * @note assert(param >= 0 && width > 0 && param < 2^width)
+         * 
+         * @param param Parameter (natural number)
+         * @param width Width of the resulting bitvector
+         * @return Natural number to bitvector conversion node (to_bv(param, width))
+         */
         std::shared_ptr<DAGNode> mkNatToBv(std::shared_ptr<DAGNode> param, std::shared_ptr<DAGNode> width); // to_bv(param, width)
+        
+        /**
+         * @brief Create a bitvector to integer conversion node
+         * 
+         * Creates a bitvector to integer conversion node with the given parameter.
+         * 
+         * @param param Parameter
+         * @return Bitvector to integer conversion node (to_int(param))
+         */
         std::shared_ptr<DAGNode> mkBvToInt(std::shared_ptr<DAGNode> param); // to_int(param)
+        
+        /**
+         * @brief Create an integer to bitvector conversion node
+         * 
+         * Creates an integer to bitvector conversion node with the given parameters.
+         * 
+         * @note assert(width > 0 && param >= -2^(width-1) && param < 2^(width-1))
+         * 
+         * @param param Parameter (integer number)
+         * @param width Width of the resulting bitvector
+         * @return Integer to bitvector conversion node (to_bv(param, width))
+         */
         std::shared_ptr<DAGNode> mkIntToBv(std::shared_ptr<DAGNode> param, std::shared_ptr<DAGNode> width); // to_bv(param, width)
+        
         // FLOATING POINT COMMON OPERATORS
+        /**
+         * @brief Create a floating-point addition node
+         * 
+         * Creates a floating-point addition node with the given parameters.
+         * 
+         * @param params Parameters
+         * @return Floating-point addition node (fp.add(l, r, ...))
+         */
         std::shared_ptr<DAGNode> mkFpAdd(const std::vector<std::shared_ptr<DAGNode>> &params); // l + r + ...
+        
+        /**
+         * @brief Create a floating-point subtraction node
+         * 
+         * Creates a floating-point subtraction node with the given parameters.
+         * 
+         * @param params Parameters
+         * @return Floating-point subtraction node (fp.sub(l, r, ...))
+         */
         std::shared_ptr<DAGNode> mkFpSub(const std::vector<std::shared_ptr<DAGNode>> &params); // l - r - ...
+        
+        /**
+         * @brief Create a floating-point multiplication node
+         * 
+         * Creates a floating-point multiplication node with the given parameters.
+         * 
+         * @param params Parameters
+         * @return Floating-point multiplication node (fp.mul(l, r, ...))
+         */
         std::shared_ptr<DAGNode> mkFpMul(const std::vector<std::shared_ptr<DAGNode>> &params); // l * r * ...
+        
+        /**
+         * @brief Create a floating-point division node
+         * 
+         * Creates a floating-point division node with the given parameters.
+         * 
+         * @note Division by zero results in appropriate IEEE-754 behavior
+         * 
+         * @param params Parameters
+         * @return Floating-point division node (fp.div(l, r, ...))
+         */
         std::shared_ptr<DAGNode> mkFpDiv(const std::vector<std::shared_ptr<DAGNode>> &params); // l / r / ...
+        
+        /**
+         * @brief Create a floating-point absolute value node
+         * 
+         * Creates a floating-point absolute value node with the given parameter.
+         * 
+         * @param param Parameter
+         * @return Floating-point absolute value node (fp.abs(param))
+         */
         std::shared_ptr<DAGNode> mkFpAbs(std::shared_ptr<DAGNode> param); // |param|
+        
+        /**
+         * @brief Create a floating-point negation node
+         * 
+         * Creates a floating-point negation node with the given parameter.
+         * 
+         * @param param Parameter
+         * @return Floating-point negation node (fp.neg(param))
+         */
         std::shared_ptr<DAGNode> mkFpNeg(std::shared_ptr<DAGNode> param); // -param
+        
+        /**
+         * @brief Create a floating-point remainder node
+         * 
+         * Creates a floating-point remainder node with the given parameters.
+         * 
+         * @note IEEE-754 remainder operation
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Floating-point remainder node (fp.rem(l, r))
+         */
         std::shared_ptr<DAGNode> mkFpRem(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l % r
+        
+        /**
+         * @brief Create a floating-point fused multiply-add node
+         * 
+         * Creates a floating-point fused multiply-add node with the given parameters.
+         * 
+         * @note The operation (a * b + c) performed with only one rounding
+         * 
+         * @param params Parameters (should have exactly 3 elements)
+         * @return Floating-point fused multiply-add node (fp.fma(a, b, c) = a * b + c)
+         */
         std::shared_ptr<DAGNode> mkFpFma(const std::vector<std::shared_ptr<DAGNode>> &params); // fma(a, b, c) = a * b + c
+        
+        /**
+         * @brief Create a floating-point square root node
+         * 
+         * Creates a floating-point square root node with the given parameter.
+         * 
+         * @note Returns NaN for negative values
+         * 
+         * @param param Parameter
+         * @return Floating-point square root node (fp.sqrt(param))
+         */
         std::shared_ptr<DAGNode> mkFpSqrt(std::shared_ptr<DAGNode> param); // sqrt(param)
+        
+        /**
+         * @brief Create a floating-point round to integral node
+         * 
+         * Creates a floating-point round to integral node with the given parameter.
+         * 
+         * @param param Parameter
+         * @return Floating-point round to integral node (fp.roundToIntegral(param))
+         */
         std::shared_ptr<DAGNode> mkFpRoundToIntegral(std::shared_ptr<DAGNode> param); // round_to_integral(param)
-        std::shared_ptr<DAGNode> mkFpMin(const std::vector<std::shared_ptr<DAGNode>> &params); // min(params)
-        std::shared_ptr<DAGNode> mkFpMax(const std::vector<std::shared_ptr<DAGNode>> &params); // max(params)
+        
+        /**
+         * @brief Create a floating-point minimum node
+         * 
+         * Creates a floating-point minimum node with the given parameters.
+         * 
+         * @param params Parameters
+         * @return Floating-point minimum node (fp.min(params))
+         */
+        std::shared_ptr<DAGNode> mkFpMin(const std::vector<std::shared_ptr<DAGNode>> &params); // fp.min(params)
+        
+        /**
+         * @brief Create a floating-point maximum node
+         * 
+         * Creates a floating-point maximum node with the given parameters.
+         * 
+         * @param params Parameters
+         * @return Floating-point maximum node (fp.max(params))
+         */
+        std::shared_ptr<DAGNode> mkFpMax(const std::vector<std::shared_ptr<DAGNode>> &params); // fp.max(params)
+        
         // FLOATING POINT COMP
+        /**
+         * @brief Create a floating-point less than or equal node
+         * 
+         * Creates a floating-point less than or equal node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Floating-point less than or equal node (fp.leq(l, r))
+         */
         std::shared_ptr<DAGNode> mkFpLe(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l <= r
+        
+        /**
+         * @brief Create a floating-point less than node
+         * 
+         * Creates a floating-point less than node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Floating-point less than node (fp.lt(l, r))
+         */
         std::shared_ptr<DAGNode> mkFpLt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l < r
+        
+        /**
+         * @brief Create a floating-point greater than or equal node
+         * 
+         * Creates a floating-point greater than or equal node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Floating-point greater than or equal node (fp.geq(l, r))
+         */
         std::shared_ptr<DAGNode> mkFpGe(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l >= r
+        
+        /**
+         * @brief Create a floating-point greater than node
+         * 
+         * Creates a floating-point greater than node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Floating-point greater than node (fp.gt(l, r))
+         */
         std::shared_ptr<DAGNode> mkFpGt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l > r
+        
+        /**
+         * @brief Create a floating-point equality node
+         * 
+         * Creates a floating-point equality node with the given parameters.
+         * 
+         * @note This is IEEE-754 equality (NaN != NaN)
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Floating-point equality node (fp.eq(l, r))
+         */
         std::shared_ptr<DAGNode> mkFpEq(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l = r
+        
         // FLOATING POINT CONVERSION
+        /**
+         * @brief Create a floating-point to unsigned bitvector conversion node
+         * 
+         * Creates a floating-point to unsigned bitvector conversion node with the given parameters.
+         * 
+         * @note Rounds toward zero, returns max representable value if out of range
+         * 
+         * @param param Floating-point value
+         * @param size Size of resulting bitvector
+         * @return Floating-point to unsigned bitvector conversion node (fp.to_ubv(param, size))
+         */
         std::shared_ptr<DAGNode> mkFpToUbv(std::shared_ptr<DAGNode> param, std::shared_ptr<DAGNode> size); // to_ubv(param, size)
+        
+        /**
+         * @brief Create a floating-point to signed bitvector conversion node
+         * 
+         * Creates a floating-point to signed bitvector conversion node with the given parameters.
+         * 
+         * @note Rounds toward zero, returns max/min representable value if out of range
+         * 
+         * @param param Floating-point value
+         * @param size Size of resulting bitvector
+         * @return Floating-point to signed bitvector conversion node (fp.to_sbv(param, size))
+         */
         std::shared_ptr<DAGNode> mkFpToSbv(std::shared_ptr<DAGNode> param, std::shared_ptr<DAGNode> size); // to_sbv(param, size)
+        
+        /**
+         * @brief Create a floating-point to real conversion node
+         * 
+         * Creates a floating-point to real conversion node with the given parameter.
+         * 
+         * @note NaN and infinity cannot be converted to real
+         * 
+         * @param param Floating-point value
+         * @return Floating-point to real conversion node (fp.to_real(param))
+         */
         std::shared_ptr<DAGNode> mkFpToReal(std::shared_ptr<DAGNode> param); // to_real(param)
+        
+        /**
+         * @brief Create a value to floating-point conversion node
+         * 
+         * Creates a value to floating-point conversion node with the given parameters.
+         * 
+         * @param eb Exponent bit width
+         * @param sb Significand bit width
+         * @param param Value to convert
+         * @return Value to floating-point conversion node (to_fp(eb, sb, param))
+         */
         std::shared_ptr<DAGNode> mkToFp(std::shared_ptr<DAGNode> eb, std::shared_ptr<DAGNode> sb, std::shared_ptr<DAGNode> param); // to_fp(eb, sb, param)
+        
         // FLOATING POINT PROPERTIES
+        /**
+         * @brief Create a floating-point is-normal check node
+         * 
+         * Creates a node that checks if a floating-point value is normal.
+         * 
+         * @param param Parameter to check
+         * @return Is-normal check node (fp.isNormal(param))
+         */
         std::shared_ptr<DAGNode> mkFpIsNormal(std::shared_ptr<DAGNode> param); // is_normal(param)
+        
+        /**
+         * @brief Create a floating-point is-subnormal check node
+         * 
+         * Creates a node that checks if a floating-point value is subnormal.
+         * 
+         * @param param Parameter to check
+         * @return Is-subnormal check node (fp.isSubnormal(param))
+         */
         std::shared_ptr<DAGNode> mkFpIsSubnormal(std::shared_ptr<DAGNode> param); // is_subnormal(param)
+        
+        /**
+         * @brief Create a floating-point is-zero check node
+         * 
+         * Creates a node that checks if a floating-point value is zero.
+         * 
+         * @param param Parameter to check
+         * @return Is-zero check node (fp.isZero(param))
+         */
         std::shared_ptr<DAGNode> mkFpIsZero(std::shared_ptr<DAGNode> param); // is_zero(param)
+        
+        /**
+         * @brief Create a floating-point is-infinity check node
+         * 
+         * Creates a node that checks if a floating-point value is infinity.
+         * 
+         * @param param Parameter to check
+         * @return Is-infinity check node (fp.isInf(param))
+         */
         std::shared_ptr<DAGNode> mkFpIsInf(std::shared_ptr<DAGNode> param); // is_inf(param)
+        
+        /**
+         * @brief Create a floating-point is-NaN check node
+         * 
+         * Creates a node that checks if a floating-point value is NaN.
+         * 
+         * @param param Parameter to check
+         * @return Is-NaN check node (fp.isNaN(param))
+         */
         std::shared_ptr<DAGNode> mkFpIsNan(std::shared_ptr<DAGNode> param); // is_nan(param)
+        
+        /**
+         * @brief Create a floating-point is-negative check node
+         * 
+         * Creates a node that checks if a floating-point value is negative.
+         * 
+         * @param param Parameter to check
+         * @return Is-negative check node (fp.isNegative(param))
+         */
         std::shared_ptr<DAGNode> mkFpIsNeg(std::shared_ptr<DAGNode> param); // is_neg(param)
+        
+        /**
+         * @brief Create a floating-point is-positive check node
+         * 
+         * Creates a node that checks if a floating-point value is positive.
+         * 
+         * @param param Parameter to check
+         * @return Is-positive check node (fp.isPositive(param))
+         */
         std::shared_ptr<DAGNode> mkFpIsPos(std::shared_ptr<DAGNode> param); // is_pos(param)
+        
         // ARRAY
+        /**
+         * @brief Create an array select node
+         * 
+         * Creates an array select node that returns the element at the specified index.
+         * 
+         * @param l Array
+         * @param r Index
+         * @return Array select node (l[r])
+         */
         std::shared_ptr<DAGNode> mkSelect(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l[r]
+        
+        /**
+         * @brief Create an array store node
+         * 
+         * Creates an array store node that updates the array with a new value at the specified index.
+         * 
+         * @note Returns a new array, the original array is not modified
+         * 
+         * @param l Array
+         * @param r Index
+         * @param v Value
+         * @return Array store node (l[r] = v)
+         */
         std::shared_ptr<DAGNode> mkStore(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> v); // l[r] = v
+        
         // STRINGS COMMON OPERATORS
-        std::shared_ptr<DAGNode> mkStrLen(std::shared_ptr<DAGNode> param); // len(param)
-        std::shared_ptr<DAGNode> mkStrConcat(const std::vector<std::shared_ptr<DAGNode>> &params); // param1 + param2 + ...
-        std::shared_ptr<DAGNode> mkStrSubstr(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> s); // l.substr(r, s)
-        std::shared_ptr<DAGNode> mkStrPrefixof(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // prefixof(l, r)
-        std::shared_ptr<DAGNode> mkStrSuffixof(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // suffixof(l, r)
-        std::shared_ptr<DAGNode> mkStrIndexof(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> s); // indexof(l, r, s)
-        std::shared_ptr<DAGNode> mkStrCharat(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // charat(l, r)
-        std::shared_ptr<DAGNode> mkStrUpdate(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> v); // update(l, r, v)
-        std::shared_ptr<DAGNode> mkStrReplace(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> v); // replace(l, r, v)
-        std::shared_ptr<DAGNode> mkStrReplaceAll(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> v); // replace_all(l, r, v)
-        std::shared_ptr<DAGNode> mkStrToLower(std::shared_ptr<DAGNode> param); // to_lower(param)
-        std::shared_ptr<DAGNode> mkStrToUpper(std::shared_ptr<DAGNode> param); // to_upper(param)
-        std::shared_ptr<DAGNode> mkStrRev(std::shared_ptr<DAGNode> param); // rev(param)
-        std::shared_ptr<DAGNode> mkStrSplit(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // split(l, r)
+        /**
+         * @brief Create a string length node
+         * 
+         * Creates a string length node that returns the length of the string.
+         * 
+         * @param param String
+         * @return String length node (str.len(param))
+         */
+        std::shared_ptr<DAGNode> mkStrLen(std::shared_ptr<DAGNode> param); // str.len(param)
+        
+        /**
+         * @brief Create a string concatenation node
+         * 
+         * Creates a string concatenation node that concatenates multiple strings.
+         * 
+         * @param params Strings to concatenate
+         * @return String concatenation node (str.++(param1, param2, ...))
+         */
+        std::shared_ptr<DAGNode> mkStrConcat(const std::vector<std::shared_ptr<DAGNode>> &params); // str.++(param1, param2, ...)
+        
+        /**
+         * @brief Create a string substring node
+         * 
+         * Creates a string substring node that extracts a substring.
+         * 
+         * @param l String
+         * @param r Start index
+         * @param s Length
+         * @return String substring node (str.substr(l, r, s), i.e., l[r, r+s))
+         */
+        std::shared_ptr<DAGNode> mkStrSubstr(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> s); // str.substr(l, r, s)
+        
+        /**
+         * @brief Create a string prefix check node
+         * 
+         * Creates a node that checks if the first string is a prefix of the second string.
+         * 
+         * @param l Prefix
+         * @param r String
+         * @return String prefix check node (str.prefixof(l, r))
+         */
+        std::shared_ptr<DAGNode> mkStrPrefixof(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // str.prefixof(l, r)
+        
+        /**
+         * @brief Create a string suffix check node
+         * 
+         * Creates a node that checks if the first string is a suffix of the second string.
+         * 
+         * @param l Suffix
+         * @param r String
+         * @return String suffix check node (str.suffixof(l, r))
+         */
+        std::shared_ptr<DAGNode> mkStrSuffixof(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // str.suffixof(l, r)
+        
+        /**
+         * @brief Create a string index-of node
+         * 
+         * Creates a node that returns the index of the first occurrence of a substring.
+         * 
+         * @param l String
+         * @param r Substring to find
+         * @param s Start index
+         * @return String index-of node (str.indexof(l, r, s))
+         */
+        std::shared_ptr<DAGNode> mkStrIndexof(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> s); // str.indexof(l, r, s)
+        
+        /**
+         * @brief Create a string char-at node
+         * 
+         * Creates a node that returns the character at the specified index.
+         * 
+         * @param l String
+         * @param r Index
+         * @return String char-at node (str.at(l, r))
+         */
+        std::shared_ptr<DAGNode> mkStrCharat(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // str.charAt(l, r)
+        
+        /**
+         * @brief Create a string update node
+         * 
+         * Creates a node that updates a string at the specified index.
+         * 
+         * @param l String
+         * @param r Index
+         * @param v New character
+         * @return String update node (str.update(l, r, v), i.e., l[r] = v)
+         */
+        std::shared_ptr<DAGNode> mkStrUpdate(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> v); // str.update(l, r, v)
+        
+        /**
+         * @brief Create a string replace node
+         * 
+         * Creates a node that replaces the first occurrence of a substring.
+         * 
+         * @param l String
+         * @param r Substring to replace
+         * @param v Replacement string
+         * @return String replace node (str.replace(l, r, v))
+         */
+        std::shared_ptr<DAGNode> mkStrReplace(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> v); // str.replace(l, r, v)
+        
+        /**
+         * @brief Create a string replace-all node
+         * 
+         * Creates a node that replaces all occurrences of a substring.
+         * 
+         * @param l String
+         * @param r Substring to replace
+         * @param v Replacement string
+         * @return String replace-all node (str.replace_all(l, r, v))
+         */
+        std::shared_ptr<DAGNode> mkStrReplaceAll(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> v); // str.replace_all(l, r, v)
+        
+        /**
+         * @brief Create a string to-lower node
+         * 
+         * Creates a node that converts a string to lowercase.
+         * 
+         * @param param String
+         * @return String to-lower node (str.to_lower(param))
+         */
+        std::shared_ptr<DAGNode> mkStrToLower(std::shared_ptr<DAGNode> param); // str.to_lower(param)
+        
+        /**
+         * @brief Create a string to-upper node
+         * 
+         * Creates a node that converts a string to uppercase.
+         * 
+         * @param param String
+         * @return String to-upper node (str.to_upper(param))
+         */
+        std::shared_ptr<DAGNode> mkStrToUpper(std::shared_ptr<DAGNode> param); // str.to_upper(param)
+        
+        /**
+         * @brief Create a string reverse node
+         * 
+         * Creates a node that reverses a string.
+         * 
+         * @param param String
+         * @return String reverse node (str.rev(param))
+         */
+        std::shared_ptr<DAGNode> mkStrRev(std::shared_ptr<DAGNode> param); // str.rev(param)
+        
+        /**
+         * @brief Create a string split node
+         * 
+         * Creates a node that splits a string by a delimiter.
+         * 
+         * @param l String
+         * @param r Delimiter
+         * @return String split node (str.split(l, r))
+         */
+        std::shared_ptr<DAGNode> mkStrSplit(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // str.split(l, r)
+        
         // STRINGS COMP
-        std::shared_ptr<DAGNode> mkStrLt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l < r
-        std::shared_ptr<DAGNode> mkStrLe(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l <= r
-        std::shared_ptr<DAGNode> mkStrGt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l > r
-        std::shared_ptr<DAGNode> mkStrGe(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l >= r
+        /**
+         * @brief Create a string less-than node
+         * 
+         * Creates a node that checks if the first string is lexicographically less than the second string.
+         * 
+         * @param l Left string
+         * @param r Right string
+         * @return String less-than node (str.<(l, r))
+         */
+        std::shared_ptr<DAGNode> mkStrLt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // str.<(l, r)
+        
+        /**
+         * @brief Create a string less-than-or-equal node
+         * 
+         * Creates a node that checks if the first string is lexicographically less than or equal to the second string.
+         * 
+         * @param l Left string
+         * @param r Right string
+         * @return String less-than-or-equal node (str.<=(l, r))
+         */
+        std::shared_ptr<DAGNode> mkStrLe(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // str.<=(l, r)
+        
+        /**
+         * @brief Create a string greater-than node
+         * 
+         * Creates a node that checks if the first string is lexicographically greater than the second string.
+         * 
+         * @param l Left string
+         * @param r Right string
+         * @return String greater-than node (str.>(l, r))
+         */
+        std::shared_ptr<DAGNode> mkStrGt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // str.>(l, r)
+        
+        /**
+         * @brief Create a string greater-than-or-equal node
+         * 
+         * Creates a node that checks if the first string is lexicographically greater than or equal to the second string.
+         * 
+         * @param l Left string
+         * @param r Right string
+         * @return String greater-than-or-equal node (str.>=(l, r))
+         */
+        std::shared_ptr<DAGNode> mkStrGe(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // str.>=(l, r)
+        
         // STRINGS PROPERTIES
-        std::shared_ptr<DAGNode> mkStrInReg(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l in r
-        std::shared_ptr<DAGNode> mkStrContains(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // contains(l, r)
-        std::shared_ptr<DAGNode> mkStrIsDigit(std::shared_ptr<DAGNode> param); // is_digit(param)
+        /**
+         * @brief Create a string in-regex check node
+         * 
+         * Creates a node that checks if a string matches a regular expression.
+         * 
+         * @param l String
+         * @param r Regular expression
+         * @return String in-regex check node (str.in_re(l, r))
+         */
+        std::shared_ptr<DAGNode> mkStrInReg(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // str.in_re(l, r)
+        
+        /**
+         * @brief Create a string contains check node
+         * 
+         * Creates a node that checks if a string contains a substring.
+         * 
+         * @param l String
+         * @param r Substring
+         * @return String contains check node (str.contains(l, r))
+         */
+        std::shared_ptr<DAGNode> mkStrContains(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // str.contains(l, r)
+        
+        /**
+         * @brief Create a string is-digit check node
+         * 
+         * Creates a node that checks if a string consists of only digits.
+         * 
+         * @param param String
+         * @return String is-digit check node (str.is_digit(param))
+         */
+        std::shared_ptr<DAGNode> mkStrIsDigit(std::shared_ptr<DAGNode> param); // str.is_digit(param)
+        
         // STRINGS CONVERSION
-        std::shared_ptr<DAGNode> mkStrFromInt(std::shared_ptr<DAGNode> param); // from_int(param)
-        std::shared_ptr<DAGNode> mkStrToInt(std::shared_ptr<DAGNode> param); // to_int(param)
-        std::shared_ptr<DAGNode> mkStrToReg(std::shared_ptr<DAGNode> param); // to_reg(param)
-        std::shared_ptr<DAGNode> mkStrToCode(std::shared_ptr<DAGNode> param); // to_code(param) assci code
-        std::shared_ptr<DAGNode> mkStrFromCode(std::shared_ptr<DAGNode> param); // from_code(param) assci code
+        /**
+         * @brief Create a string from-integer conversion node
+         * 
+         * Creates a node that converts an integer to a string.
+         * 
+         * @param param Integer
+         * @return String from-integer conversion node (str.from_int(param))
+         */
+        std::shared_ptr<DAGNode> mkStrFromInt(std::shared_ptr<DAGNode> param); // str.from_int(param)
+        
+        /**
+         * @brief Create a string to-integer conversion node
+         * 
+         * Creates a node that converts a string to an integer.
+         * 
+         * @note Returns -1 if the string does not represent a valid integer
+         * 
+         * @param param String
+         * @return String to-integer conversion node (str.to_int(param))
+         */
+        std::shared_ptr<DAGNode> mkStrToInt(std::shared_ptr<DAGNode> param); // str.to_int(param)
+        
+        /**
+         * @brief Create a string to-regex conversion node
+         * 
+         * Creates a node that converts a string to a regular expression.
+         * 
+         * @param param String
+         * @return String to-regex conversion node (str.to_reg(param))
+         */
+        std::shared_ptr<DAGNode> mkStrToReg(std::shared_ptr<DAGNode> param); // str.to_reg(param)
+        
+        /**
+         * @brief Create a string to-code conversion node
+         * 
+         * Creates a node that converts a string to its ASCII code.
+         * 
+         * @note Assumes the string has exactly one character
+         * 
+         * @param param String
+         * @return String to-code conversion node (str.to_code(param))
+         */
+        std::shared_ptr<DAGNode> mkStrToCode(std::shared_ptr<DAGNode> param); // str.to_code(param) assci code
+        
+        /**
+         * @brief Create a string from-code conversion node
+         * 
+         * Creates a node that converts an ASCII code to a string.
+         * 
+         * @param param ASCII code
+         * @return String from-code conversion node (str.from_code(param))
+         */
+        std::shared_ptr<DAGNode> mkStrFromCode(std::shared_ptr<DAGNode> param); // str.from_code(param) assci code
+        
         // STRINGS RE CONSTANTS
-        std::shared_ptr<DAGNode> mkRegNone(); // none
-        std::shared_ptr<DAGNode> mkRegAll(); // all
-        std::shared_ptr<DAGNode> mkRegAllChar(); // allchar
+        /**
+         * @brief Create a regex none node
+         * 
+         * Creates a regex node that matches nothing.
+         * 
+         * @return Regex none node (re.none)
+         */
+        std::shared_ptr<DAGNode> mkRegNone(); // re.none
+        
+        /**
+         * @brief Create a regex all node
+         * 
+         * Creates a regex node that matches any string.
+         * 
+         * @return Regex all node (re.all)
+         */
+        std::shared_ptr<DAGNode> mkRegAll(); // re.all
+        
+        /**
+         * @brief Create a regex allchar node
+         * 
+         * Creates a regex node that matches any single character.
+         * 
+         * @return Regex allchar node (re.allchar)
+         */
+        std::shared_ptr<DAGNode> mkRegAllChar(); // re.allchar
+        
         // STRINGS RE COMMON OPERATORS
-        std::shared_ptr<DAGNode> mkRegConcat(const std::vector<std::shared_ptr<DAGNode>> &params); // l + r + ...
-        std::shared_ptr<DAGNode> mkRegUnion(const std::vector<std::shared_ptr<DAGNode>> &params); // l | r | ...
-        std::shared_ptr<DAGNode> mkRegInter(const std::vector<std::shared_ptr<DAGNode>> &params); // l & r & ...
-        std::shared_ptr<DAGNode> mkRegDiff(const std::vector<std::shared_ptr<DAGNode>> &params); // l - r - ...
-        std::shared_ptr<DAGNode> mkRegStar(std::shared_ptr<DAGNode> param); // param*
+        /**
+         * @brief Create a regex concatenation node
+         * 
+         * Creates a regex concatenation node that matches the concatenation of patterns.
+         * 
+         * @param params Regex patterns
+         * @return Regex concatenation node (re.++(l, r, ...))
+         */
+        std::shared_ptr<DAGNode> mkRegConcat(const std::vector<std::shared_ptr<DAGNode>> &params); // re.++(l, r, ...)
+        
+        /**
+         * @brief Create a regex union node
+         * 
+         * Creates a regex union node that matches any of the patterns.
+         * 
+         * @param params Regex patterns
+         * @return Regex union node (re.union(l, r, ...))
+         */
+        std::shared_ptr<DAGNode> mkRegUnion(const std::vector<std::shared_ptr<DAGNode>> &params); // re.union(l, r, ...)
+        
+        /**
+         * @brief Create a regex intersection node
+         * 
+         * Creates a regex intersection node that matches strings that match all patterns.
+         * 
+         * @param params Regex patterns
+         * @return Regex intersection node (re.inter(l, r, ...))
+         */
+        std::shared_ptr<DAGNode> mkRegInter(const std::vector<std::shared_ptr<DAGNode>> &params); // re.inter(l, r, ...)
+        
+        /**
+         * @brief Create a regex difference node
+         * 
+         * Creates a regex difference node that matches strings matching the first pattern but not subsequent patterns.
+         * 
+         * @param params Regex patterns
+         * @return Regex difference node (re.diff(l, r, ...))
+         */
+        std::shared_ptr<DAGNode> mkRegDiff(const std::vector<std::shared_ptr<DAGNode>> &params); // re.diff(l, r, ...)
+        
+        /**
+         * @brief Create a regex star node
+         * 
+         * Creates a regex star node that matches zero or more occurrences of the pattern.
+         * 
+         * @param param Regex pattern
+         * @return Regex star node (re.*(param), i.e., param*)
+         */
+        std::shared_ptr<DAGNode> mkRegStar(std::shared_ptr<DAGNode> param); // re.*(param)
+        
+        /**
+         * @brief Create a regex plus node
+         * 
+         * Creates a regex plus node that matches one or more occurrences of the pattern.
+         * 
+         * @param param Regex pattern
+         * @return Regex plus node (re.+(param), i.e., param+)
+         */
         std::shared_ptr<DAGNode> mkRegPlus(std::shared_ptr<DAGNode> param); // param+
+        
+        /**
+         * @brief Create a regex option node
+         * 
+         * Creates a regex option node that matches zero or one occurrence of the pattern.
+         * 
+         * @param param Regex pattern
+         * @return Regex option node (re.?(param)/re.opt(param), i.e., param?)
+         */
         std::shared_ptr<DAGNode> mkRegOpt(std::shared_ptr<DAGNode> param); // param?
+        
+        /**
+         * @brief Create a regex range node
+         * 
+         * Creates a regex range node that matches characters in the specified range.
+         * 
+         * @param l Lower bound (inclusive)
+         * @param r Upper bound (inclusive)
+         * @return Regex range node (re.range(l, r), i.e., l..r)
+         */
         std::shared_ptr<DAGNode> mkRegRange(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l..r
-        std::shared_ptr<DAGNode> mkRegRepeat(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // re.^n reg
+        
+        /**
+         * @brief Create a regex repeat node
+         * 
+         * Creates a regex repeat node that matches exactly r occurrences of the pattern.
+         * 
+         * @param l Regex pattern
+         * @param r Number of repetitions
+         * @return Regex repeat node (re.^(n, l), i.e., l^n)
+         */
+        std::shared_ptr<DAGNode> mkRegRepeat(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // re.^(n, l)
+        
+        /**
+         * @brief Create a regex loop node
+         * 
+         * Creates a regex loop node that matches between r and s occurrences of the pattern.
+         * 
+         * @param l Regex pattern
+         * @param r Minimum number of repetitions
+         * @param s Maximum number of repetitions
+         * @return Regex loop node (re.loop(l, r, s), i.e., l{r,s})
+         */
         std::shared_ptr<DAGNode> mkRegLoop(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> s); // l{r,s}
+        
+        /**
+         * @brief Create a regex complement node
+         * 
+         * Creates a regex complement node that matches strings not matching the pattern.
+         * 
+         * @param param Regex pattern
+         * @return Regex complement node (re.complement(param), i.e., ~param)
+         */
         std::shared_ptr<DAGNode> mkRegComplement(std::shared_ptr<DAGNode> param); // ~param
+        
         // STRINGS RE FUNCTIONS
+        /**
+         * @brief Create a string replace-regex node
+         * 
+         * Creates a node that replaces the first match of a regex pattern.
+         * 
+         * @param l String
+         * @param r Regex pattern
+         * @param v Replacement string
+         * @return String replace-regex node (str.replace_re(l, r, v))
+         */
         std::shared_ptr<DAGNode> mkReplaceReg(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> v); // replace(l, r, v)
+        
+        /**
+         * @brief Create a string replace-all-regex node
+         * 
+         * Creates a node that replaces all matches of a regex pattern.
+         * 
+         * @param l String
+         * @param r Regex pattern
+         * @param v Replacement string
+         * @return String replace-all-regex node (str.replace_all_re(l, r, v))
+         */
         std::shared_ptr<DAGNode> mkReplaceRegAll(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> v); // replace_all(l, r, v)
+        
+        /**
+         * @brief Create a string index-of-regex node
+         * 
+         * Creates a node that returns the index of the first match of a regex pattern.
+         * 
+         * @param l String
+         * @param r Regex pattern
+         * @return String index-of-regex node (str.indexof(l, r))
+         */
         std::shared_ptr<DAGNode> mkIndexofReg(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // indexof(l, r)
+        
         // LET 
+        /**
+         * @brief Create a let node
+         * 
+         * Creates a let node that binds variables to values.
+         * 
+         * @param params List of (key, value) pairs
+         * @return Let node (let((key1, val1), (key2, val2), ...))
+         */
         std::shared_ptr<DAGNode> mkLet(const std::vector<std::shared_ptr<DAGNode>> &params); // let((key1, val1), (key2, val2), ...)
+        
         // QUANTIFIERS
+        /**
+         * @brief Create a quantifier variable node
+         * 
+         * Creates a quantifier variable node that binds a variable to a sort.
+         * 
+         * @param name Variable name
+         * @param sort Variable sort
+         * @return Quantifier variable node (var1, sort1)
+         */
         std::shared_ptr<DAGNode> mkQuantVar(const std::string& name, std::shared_ptr<Sort> sort);
+        
+        /**
+         * @brief Create a forall node
+         * 
+         * Creates a forall node that binds variables to a sort and a body.
+         * 
+         * @param params List of (variable, sort) pairs
+         * @return Forall node (forall((var1, sort1), (var2, sort2), ..., body))
+         */
         std::shared_ptr<DAGNode> mkForall(const std::vector<std::shared_ptr<DAGNode>> &params); // forall((var1, sort1), (var2, sort2), ..., body)
+        
+        /**
+         * @brief Create an exists node
+         * 
+         * Creates an exists node that binds variables to a sort and a body.
+         * 
+         * @param params List of (variable, sort) pairs
+         * @return Exists node (exists((var1, sort1), (var2, sort2), ..., body))
+         */
         std::shared_ptr<DAGNode> mkExists(const std::vector<std::shared_ptr<DAGNode>> &params); // exists((var1, sort1), (var2, sort2), ..., body)
+        
         // FUNCTION
+        /**
+         * @brief Create a function application node
+         * 
+         * Creates a function application node that applies a function to a list of parameters.
+         * 
+         * @param fun Function node
+         * @param params List of parameters
+         * @return Function application node (fun(p1, p2, ..., pn))
+         */
         std::shared_ptr<DAGNode> mkApplyFunc(std::shared_ptr<DAGNode> fun, const std::vector<std::shared_ptr<DAGNode>> &params); // static apply function, only (f p1 p2 ... pn) without substitution
         
 
         // parse smt-lib2 file
+        /**
+         * @brief Parse an SMT-LIB2 file
+         * 
+         * Parses an SMT-LIB2 file and returns a boolean indicating success.
+         * 
+         * @param filename Path to the SMT-LIB2 file
+         * @return Boolean indicating success
+         */
         bool 	                 parseSmtlib2File(const std::string filename);
-        // // // parse model file
-        // void 	            parseModel(std::string filename, boost::unordered_map<std::string, vType>& recs);
 
-        std::shared_ptr<Sort>    mkSort(); // mk unique sort, TODO!!!! for example, bv, fp, and array
+        /**
+         * @brief Get the arity of a node kind
+         * 
+         * Returns the arity of a node kind.
+         * 
+         * @param k Node kind
+         * @return Arity of the node kind
+         */
         int                      getArity(NODE_KIND k) const;
 
         // aux functions
+        /**
+         * @brief Get the add operator for a sort
+         * 
+         * Returns the add operator for a sort.
+         * 
+         * @param sort Sort
+         * @return Add operator for the sort
+         */ 
         NODE_KIND                getAddOp(std::shared_ptr<Sort> sort); // mk unique add 
+
+        /**
+         * @brief Get the zero for a sort
+         * 
+         * Returns the zero for a sort.
+         * 
+         * @param sort Sort
+         * @return Zero for the sort
+         */
         std::shared_ptr<DAGNode> getZero(std::shared_ptr<Sort> sort); // mk unique zero
-
-        // parse optimization
-        // single_opt = (maximize <expr> [:comp <symbol>] [:epsilon <symbol>] [:M <symbol>] [:id <symbol>]) 
-        //            | (minimize <expr> [:comp <symbol>] [:epsilon <symbol>] [:M <symbol>] [:id <symbol>])
-        void                             parseAssertSoft();
-        // (maximize <expr> [:comp <symbol>] [:epsilon <symbol>] [:M <symbol>] [:id <symbol>])
-        std::shared_ptr<Objective>       parseMaximize();
-        // (minimize <expr> [:comp <symbol>] [:epsilon <symbol>] [:M <symbol>] [:id <symbol>])
-        std::shared_ptr<Objective>       parseMinimize();
-        // (maxsat <expr> [:id])
-        std::shared_ptr<Objective>       parseMaxsat();
-        // (minsat <expr> [:id])
-        std::shared_ptr<Objective>       parseMinsat();
-        std::shared_ptr<Objective>       parseSingleObj(const OPT_KIND& opt_type);
-        std::shared_ptr<Objective>       parseMultiObj(const OPT_KIND& opt_type);
-        // (define-objective <symbol> signle_opt [:id <symbol>])
-        std::shared_ptr<Objective>       parseDefObj();
-        // (lex-optimize (<symbol>+) [:id <symbol>])
-        std::shared_ptr<Objective>       parseLexOpt();
-        // (pareto-optimize (<symbol>+) [:id <symbol>])
-        std::shared_ptr<Objective>       parseParetoOpt();
-        // (box-optimize (<symbol>+) [:id <symbol>])
-        std::shared_ptr<Objective>       parseBoxOpt();
-        // (minmax (<symbol>+) [:id <symbol>])
-        std::shared_ptr<Objective>       parseMinmax();
-        // (maxmin (<symbol>+) [:id <symbol>])
-        std::shared_ptr<Objective>       parseMaxmin();
-        // (optimize (<symbol>+) [:id <symbol>] [:opt_kind <symbol>])
-        std::shared_ptr<Objective>       parseOptimize();
-        KEYWORD                          attemptParseKeywords();
-
         
         // additional functions
+        /**
+         * @brief Substitute variables in an expression
+         * 
+         * Substitutes variables in an expression with their corresponding values.
+         *
+         * @note This function is used to substitute variables in an expression but not simplify the expression.
+         * 
+         * @param expr Expression to substitute
+         * @param params Map of variable names to their corresponding values
+         * @return Substituted expression
+         */
         std::shared_ptr<DAGNode>                substitute(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::string, std::shared_ptr<DAGNode>> &params);
-        std::shared_ptr<DAGNode>                substitute(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::string, std::shared_ptr<DAGNode>> &params, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> & visited);
         
         // apply function
+        /**
+         * @brief Apply a function to a list of parameters
+         * 
+         * Applies a function to a list of parameters.
+         * 
+         * @param fun Function node
+         * @param params List of parameters
+         * @return Applied function (fun(p1, p2, ..., pn))
+         */
         std::shared_ptr<DAGNode>	            applyFun(std::shared_ptr<DAGNode> fun, const std::vector<std::shared_ptr<DAGNode>> & params);
-        std::shared_ptr<DAGNode>	            applyFunPostOrder(std::shared_ptr<DAGNode> node, boost::unordered_map<std::string, std::shared_ptr<DAGNode>> &params);
+        
         // negate an atom
+        /**
+         * @brief Negate an atom
+         * 
+         * Negates an atom.
+         * 
+         * @note This function is used to negate an atom (for example, negateAtom(x = y) <=> x != y).
+         * 
+         * @param atom Atom to negate
+         * @return Negated atom
+         */
         std::shared_ptr<DAGNode>	            negateAtom(std::shared_ptr<DAGNode> atom);
 
         // evaluate: return true if the evaluation has changed the expression
+        /**
+         * @brief Set the precision for evaluation
+         * 
+         * Sets the precision for evaluation.
+         * 
+         * @param precision Precision
+         */
         void                                    setEvaluatePrecision(mpfr_prec_t precision);
+
+        /**
+         * @brief Get the precision for evaluation
+         * 
+         * Gets the precision for evaluation.
+         * 
+         * @return Precision
+         */
         mpfr_prec_t                             getEvaluatePrecision() const;
+
+        /**
+         * @brief Set the use floating for evaluation
+         * 
+         * Sets the use floating for evaluation.
+         * 
+         * @param use_floating Use floating
+         */
         void                                    setEvaluateUseFloating(bool use_floating);
+
+        /**
+         * @brief Get the use floating for evaluation
+         * 
+         * Gets the use floating for evaluation.
+         * 
+         * @return Use floating
+         */
         bool                                    getEvaluateUseFloating() const;
+
+        /**
+         * @brief Evaluate an expression
+         * 
+         * Evaluates an expression.
+         * 
+         * @note The model can be a partial model and this function will simplify the expression.
+         * 
+         * @param expr Expression to evaluate
+         * @param model Model
+         * @return Evaluated expression
+         */
         std::shared_ptr<DAGNode>                evaluate(std::shared_ptr<DAGNode> expr, const std::shared_ptr<Model> &model);
-        std::shared_ptr<DAGNode>                evaluate(std::shared_ptr<DAGNode> expr, const Model &model);
+
+        /**
+         * @brief Evaluate an expression
+         * 
+         * Evaluates an expression.
+         * 
+         * @note The model can be a partial model and this function will simplify the expression.
+         * 
+         * @param expr Expression to evaluate
+         * @param model Model
+         * @param result Result
+         * @return true if the evaluation has changed the expression, false otherwise
+         */
         bool                                    evaluate(std::shared_ptr<DAGNode> expr, const std::shared_ptr<Model> &model, std::shared_ptr<DAGNode> &result);
 
         // type conversion
+        /**
+         * @brief Convert an expression to a real
+         * 
+         * Converts an expression to a real.
+         * 
+         * @param expr Expression to convert
+         * @return Real
+         */
         Real                                    toReal(std::shared_ptr<DAGNode> expr);
+
+        /**
+         * @brief Convert an expression to an integer
+         * 
+         * Converts an expression to an integer.
+         * 
+         * @param expr Expression to convert
+         * @return Integer
+         */
         Integer                                 toInt(std::shared_ptr<DAGNode> expr);
+
+        /**
+         * @brief Check if an expression is zero
+         * 
+         * Checks if an expression is zero.
+         * 
+         * @param expr Expression to check
+         * @return true if the expression is zero, false otherwise
+         */
         bool                                    isZero(std::shared_ptr<DAGNode> expr);
+
+        /**
+         * @brief Check if an expression is one
+         * 
+         * Checks if an expression is one.
+         * 
+         * @param expr Expression to check
+         * @return true if the expression is one, false otherwise
+         */
         bool                                    isOne(std::shared_ptr<DAGNode> expr);
 
         // Format conversion
+        /**
+         * @brief Collect atoms from an expression
+         * 
+         * Collects atoms from an expression.
+         * 
+         * @param expr Expression to collect atoms from
+         * @param atoms Atoms (stored in a set)
+         */
         void                                    collectAtoms(std::shared_ptr<DAGNode> expr, boost::unordered_set<std::shared_ptr<DAGNode>>& atoms);
+
+        /**
+         * @brief Replace atoms in an expression
+         * 
+         * Replaces atoms in an expression.
+         * 
+         * @param expr Expression to replace atoms in
+         * @param atom_map Atom map (stored in a map)
+         * @return Expression with replaced atoms
+         */
         std::shared_ptr<DAGNode>                replaceAtoms(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& atom_map);
+
+        /**
+         * @brief Convert an expression to Tseitin CNF
+         * 
+         * Converts an expression to Tseitin CNF.
+         * 
+         * @param expr Expression to convert
+         * @param clauses Clauses (stored in a vector)
+         * @return Expression in Tseitin CNF
+         */
         std::shared_ptr<DAGNode>                toTseitinCNF(std::shared_ptr<DAGNode> expr, std::vector<std::shared_ptr<DAGNode>>& clauses);
+
+        /**
+         * @brief Convert an expression to CNF
+         * 
+         * Converts an expression to CNF.
+         * 
+         * @param expr Expression to convert
+         * @return Expression in CNF
+         */
         std::shared_ptr<DAGNode>                toCNF(std::shared_ptr<DAGNode> expr);
+
+        /**
+         * @brief Convert a vector of expressions to CNF
+         * 
+         * Converts a vector of expressions to CNF.
+         * 
+         * @param exprs Expressions to convert
+         * @return Expressions in CNF
+         */
         std::shared_ptr<DAGNode>                toCNF(std::vector<std::shared_ptr<DAGNode>> exprs);
+
+        /**
+         * @brief Convert an expression to DNF
+         * 
+         * Converts an expression to DNF.
+         * 
+         * @param expr Expression to convert
+         * @return Expression in DNF
+         */
         std::shared_ptr<DAGNode>                toDNF(std::shared_ptr<DAGNode> expr);
+
+        /**
+         * @brief Convert a vector of expressions to DNF
+         * 
+         * Converts a vector of expressions to DNF.
+         * 
+         * @param exprs Expressions to convert
+         * @return Expressions in DNF
+         */
         std::shared_ptr<DAGNode>                toDNF(std::vector<std::shared_ptr<DAGNode>> exprs);
+
+        /**
+         * @brief Convert an expression to NNF
+         * 
+         * Converts an expression to NNF.
+         * 
+         * @param expr Expression to convert
+         * @return Expression in NNF
+         */
         std::shared_ptr<DAGNode>                toNNF(std::shared_ptr<DAGNode> expr);
-        std::shared_ptr<DAGNode>                toNNF(std::shared_ptr<DAGNode> expr, bool is_not);
+
+        /**
+         * @brief Convert a vector of expressions to NNF
+         * 
+         * Converts a vector of expressions to NNF.
+         * 
+         * @param exprs Expressions to convert
+         * @return Expressions in NNF
+         */
         std::shared_ptr<DAGNode>                toNNF(std::vector<std::shared_ptr<DAGNode>> exprs);
 
         // print
+        /**
+         * @brief Print an expression
+         * 
+         * Prints an expression.
+         * 
+         * @param expr Expression to print
+         * @return String representation of the expression
+         */
         std::string                             toString(std::shared_ptr<DAGNode> expr);
     private:
         // parse smt-lib2 file
@@ -1912,10 +3599,44 @@ namespace SMTLIBParser{
         std::string                             parseWeight();
         void                                    parseQuant(const std::string& type);
         
+        // parse optimization
+        // single_opt = (maximize <expr> [:comp <symbol>] [:epsilon <symbol>] [:M <symbol>] [:id <symbol>]) 
+        //            | (minimize <expr> [:comp <symbol>] [:epsilon <symbol>] [:M <symbol>] [:id <symbol>])
+        void                                    parseAssertSoft();
+        // (maximize <expr> [:comp <symbol>] [:epsilon <symbol>] [:M <symbol>] [:id <symbol>])
+        std::shared_ptr<Objective>              parseMaximize();
+        // (minimize <expr> [:comp <symbol>] [:epsilon <symbol>] [:M <symbol>] [:id <symbol>])
+        std::shared_ptr<Objective>              parseMinimize();
+        // (maxsat <expr> [:id])
+        std::shared_ptr<Objective>              parseMaxsat();
+        // (minsat <expr> [:id])
+        std::shared_ptr<Objective>              parseMinsat();
+        std::shared_ptr<Objective>              parseSingleObj(const OPT_KIND& opt_type);
+        std::shared_ptr<Objective>              parseMultiObj(const OPT_KIND& opt_type);
+        // (define-objective <symbol> signle_opt [:id <symbol>])
+        std::shared_ptr<Objective>              parseDefObj();
+        // (lex-optimize (<symbol>+) [:id <symbol>])
+        std::shared_ptr<Objective>              parseLexOpt();
+        // (pareto-optimize (<symbol>+) [:id <symbol>])
+        std::shared_ptr<Objective>              parseParetoOpt();
+        // (box-optimize (<symbol>+) [:id <symbol>])
+        std::shared_ptr<Objective>              parseBoxOpt();
+        // (minmax (<symbol>+) [:id <symbol>])
+        std::shared_ptr<Objective>              parseMinmax();
+        // (maxmin (<symbol>+) [:id <symbol>])
+        std::shared_ptr<Objective>              parseMaxmin();
+        // (optimize (<symbol>+) [:id <symbol>] [:opt_kind <symbol>])
+        std::shared_ptr<Objective>              parseOptimize();
+        KEYWORD                                 attemptParseKeywords();
+
+        
         // auxilary functions
         std::shared_ptr<DAGNode>	            bindLetVar(const std::string &key, std::shared_ptr<DAGNode> expr);
         std::shared_ptr<DAGNode>	            bindFunVar(const std::string &key, std::shared_ptr<DAGNode> expr);
         // conversion
+        std::shared_ptr<DAGNode>                substitute(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::string, std::shared_ptr<DAGNode>> &params, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> & visited);
+        std::shared_ptr<DAGNode>	            applyFunPostOrder(std::shared_ptr<DAGNode> node, boost::unordered_map<std::string, std::shared_ptr<DAGNode>> &params);
+        
         std::shared_ptr<DAGNode>                replaceAtoms(std::shared_ptr<DAGNode> expr, 
                                                             boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& atom_map, 
                                                             boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited, 
@@ -1938,6 +3659,8 @@ namespace SMTLIBParser{
         std::shared_ptr<DAGNode>                applyDNFDistributiveLawRec(std::shared_ptr<DAGNode> expr,
                                                                          boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited);
         std::shared_ptr<DAGNode>                flattenDNF(std::shared_ptr<DAGNode> expr);
+        
+        std::shared_ptr<DAGNode>                toNNF(std::shared_ptr<DAGNode> expr, bool is_not);
         
         //errors & warnings
         // mk errror node
