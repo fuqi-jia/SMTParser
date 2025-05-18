@@ -36,19 +36,122 @@ namespace SMTLIBParser{
             Model();
             Model(const Model &other);
             ~Model();
+
+            /**
+             * @brief Add a variable to the model
+             * 
+             * Adds a variable to the model.
+             * 
+             * @param node Variable to add
+             */
             void add(const std::shared_ptr<DAGNode> &node, const std::shared_ptr<DAGNode> &value);
+
+            /**
+             * @brief Add a variable to the model
+             * 
+             * Adds a variable to the model.
+             * 
+             * @param name Variable name
+             */
             void add(const std::string &name, const std::shared_ptr<DAGNode> &value);
+
+            /**
+             * @brief Add a variable to the model
+             * 
+             * Adds a variable to the model.
+             * 
+             * @param node Variable to add
+             */
             void addVar(const std::shared_ptr<DAGNode> &node);
+
+            /**
+             * @brief Get a variable from the model
+             * 
+             * Gets a variable from the model.
+             * 
+             * @param node Variable to get
+             * @return Variable
+             */
             std::shared_ptr<DAGNode> get(const std::shared_ptr<DAGNode> &node);
+
+            /**
+             * @brief Get a variable from the model
+             * 
+             * Gets a variable from the model.
+             * 
+             * @param name Variable name
+             * @return Variable
+             */
             std::shared_ptr<DAGNode> get(const std::string &name);
+
+            /**
+             * @brief Check if the model is full
+             * 
+             * Checks if the model is full.
+             * 
+             * @return True if the model is full, false otherwise
+             */
             bool isFull() const;
+
+            /**
+             * @brief Check if the model is empty
+             * 
+             * Checks if the model is empty.
+             * 
+             * @return True if the model is empty, false otherwise
+             */
             bool isEmpty() const;
+
+            /**
+             * @brief Clear the model
+             * 
+             * Clears the model.
+             */
             void clear();
+
+            /**
+             * @brief Get the size of the model
+             * 
+             * Gets the size of the model.
+             * 
+             * @return The size of the model
+             */
             size_t size() const;
+
+            /**
+             * @brief Get the variables of the model
+             * 
+             * Gets the variables of the model.
+             * 
+             * @return The variables of the model
+             */
             std::vector<std::shared_ptr<DAGNode>> getVars() const;
+
+            /**
+             * @brief Get the values of the model
+             * 
+             * Gets the values of the model.
+             * 
+             * @return The values of the model
+             */
             std::vector<std::shared_ptr<DAGNode>> getValues() const;
+
+            /**
+             * @brief Get the pairs of the model
+             * 
+             * Gets the pairs of the model.
+             * 
+             * @return The pairs of the model
+             */
             std::vector<std::pair<std::string, std::shared_ptr<DAGNode>>> getPairs() const;
-            
+
+            /**
+             * @brief Get the string representation of the model
+             * 
+             * Gets the string representation of the model.
+             * 
+             * @return The string representation of the model
+             */
             std::string toString();
         private:
             std::unordered_map<std::string, size_t> model_name_index;

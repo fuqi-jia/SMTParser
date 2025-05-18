@@ -1635,6 +1635,14 @@ namespace SMTLIBParser{
 			assert(params.size() == 3);
 			return mkStrReplaceAll(params[0], params[1], params[2]);
 		}
+		else if (s == "str.replace_re") {
+			assert(params.size() == 3);
+			return mkReplaceReg(params[0], params[1], params[2]);
+		}
+		else if (s == "str.replace_all_re") {
+			assert(params.size() == 3);
+			return mkReplaceRegAll(params[0], params[1], params[2]);
+		}
 		else if (s == "str.to_lower") {
 			assert(params.size() == 1);
 			return mkStrToLower(params[0]);
@@ -2202,6 +2210,9 @@ namespace SMTLIBParser{
 			return NODE_KIND::NT_ERROR;
 		}
 	}
+	NODE_KIND Parser::getOppositeKind(NODE_KIND kind){
+		return SMTLIBParser::getOppositeKind(kind);
+	}
 	std::shared_ptr<DAGNode> Parser::getZero(std::shared_ptr<Sort> sort){
 		if(sort == INT_SORT){
 			return mkConstInt(0);
@@ -2390,6 +2401,14 @@ namespace SMTLIBParser{
 
 	std::string Parser::toString(std::shared_ptr<DAGNode> expr){
 		return dumpSMTLIB2(expr);
+	}
+
+	std::string Parser::toString(std::shared_ptr<Sort> sort){
+		return sort->toString();
+	}
+
+	std::string Parser::toString(const NODE_KIND& kind){
+		return kindToString(kind);
 	}
 
 	/*
