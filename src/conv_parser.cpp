@@ -182,6 +182,12 @@ namespace SMTLIBParser {
         if (visited.find(expr) != visited.end()) {
             return visited[expr];
         }
+        
+        if(expr->isLet()){
+            std::shared_ptr<DAGNode> result = toTseitinCNF(expandLet(expr), visited, clauses);
+            visited[expr] = result;
+            return result;
+        }
         // c <-> ¬a <=> c -> ¬a and ¬a -> c
         // => ¬c or ¬a
         // => a or c
@@ -530,6 +536,13 @@ namespace SMTLIBParser {
         if(visited.find(expr) != visited.end()){
             return visited[expr];
         }
+
+        if(expr->isLet()){
+            std::shared_ptr<DAGNode> result = toDNFEliminateAll(expandLet(expr), visited, is_changed);
+            visited[expr] = result;
+            return result;
+        }
+
         if(expr->isNot()){
             bool child_changed = false;
             std::shared_ptr<DAGNode> child = toDNFEliminateAll(expr->getChild(0), visited, child_changed);
@@ -774,6 +787,12 @@ namespace SMTLIBParser {
         if(visited.find(expr) != visited.end()) {
             return visited[expr];
         }
+
+        if(expr->isLet()){
+            std::shared_ptr<DAGNode> result = applyDNFDistributiveLawRec(expandLet(expr), visited);
+            visited[expr] = result;
+            return result;
+        }
         
         if(expr->isNot()) {
             // negation only appears in front of literals in NNF
@@ -1005,9 +1024,11 @@ namespace SMTLIBParser {
         }
 
         if(expr->isLet()){
-            return toNNF(expandLet(expr), is_not);
+            std::shared_ptr<DAGNode> result = toNNF(expandLet(expr), is_not);
+            nnf_map[expr] = result;
+            return result;
         }
-        
+
         // handle NOT node
         if(expr->isNot()){
             // negate propagation: ¬¬A → A

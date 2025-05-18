@@ -324,8 +324,8 @@ namespace SMTLIBParser{
         bool isArithTerm() 			const { return (isArithOp() || isArithConv() || isRealNonlinearOp() || isTranscendentalOp() || 
                                                     (isVar() && (isVInt() || isVReal())) ||
                                                     (isConst() && (isCInt() || isCReal()))); };
-        bool isArithComp() 			const { return ((isEq() && getChild(0)->isArithTerm() && getChild(1)->isArithTerm())|| 
-                                                    (isDistinct() && getChild(0)->isArithTerm() && getChild(1)->isArithTerm()) || 
+        bool isArithComp() 			const { return ((isEq() && getChild(0)->isArithTerm())|| 
+                                                    (isDistinct() && getChild(0)->isArithTerm()) || 
                                                     isLe() || isLt() || isGe() || isGt()); };
 
         // check arithmetic covertion
@@ -410,8 +410,8 @@ namespace SMTLIBParser{
         bool isBVTerm()    		    const { return (isBVOp() ||
                                                     (isVar() && isVBV()) ||
                                                     (isConst() && isCBV())); };
-        bool isBVCompOp()     		const { return ((isEq() && getChild(0)->isBVTerm() && getChild(1)->isBVTerm()) ||
-                                                    (isDistinct() && getChild(0)->isBVTerm() && getChild(1)->isBVTerm()) ||
+        bool isBVCompOp()     		const { return ((isEq() && getChild(0)->isBVTerm()) ||
+                                                    (isDistinct() && getChild(0)->isBVTerm()) ||
                                                     isBVUlt() || isBVUle() || isBVUgt() || isBVUge() || isBVSlt() || isBVSle() || isBVSgt() || isBVSge()); };
         bool isBvAtom()             const { return isBVCompOp(); }; 
 
