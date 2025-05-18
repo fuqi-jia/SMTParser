@@ -555,7 +555,14 @@ std::string HighPrecisionReal::toString() const {
     
     mpfr_free_str(str);
     // remove trailing zeros and leave the first zero
-    result.erase(result.find_last_not_of('0') + 2);
+    size_t pos = result.find_last_not_of('0');
+    if(pos < result.size() - 2){
+        result.erase(pos + 2);
+    }
+    else if(pos < result.size() - 1){
+        // pos = result.size() - 2
+        result.erase(pos + 1);
+    }
     return result;
 }
 
