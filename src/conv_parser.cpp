@@ -178,10 +178,21 @@ namespace SMTLIBParser {
         if (visited.find(expr) != visited.end()) {
             return visited[expr];
         }
+        // c <-> ¬a <=> c -> ¬a and ¬a -> c
+        // => ¬c or ¬a
+        // => a or c
+        if(expr->isNot()){
+            // TODO: after NNF
+            std::shared_ptr<DAGNode> c = mkTempVar(BOOL_SORT);
+            clauses.emplace_back(mkOr({mkNot(c), mkNot(expr->getChild(0))}));
+            clauses.emplace_back(mkOr({expr->getChild(0), c}));
+            visited[expr] = c;
+            return c;
+        }
         // a and b and ... <=> c <-> a and b and ...
         // => c -> a and b and ... => ¬c or a and b and ... => (¬c or a) and (¬c or b) and ...
         // => a and b and ... -> c => ¬a or ¬b or ... or c
-        if (expr->isAnd()) {
+        else if (expr->isAnd()) {
             std::vector<std::shared_ptr<DAGNode>> children;
             for (size_t i = 0; i < expr->getChildrenSize(); i++) {
                 std::shared_ptr<DAGNode> child_cnf = toTseitinCNF(expr->getChild(i), visited, clauses);
@@ -427,6 +438,19 @@ namespace SMTLIBParser {
         if(cnf_map.find(expr) != cnf_map.end()){
             return cnf_map[expr];
         }
+        // convert to NNF first
+        expr = toNNF(expr);
+        // simple check: if all children are atom, just return it
+        bool all_atoms = true;
+        for(size_t i=0;i<expr->getChildrenSize();i++){
+            if(!expr->getChild(i)->isAtom()){
+                all_atoms = false;
+            }
+        }
+        if(all_atoms){
+            return expr;
+        }
+        assert(!all_atoms);
         std::vector<std::shared_ptr<DAGNode>> clauses;
         // collect all atoms
         boost::unordered_set<std::shared_ptr<DAGNode>> atoms;
