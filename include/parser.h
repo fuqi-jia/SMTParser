@@ -163,112 +163,928 @@ namespace SMTLIBParser{
 
 
     public:
-
-        //methods
+        
+        /**
+         * @brief Constructor with filename
+         * 
+         * Creates a Parser object and immediately tries to parse the specified SMT-LIB2 file.
+         * 
+         * @param filename Path to the SMT-LIB2 file to parse
+         */
         Parser(const std::string& filename);
+        
+        /**
+         * @brief Default constructor
+         * 
+         * Creates an empty Parser object, parse method must be called later to parse a file.
+         */
         Parser();
+        
+        /**
+         * @brief Destructor
+         * 
+         * Releases all resources used by the Parser
+         */
         ~Parser();
+        
+        /**
+         * @brief Parse SMT-LIB2 file
+         * 
+         * Parses the specified SMT-LIB2 file and builds internal data structures.
+         * 
+         * @param filename Path to the SMT-LIB2 file to parse
+         * @return True if parsing was successful, false otherwise
+         */
         bool parse(const std::string& filename);
 
         // to solver
+        /**
+         * @brief Get all assertions
+         * 
+         * Returns a vector of all assertions.
+         * 
+         * @return Vector of all assertions
+         */
         std::vector<std::shared_ptr<DAGNode>> getAssertions() const;
+
+        /**
+         * @brief Get grouped assertions
+         *
+         * Returns assertion groups map. Use (assert expr :id group_name) to assign 
+         * assertions to groups. Assertions without an ID go to the default group.
+         *
+         * @return Map from group names to sets of assertion indices
+         */
         boost::unordered_map<std::string, boost::unordered_set<size_t>> getGroupedAssertions() const;
+
+        /**
+         * @brief Get assumptions
+         * 
+         * Returns a vector of all assumptions. Use (check-sat-assuming (assumptions)) to check satisfiability
+         * under the given assumptions.
+         * 
+         * @return Vector of all assumptions
+         */ 
         std::vector<std::vector<std::shared_ptr<DAGNode>>> getAssumptions() const;
+
+        /**
+         * @brief Get soft assertions
+         * 
+         * Returns soft assertions. Use (assert-soft expr :weight weight :id group_name) to group and weight them.
+         * 
+         * @return Vector of all soft assertions
+         */
         std::vector<std::shared_ptr<DAGNode>> getSoftAssertions() const;
+
+        /**
+         * @brief Get soft assertion weights
+         * 
+         * Returns a vector of all soft assertion weights.
+         * 
+         * @return Vector of all soft assertion weights
+         */
         std::vector<std::shared_ptr<DAGNode>> getSoftWeights() const;
+
+        /**
+         * @brief Get grouped soft assertions
+         * 
+         * Returns a map of soft assertion groups. Use (assert-soft expr :weight weight :id group_name) to group and weight them.
+         * 
+         * @return Map from group names to sets of soft assertion indices
+         */
         boost::unordered_map<std::string, boost::unordered_set<size_t>> getGroupedSoftAssertions() const;
+
+        /**
+         * @brief Get objectives
+         * 
+         * Returns a vector of all objectives.
+         * 
+         * @return Vector of all objectives
+         */
         std::vector<std::shared_ptr<Objective>> getObjectives() const;
+
+        /**
+         * @brief Get global options
+         * 
+         * Returns a pointer to the global options.
+         * 
+         * @return Pointer to global options
+         */
         std::shared_ptr<GlobalOptions> getOptions() const;
+
+        /**
+         * @brief Get variables
+         * 
+         * Returns a vector of all variables.
+         * 
+         * @return Vector of all variables
+         */
         std::vector<std::shared_ptr<DAGNode>> getVariables() const;
+
+        /**
+         * @brief Get functions
+         * 
+         * Returns a vector of all functions. Use (define-fun name (params) body) to define a function.
+         * 
+         * @return Vector of all functions
+         */
         std::vector<std::shared_ptr<DAGNode>> getFunctions() const;
 
         // get sort
+        /**
+         * @brief Get sort
+         * 
+         * Returns a sort for the given parameters.
+         * 
+         * @param params Vector of parameters
+         * @return Sort
+         */
         std::shared_ptr<Sort> getSort(const std::vector<std::shared_ptr<DAGNode>>& params);
+
+        /**
+         * @brief Get sort
+         * 
+         * Returns a sort for the given parameter.
+         * 
+         * @param param Parameter
+         * @return Sort
+         */
         std::shared_ptr<Sort> getSort(std::shared_ptr<DAGNode> param);
+
+        /**
+         * @brief Get sort
+         * 
+         * Returns a sort for the given parameters.
+         * 
+         * @param params Vector of parameters
+         * @return Sort
+         */
         std::shared_ptr<Sort> getSort(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r);
+
+        /**
+         * @brief Get sort
+         * 
+         * Returns a sort for the given parameters.
+         * 
+         * @param params Vector of parameters
+         * @return Sort
+         */
         std::shared_ptr<Sort> getSort(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> m);
 
         // mk oper 
+        /**
+         * @brief Create an operation
+         * 
+         * Creates an operation with the given sort and parameters.
+         * 
+         * @param sort Sort
+         * @param t Operation kind
+         * @param p Parameters
+         * @return Operation Node
+         */
         std::shared_ptr<DAGNode> mkOper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, std::shared_ptr<DAGNode> p);
+
+        /**
+         * @brief Create an operation
+         * 
+         * Creates an operation with the given sort and parameters.
+         * 
+         * @param sort Sort
+         * @param t Operation kind
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Operation Node
+         */
         std::shared_ptr<DAGNode> mkOper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r);
+
+        /**
+         * @brief Create an operation
+         * 
+         * Creates an operation with the given sort and parameters.
+         * 
+         * @param sort Sort
+         * @param t Operation kind
+         * @param l Left parameter
+         * @param m Middle parameter
+         * @param r Right parameter
+         * @return Operation Node
+         */     
         std::shared_ptr<DAGNode> mkOper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> m, std::shared_ptr<DAGNode> r);
+
+        /**
+         * @brief Create an operation
+         * 
+         * Creates an operation with the given sort and parameters.
+         * 
+         * @param sort Sort
+         * @param t Operation kind
+         * @param p Parameters
+         * @return Operation Node
+         */
         std::shared_ptr<DAGNode> mkOper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, const std::vector<std::shared_ptr<DAGNode>> &p);
+
+        /**
+         * @brief Simplify an operation
+         * 
+         * Simplifies an operation with the given kind and parameters.
+         * 
+         * @note The parameters are assumed to be constant.
+         * 
+         * @param t Operation kind
+         * @param p Parameters
+         * @return Simplified operation node
+         */
         std::shared_ptr<DAGNode> simp_oper(const NODE_KIND& t, std::shared_ptr<DAGNode> p);
-        std::shared_ptr<DAGNode> simp_oper(const NODE_KIND& t, std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r);
+
+        /**
+         * @brief Simplify an operation
+         * 
+         * Simplifies an operation with the given kind and parameters.
+         * 
+         * @note The parameters are assumed to be constant.
+         * 
+         * @param t Operation kind
+         * @param l Left parameter
+         * @param m Middle parameter
+         * @param r Right parameter
+         * @return Simplified operation node
+         */
         std::shared_ptr<DAGNode> simp_oper(const NODE_KIND& t, std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> m, std::shared_ptr<DAGNode> r);
+        
+        /**
+         * @brief Simplify an operation
+         * 
+         * Simplifies an operation with the given kind and parameters.
+         * 
+         * @param t Operation kind
+         * @param p Parameters
+         * @return Simplified operation node
+         */
         std::shared_ptr<DAGNode> simp_oper(const NODE_KIND& t, const std::vector<std::shared_ptr<DAGNode>> &p);
+
         // mk function
+        /**
+         * @brief Create a function declaration
+         * 
+         * Creates a function declaration with the given name, parameters, and output sort.
+         * 
+         * @param name Function name
+         * @param params Parameters
+         * @param out_sort Output sort
+         * @return Function declaration node
+         */
         std::shared_ptr<DAGNode> mkFuncDec(const std::string &name, const std::vector<std::shared_ptr<Sort>> &params, std::shared_ptr<Sort> out_sort);
+
+        /**
+         * @brief Create a function definition
+         * 
+         * Creates a function definition with the given name, parameters, output sort, and body.
+         * 
+         * @param name Function name
+         * @param params Parameters
+         * @param out_sort Output sort
+         * @param body Body
+         * @return Function definition node
+         */
         std::shared_ptr<DAGNode> mkFuncDef(const std::string &name, const std::vector<std::shared_ptr<DAGNode>> &params, std::shared_ptr<Sort> out_sort, std::shared_ptr<DAGNode> body);
+
         // mk sort
+        /**
+         * @brief Create a sort declaration
+         * 
+         * Creates a sort declaration with the given name and arity.
+         * 
+         * @param name Sort name
+         * @param arity Arity
+         * @return Sort declaration node
+         */
         std::shared_ptr<Sort> mkSortDec(const std::string &name, const size_t &arity);
         // mk true/false
+        /**
+         * @brief Create a true node
+         * 
+         * Creates a true node.
+         * 
+         * @return True node
+         */
         std::shared_ptr<DAGNode>	mkTrue(); // true
+
+        /**
+         * @brief Create a false node
+         * 
+         * Creates a false node.
+         * 
+         * @return False node
+         */
         std::shared_ptr<DAGNode>	mkFalse(); // false
+
+        /**
+         * @brief Create an unknown node
+         * 
+         * Creates an unknown node.
+         * 
+         * @return Unknown node
+         */
         std::shared_ptr<DAGNode>    mkUnknown(); // unknown
         // CORE OPERATORS
+        /**
+         * @brief Create an equality node
+         * 
+         * Creates an equality node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Equality node
+         */
         std::shared_ptr<DAGNode> mkEq(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l = r
+
+        /**
+         * @brief Create an equality node
+         * 
+         * Creates an equality node with the given parameters.
+         * 
+         * @param params Parameters
+         * @return Equality node
+         */
         std::shared_ptr<DAGNode> mkEq(const std::vector<std::shared_ptr<DAGNode>>& params); // l = r = ... 
+        
+        /**
+         * @brief Create a distinct node
+         * 
+         * Creates a distinct node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Distinct node
+         */
+        std::shared_ptr<DAGNode> mkDistinct(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r);
+
+        /**
+         * @brief Create a distinct node
+         * 
+         * Creates a distinct node with the given parameters.
+         * 
+         * @param params Parameters
+         * @return Distinct node
+         */
         std::shared_ptr<DAGNode> mkDistinct(const std::vector<std::shared_ptr<DAGNode>> &params); // l != r != ...
-        std::shared_ptr<DAGNode> mkDistinct(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l != r
+        
         // CONST
+        /**
+         * @brief Create a constant node
+         * 
+         * Creates a constant node with the given sort and value.
+         * 
+         * @param sort Sort
+         * @param v Value (string)
+         * @return Constant node
+         */
         std::shared_ptr<DAGNode> mkConst(const std::shared_ptr<Sort>& sort, const std::string &v); // CONST
+
+        
+        /**
+         * @brief Create an integer constant
+         *
+         * Creates a constant node with the given sort and integer value.
+         *
+         * @param sort Sort
+         * @param v Value (int)
+         * @return Constant node
+         */
         std::shared_ptr<DAGNode> mkConst(const std::shared_ptr<Sort>& sort, const int& v); // CONST_INT
+
+        /**
+         * @brief Create a real constant from double
+         *
+         * Creates a constant node with the given sort and double value.
+         *
+         * @param sort Sort
+         * @param v Value (double)
+         * @return Constant node
+         */
         std::shared_ptr<DAGNode> mkConst(const std::shared_ptr<Sort>& sort, const double& v); // CONST_REAL
+
+        /**
+         * @brief Create a real constant
+         *
+         * Creates a constant node with the given sort and high-precision real value.
+         *
+         * @param sort Sort
+         * @param v Value (double)
+         * @return Constant node
+         */
         std::shared_ptr<DAGNode> mkConst(const std::shared_ptr<Sort>& sort, const Real& v); // CONST_REAL
+
+        /**
+         * @brief Create a numeric constant
+         *
+         * Creates a constant node with the given sort and arbitrary-precision integer value.
+         *
+         * @param sort Sort
+         * @param v Value (Integer)
+         * @return Constant node
+         */
         std::shared_ptr<DAGNode> mkConst(const std::shared_ptr<Sort>& sort, const Integer& v); // CONST_REAL/INT
+
+        /**
+         * @brief Create a boolean constant
+         *
+         * Creates a constant node with the given sort and boolean value.
+         *
+         * @param sort Sort
+         * @param v Value (bool)
+         * @return Constant node
+         */
         std::shared_ptr<DAGNode> mkConst(const std::shared_ptr<Sort>& sort, const bool& v); // CONST_BOOL
+        
+        /**
+         * @brief Create a boolean constant
+         *
+         * Creates a boolean constant node with the given boolean value.
+         *
+         * @param v Value (bool)
+         * @return Boolean constant node
+         */
         std::shared_ptr<DAGNode> mkConstBool(const bool &v); // CONST_BOOL
+        
+        /**
+         * @brief Create a boolean constant from integer
+         *
+         * Creates a boolean constant node from an integer value (0 = false, non-0 = true).
+         *
+         * @param v Value (int)
+         * @return Boolean constant node
+         */
         std::shared_ptr<DAGNode> mkConstBool(const int& v); // CONST_BOOL
+        
+        /**
+         * @brief Create a boolean constant from string
+         *
+         * Creates a boolean constant node from a string ("true"/"false").
+         *
+         * @param v Value (string)
+         * @return Boolean constant node
+         */
         std::shared_ptr<DAGNode> mkConstBool(const std::string &v); // CONST_BOOL
+        
+        /**
+         * @brief Create a boolean constant from double
+         *
+         * Creates a boolean constant node from a double value (0.0 = false, non-0 = true).
+         *
+         * @param v Value (double)
+         * @return Boolean constant node
+         */
         std::shared_ptr<DAGNode> mkConstBool(const double &v); // CONST_BOOL
+        
+        /**
+         * @brief Create an integer constant from string
+         *
+         * Creates an integer constant node from a string representation.
+         *
+         * @param v Value (string)
+         * @return Integer constant node
+         */
         std::shared_ptr<DAGNode> mkConstInt(const std::string &v); // CONST_INT
+        
+        /**
+         * @brief Create an integer constant
+         *
+         * Creates an integer constant node from an integer value.
+         *
+         * @param v Value (int)
+         * @return Integer constant node
+         */
         std::shared_ptr<DAGNode> mkConstInt(const int& v); // CONST_INT
+        
+        /**
+         * @brief Create an integer constant
+         *
+         * Creates an integer constant node from an arbitrary-precision integer value.
+         *
+         * @param v Value (Integer)
+         * @return Integer constant node
+         */
         std::shared_ptr<DAGNode> mkConstInt(const Integer &v); // CONST_INT
+        
+        /**
+         * @brief Create a real constant from string
+         *
+         * Creates a real constant node from a string representation.
+         *
+         * @param v Value (string)
+         * @return Real constant node
+         */
         std::shared_ptr<DAGNode> mkConstReal(const std::string &v); // CONST_REAL
+        
+        /**
+         * @brief Create a real constant
+         *
+         * Creates a real constant node from a high-precision real value.
+         *
+         * @param v Value (Real)
+         * @return Real constant node
+         */
         std::shared_ptr<DAGNode> mkConstReal(const Real &v); // CONST_REAL
+        
+        /**
+         * @brief Create a real constant from double
+         *
+         * Creates a real constant node from a double value.
+         *
+         * @param v Value (double)
+         * @return Real constant node
+         */
         std::shared_ptr<DAGNode> mkConstReal(const double &v); // CONST_REAL
+        
+        /**
+         * @brief Create a real constant from integer
+         *
+         * Creates a real constant node from an arbitrary-precision integer value.
+         *
+         * @param v Value (Integer)
+         * @return Real constant node
+         */
         std::shared_ptr<DAGNode> mkConstReal(const Integer &v); // CONST_REAL
+        
+        /**
+         * @brief Create a string constant
+         *
+         * Creates a string constant node.
+         *
+         * @param v Value (string)
+         * @return String constant node
+         */
         std::shared_ptr<DAGNode> mkConstStr(const std::string &v); // CONST_Str
+        
+        /**
+         * @brief Create a bit-vector constant
+         *
+         * Creates a bit-vector constant node with the given value and width.
+         *
+         * @param v Value (string)
+         * @param width Width of the bit-vector
+         * @return Bit-vector constant node
+         */
         std::shared_ptr<DAGNode> mkConstBv(const std::string &v, const size_t& width); // CONST_BV
+        
+        /**
+         * @brief Create a floating-point constant
+         *
+         * Creates a floating-point constant node with the given value and format.
+         *
+         * @param v Value (string)
+         * @param e Exponent size
+         * @param s Significand size
+         * @return Floating-point constant node
+         */
         std::shared_ptr<DAGNode> mkConstFp(const std::string &v, const size_t& e, const size_t& s); // CONST_FP
+        
+        /**
+         * @brief Create a regular expression constant
+         *
+         * Creates a regular expression constant node.
+         *
+         * @param v Value (string)
+         * @return Regular expression constant node
+         */
         std::shared_ptr<DAGNode> mkConstReg(const std::string &v); // CONST_REG
+        
         // VAR
-        // TODO ...
+        /**
+         * @brief Create a variable
+         *
+         * Creates a variable node with the given sort and name.
+         *
+         * @param sort Sort
+         * @param name Variable name
+         * @return Variable node
+         */
         std::shared_ptr<DAGNode> mkVar(const std::shared_ptr<Sort>& sort, const std::string &name); // VAR
+        
+        /**
+         * @brief Create a temporary variable
+         *
+         * Creates a temporary variable node with the given sort.
+         *
+         * @param sort Sort
+         * @return Temporary variable node
+         */
         std::shared_ptr<DAGNode> mkTempVar(const std::shared_ptr<Sort>& sort); // TEMP_VAR
+        
+        /**
+         * @brief Create a boolean variable
+         *
+         * Creates a boolean variable node with the given name.
+         *
+         * @param name Variable name
+         * @return Boolean variable node
+         */
         std::shared_ptr<DAGNode> mkVarBool(const std::string &name); // VAR_BOOL
+        
+        /**
+         * @brief Create an integer variable
+         *
+         * Creates an integer variable node with the given name.
+         *
+         * @param name Variable name
+         * @return Integer variable node
+         */
         std::shared_ptr<DAGNode> mkVarInt(const std::string &name); // VAR_INT
+        
+        /**
+         * @brief Create a real variable
+         *
+         * Creates a real variable node with the given name.
+         *
+         * @param name Variable name
+         * @return Real variable node
+         */
         std::shared_ptr<DAGNode> mkVarReal(const std::string &name); // VAR_REAL
+        
+        /**
+         * @brief Create a bit-vector variable
+         *
+         * Creates a bit-vector variable node with the given name and width.
+         *
+         * @param name Variable name
+         * @param width Width of the bit-vector
+         * @return Bit-vector variable node
+         */
         std::shared_ptr<DAGNode> mkVarBv(const std::string &name, const size_t& width); // VAR_BV
+        
+        /**
+         * @brief Create a floating-point variable
+         *
+         * Creates a floating-point variable node with the given name and format.
+         *
+         * @param name Variable name
+         * @param e Exponent size
+         * @param s Significand size
+         * @return Floating-point variable node
+         */
         std::shared_ptr<DAGNode> mkVarFp(const std::string &name, const size_t& e, const size_t& s); // VAR_FP
+        
+        /**
+         * @brief Create a string variable
+         *
+         * Creates a string variable node with the given name.
+         *
+         * @param name Variable name
+         * @return String variable node
+         */
         std::shared_ptr<DAGNode> mkVarStr(const std::string &name); // VAR_STR
+        
+        /**
+         * @brief Create a regular expression variable
+         *
+         * Creates a regular expression variable node with the given name.
+         *
+         * @param name Variable name
+         * @return Regular expression variable node
+         */
         std::shared_ptr<DAGNode> mkVarReg(const std::string &name); // VAR_REG
+        
+        /**
+         * @brief Create a function parameter variable
+         *
+         * Creates a function parameter variable node with the given sort and name.
+         *
+         * @param sort Sort
+         * @param name Variable name
+         * @return Function parameter variable node
+         */
         std::shared_ptr<DAGNode> mkFunParamVar(std::shared_ptr<Sort> sort, const std::string &name); // FUN_PARAM_VAR
-        // ARRAY
+        
+        /**
+         * @brief Create an array
+         *
+         * Creates an array node with the given name, index sort, and element sort.
+         *
+         * @param name Array name
+         * @param index Index sort
+         * @param elem Element sort
+         * @return Array node
+         */
         std::shared_ptr<DAGNode> mkArray(const std::string &name, std::shared_ptr<Sort> index, std::shared_ptr<Sort> elem); // ARRAY
+        
         // BOOLEAN
+        /**
+         * @brief Create a not node
+         * 
+         * Creates a not node with the given parameter.
+         * 
+         * @param param Parameter
+         * @return Not node
+         */
         std::shared_ptr<DAGNode> mkNot(std::shared_ptr<DAGNode> param);
+        
+        /**
+         * @brief Create an and node
+         * 
+         * Creates an and node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return And node
+         */
         std::shared_ptr<DAGNode> mkAnd(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r);
+        
+        /**
+         * @brief Create an and node
+         * 
+         * Creates an and node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param m Middle parameter
+         * @param r Right parameter
+         * @return And node
+         */
         std::shared_ptr<DAGNode> mkAnd(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> m, std::shared_ptr<DAGNode> r);
-        std::shared_ptr<DAGNode> mkAnd(const std::vector<std::shared_ptr<DAGNode>> &params);
+        
+        /**
+         * @brief Create an and node
+         * 
+         * Creates an and node with the given parameters.
+         * 
+         * @param params Parameters
+         * @return And node
+         */
         std::shared_ptr<DAGNode> mkOr(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r);
+        
+        /**
+         * @brief Create an or node
+         * 
+         * Creates an or node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param m Middle parameter
+         * @param r Right parameter
+         * @return Or node
+         */
         std::shared_ptr<DAGNode> mkOr(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> m, std::shared_ptr<DAGNode> r);
+        
+        /**
+         * @brief Create an or node
+         * 
+         * Creates an or node with the given parameters.
+         * 
+         * @param params Parameters
+         * @return Or node
+         */
         std::shared_ptr<DAGNode> mkOr(const std::vector<std::shared_ptr<DAGNode>> &params);
+        
+        /**
+         * @brief Create an implies node
+         * 
+         * Creates an implies node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Implies node
+         */
         std::shared_ptr<DAGNode> mkImplies(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r);
+        
+        /**
+         * @brief Create an implies node
+         * 
+         * Creates an implies node with the given parameters.
+         * 
+         * @param params Parameters
+         * @return Implies node
+         */
         std::shared_ptr<DAGNode> mkImplies(const std::vector<std::shared_ptr<DAGNode>> &params);
+        
+        /**
+         * @brief Create an xor node
+         * 
+         * Creates an xor node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Xor node
+         */
         std::shared_ptr<DAGNode> mkXor(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r);
+        
+        /**
+         * @brief Create an xor node
+         * 
+         * Creates an xor node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param m Middle parameter
+         * @param r Right parameter
+         * @return Xor node
+         */
         std::shared_ptr<DAGNode> mkXor(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> m, std::shared_ptr<DAGNode> r);
+        
+        /**
+         * @brief Create an xor node
+         * 
+         * Creates an xor node with the given parameters.
+         * 
+         * @param params Parameters
+         * @return Xor node
+         */
         std::shared_ptr<DAGNode> mkXor(const std::vector<std::shared_ptr<DAGNode>> &params);
+        
+        /**
+         * @brief Create an ite node
+         * 
+         * Creates an ite node with the given parameters.
+         * 
+         * @param cond Condition
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Ite node
+         */
         std::shared_ptr<DAGNode> mkIte(std::shared_ptr<DAGNode> cond, std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r);
+        
+        /**
+         * @brief Create an ite node
+         * 
+         * Creates an ite node with the given parameters.
+         * 
+         * @param params Parameters
+         * @return Ite node
+         */
         std::shared_ptr<DAGNode> mkIte(const std::vector<std::shared_ptr<DAGNode>> &params);
         // ARITHMATIC COMMON OPERATORS
+
+        /**
+         * @brief Create an add node
+         * 
+         * Creates an add node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Add node
+         */
         std::shared_ptr<DAGNode> mkAdd(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r);
+        
+        /**
+         * @brief Create an add node
+         * 
+         * Creates an add node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param m Middle parameter
+         * @param r Right parameter
+         * @return Add node
+         */
         std::shared_ptr<DAGNode> mkAdd(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> m, std::shared_ptr<DAGNode> r);
+        
+        /**
+         * @brief Create an add node
+         * 
+         * Creates an add node with the given parameters.
+         * 
+         * @param params Parameters
+         * @return Add node
+         */
         std::shared_ptr<DAGNode> mkAdd(const std::vector<std::shared_ptr<DAGNode>> &params); // l + r + ...
+        
+        /**
+         * @brief Create an mul node
+         * 
+         * Creates an mul node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Mul node
+         */
         std::shared_ptr<DAGNode> mkMul(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r);
+        
+        /**
+         * @brief Create an mul node
+         * 
+         * Creates an mul node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param m Middle parameter
+         * @param r Right parameter
+         * @return Mul node
+         */
         std::shared_ptr<DAGNode> mkMul(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> m, std::shared_ptr<DAGNode> r);
+        
+        /**
+         * @brief Create an mul node
+         *  
+         * Creates an mul node with the given parameters.
+         * 
+         * @param params Parameters
+         * @return Mul node
+         */
         std::shared_ptr<DAGNode> mkMul(const std::vector<std::shared_ptr<DAGNode>> &params); // l * r * ...
+        
+        /**
+         * @brief Create an and node
+         * 
+         * Creates an and node with the given parameters.
+         * 
+         * @param params Parameters
+         * @return And node
+         */
         std::shared_ptr<DAGNode> mkIand(const std::vector<std::shared_ptr<DAGNode>> &params); // l & r & ... 
         std::shared_ptr<DAGNode> mkPow2(std::shared_ptr<DAGNode> param); // 2^param
         std::shared_ptr<DAGNode> mkPow(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l^r
