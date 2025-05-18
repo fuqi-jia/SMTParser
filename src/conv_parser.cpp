@@ -40,10 +40,14 @@ namespace SMTLIBParser {
         }
         visited.insert(expr);
         if (expr->isAtom()) {
+            // directly insert the atom and return
             atoms.insert(expr);
+            return;
         }
-        for (size_t i = 0; i < expr->getChildrenSize(); i++) {
-            collectAtoms(expr->getChild(i), atoms, visited);
+        else{
+            for (size_t i = 0; i < expr->getChildrenSize(); i++) {
+                collectAtoms(expr->getChild(i), atoms, visited);
+            }
         }
     }
 
@@ -445,6 +449,7 @@ namespace SMTLIBParser {
         for(size_t i=0;i<expr->getChildrenSize();i++){
             if(!expr->getChild(i)->isAtom()){
                 all_atoms = false;
+                break;
             }
         }
         if(all_atoms){
