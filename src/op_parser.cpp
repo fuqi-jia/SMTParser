@@ -433,7 +433,15 @@ namespace SMTLIBParser{
         assert(isRealUtil(v) || v == "e" || v == "pi");
         if(v == "e") return E_NODE;
         if(v == "pi") return PI_NODE;
-        return mkConstReal(Real(v));
+        if(constants_real.find(v) != constants_real.end()){
+            return node_list[constants_real[v]];
+        }
+        else{
+            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(REAL_SORT, NODE_KIND::NT_CONST, v);
+            constants_real.insert(std::pair<std::string, size_t>(v, node_list.size()));
+            node_list.emplace_back(newconst);
+            return newconst;
+        }
     }
     std::shared_ptr<DAGNode> Parser::mkConstReal(const Real &v){
         std::string v_str = SMTLIBParser::toString(v);
@@ -448,10 +456,28 @@ namespace SMTLIBParser{
         }
     }
     std::shared_ptr<DAGNode> Parser::mkConstReal(const double &v){
-        return mkConstReal(Real(v));
+        std::string v_str = std::to_string(v);
+        if(constants_real.find(v_str) != constants_real.end()){
+            return node_list[constants_real[v_str]];
+        }
+        else{
+            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(REAL_SORT, NODE_KIND::NT_CONST, v_str);
+            constants_real.insert(std::pair<std::string, size_t>(v_str, node_list.size()));
+            node_list.emplace_back(newconst);
+            return newconst;
+        }
     }
     std::shared_ptr<DAGNode> Parser::mkConstReal(const Integer &v){
-        return mkConstReal(Real(v));
+        std::string v_str = SMTLIBParser::toString(v);
+        if(constants_real.find(v_str) != constants_real.end()){
+            return node_list[constants_real[v_str]];
+        }
+        else{
+            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(REAL_SORT, NODE_KIND::NT_CONST, v_str);
+            constants_real.insert(std::pair<std::string, size_t>(v_str, node_list.size()));
+            node_list.emplace_back(newconst);
+            return newconst;
+        }
     }
     std::shared_ptr<DAGNode> Parser::mkConstStr(const std::string &v){
         if(constants_str.find(v) != constants_str.end()){
