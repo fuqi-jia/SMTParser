@@ -1018,7 +1018,7 @@ namespace SMTLIBParser{
          * 
          * @param l Left parameter
          * @param r Right parameter
-         * @return Add node
+         * @return Add node (l + r)
          */
         std::shared_ptr<DAGNode> mkAdd(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r);
         
@@ -1030,7 +1030,7 @@ namespace SMTLIBParser{
          * @param l Left parameter
          * @param m Middle parameter
          * @param r Right parameter
-         * @return Add node
+         * @return Add node (l + m + r)
          */
         std::shared_ptr<DAGNode> mkAdd(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> m, std::shared_ptr<DAGNode> r);
         
@@ -1040,7 +1040,7 @@ namespace SMTLIBParser{
          * Creates an add node with the given parameters.
          * 
          * @param params Parameters
-         * @return Add node
+         * @return Add node (l + r + ...)
          */
         std::shared_ptr<DAGNode> mkAdd(const std::vector<std::shared_ptr<DAGNode>> &params); // l + r + ...
         
@@ -1051,7 +1051,7 @@ namespace SMTLIBParser{
          * 
          * @param l Left parameter
          * @param r Right parameter
-         * @return Mul node
+         * @return Mul node (l * r)
          */
         std::shared_ptr<DAGNode> mkMul(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r);
         
@@ -1063,7 +1063,7 @@ namespace SMTLIBParser{
          * @param l Left parameter
          * @param m Middle parameter
          * @param r Right parameter
-         * @return Mul node
+         * @return Mul node (l * m * r) 
          */
         std::shared_ptr<DAGNode> mkMul(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> m, std::shared_ptr<DAGNode> r);
         
@@ -1073,31 +1073,154 @@ namespace SMTLIBParser{
          * Creates an mul node with the given parameters.
          * 
          * @param params Parameters
-         * @return Mul node
+         * @return Mul node (l * r * ...)
          */
         std::shared_ptr<DAGNode> mkMul(const std::vector<std::shared_ptr<DAGNode>> &params); // l * r * ...
         
         /**
-         * @brief Create an and node
+         * @brief Create an iand node
          * 
-         * Creates an and node with the given parameters.
+         * Creates an iand node with the given parameters.
          * 
          * @param params Parameters
-         * @return And node
+         * @return Iand node (l & r & ...)
          */
         std::shared_ptr<DAGNode> mkIand(const std::vector<std::shared_ptr<DAGNode>> &params); // l & r & ... 
+        
+        /**
+         * @brief Create an pow2 node
+         * 
+         * Creates an pow2 node with the given parameter.
+         * 
+         * @param param Parameter
+         * @return Pow2 node (2^param)
+         */
         std::shared_ptr<DAGNode> mkPow2(std::shared_ptr<DAGNode> param); // 2^param
+        
+        /**
+         * @brief Create an pow node
+         * 
+         * Creates an pow node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Pow node (l^r)
+         */
         std::shared_ptr<DAGNode> mkPow(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l^r
+        
+        /**
+         * @brief Create an sub node
+         * 
+         * Creates an sub node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Sub node (l - r)
+         */
         std::shared_ptr<DAGNode> mkSub(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r);
+        
+        /**
+         * @brief Create an sub node
+         * 
+         * Creates an sub node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param m Middle parameter
+         * @param r Right parameter
+         * @return Sub node (l - m - r)
+         */
         std::shared_ptr<DAGNode> mkSub(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> m, std::shared_ptr<DAGNode> r);
+        
+        /**
+         * @brief Create an sub node
+         * 
+         * Creates an sub node with the given parameters.
+         * 
+         * @param params Parameters
+         * @return Sub node (l - r - ...)
+         */
         std::shared_ptr<DAGNode> mkSub(const std::vector<std::shared_ptr<DAGNode>> &params);
+        
+        /**
+         * @brief Create an neg node
+         * 
+         * Creates an neg node with the given parameter.
+         * 
+         * @param param Parameter
+         * @return Neg node (-param)
+         */
         std::shared_ptr<DAGNode> mkNeg(std::shared_ptr<DAGNode> param); // -param
+        
+        /**
+         * @brief Create an div node
+         * 
+         * Creates an div node with the given parameters.
+         * 
+         * @note This is the real division operator.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Div node (l / r)
+         */
         std::shared_ptr<DAGNode> mkDiv(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r);
-        std::shared_ptr<DAGNode> mkDiv(const std::vector<std::shared_ptr<DAGNode>> &params); // div_real
+        
+        /**
+         * @brief Create an div node
+         * 
+         * Creates an div node with the given parameters.
+         * 
+         * @note This is the real division operator.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Div node (l / r / ...)
+         */
+        std::shared_ptr<DAGNode> mkDiv(const std::vector<std::shared_ptr<DAGNode>> &params); // l / r / ...
+        
+        /**
+         * @brief Create an div node
+         * 
+         * Creates an div node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Div node (l / r)
+         */
         std::shared_ptr<DAGNode> mkDivInt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r);
+        
+        /**
+         * @brief Create an div node
+         * 
+         * Creates an div node with the given parameters.
+         * 
+         * @param params Parameters
+         * @return Div node (l / r / ...)
+         */
         std::shared_ptr<DAGNode> mkDivInt(const std::vector<std::shared_ptr<DAGNode>> &params); // l / r / ...
+        
+        /**
+         * @brief Create an div node
+         * 
+         * Creates an div node with the given parameters.
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Div node (l / r)
+         */
         std::shared_ptr<DAGNode> mkDivReal(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r);
+        
+        /**
+         * @brief Create an div node
+         * 
+         * Creates an div node with the given parameters.
+         * 
+         * @param params Parameters
+         * @return Div node (l / r / ...)
+         */
         std::shared_ptr<DAGNode> mkDivReal(const std::vector<std::shared_ptr<DAGNode>> &params); // l / r / ...
+        
+        /** 
+         * 
         std::shared_ptr<DAGNode> mkMod(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l % r
         std::shared_ptr<DAGNode> mkAbs(std::shared_ptr<DAGNode> param); // |param|
         std::shared_ptr<DAGNode> mkSqrt(std::shared_ptr<DAGNode> param); // sqrt(param)
