@@ -1104,7 +1104,7 @@ namespace SMTLIBParser {
         
         // handle other types of nodes (e.g., arithmetic operators)
         if(is_not){
-            return negateAtom(expr);
+            return mkNot(expr);
         }
         return expr;
     }

@@ -283,6 +283,7 @@ namespace SMTLIBParser{
                 case NODE_KIND::NT_FP_GE:
                 case NODE_KIND::NT_FP_GT:
                 case NODE_KIND::NT_FP_EQ:
+                case NODE_KIND::NT_FP_NE:
                 case NODE_KIND::NT_SELECT:
                 case NODE_KIND::NT_STR_PREFIXOF:
                 case NODE_KIND::NT_STR_SUFFIXOF:
@@ -868,6 +869,7 @@ namespace SMTLIBParser{
         case NODE_KIND::NT_FP_GE:
         case NODE_KIND::NT_FP_GT:
         case NODE_KIND::NT_FP_EQ:
+        case NODE_KIND::NT_FP_NE:
             dumpDoubleOp(kind, node->getChild(0), node->getChild(1), visited, ofs);
             break;
         // FLOATING POINT CONVERSION

@@ -1175,6 +1175,7 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_FP_GE:
             case NODE_KIND::NT_FP_GT:
             case NODE_KIND::NT_FP_EQ:
+            case NODE_KIND::NT_FP_NE:
             case NODE_KIND::NT_SELECT:{
                 return mkUnknown();
             }

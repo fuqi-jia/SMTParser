@@ -444,7 +444,8 @@ namespace SMTLIBParser{
         bool isFPGe() 				const { return (kind == NODE_KIND::NT_FP_GE); };
         bool isFPGt() 				const { return (kind == NODE_KIND::NT_FP_GT); };
         bool isFPEq() 				const { return (kind == NODE_KIND::NT_FP_EQ); };
-        bool isFPComp() 			const { return (isFPLe() || isFPLt() || isFPGe() || isFPGt()); };
+        bool isFPNe() 				const { return (kind == NODE_KIND::NT_FP_NE); };
+        bool isFPComp() 			const { return (isFPLe() || isFPLt() || isFPGe() || isFPGt() || isFPEq() || isFPNe()); };
 
         // check floating point conversion
         bool isFPToUBV() 			const { return (kind == NODE_KIND::NT_FP_TO_UBV); };

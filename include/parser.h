@@ -2097,6 +2097,15 @@ namespace SMTLIBParser{
         
         // FLOATING POINT COMP
         /**
+         * @brief Create a floating-point not equal node
+         * 
+         * @param l Left parameter
+         * @param r Right parameter
+         * @return Floating-point not equal node (fp.ne(l, r))
+         */
+        std::shared_ptr<DAGNode> mkFpNe(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l != r
+
+        /**
          * @brief Create a floating-point less than or equal node
          * 
          * @param l Left parameter
@@ -2798,14 +2807,14 @@ namespace SMTLIBParser{
         
         // negate an atom
         /**
-         * @brief Negate an atom
+         * @brief Negate a comparison atom
          * 
-         * @note This function is used to negate an atom (for example, negateAtom(x = y) <=> x != y).
+         * @note This function is used to negate a comparison atom (for example, negateComp(x = y) <=> x != y).
          * 
-         * @param atom Atom to negate
-         * @return Negated atom
+         * @param atom Comparison atom to negate
+         * @return Negated comparison atom
          */
-        std::shared_ptr<DAGNode>	            negateAtom(std::shared_ptr<DAGNode> atom);
+        std::shared_ptr<DAGNode>	            negateComp(std::shared_ptr<DAGNode> atom);
 
         // evaluate: return true if the evaluation has changed the expression
         /**

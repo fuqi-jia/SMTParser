@@ -641,6 +641,15 @@ namespace SMTLIBParser{
             assert(param->getChildrenSize() == 1);
             return param->getChild(0);
         }
+        else if(param->isTrue()){
+            return mkFalse();
+        }
+        else if(param->isFalse()){
+            return mkTrue();
+        }
+        else if(param->isArithComp() || param->isBVComp() || param->isStrComp() || param->isFPComp()){
+            return negateComp(param);
+        }
         else{
             return mkOper(BOOL_SORT, NODE_KIND::NT_NOT, param);
         }
@@ -2855,6 +2864,16 @@ namespace SMTLIBParser{
 
         return mkOper(BOOL_SORT, NODE_KIND::NT_FP_EQ, l, r);
     }
+    /*
+    (fp.ne Fp Fp), return Bool
+    */
+    std::shared_ptr<DAGNode> Parser::mkFpNe(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
+        if(!isFpParam(l) || !isFpParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_ne", line_number);
+            return mkUnknown();
+        }
+        return mkOper(BOOL_SORT, NODE_KIND::NT_FP_NE, l, r);
+    }
     // FLOATING POINT CONVERSION
     /*
     (fp.to_ubv Fp), return Bv
@@ -3576,7 +3595,7 @@ namespace SMTLIBParser{
     }
 
     // negate an atom
-    std::shared_ptr<DAGNode> Parser::negateAtom(std::shared_ptr<DAGNode> atom){
+    std::shared_ptr<DAGNode> Parser::negateComp(std::shared_ptr<DAGNode> atom){
         if(atom->isErr()) return atom;
 
         if(atom->isEq()){
@@ -3604,10 +3623,14 @@ namespace SMTLIBParser{
             else if(atom->isGe()){
                 return mkLt(atom->getChild(0), atom->getChild(1));
             }
+            else{
+                std::cerr << "Unknown arithmetic comparison operator" << std::endl;
+                assert(false);
+            }
         }
 
         // negate a bitvector atom
-        if(atom->isBvAtom()){
+        if(atom->isBVCompOp()){
             if(atom->isBVUlt()){
                 return mkBvUge(atom->getChild(0), atom->getChild(1));
             }
@@ -3632,9 +3655,55 @@ namespace SMTLIBParser{
             else if(atom->isBVSge()){
                 return mkBvSlt(atom->getChild(0), atom->getChild(1));
             }
+            else{
+                std::cerr << "Unknown bitvector comparison operator" << std::endl;
+                assert(false);
+            }
         }
 
-        // TODO: fp, string, reg in the future
+        if(atom->isFPComp()){
+            if(atom->isFPEq()){
+                return mkFpNe(atom->getChild(0), atom->getChild(1));
+            }
+            else if(atom->isFPGt()){
+                return mkFpLe(atom->getChild(0), atom->getChild(1));
+            }
+            else if(atom->isFPLt()){
+                return mkFpGe(atom->getChild(0), atom->getChild(1));
+            }
+            else if(atom->isFPGe()){
+                return mkFpLt(atom->getChild(0), atom->getChild(1));
+            }
+            else if(atom->isFPLe()){
+                return mkFpGt(atom->getChild(0), atom->getChild(1));
+            }
+            else if(atom->isFPNe()){
+                return mkFpEq(atom->getChild(0), atom->getChild(1));
+            }
+            else{
+                std::cerr << "Unknown floating-point comparison operator" << std::endl;
+                assert(false);
+            }
+        }
+
+        if(atom->isStrComp()){
+            if(atom->isStrLt()){
+                return mkStrGe(atom->getChild(0), atom->getChild(1));
+            }
+            else if(atom->isStrLe()){
+                return mkStrGt(atom->getChild(0), atom->getChild(1));
+            }
+            else if(atom->isStrGt()){
+                return mkStrLe(atom->getChild(0), atom->getChild(1));
+            }
+            else if(atom->isStrGe()){
+                return mkStrLt(atom->getChild(0), atom->getChild(1));
+            }
+            else{
+                std::cerr << "Unknown string comparison operator" << std::endl;
+                assert(false);
+            }
+        }
 
         // for other types of atoms, use the general negation operation
         return mkNot(atom);
@@ -3788,6 +3857,7 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_FP_GE:
             case NODE_KIND::NT_FP_GT:
             case NODE_KIND::NT_FP_EQ:
+            case NODE_KIND::NT_FP_NE:
             case NODE_KIND::NT_SELECT:
             case NODE_KIND::NT_STR_PREFIXOF:
             case NODE_KIND::NT_STR_SUFFIXOF:

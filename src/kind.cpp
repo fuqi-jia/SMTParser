@@ -358,6 +358,8 @@ namespace SMTLIBParser{
             return "fp.gt";
         case NODE_KIND::NT_FP_EQ:
             return "fp.eq";
+        case NODE_KIND::NT_FP_NE:
+            return "fp.ne";
         // FLOATING POINT CONVERSION
         case NODE_KIND::NT_FP_TO_UBV:
             return "fp.toUbv";
