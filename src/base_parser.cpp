@@ -1537,9 +1537,13 @@ namespace SMTLIBParser{
 			assert(params.size() == 2);
 			return mkFpGt(params[0], params[1]);
 		}
-		else if (s == "fp.eq") {
+		else if (s == "fp.eq" || s == "fp.=" || s == "fp.==") {
 			assert(params.size() == 2);
 			return mkFpEq(params[0], params[1]);
+		}
+		else if (s == "fp.ne" || s == "fp.!=" || s == "fp.neq") {
+			assert(params.size() == 2);
+			return mkFpNe(params[0], params[1]);
 		}
 		else if (s == "fp.to_ubv") {
 			assert(params.size() == 2);
