@@ -173,7 +173,11 @@ namespace SMTLIBParser {
     }
     std::shared_ptr<DAGNode> Parser::toTseitinCNF(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited, std::vector<std::shared_ptr<DAGNode>>& clauses) {
         // Tseitin CNF is ¬applied to atoms: all atoms are already in CNF form
-        assert(!expr->isAtom());
+        if(expr->isAtom()){
+            // directly return the original expression
+            assert(cnf_map.find(expr) != cnf_map.end());
+            return cnf_map[expr];
+        }
         if(expr->isLiteral() || expr->isTempVar()) {
             // always return the original expression
             // and no need to add to visited
@@ -462,6 +466,10 @@ namespace SMTLIBParser {
             return expr;
         }
         assert(!all_atoms);
+        // expand let
+        if(expr->isLet()){
+            expr = expandLet(expr);
+        }
         std::vector<std::shared_ptr<DAGNode>> clauses;
         // collect all atoms
         boost::unordered_set<std::shared_ptr<DAGNode>> atoms;
@@ -472,6 +480,9 @@ namespace SMTLIBParser {
         for (auto& atom : atoms) {
             std::shared_ptr<DAGNode> new_var = mkTempVar(BOOL_SORT);
             atom_map[atom] = new_var;
+            // add to cnf_map
+            cnf_map[atom] = new_var;
+            cnf_map[mkNot(atom)] = mkNot(new_var);
         }
 
         // use Tseitin transformation for each atom
