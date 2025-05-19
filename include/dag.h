@@ -714,6 +714,17 @@ namespace SMTLIBParser{
          * @param params The parameters of the function
          */
         void updateApplyFunc(std::shared_ptr<Sort> out_sort, std::shared_ptr<DAGNode> body, const std::vector<std::shared_ptr<DAGNode>> &params);
+
+        /**
+         * @brief Rename the node
+         * 
+         * @note Warning: It is not recommended to use this function.
+         * 
+         * @param new_name The new name
+         */
+        void rename(const std::string& new_name){
+            name = new_name;
+        }
     };
 
     inline const std::shared_ptr<DAGNode> NULL_NODE = std::make_shared<DAGNode>(NULL_SORT, NODE_KIND::NT_NULL, "null");
