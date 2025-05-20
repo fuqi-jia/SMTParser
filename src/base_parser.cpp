@@ -2037,7 +2037,7 @@ namespace SMTLIBParser{
 
 	std::shared_ptr<DAGNode> Parser::applyFun(std::shared_ptr<DAGNode> fun, const std::vector<std::shared_ptr<DAGNode>> & params){
 		// check the number of params
-		if (fun->getChildrenSize() != params.size()){
+		if (fun->getFuncParamsSize() != params.size()){
 			return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
 		}
 
@@ -2047,11 +2047,12 @@ namespace SMTLIBParser{
 		
 		// variable map for local variables
 		boost::unordered_map<std::string, std::shared_ptr<DAGNode>> new_params_map;
-		for (size_t i = 1; i < fun->getChildrenSize(); i++) {
+		std::vector<std::shared_ptr<DAGNode>> func_params = fun->getFuncParams();
+		for (size_t i = 0; i < func_params.size(); i++) {
 			if(params[i]->isErr()){
 				return params[i];
 			}
-			new_params_map.insert(std::pair<std::string, std::shared_ptr<DAGNode>>(fun->getChild(i)->getName(), params[i - 1]));
+			new_params_map.insert(std::pair<std::string, std::shared_ptr<DAGNode>>(func_params[i]->getName(), params[i]));
 		}
 		
 		// function content

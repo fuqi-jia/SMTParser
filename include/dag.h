@@ -622,6 +622,15 @@ namespace SMTLIBParser{
             return res;
         }
 
+        /**
+         * @brief Get the number of parameters of the function
+         * 
+         * @return The number of parameters of the function
+         */
+        size_t getFuncParamsSize() const{
+            return getChildrenSize() - 1;
+        }
+
         // get quant body
         /**
          * @brief Get the body of the quantifier
