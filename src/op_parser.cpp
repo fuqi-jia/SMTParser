@@ -1482,6 +1482,9 @@ namespace SMTLIBParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in le", line_number);
             return mkUnknown();
         }
+        else if(l == r){
+            return mkTrue();
+        }
         return mkOper(BOOL_SORT, NODE_KIND::NT_LE, l, r);
     }
     std::shared_ptr<DAGNode> Parser::mkLt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
@@ -1489,6 +1492,9 @@ namespace SMTLIBParser{
         if(!l->getSort()->isEqTo(r->getSort())) {
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in lt", line_number);
             return mkUnknown();
+        }
+        else if(l == r){
+            return mkFalse();
         }
         return mkOper(BOOL_SORT, NODE_KIND::NT_LT, l, r);
     }
@@ -1498,6 +1504,9 @@ namespace SMTLIBParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in ge", line_number);
             return mkUnknown();
         }
+        else if(l == r){
+            return mkTrue();
+        }
         return mkOper(BOOL_SORT, NODE_KIND::NT_GE, l, r);
     }
     std::shared_ptr<DAGNode> Parser::mkGt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
@@ -1505,6 +1514,9 @@ namespace SMTLIBParser{
         if(!l->getSort()->isEqTo(r->getSort())) {
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in gt", line_number);
             return mkUnknown();
+        }
+        else if(l == r){
+            return mkFalse();
         }
         return mkOper(BOOL_SORT, NODE_KIND::NT_GT, l, r);
     }
@@ -2379,6 +2391,9 @@ namespace SMTLIBParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_ult", line_number);
             return mkUnknown();
         }
+        else if(l == r){
+            return mkFalse();
+        }
         return mkOper(BOOL_SORT, NODE_KIND::NT_BV_ULT, l, r);
     }
     /*
@@ -2394,6 +2409,10 @@ namespace SMTLIBParser{
         if(l->isCBV() && r->isCBV()){
             return bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_ULE) ? mkTrue() : mkFalse();
         }
+        else if(l == r){
+            return mkTrue();
+        }
+
 
         return mkOper(BOOL_SORT, NODE_KIND::NT_BV_ULE, l, r);
     }
@@ -2410,6 +2429,10 @@ namespace SMTLIBParser{
         if(l->isCBV() && r->isCBV()){
             return bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_UGT) ? mkTrue() : mkFalse();
         }
+        else if(l == r){
+            return mkFalse();
+        }
+
 
         return mkOper(BOOL_SORT, NODE_KIND::NT_BV_UGT, l, r);
     }
@@ -2426,6 +2449,10 @@ namespace SMTLIBParser{
         if(l->isCBV() && r->isCBV()){
             return bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_UGE) ? mkTrue() : mkFalse();
         }
+        else if(l == r){
+            return mkTrue();
+        }
+
 
         return mkOper(BOOL_SORT, NODE_KIND::NT_BV_UGE, l, r);
     }
@@ -2442,6 +2469,10 @@ namespace SMTLIBParser{
         if(l->isCBV() && r->isCBV()){
             return bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_SLT) ? mkTrue() : mkFalse();
         }
+        else if(l == r){
+            return mkFalse();
+        }
+
 
         return mkOper(BOOL_SORT, NODE_KIND::NT_BV_SLT, l, r);
     }
@@ -2458,6 +2489,10 @@ namespace SMTLIBParser{
         if(l->isCBV() && r->isCBV()){
             return bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_SLE) ? mkTrue() : mkFalse();
         }
+        else if(l == r){
+            return mkTrue();
+        }
+
 
         return mkOper(BOOL_SORT, NODE_KIND::NT_BV_SLE, l, r);
     }
@@ -2474,6 +2509,10 @@ namespace SMTLIBParser{
         if(l->isCBV() && r->isCBV()){
             return bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_SGT) ? mkTrue() : mkFalse();
         }
+        else if(l == r){
+            return mkFalse();
+        }
+
 
         return mkOper(BOOL_SORT, NODE_KIND::NT_BV_SGT, l, r);
     }
@@ -2490,6 +2529,10 @@ namespace SMTLIBParser{
         if(l->isCBV() && r->isCBV()){
             return bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_SGE) ? mkTrue() : mkFalse();
         }
+        else if(l == r){
+            return mkTrue();
+        }
+
 
         return mkOper(BOOL_SORT, NODE_KIND::NT_BV_SGE, l, r);
     }
@@ -2813,6 +2856,9 @@ namespace SMTLIBParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_le", line_number);
             return mkUnknown();
         }
+        else if(l == r){
+            return mkTrue();
+        }
 
         return mkOper(BOOL_SORT, NODE_KIND::NT_FP_LE, l, r);
     }
@@ -2824,6 +2870,9 @@ namespace SMTLIBParser{
         if(!isFpParam(l) || !isFpParam(r)) {
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_lt", line_number);
             return mkUnknown();
+        }
+        else if(l == r){
+            return mkFalse();
         }
 
         return mkOper(BOOL_SORT, NODE_KIND::NT_FP_LT, l, r);
@@ -2837,6 +2886,9 @@ namespace SMTLIBParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_ge", line_number);
             return mkUnknown();
         }
+        else if(l == r){
+            return mkTrue();
+        }
 
         return mkOper(BOOL_SORT, NODE_KIND::NT_FP_GE, l, r);
     }
@@ -2848,6 +2900,9 @@ namespace SMTLIBParser{
         if(!isFpParam(l) || !isFpParam(r)) {
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_gt", line_number);
             return mkUnknown();
+        }
+        else if(l == r){
+            return mkFalse();
         }
 
         return mkOper(BOOL_SORT, NODE_KIND::NT_FP_GT, l, r);
@@ -2861,6 +2916,9 @@ namespace SMTLIBParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_eq", line_number);
             return mkUnknown();
         }
+        else if(l == r){
+            return mkTrue();
+        }
 
         return mkOper(BOOL_SORT, NODE_KIND::NT_FP_EQ, l, r);
     }
@@ -2872,6 +2930,10 @@ namespace SMTLIBParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_ne", line_number);
             return mkUnknown();
         }
+        else if(l == r){
+            return mkFalse();
+        }
+
         return mkOper(BOOL_SORT, NODE_KIND::NT_FP_NE, l, r);
     }
     // FLOATING POINT CONVERSION
@@ -3236,6 +3298,9 @@ namespace SMTLIBParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_lt", line_number);
             return mkUnknown();
         }
+        else if(l == r){
+            return mkFalse();
+        }
 
         return mkOper(BOOL_SORT, NODE_KIND::NT_STR_LT, l, r);
     }
@@ -3247,6 +3312,9 @@ namespace SMTLIBParser{
         if(!isStrParam(l) || !isStrParam(r)) {
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_le", line_number);
             return mkUnknown();
+        }
+        else if(l == r){
+            return mkTrue();
         }
 
         return mkOper(BOOL_SORT, NODE_KIND::NT_STR_LE, l, r);
@@ -3260,6 +3328,9 @@ namespace SMTLIBParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_gt", line_number);
             return mkUnknown();
         }
+        else if(l == r){
+            return mkFalse();
+        }
 
         return mkOper(BOOL_SORT, NODE_KIND::NT_STR_GT, l, r);
     }
@@ -3271,6 +3342,9 @@ namespace SMTLIBParser{
         if(!isStrParam(l) || !isStrParam(r)) {
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_ge", line_number);
             return mkUnknown();
+        }
+        else if(l == r){
+            return mkTrue();
         }
 
         return mkOper(BOOL_SORT, NODE_KIND::NT_STR_GE, l, r);
