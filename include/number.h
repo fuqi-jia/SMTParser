@@ -28,6 +28,7 @@
 #ifndef NUMBER_HEADER
 #define NUMBER_HEADER
 
+#include "common.h"
 #include <gmp.h>
 #include <gmpxx.h>
 #include <mpfr.h>

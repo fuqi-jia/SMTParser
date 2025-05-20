@@ -343,7 +343,7 @@ namespace SMTLIBParser{
     }
 
     std::string bvNot(const std::string& bv){
-        assert(bv[0] == '#' && bv[1] == 'b');
+        cassert(bv[0] == '#' && bv[1] == 'b', "bvNot: invalid bitvector");
         std::string res = "#b";
         for(size_t i = 2; i < bv.size(); i++){
             res += bv[i] == '0' ? '1' : '0';
@@ -351,8 +351,8 @@ namespace SMTLIBParser{
         return res;
     }
     std::string bvAnd(const std::string& bv1, const std::string& bv2){
-        assert(bv1[0] == '#' && bv1[1] == 'b');
-        assert(bv2[0] == '#' && bv2[1] == 'b');
+        cassert(bv1[0] == '#' && bv1[1] == 'b', "bvAnd: invalid bitvector");
+        cassert(bv2[0] == '#' && bv2[1] == 'b', "bvAnd: invalid bitvector");
         std::string res = "#b";
         for(size_t i = 2; i < bv1.size(); i++){
             res += bv1[i] == '1' && bv2[i] == '1' ? '1' : '0';
@@ -360,8 +360,8 @@ namespace SMTLIBParser{
         return res;
     }
     std::string bvOr(const std::string& bv1, const std::string& bv2){
-        assert(bv1[0] == '#' && bv1[1] == 'b');
-        assert(bv2[0] == '#' && bv2[1] == 'b');
+        cassert(bv1[0] == '#' && bv1[1] == 'b', "bvOr: invalid bitvector");
+        cassert(bv2[0] == '#' && bv2[1] == 'b', "bvOr: invalid bitvector");
         std::string res = "#b";
         for(size_t i = 2; i < bv1.size(); i++){
             res += bv1[i] == '1' || bv2[i] == '1' ? '1' : '0';
@@ -369,8 +369,8 @@ namespace SMTLIBParser{
         return res;
     }
     std::string bvXor(const std::string& bv1, const std::string& bv2){
-        assert(bv1[0] == '#' && bv1[1] == 'b');
-        assert(bv2[0] == '#' && bv2[1] == 'b');
+        cassert(bv1[0] == '#' && bv1[1] == 'b', "bvXor: invalid bitvector");
+        cassert(bv2[0] == '#' && bv2[1] == 'b', "bvXor: invalid bitvector");
         std::string res = "#b";
         for(size_t i = 2; i < bv1.size(); i++){
             res += bv1[i] != bv2[i] ? '1' : '0';
@@ -378,8 +378,8 @@ namespace SMTLIBParser{
         return res;
     }
     std::string bvNand(const std::string& bv1, const std::string& bv2){
-        assert(bv1[0] == '#' && bv1[1] == 'b');
-        assert(bv2[0] == '#' && bv2[1] == 'b');
+        cassert(bv1[0] == '#' && bv1[1] == 'b', "bvNand: invalid bitvector");
+        cassert(bv2[0] == '#' && bv2[1] == 'b', "bvNand: invalid bitvector");
         std::string res = "#b";
         for(size_t i = 2; i < bv1.size(); i++){
             res += bv1[i] == '1' && bv2[i] == '1' ? '0' : '1';
@@ -387,8 +387,8 @@ namespace SMTLIBParser{
         return res;
     }
     std::string bvNor(const std::string& bv1, const std::string& bv2){
-        assert(bv1[0] == '#' && bv1[1] == 'b');
-        assert(bv2[0] == '#' && bv2[1] == 'b');
+        cassert(bv1[0] == '#' && bv1[1] == 'b', "bvNor: invalid bitvector");
+        cassert(bv2[0] == '#' && bv2[1] == 'b', "bvNor: invalid bitvector");
         std::string res = "#b";
         for(size_t i = 2; i < bv1.size(); i++){
             res += bv1[i] == '0' && bv2[i] == '0' ? '1' : '0';
@@ -396,8 +396,8 @@ namespace SMTLIBParser{
         return res;
     }
     std::string bvXnor(const std::string& bv1, const std::string& bv2){
-        assert(bv1[0] == '#' && bv1[1] == 'b');
-        assert(bv2[0] == '#' && bv2[1] == 'b');
+        cassert(bv1[0] == '#' && bv1[1] == 'b', "bvXnor: invalid bitvector");
+        cassert(bv2[0] == '#' && bv2[1] == 'b', "bvXnor: invalid bitvector");
         std::string res = "#b";
         for(size_t i = 2; i < bv1.size(); i++){
             res += bv1[i] == bv2[i] ? '1' : '0';
@@ -406,7 +406,7 @@ namespace SMTLIBParser{
     }
 
     std::string bvNeg(const std::string& bv){
-        assert(bv[0] == '#' && bv[1] == 'b');
+        cassert(bv[0] == '#' && bv[1] == 'b', "bvNeg: invalid bitvector");
         // 2's complement
         std::string res = "";
         bool carry = true;
@@ -425,8 +425,8 @@ namespace SMTLIBParser{
     }
 
     std::string bvAdd(const std::string& bv1, const std::string& bv2){
-        assert(bv1[0] == '#' && bv1[1] == 'b');
-        assert(bv2[0] == '#' && bv2[1] == 'b');
+        cassert(bv1[0] == '#' && bv1[1] == 'b', "bvAdd: invalid bitvector");
+        cassert(bv2[0] == '#' && bv2[1] == 'b', "bvAdd: invalid bitvector");
         std::string bv1_ = bv1.substr(2, bv1.size() - 2);
         std::string bv2_ = bv2.substr(2, bv2.size() - 2);
         if(bv1_.size() != bv2_.size()){
@@ -465,8 +465,8 @@ namespace SMTLIBParser{
         return res;
     }
     std::string bvSub(const std::string& bv1, const std::string& bv2){
-        assert(bv1[0] == '#' && bv1[1] == 'b');
-        assert(bv2[0] == '#' && bv2[1] == 'b');
+        cassert(bv1[0] == '#' && bv1[1] == 'b', "bvSub: invalid bitvector");
+        cassert(bv2[0] == '#' && bv2[1] == 'b', "bvSub: invalid bitvector");
         std::string bv1_ = bv1.substr(2, bv1.size() - 2);
         std::string bv2_ = bv2.substr(2, bv2.size() - 2);
         if(bv1_.size() != bv2_.size()){
@@ -504,8 +504,8 @@ namespace SMTLIBParser{
         return res;
     }
     std::string bvMul(const std::string& bv1, const std::string& bv2){
-        assert(bv1[0] == '#' && bv1[1] == 'b');
-        assert(bv2[0] == '#' && bv2[1] == 'b');
+        cassert(bv1[0] == '#' && bv1[1] == 'b', "bvMul: invalid bitvector");
+        cassert(bv2[0] == '#' && bv2[1] == 'b', "bvMul: invalid bitvector");
         std::string bv1_ = bv1.substr(2, bv1.size() - 2);
         std::string bv2_ = bv2.substr(2, bv2.size() - 2);
         if(bv1_.size() != bv2_.size()){
@@ -544,8 +544,8 @@ namespace SMTLIBParser{
 
 
     std::string bvUdiv(const std::string& bv1, const std::string& bv2){
-        assert(bv1[0] == '#' && bv1[1] == 'b');
-        assert(bv2[0] == '#' && bv2[1] == 'b');
+        cassert(bv1[0] == '#' && bv1[1] == 'b', "bvUdiv: invalid bitvector");
+        cassert(bv2[0] == '#' && bv2[1] == 'b', "bvUdiv: invalid bitvector");
 
         // div 0, return all ones
         bool isBv2Zero = true;
@@ -647,8 +647,8 @@ namespace SMTLIBParser{
         return "#b" + quotient_bits;
     }
     std::string bvUrem(const std::string& bv1, const std::string& bv2){
-        assert(bv1[0] == '#' && bv1[1] == 'b');
-        assert(bv2[0] == '#' && bv2[1] == 'b');
+        cassert(bv1[0] == '#' && bv1[1] == 'b', "bvUrem: invalid bitvector");
+        cassert(bv2[0] == '#' && bv2[1] == 'b', "bvUrem: invalid bitvector");
         // div 0, return first operand
         bool isZero = true;
         for(size_t i = 2; i < bv2.size(); i++){
@@ -667,14 +667,14 @@ namespace SMTLIBParser{
         return res;
     }
     std::string bvUmod(const std::string& bv1, const std::string& bv2){
-        assert(bv1[0] == '#' && bv1[1] == 'b');
-        assert(bv2[0] == '#' && bv2[1] == 'b');
+        cassert(bv1[0] == '#' && bv1[1] == 'b', "bvUmod: invalid bitvector");
+        cassert(bv2[0] == '#' && bv2[1] == 'b', "bvUmod: invalid bitvector");
         std::string res = SMTLIBParser::bvUrem(bv1, bv2);
         return res;
     }
     std::string bvSdiv(const std::string& bv1, const std::string& bv2){
-        assert(bv1[0] == '#' && bv1[1] == 'b');
-        assert(bv2[0] == '#' && bv2[1] == 'b');
+        cassert(bv1[0] == '#' && bv1[1] == 'b', "bvSdiv: invalid bitvector");
+        cassert(bv2[0] == '#' && bv2[1] == 'b', "bvSdiv: invalid bitvector");
         bool isNeg1 = bv1[2] == '1';
         bool isNeg2 = bv2[2] == '1';
         // div 0, return all ones if positive, otherwise 1
@@ -701,8 +701,8 @@ namespace SMTLIBParser{
         return res;
     }
     std::string bvSrem(const std::string& bv1, const std::string& bv2){
-        assert(bv1[0] == '#' && bv1[1] == 'b');
-        assert(bv2[0] == '#' && bv2[1] == 'b');
+        cassert(bv1[0] == '#' && bv1[1] == 'b', "bvSrem: invalid bitvector");
+        cassert(bv2[0] == '#' && bv2[1] == 'b', "bvSrem: invalid bitvector");
         // rem 0, return first operand
         bool isZero = true;
         for(size_t i = 2; i < bv2.size(); i++){
@@ -723,8 +723,8 @@ namespace SMTLIBParser{
         return res;
     }
     std::string bvSmod(const std::string& bv1, const std::string& bv2){
-        assert(bv1[0] == '#' && bv1[1] == 'b');
-        assert(bv2[0] == '#' && bv2[1] == 'b');
+        cassert(bv1[0] == '#' && bv1[1] == 'b', "bvSmod: invalid bitvector");
+        cassert(bv2[0] == '#' && bv2[1] == 'b', "bvSmod: invalid bitvector");
         bool isNeg1 = bv1[2] == '1';
         std::string res = SMTLIBParser::bvSrem(bv1, bv2);
         if(isNeg1){
@@ -736,8 +736,8 @@ namespace SMTLIBParser{
 
     std::string bvShl(const std::string& bv, const std::string& n){
         // left shift
-        assert(bv[0] == '#' && bv[1] == 'b');
-        assert(n[0] == '#' && n[1] == 'b');
+        cassert(bv[0] == '#' && bv[1] == 'b', "bvShl: invalid bitvector");
+        cassert(n[0] == '#' && n[1] == 'b', "bvShl: invalid bitvector");
         size_t shift = Integer(n.substr(2, n.size() - 2)).toULong();
         if(shift >= bv.size() - 2){
             return "#b0" + std::string(shift - bv.size() + 2, '0');
@@ -748,8 +748,8 @@ namespace SMTLIBParser{
     }
     std::string bvLshr(const std::string& bv, const std::string& n){
         // logical right shift
-        assert(bv[0] == '#' && bv[1] == 'b');
-        assert(n[0] == '#' && n[1] == 'b');
+        cassert(bv[0] == '#' && bv[1] == 'b', "bvLshr: invalid bitvector");
+        cassert(n[0] == '#' && n[1] == 'b', "bvLshr: invalid bitvector");
         size_t shift = Integer(n.substr(2, n.size() - 2)).toULong();
         if(shift >= bv.size() - 2){
             return "#b0" + std::string(shift - bv.size() + 2, '0');
@@ -760,8 +760,8 @@ namespace SMTLIBParser{
     }
     std::string bvAshr(const std::string& bv, const std::string& n){
         // arithmetic right shift
-        assert(bv[0] == '#' && bv[1] == 'b');
-        assert(n[0] == '#' && n[1] == 'b');
+        cassert(bv[0] == '#' && bv[1] == 'b', "bvAshr: invalid bitvector");
+        cassert(n[0] == '#' && n[1] == 'b', "bvAshr: invalid bitvector");
         size_t shift = Integer(n.substr(2, n.size() - 2)).toULong();
         if(shift >= bv.size() - 2){
             return "#b" + std::string(bv.size() - 2, bv[2]);
@@ -772,17 +772,17 @@ namespace SMTLIBParser{
     }
 
     std::string bvConcat(const std::string& bv1, const std::string& bv2){
-        assert(bv1[0] == '#' && bv1[1] == 'b');
-        assert(bv2[0] == '#' && bv2[1] == 'b');
+        cassert(bv1[0] == '#' && bv1[1] == 'b', "bvConcat: invalid bitvector");
+        cassert(bv2[0] == '#' && bv2[1] == 'b', "bvConcat: invalid bitvector");
         return "#b" + bv1.substr(2, bv1.size() - 2) + bv2.substr(2, bv2.size() - 2);
     }
     std::string bvExtract(const std::string& bv, const Integer& i, const Integer& j){
-        assert(bv[0] == '#' && bv[1] == 'b');
-        assert(i >= j);
+        cassert(bv[0] == '#' && bv[1] == 'b', "bvExtract: invalid bitvector");
+        cassert(i >= j, "bvExtract: i must be greater than or equal to j");
         return "#b" + bv.substr(2 + bv.size() - 2 - j.toULong(), i.toULong() - j.toULong() + 1);
     }
     std::string bvRepeat(const std::string& bv, const Integer& n){
-        assert(bv[0] == '#' && bv[1] == 'b');
+        cassert(bv[0] == '#' && bv[1] == 'b', "bvRepeat: invalid bitvector");
         std::string res = "";
         for(size_t i = 0; i < n.toULong(); i++){
             res += bv.substr(2, bv.size() - 2);
@@ -790,28 +790,28 @@ namespace SMTLIBParser{
         return "#b" + res;
     }
     std::string bvZeroExtend(const std::string& bv, const Integer& n){
-        assert(bv[0] == '#' && bv[1] == 'b');
+        cassert(bv[0] == '#' && bv[1] == 'b', "bvZeroExtend: invalid bitvector");
         return "#b" + std::string(n.toULong(), '0') + bv.substr(2, bv.size() - 2);
     }
     std::string bvSignExtend(const std::string& bv, const Integer& n){
-        assert(bv[0] == '#' && bv[1] == 'b');
+        cassert(bv[0] == '#' && bv[1] == 'b', "bvSignExtend: invalid bitvector");
         return "#b" + std::string(n.toULong(), bv[2]) + bv.substr(2, bv.size() - 2);
     }
 
     std::string bvRotateLeft(const std::string& bv, const Integer& n){
-        assert(bv[0] == '#' && bv[1] == 'b');
+        cassert(bv[0] == '#' && bv[1] == 'b', "bvRotateLeft: invalid bitvector");
         Integer real_n = n % (bv.size() - 2);
         return "#b" + bv.substr(2 + n.toULong(), bv.size() - 2 - n.toULong()) + bv.substr(2, n.toULong());
     }
     std::string bvRotateRight(const std::string& bv, const Integer& n){
-        assert(bv[0] == '#' && bv[1] == 'b');
+        cassert(bv[0] == '#' && bv[1] == 'b', "bvRotateRight: invalid bitvector");
         Integer real_n = n % (bv.size() - 2);
         return "#b" + bv.substr(2 + bv.size() - 2 - n.toULong(), n.toULong()) + bv.substr(2, bv.size() - 2 - n.toULong());
     }
 
     bool bvComp(const std::string& bv1, const std::string& bv2, const NODE_KIND& kind){
-        assert(bv1[0] == '#' && bv1[1] == 'b');
-        assert(bv2[0] == '#' && bv2[1] == 'b');
+        cassert(bv1[0] == '#' && bv1[1] == 'b', "bvComp: invalid bitvector");
+        cassert(bv2[0] == '#' && bv2[1] == 'b', "bvComp: invalid bitvector");
         switch(kind){
             case NODE_KIND::NT_BV_COMP:
                 return bv1 == bv2;
@@ -841,7 +841,7 @@ namespace SMTLIBParser{
     }
 
     std::string bvToNat(const std::string& bv){
-        assert(bv[0] == '#' && bv[1] == 'b');
+        cassert(bv[0] == '#' && bv[1] == 'b', "bvToNat: invalid bitvector");
         Integer res = 0;
         for(size_t i = 2; i < bv.size(); i++){
             res = res * 2 + (bv[i] == '1' ? 1 : 0);
@@ -930,7 +930,7 @@ namespace SMTLIBParser{
                     res += "1111";
                     break;
                 default:
-                    assert(false);
+                    cassert(false, "hexToBv: invalid hex character");
             }
         }
         return res;
@@ -968,7 +968,7 @@ namespace SMTLIBParser{
         }
     }
     std::string bvToInt(const std::string& bv){
-        assert(bv[0] == '#' && bv[1] == 'b');
+        cassert(bv[0] == '#' && bv[1] == 'b', "bvToInt: invalid bitvector");
         if(bv[2] == '0'){
             Integer res = 0;
             for(size_t i = 3; i < bv.size(); i++){
@@ -1012,7 +1012,7 @@ namespace SMTLIBParser{
 
     // TODO??
     std::string fpToUbv(const std::string& fp, const Integer& n){
-        assert(fp[0] == '#' && fp[1] == 'x');
+        cassert(fp[0] == '#' && fp[1] == 'x', "fpToUbv: invalid floating point");
         std::string res = "";
         bool isNeg = fp[2] == '1';
         if(!isNeg){
@@ -1036,7 +1036,7 @@ namespace SMTLIBParser{
         return res;
     }
     std::string fpToSbv(const std::string& fp, const Integer& n){
-        assert(fp[0] == '#' && fp[1] == 'x');
+        cassert(fp[0] == '#' && fp[1] == 'x', "fpToSbv: invalid floating point");
         std::string res = "";
         bool isNeg = fp[2] == '1';
         if(!isNeg){

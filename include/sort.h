@@ -29,6 +29,8 @@
 #define _SORT_H
 
 #include "kind.h"
+#include "common.h"
+
 #include <vector>
 #include <string>
 #include <memory>
@@ -138,27 +140,27 @@ namespace SMTLIBParser{
         }
 
         size_t getBitWidth() const {
-            assert(kind == SORT_KIND::SK_BV);
+            cassert(kind == SORT_KIND::SK_BV, "Cannot get bit width of non-bitvector sort");
             return children[0]->arity;
         }
 
         size_t getExponentWidth() const {
-            assert(kind == SORT_KIND::SK_FP);
+            cassert(kind == SORT_KIND::SK_FP, "Cannot get exponent width of non-floating-point sort");
             return children[0]->arity;
         }
 
         size_t getSignificandWidth() const {
-            assert(kind == SORT_KIND::SK_FP);
+            cassert(kind == SORT_KIND::SK_FP, "Cannot get significand width of non-floating-point sort");
             return children[1]->arity;
         }
 
         std::shared_ptr<Sort> getIndexSort() const {
-            assert(kind == SORT_KIND::SK_ARRAY);
+            cassert(kind == SORT_KIND::SK_ARRAY, "Cannot get index sort of non-array sort");
             return children[0];
         }
 
         std::shared_ptr<Sort> getElemSort() const {
-            assert(kind == SORT_KIND::SK_ARRAY);
+            cassert(kind == SORT_KIND::SK_ARRAY, "Cannot get element sort of non-array sort");
             return children[1];
         }
         

@@ -34,6 +34,13 @@ namespace SMTLIBParser {
         collectAtoms(expr, atoms, visited);
     }
 
+    void Parser::collectAtoms(std::vector<std::shared_ptr<DAGNode>> exprs, boost::unordered_set<std::shared_ptr<DAGNode>>& atoms) {
+        boost::unordered_set<std::shared_ptr<DAGNode>> visited;
+        for(auto& expr : exprs) {
+            collectAtoms(expr, atoms, visited);
+        }
+    }
+
     void Parser::collectAtoms(std::shared_ptr<DAGNode> expr, boost::unordered_set<std::shared_ptr<DAGNode>>& atoms, boost::unordered_set<std::shared_ptr<DAGNode>>& visited) {
         if (visited.find(expr) != visited.end()) {
             return;
@@ -84,7 +91,7 @@ namespace SMTLIBParser {
             visited[expr] = new_expr; // no need to visit again
             return new_expr;
         }
-        assert(!is_changed);
+        cassert(!is_changed, "replaceAtoms: is_changed is true");
         visited[expr] = expr;
         return expr;
     }
@@ -175,7 +182,7 @@ namespace SMTLIBParser {
         // Tseitin CNF is ¬applied to atoms: all atoms are already in CNF form
         if(expr->isAtom()){
             // directly return the original expression
-            assert(cnf_map.find(expr) != cnf_map.end());
+            cassert(cnf_map.find(expr) != cnf_map.end(), "toTseitinCNF: expr is an atom but not in cnf_map");
             return cnf_map[expr];
         }
         if(expr->isLiteral() || expr->isTempVar()) {
@@ -214,7 +221,7 @@ namespace SMTLIBParser {
             }
             if(children.size() == 1){
                 // return the only child, which is a temp var or boolean variable
-                assert(children[0]->isLiteral());
+                cassert(children[0]->isLiteral(), "toTseitinCNF: children[0] is not a literal");
                 return children[0];
             }
             std::shared_ptr<DAGNode> c = mkTempVar(BOOL_SORT);
@@ -226,7 +233,7 @@ namespace SMTLIBParser {
             or_children.emplace_back(c);
             clauses.emplace_back(mkOr(or_children));
             visited[expr] = c; // no need to visit again
-            assert(c->isLiteral() || c->isTempVar());
+            cassert(c->isLiteral() || c->isTempVar(), "toTseitinCNF: c is not a literal or temp var");
             return c;
         }
         // a or b or ... <=> c <-> a or b or ...
@@ -240,7 +247,7 @@ namespace SMTLIBParser {
             }
             if(children.size() == 1){
                 // return the only child, which is a temp var or boolean variable
-                assert(children[0]->isLiteral());
+                cassert(children[0]->isLiteral(), "toTseitinCNF: children[0] is not a literal");
                 return children[0];
             }
             std::shared_ptr<DAGNode> c = mkTempVar(BOOL_SORT);
@@ -252,7 +259,7 @@ namespace SMTLIBParser {
             or_children.emplace_back(mkNot(c));
             clauses.emplace_back(mkOr(or_children));
             visited[expr] = c; // no need to visit again
-            assert(c->isLiteral() || c->isTempVar());
+            cassert(c->isLiteral() || c->isTempVar(), "toTseitinCNF: c is not a literal or temp var");
             return c;
         }
         // c <-> a -> b <=> c -> a -> b and a -> b -> c
@@ -266,7 +273,7 @@ namespace SMTLIBParser {
             }
             if(children.size() == 1){
                 // return the only child, which is a temp var or boolean variable
-                assert(children[0]->isLiteral());
+                cassert(children[0]->isLiteral(), "toTseitinCNF: children[0] is not a literal");
                 return children[0];
             }
             std::shared_ptr<DAGNode> c = mkTempVar(BOOL_SORT);
@@ -285,7 +292,7 @@ namespace SMTLIBParser {
             clauses.emplace_back(mkOr(or_children1));
             clauses.emplace_back(mkOr(or_children2));
             visited[expr] = c; // no need to visit again
-            assert(c->isLiteral() || c->isTempVar());
+            cassert(c->isLiteral() || c->isTempVar(), "toTseitinCNF: c is not a literal or temp var");
             return c;
         }
         // c <-> a xor b <=> (c -> a xor b) and (a xor b -> c)
@@ -317,7 +324,7 @@ namespace SMTLIBParser {
                 }
             }
 
-            assert(all_bool);
+            cassert(all_bool, "toTseitinCNF: eq has non-boolean variables");
             
             if(all_bool){
                 if(expr->getChildrenSize() == 1){
@@ -332,7 +339,7 @@ namespace SMTLIBParser {
                     std::shared_ptr<DAGNode> b = toTseitinCNF(expr->getChild(1), visited, clauses);
                     std::shared_ptr<DAGNode> c = toTseitinEq(a, b, clauses);
                     visited[expr] = c;
-                    assert(c->isLiteral() || c->isTempVar());
+                    cassert(c->isLiteral() || c->isTempVar(), "toTseitinCNF: c is not a literal or temp var");
                     return c;
                 }
                 else{
@@ -367,7 +374,7 @@ namespace SMTLIBParser {
                     clauses.emplace_back(mkOr(or_children));
                     
                     visited[expr] = result;
-                    assert(result->isLiteral() || result->isTempVar());
+                    cassert(result->isLiteral() || result->isTempVar(), "toTseitinCNF: result is not a literal or temp var");
                     return result;
                 }
             }
@@ -395,7 +402,7 @@ namespace SMTLIBParser {
                     std::shared_ptr<DAGNode> b = toTseitinCNF(expr->getChild(1), visited, clauses);
                     std::shared_ptr<DAGNode> c = toTseitinDistinct(a, b, clauses);
                     visited[expr] = c;
-                    assert(c->isLiteral() || c->isTempVar());
+                    cassert(c->isLiteral() || c->isTempVar(), "toTseitinCNF: c is not a literal or temp var");
                     return c;
                 }
                 else{
@@ -426,7 +433,7 @@ namespace SMTLIBParser {
             clauses.emplace_back(mkOr({d, a, mkNot(c)}));
             
             visited[expr] = d;
-            assert(d->isLiteral() || d->isTempVar());
+            cassert(d->isLiteral() || d->isTempVar(), "toTseitinCNF: d is not a literal or temp var");
             return d;
         }
         else{
@@ -465,7 +472,7 @@ namespace SMTLIBParser {
         if(all_atoms){
             return expr;
         }
-        assert(!all_atoms);
+        cassert(!all_atoms, "toCNF: expr has non-atom children");
         // expand let
         if(expr->isLet()){
             expr = expandLet(expr);

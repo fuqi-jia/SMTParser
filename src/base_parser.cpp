@@ -132,13 +132,13 @@ namespace SMTLIBParser{
 		return options->getEvaluateUseFloating();
 	}
 	Real Parser::toReal(std::shared_ptr<DAGNode> expr){
-		assert(expr->isCReal() || expr->isCInt());
+		cassert(expr->isCReal() || expr->isCInt(), "Cannot convert non-constant expression to real");
 		if(expr->isPi()) return Real::pi(getEvaluatePrecision());
 		if(expr->isE()) return Real::e(getEvaluatePrecision());
 		return expr->getValue().toReal(getEvaluatePrecision());
 	}
 	Integer Parser::toInt(std::shared_ptr<DAGNode> expr){
-		assert(expr->isCInt());
+		cassert(expr->isCInt(), "Cannot convert non-integer expression to integer");
 		return expr->getValue().toInteger();
 	}
 	bool Parser::isZero(std::shared_ptr<DAGNode> expr){
@@ -275,7 +275,7 @@ namespace SMTLIBParser{
 				break;
 
 			default:
-				assert(false);
+				cassert(false, "Invalid scan mode");
 			}
 
 			// go next char
@@ -433,6 +433,37 @@ namespace SMTLIBParser{
 		delete[] buffer;
 		return true;
 	}
+
+	bool Parser::parseStr(const std::string& constraint) {
+		buffer = strdup(constraint.c_str());
+		buflen = constraint.length();
+		bufptr = buffer;
+		if (buflen > 0) line_number = 1;
+		scanToNextSymbol();
+		while (*bufptr) {
+			parseLpar();
+			if (parseCommand() == CMD_TYPE::CT_EXIT) break;
+			parseRpar();
+		}
+		bufptr = nullptr;
+		free(buffer);
+		return true;
+	}
+
+	bool Parser::assert(const std::string& constraint) {
+		// reset buffer
+		buffer = strdup(constraint.c_str());
+		buflen = constraint.length();
+		bufptr = buffer;
+		if (buflen > 0) line_number = 1;
+		scanToNextSymbol();
+		std::shared_ptr<DAGNode> expr = parseExpr();
+		assertions.emplace_back(expr);
+		bufptr = nullptr;
+		free(buffer);
+		return true;
+	}
+	
 
 	KEYWORD Parser::parseKeyword(){
 		
@@ -1084,43 +1115,43 @@ namespace SMTLIBParser{
 
 	std::shared_ptr<DAGNode> Parser::parseParamFunc(const std::string& f, const std::vector<std::shared_ptr<DAGNode>> &args, const std::vector<std::shared_ptr<DAGNode>> &params){
 		if (f == "extract") {
-			assert(args.size() == 2);
-			assert(params.size() == 1);
+			cassert(args.size() == 2, "Invalid number of arguments for extract");
+			cassert(params.size() == 1, "Invalid number of parameters for extract");
 			return mkBvExtract(params[0], args[0], args[1]);
 		}
 		else if (f == "repeat") {
-			assert(args.size() == 1);
-			assert(params.size() == 1);
+			cassert(args.size() == 1, "Invalid number of arguments for repeat");
+			cassert(params.size() == 1, "Invalid number of parameters for repeat");
 			return mkBvRepeat(params[0], args[0]);
 		}
 		else if (f == "zero_extend") {
-			assert(args.size() == 1);
-			assert(params.size() == 1);
+			cassert(args.size() == 1, "Invalid number of arguments for zero_extend");
+			cassert(params.size() == 1, "Invalid number of parameters for zero_extend");
 			return mkBvZeroExt(params[0], args[0]);
 		}
 		else if (f == "sign_extend") {
-			assert(args.size() == 1);
-			assert(params.size() == 1);
+			cassert(args.size() == 1, "Invalid number of arguments for sign_extend");
+			cassert(params.size() == 1, "Invalid number of parameters for sign_extend");
 			return mkBvSignExt(params[0], args[0]);
 		}
 		else if(f == "int_to_bv") {
-			assert(args.size() == 1);
-			assert(params.size() == 1);
+			cassert(args.size() == 1, "Invalid number of arguments for int_to_bv");
+			cassert(params.size() == 1, "Invalid number of parameters for int_to_bv");
 			return mkIntToBv(params[0], args[0]);
 		}
 		else if(f == "rotate_left") {
-			assert(args.size() == 1);
-			assert(params.size() == 1);
+			cassert(args.size() == 1, "Invalid number of arguments for rotate_left");
+			cassert(params.size() == 1, "Invalid number of parameters for rotate_left");
 			return mkBvRotateLeft(params[0], args[0]);
 		}
 		else if(f == "rotate_right"){
-			assert(args.size() == 1);
-			assert(params.size() == 1);
+			cassert(args.size() == 1, "Invalid number of arguments for rotate_right");
+			cassert(params.size() == 1, "Invalid number of parameters for rotate_right");
 			return mkBvRotateRight(params[0], args[0]);
 		}
 		else if (f == "re.loop") {
-			assert(params.size() == 1);
-			assert(args.size() == 2);
+			cassert(params.size() == 1, "Invalid number of parameters for re.loop");
+			cassert(args.size() == 2, "Invalid number of arguments for re.loop");
 			return mkRegLoop(params[0], args[0], args[1]);
 		}
 		else return mkErr(ERROR_TYPE::ERR_UNKWN_SYM);
@@ -1134,7 +1165,7 @@ namespace SMTLIBParser{
 			return mkOr(params);
 		}
 		else if (s == "not") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for not");
 			return mkNot(params[0]);
 		}
 		else if (s == "=>") {
@@ -1165,63 +1196,63 @@ namespace SMTLIBParser{
 			return mkIand(params);
 		}
 		else if (s == "pow2") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for pow2");
 			return mkPow2(params[0]);
 		}
 		else if (s == "pow" || s == "**" || s == "^") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for pow");
 			return mkPow(params[0], params[1]);
 		}
 		else if (s == "div") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for div");
 			return mkDivInt(params[0], params[1]);
 		}
 		else if (s == "/") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for div");
 			return mkDivReal(params[0], params[1]);
 		}
 		else if (s == "mod") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for mod");
 			return mkMod(params[0], params[1]);
 		}
 		else if (s == "abs") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for abs");
 			return mkAbs(params[0]);
 		}
 		else if (s == "sqrt") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for sqrt");
 			return mkSqrt(params[0]);
 		}
 		else if (s == "safesqrt") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for safesqrt");
 			return mkSafeSqrt(params[0]);
 		}
 		else if (s == "ceil") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for ceil");
 			return mkCeil(params[0]);
 		}
 		else if (s == "floor") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for floor");
 			return mkFloor(params[0]);
 		}
 		else if (s == "round") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for round");
 			return mkRound(params[0]);
 		}
 		else if (s == "exp") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for exp");
 			return mkExp(params[0]);
 		}
 		else if (s == "ln" || s == "loge") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for ln");
 			return mkLn(params[0]);
 		}
 		else if (s == "lg" || s == "log10"){
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for lg");
 			return mkLg(params[0]);
 		}
 		else if (s == "lb" || s == "log2"){
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for lb");
 			return mkLb(params[0]);
 		}
 		else if (s == "log") {
@@ -1236,131 +1267,131 @@ namespace SMTLIBParser{
 			else err_param_mis("log", line_number);
 		}
 		else if (s == "sin") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for sin");
 			return mkSin(params[0]);
 		}
 		else if (s == "cos") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for cos");
 			return mkCos(params[0]);
 		}
 		else if (s == "tan") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for tan");
 			return mkTan(params[0]);
 		}
 		else if (s == "asin" || s == "arcsin") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for asin");
 			return mkAsin(params[0]);
 		}
 		else if (s == "acos" || s == "arccos") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for acos");
 			return mkAcos(params[0]);
 		}
 		else if (s == "atan" || s == "arctan") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for atan");
 			return mkAtan(params[0]);
 		}
 		else if (s == "sinh") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for sinh");
 			return mkSinh(params[0]);
 		}
 		else if (s == "cosh") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for cosh");
 			return mkCosh(params[0]);
 		}
 		else if (s == "tanh") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for tanh");
 			return mkTanh(params[0]);
 		}
 		else if (s == "asinh" || s == "arcsinh") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for asinh");
 			return mkAsinh(params[0]);
 		}
 		else if (s == "acosh" || s == "arccosh") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for acosh");
 			return mkAcosh(params[0]);
 		}
 		else if (s == "atanh" || s == "arctanh") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for atanh");
 			return mkAtanh(params[0]);
 		}
 		else if (s == "asech" || s == "arcsec") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for asech");
 			return mkAsech(params[0]);
 		}
 		else if (s == "acsch" || s == "arccsch") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for acsch");
 			return mkAcsch(params[0]);
 		}
 		else if (s == "acoth" || s == "arccoth") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for acoth");
 			return mkAcoth(params[0]);
 		}
 		else if (s == "atan2" || s == "arctan2") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for atan2");
 			return mkAtan2(params[0], params[1]);
 		}
 		else if (s == "<=") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for <= ");
 			return mkLe(params[0], params[1]);
 		}
 		else if (s == "<") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for <");
 			return mkLt(params[0], params[1]);
 		}
 		else if (s == ">=") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for >= ");
 			return mkGe(params[0], params[1]);
 		}
 		else if (s == ">") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for >");
 			return mkGt(params[0], params[1]);
 		}
 		else if (s == "to_real") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for to_real");
 			return mkToReal(params[0]);
 		}
 		else if (s == "to_int") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for to_int");
 			return mkToInt(params[0]);
 		}
 		else if (s == "is_int") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for is_int");
 			return mkIsInt(params[0]);
 		}
 		else if (s == "is_divisible") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for is_divisible");
 			return mkIsDivisible(params[0], params[1]);
 		}
 		else if (s == "is_prime") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for is_prime");
 			return mkIsPrime(params[0]);
 		}
 		else if (s == "is_even") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for is_even");
 			return mkIsEven(params[0]);
 		}
 		else if (s == "is_odd") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for is_odd");
 			return mkIsOdd(params[0]);
 		}
 		else if (s == "gcd") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for gcd");
 			return mkGcd(params[0], params[1]);
 		}
 		else if (s == "lcm") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for lcm");
 			return mkLcm(params[0], params[1]);
 		}
 		else if (s == "factorial") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for factorial");
 			return mkFact(params[0]);
 		}
 		else if (s == "bvnot") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for bvnot");
 			return mkBvNot(params[0]);
 		}
 		else if (s == "bvneg") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for bvneg");
 			return mkBvNeg(params[0]);
 		}
 		else if (s == "bvand") {
@@ -1382,7 +1413,7 @@ namespace SMTLIBParser{
 			return mkBvXnor(params);
 		}
 		else if (s == "bvcomp") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for bvcomp");
 			return mkBvComp(params[0], params[1]);
 		}
 		else if (s == "bvadd") {
@@ -1395,94 +1426,94 @@ namespace SMTLIBParser{
 			return mkBvMul(params);
 		}
 		else if (s == "bvudiv") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for bvudiv");
 			return mkBvUdiv(params[0], params[1]);
 		}
 		else if (s == "bvurem") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for bvurem");
 			return mkBvUrem(params[0], params[1]);
 		}
 		else if (s == "bvsdiv") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for bvsdiv");
 			return mkBvSdiv(params[0], params[1]);
 		}
 		else if (s == "bvsrem") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for bvsrem");
 			return mkBvSrem(params[0], params[1]);
 		}
 		else if (s == "bvsmod") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for bvsmod");
 			return mkBvSmod(params[0], params[1]);
 		}
 		else if (s == "bvshl") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for bvshl");
 			return mkBvShl(params[0], params[1]);
 		}
 		else if (s == "bvlshr") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for bvlshr");
 			return mkBvLshr(params[0], params[1]);
 		}
 		else if (s == "bvashr") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for bvashr");
 			return mkBvAshr(params[0], params[1]);
 		}
 		else if (s == "bvult") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for bvult");
 			return mkBvUlt(params[0], params[1]);
 		}
 		else if (s == "bvule") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for bvule");
 			return mkBvUle(params[0], params[1]);
 		}
 		else if (s == "bvugt") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for bvugt");
 			return mkBvUgt(params[0], params[1]);
 		}
 		else if (s == "bvuge") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for bvuge");
 			return mkBvUge(params[0], params[1]);
 		}
 		else if (s == "bvslt") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for bvslt");
 			return mkBvSlt(params[0], params[1]);
 		}
 		else if (s == "bvsle") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for bvsle");
 			return mkBvSle(params[0], params[1]);
 		}
 		else if (s == "bvsgt") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for bvsgt");
 			return mkBvSgt(params[0], params[1]);
 		}
 		else if (s == "bvsge") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for bvsge");
 			return mkBvSge(params[0], params[1]);
 		}
 		else if (s == "concat") {
 			return mkBvConcat(params);
 		}
 		else if (s == "bv2nat") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for bv2nat");
 			return mkBvToNat(params[0]);
 		}
 		else if (s == "nat2bv") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for nat2bv");
 			return mkNatToBv(params[0], params[1]);
 		}
 		else if (s == "int2bv") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for int2bv");
 			return mkIntToBv(params[0], params[1]);
 		}
 		else if (s == "bv2int") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for bv2int");
 			return mkBvToInt(params[0]);
 		}
 		else if (s == "fp.abs") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for fp.abs");
 			return mkFpAbs(params[0]);
 		}
 		else if (s == "fp.neg") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for fp.neg");
 			return mkFpNeg(params[0]);
 		}
 		else if (s == "fp.add") {
@@ -1498,214 +1529,214 @@ namespace SMTLIBParser{
 			return mkFpDiv(params);
 		}
 		else if (s == "fp.fma") {
-			assert(params.size() == 3);
+			cassert(params.size() == 3, "Invalid number of parameters for fp.fma");
 			return mkFpFma(params);
 		}
 		else if (s == "fp.sqrt") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for fp.sqrt");
 			return mkFpSqrt(params[0]);
 		}
 		else if (s == "fp.rem") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for fp.rem");
 			return mkFpRem(params[0], params[1]);
 		}
 		else if (s == "fp.roundToIntegral") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for fp.roundToIntegral");
 			return mkFpRoundToIntegral(params[0]);
 		}
 		else if (s == "fp.min") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for fp.min");
 			return mkFpMin(params);
 		}
 		else if (s == "fp.max") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for fp.max");
 			return mkFpMax(params);
 		}
 		else if (s == "fp.leq") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for fp.leq");
 			return mkFpLe(params[0], params[1]);
 		}
 		else if (s == "fp.lt") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for fp.lt");
 			return mkFpLt(params[0], params[1]);
 		}
 		else if (s == "fp.geq") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for fp.geq");
 			return mkFpGe(params[0], params[1]);
 		}
 		else if (s == "fp.gt") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for fp.gt");
 			return mkFpGt(params[0], params[1]);
 		}
 		else if (s == "fp.eq" || s == "fp.=" || s == "fp.==") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for fp.eq");
 			return mkFpEq(params[0], params[1]);
 		}
 		else if (s == "fp.ne" || s == "fp.!=" || s == "fp.neq") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for fp.ne");
 			return mkFpNe(params[0], params[1]);
 		}
 		else if (s == "fp.to_ubv") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for fp.to_ubv");
 			return mkFpToUbv(params[0], params[1]);
 		}
 		else if (s == "fp.to_sbv") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for fp.to_sbv");
 			return mkFpToSbv(params[0], params[1]);
 		}
 		else if (s == "fp.to_real") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for fp.to_real");
 			return mkFpToReal(params[0]);
 		}
 		else if (s == "to_fp") {
-			assert(params.size() == 3);
+			cassert(params.size() == 3, "Invalid number of parameters for to_fp");
 			return mkToFp(params[0], params[1], params[2]);
 		}
 		else if (s == "fp.isNormal"){
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for fp.isNormal");
 			return mkFpIsNormal(params[0]);
 		}
 		else if (s == "fp.isSubnormal"){
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for fp.isSubnormal");
 			return mkFpIsSubnormal(params[0]);
 		}
 		else if (s == "fp.isZero"){
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for fp.isZero");
 			return mkFpIsZero(params[0]);
 		}
 		else if (s == "fp.isInfinite"){
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for fp.isInfinite");
 			return mkFpIsInf(params[0]);
 		}
 		else if (s == "fp.isNaN"){
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for fp.isNaN");
 			return mkFpIsNan(params[0]);
 		}
 		else if (s == "fp.isNegative"){
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for fp.isNegative");
 			return mkFpIsNeg(params[0]);
 		}
 		else if (s == "fp.isPositive"){
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for fp.isPositive");
 			return mkFpIsPos(params[0]);
 		}
 		else if (s == "select") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for select");
 			return mkSelect(params[0], params[1]);
 		}
 		else if (s == "store") {
-			assert(params.size() == 3);
+			cassert(params.size() == 3, "Invalid number of parameters for store");
 			return mkStore(params[0], params[1], params[2]);
 		}
 		else if (s == "str.len") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for str.len");
 			return mkStrLen(params[0]);
 		}
 		else if (s == "str.++") {
 			return mkStrConcat(params);
 		}
 		else if (s == "str.substr") {
-			assert(params.size() == 3);
+			cassert(params.size() == 3, "Invalid number of parameters for str.substr");
 			return mkStrSubstr(params[0], params[1], params[2]);
 		}
 		else if (s == "str.prefixof") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for str.prefixof");
 			return mkStrPrefixof(params[0], params[1]);
 		}
 		else if (s == "str.suffixof") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for str.suffixof");
 			return mkStrSuffixof(params[0], params[1]);
 		}
 		else if (s == "str.indexof") {
-			assert(params.size() == 3);
+			cassert(params.size() == 3, "Invalid number of parameters for str.indexof");
 			return mkStrIndexof(params[0], params[1], params[2]);
 		}
 		else if (s == "str.at") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for str.at");
 			return mkStrCharat(params[0], params[1]);
 		}
 		else if (s == "str.update") {
-			assert(params.size() == 3);
+			cassert(params.size() == 3, "Invalid number of parameters for str.update");
 			return mkStrUpdate(params[0], params[1], params[2]);
 		}
 		else if (s == "str.replace") {
-			assert(params.size() == 3);
+			cassert(params.size() == 3, "Invalid number of parameters for str.replace");
 			return mkStrReplace(params[0], params[1], params[2]);
 		}
 		else if (s == "str.replace_all") {
-			assert(params.size() == 3);
+			cassert(params.size() == 3, "Invalid number of parameters for str.replace_all");
 			return mkStrReplaceAll(params[0], params[1], params[2]);
 		}
 		else if (s == "str.replace_re") {
-			assert(params.size() == 3);
+			cassert(params.size() == 3, "Invalid number of parameters for str.replace_re");
 			return mkReplaceReg(params[0], params[1], params[2]);
 		}
 		else if (s == "str.replace_all_re") {
-			assert(params.size() == 3);
+			cassert(params.size() == 3, "Invalid number of parameters for str.replace_all_re");
 			return mkReplaceRegAll(params[0], params[1], params[2]);
 		}
 		else if (s == "str.to_lower") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for str.to_lower");
 			return mkStrToLower(params[0]);
 		}
 		else if (s == "str.to_upper") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for str.to_upper");
 			return mkStrToUpper(params[0]);
 		}
 		else if (s == "str.rev") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for str.rev");
 			return mkStrRev(params[0]);
 		}
 		else if (s == "str.split") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for str.split");
 			return mkStrSplit(params[0], params[1]);
 		}
 		else if (s == "str.<"){
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for str.<");
 			return mkStrLt(params[0], params[1]);
 		}
 		else if (s == "str.<="){
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for str.<=");
 			return mkStrLe(params[0], params[1]);
 		}
 		else if (s == "str.>"){
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for str.>");
 			return mkStrGt(params[0], params[1]);
 		}
 		else if (s == "str.>="){
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for str.>=");
 			return mkStrGe(params[0], params[1]);
 		}
 		else if (s == "str.in_re"){
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for str.in_re");
 			return mkStrInReg(params[0], params[1]);
 		}
 		else if (s == "str.contains"){
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for str.contains");
 			return mkStrContains(params[0], params[1]);
 		}
 		else if (s == "str.is_digit"){
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for str.is_digit");
 			return mkStrIsDigit(params[0]);
 		}
 		else if (s == "str.from_int"){
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for str.from_int");
 			return mkStrFromInt(params[0]);
 		}
 		else if (s == "str.to_int"){
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for str.to_int");
 			return mkStrToInt(params[0]);
 		}
 		else if (s == "str.to_re"){
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for str.to_re");
 			return mkStrToReg(params[0]);
 		}
 		else if (s == "str.to_code"){
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for str.to_code");
 			return mkStrToCode(params[0]);
 		}
 		else if (s == "str.from_code"){
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for str.from_code");
 			return mkStrFromCode(params[0]);
 		}
 		else if (s == "re.++") {
@@ -1721,27 +1752,27 @@ namespace SMTLIBParser{
 			return mkRegDiff(params);
 		}
 		else if (s == "re.*") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for re.*");
 			return mkRegStar(params[0]);
 		}
 		else if (s == "re.+") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for re.+");
 			return mkRegPlus(params[0]);
 		}
 		else if (s == "re.?" || s == "re.opt") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for re.?");
 			return mkRegOpt(params[0]);
 		}
 		else if (s == "re.range") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for re.range");
 			return mkRegRange(params[0], params[1]);
 		}
 		else if (s == "re.repeat") {
-			assert(params.size() == 2);
+			cassert(params.size() == 2, "Invalid number of parameters for re.repeat");
 			return mkRegRepeat(params[0], params[1]);
 		}
 		else if (s == "re.comp") {
-			assert(params.size() == 1);
+			cassert(params.size() == 1, "Invalid number of parameters for re.comp");
 			return mkRegComplement(params[0]);
 		}
 		else if (fun_key_map.find(s) != fun_key_map.end()) {
@@ -1943,7 +1974,7 @@ namespace SMTLIBParser{
 				// Instead, push it as a new state onto the stack
 				parseLpar();  // Consume '('
 				std::string let_key = getSymbol();  // Consume "let"
-				assert(let_key == "let");
+				cassert(let_key == "let", "Invalid keyword for let");
 				parseLpar();  // Consume the second let expression's starting '('
 				
 				stateStack.emplace_back(LetContext(currentState.nesting_level + 1));
@@ -2150,7 +2181,7 @@ namespace SMTLIBParser{
 			mkExists(params);
 		}
 		else{
-			assert(false);
+			cassert(false, "Invalid quantifier");
 		}
 	}
 
@@ -2410,6 +2441,34 @@ namespace SMTLIBParser{
 
 	std::string Parser::toString(const NODE_KIND& kind){
 		return kindToString(kind);
+	}
+
+	std::string Parser::dumpSMT2(){
+		std::stringstream ss;
+		ss << "(set-logic " << options->getLogic() << ")" << std::endl;
+		// variables
+		std::vector<std::shared_ptr<DAGNode>> vars = getVariables();
+		for(auto& var : vars){
+			ss << "(declare-fun " << var->getName() << " () " << var->getSort()->toString() << ")" << std::endl;
+		}
+		std::vector<std::shared_ptr<DAGNode>> functions = getFunctions();
+		for(auto& func : functions){
+			ss << dumpFuncDef(func);
+		}
+		// constraints
+		for(auto& constraint : assertions){
+			ss << "(assert " << constraint << ")" << std::endl;
+		}
+		ss << "(check-sat)" << std::endl;
+		ss << "(exit)" << std::endl;
+		return ss.str();
+	}
+
+	std::string Parser::dumpSMT2(const std::string& filename){
+		std::ofstream file(filename);
+		file << dumpSMT2();
+		file.close();
+		return filename;
 	}
 
 	/*

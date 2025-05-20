@@ -34,7 +34,6 @@
 
 #include <iostream>
 #include <fstream>
-#include <cassert>
 
 #include <string>
 #include <vector>

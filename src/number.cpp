@@ -27,8 +27,7 @@
 
 #include "number.h"
 #include <stdexcept>
-#include <cstring>
-#include <cassert>
+#include <string>
 #include <cmath>
 #include <climits> // For LLONG_MAX and LLONG_MIN
 
@@ -1115,7 +1114,7 @@ Number Number::operator/(const Number& other) const {
 }
 
 Number Number::operator%(const Number& other) const {
-    assert(type == INT_TYPE && other.type == INT_TYPE);
+    cassert(type == INT_TYPE && other.type == INT_TYPE, "Cannot compute modulo of non-integer numbers");
     return Number(intValue % other.intValue);
 }
 
@@ -1156,7 +1155,7 @@ Number& Number::operator/=(const Number& other) {
 }
 
 Number& Number::operator%=(const Number& other) {
-    assert(type == INT_TYPE && other.type == INT_TYPE);
+    cassert(type == INT_TYPE && other.type == INT_TYPE, "Cannot compute modulo of non-integer numbers");
     intValue %= other.intValue;
     return *this;
 }

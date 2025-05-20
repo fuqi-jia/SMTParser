@@ -28,6 +28,8 @@
 #define UTIL_HEADER
 
 #include "kind.h"
+#include "number.h"
+#include "common.h"
 
 #include <iostream>
 #include <iomanip>

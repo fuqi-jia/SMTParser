@@ -36,9 +36,8 @@
 
 #include <boost/unordered_set.hpp>
 
-
-
 namespace SMTLIBParser{
+    #undef assert
     enum class SCAN_MODE {
         SM_COMMON,
         SM_SYMBOL,
@@ -209,6 +208,28 @@ namespace SMTLIBParser{
          * @return True if parsing was successful, false otherwise
          */
         bool parse(const std::string& filename);
+
+        /**
+         * @brief Parse a constraint
+         * 
+         * Parses the specified constraint and builds internal data structures.
+         * 
+         * @param constraint Constraint to parse
+         * @return True if parsing was successful, false otherwise
+         */
+        bool parseStr(const std::string& constraint);
+        
+        /**
+         * @brief Assert a constraint
+         * 
+         * Asserts the specified constraint and builds internal data structures.
+         * 
+         * @note Any variables in the constraint must be declared before assertion.
+         * 
+         * @param constraint Constraint to assert
+         * @return True if assertion was successful, false otherwise
+         */
+        bool assert(const std::string& constraint);
 
         // to solver
         /**
@@ -2929,6 +2950,14 @@ namespace SMTLIBParser{
         void                                    collectAtoms(std::shared_ptr<DAGNode> expr, boost::unordered_set<std::shared_ptr<DAGNode>>& atoms);
 
         /**
+         * @brief Collect atoms from a vector of expressions
+         * 
+         * @param exprs Expressions to collect atoms from
+         * @param atoms Atoms (stored in a set)
+         */
+        void                                    collectAtoms(std::vector<std::shared_ptr<DAGNode>> exprs, boost::unordered_set<std::shared_ptr<DAGNode>>& atoms);    
+
+        /**
          * @brief Replace atoms in an expression
          * 
          * @param expr Expression to replace atoms in
@@ -3019,6 +3048,20 @@ namespace SMTLIBParser{
          */
         std::string                             toString(std::shared_ptr<Sort> sort);
 
+        /**
+         * @brief Dump the SMT2 representation of the parsed expressions
+         * 
+         * @return String representation of the SMT2
+         */
+        std::string                             dumpSMT2();
+
+        /**
+         * @brief Dump the SMT2 representation of the parsed expressions to a file
+         * 
+         * @param filename Filename to save the SMT2
+         * @return Filename
+         */
+        std::string                             dumpSMT2(const std::string& filename);
     private:
         // parse smt-lib2 file
         std::string	                            getSymbol();

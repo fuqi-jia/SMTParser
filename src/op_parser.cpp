@@ -195,7 +195,7 @@ namespace SMTLIBParser{
         std::shared_ptr<DAGNode> func = nullptr;
         if(fun_key_map.find(name)!=fun_key_map.end()){
             func = fun_key_map[name];
-            assert(func->getKind() == NODE_KIND::NT_FUNC_DEC);
+            cassert(func->getKind() == NODE_KIND::NT_FUNC_DEC, "mkFuncDef: func is not a function declaration");
             // NOTE: we still check it, even if it is not necessary.
             if(func->getKind() == NODE_KIND::NT_FUNC_DEC){
                 // update the function
@@ -277,8 +277,8 @@ namespace SMTLIBParser{
         }
         else if(l->isNot() && r->isNot()){
             // reduce nested not
-            assert(l->getChildrenSize() == 1);
-            assert(r->getChildrenSize() == 1);
+            cassert(l->getChildrenSize() == 1, "mkEq: l has more than one child");
+            cassert(r->getChildrenSize() == 1, "mkEq: r has more than one child");
             return mkEq(l->getChild(0), r->getChild(0));
         }
         else{
@@ -360,8 +360,8 @@ namespace SMTLIBParser{
         }
         else if(l->isNot() && r->isNot()){
             // reduce nested not
-            assert(l->getChildrenSize() == 1);
-            assert(r->getChildrenSize() == 1);
+            cassert(l->getChildrenSize() == 1, "mkDistinct: l has more than one child");
+            cassert(r->getChildrenSize() == 1, "mkDistinct: r has more than one child");
             return mkDistinct(l->getChild(0), r->getChild(0));
         }
         else if(l->isNot()){
@@ -430,7 +430,7 @@ namespace SMTLIBParser{
         return mkConstInt(Integer(v));
     }
     std::shared_ptr<DAGNode> Parser::mkConstReal(const std::string &v){
-        assert(isRealUtil(v) || v == "e" || v == "pi");
+        cassert(isRealUtil(v) || v == "e" || v == "pi", "mkConstReal: invalid real constant");
         if(v == "e") return E_NODE;
         if(v == "pi") return PI_NODE;
         if(constants_real.find(v) != constants_real.end()){
@@ -638,7 +638,7 @@ namespace SMTLIBParser{
         }
         if (param->isNot()) {
             // reduce nested not
-            assert(param->getChildrenSize() == 1);
+            cassert(param->getChildrenSize() == 1, "mkNot: param has more than one child");
             return param->getChild(0);
         }
         else if(param->isTrue()){
@@ -883,7 +883,7 @@ namespace SMTLIBParser{
         else if(params.size() == 1){
             return params[0];
         }
-        assert(params.size() >= 2);
+        cassert(params.size() >= 2, "mkAdd: params has less than 2 elements");
         std::shared_ptr<Sort> sort = getSort(params);
 
         std::vector<std::shared_ptr<DAGNode>> new_params;
@@ -949,7 +949,7 @@ namespace SMTLIBParser{
         if(params.size() == 1){
             return params[0];
         }
-        assert(params.size() >= 2);
+        cassert(params.size() >= 2, "mkMul: params has less than 2 elements");
         std::shared_ptr<Sort> sort = getSort(params);
 
         std::vector<std::shared_ptr<DAGNode>> new_params;
@@ -1029,7 +1029,7 @@ namespace SMTLIBParser{
         if(params.size() == 1){
             return params[0];
         }
-        assert(params.size() >= 2);
+        cassert(params.size() >= 2, "mkIand: params has less than 2 elements");
         std::shared_ptr<Sort> sort = getSort(params);
 
         std::vector<std::shared_ptr<DAGNode>> new_params;
@@ -3624,8 +3624,7 @@ namespace SMTLIBParser{
                 return mkLt(atom->getChild(0), atom->getChild(1));
             }
             else{
-                std::cerr << "Unknown arithmetic comparison operator" << std::endl;
-                assert(false);
+                cassert(false, "negateComp: unknown arithmetic comparison operator");
             }
         }
 
@@ -3656,8 +3655,7 @@ namespace SMTLIBParser{
                 return mkBvSlt(atom->getChild(0), atom->getChild(1));
             }
             else{
-                std::cerr << "Unknown bitvector comparison operator" << std::endl;
-                assert(false);
+                cassert(false, "negateComp: unknown bitvector comparison operator");
             }
         }
 
@@ -3681,8 +3679,7 @@ namespace SMTLIBParser{
                 return mkFpEq(atom->getChild(0), atom->getChild(1));
             }
             else{
-                std::cerr << "Unknown floating-point comparison operator" << std::endl;
-                assert(false);
+                cassert(false, "negateComp: unknown floating-point comparison operator");
             }
         }
 
@@ -3700,8 +3697,7 @@ namespace SMTLIBParser{
                 return mkStrLt(atom->getChild(0), atom->getChild(1));
             }
             else{
-                std::cerr << "Unknown string comparison operator" << std::endl;
-                assert(false);
+                cassert(false, "negateComp: unknown string comparison operator");
             }
         }
 

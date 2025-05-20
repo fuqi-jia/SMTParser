@@ -28,8 +28,6 @@
 #ifndef _TYPES_H
 #define _TYPES_H
 
-#include "number.h"
-#include <cassert>
 #include <string>
 
 namespace SMTLIBParser{

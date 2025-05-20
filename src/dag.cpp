@@ -31,7 +31,7 @@
 namespace SMTLIBParser{
 
     void DAGNode::updateFuncDef(std::shared_ptr<Sort> out_sort, std::shared_ptr<DAGNode> body, const std::vector<std::shared_ptr<DAGNode>> &params){
-        assert(out_sort == sort);
+        cassert(out_sort == sort, "updateFuncDef: out_sort != sort");
         (void)out_sort;
         children.clear();
         children.emplace_back(body);
@@ -43,7 +43,7 @@ namespace SMTLIBParser{
 
     
     void DAGNode::updateApplyFunc(std::shared_ptr<Sort> out_sort, std::shared_ptr<DAGNode> body, const std::vector<std::shared_ptr<DAGNode>> &params){
-        assert(out_sort == sort);
+        cassert(out_sort == sort, "updateApplyFunc: out_sort != sort");
         (void)out_sort;
         children.clear();
         children.emplace_back(body);
@@ -122,15 +122,15 @@ namespace SMTLIBParser{
                 // Basic type and constant processing
                 case NODE_KIND::NT_UNKNOWN:
                     std::cerr << "Unknown kind: " << kindToString(kind) << std::endl;
-                    assert(false);
+                    cassert(false, "Encountered unknown kind node");
                     break;
                 case NODE_KIND::NT_ERROR:
                     std::cerr << "Encountered error kind node" << std::endl;
-                    assert(false);
+                    cassert(false, "Encountered error kind node");
                     break;
                 case NODE_KIND::NT_NULL:
                     std::cerr << "Encountered null kind node" << std::endl;
-                    assert(false);
+                    cassert(false, "Encountered null kind node");
                     res = "NULL";
                     break;
                 case NODE_KIND::NT_CONST_TRUE:
@@ -572,15 +572,15 @@ namespace SMTLIBParser{
         {
         case NODE_KIND::NT_UNKNOWN:
             std::cout<<"Unknown kind"<<std::endl;
-            assert(false);
+            cassert(false, "Encountered unknown kind node");
             break;
         case NODE_KIND::NT_ERROR:
             std::cout<<"Error kind"<<std::endl;
-            assert(false);
+            cassert(false, "Encountered error kind node");
             break;
         case NODE_KIND::NT_NULL:
             std::cout<<"Null kind"<<std::endl;
-            assert(false);
+            cassert(false, "Encountered null kind node");
             ofs << "NULL";
             break;
         case NODE_KIND::NT_CONST_TRUE:

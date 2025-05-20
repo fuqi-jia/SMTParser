@@ -27,7 +27,7 @@
 #ifndef _OPTIONS_H
 #define _OPTIONS_H
 
-#include "kind.h"
+#include "common.h"
 #include <boost/unordered_map.hpp>
 
 namespace SMTLIBParser{
@@ -120,6 +120,10 @@ namespace SMTLIBParser{
 
         void setInfo(const std::string& key, const std::string& value) {
             info[key] = value;
+        }
+
+        std::string getLogic() const {
+            return logic;
         }
 
         void getValue(const std::string& key, const std::string& value) {

@@ -54,7 +54,7 @@ namespace SMTLIBParser{
     }
 
     void Model::add(const std::string &name, const std::shared_ptr<DAGNode> &value){
-        assert(model_name_index.find(name) != model_name_index.end());
+        cassert(model_name_index.find(name) != model_name_index.end(), "Model::add: name not found");
         model_values[model_name_index[name]] = value;
     }
 

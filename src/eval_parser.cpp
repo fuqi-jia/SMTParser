@@ -609,7 +609,7 @@ namespace SMTLIBParser{
                     result = expr;
                     return false;
                 }
-                assert(changed);
+                cassert(changed, "evaluateSimpleOp: changed is false");
                 result = mkOper(expr->getSort(), op, child);
                 return true;
             }
@@ -659,7 +659,7 @@ namespace SMTLIBParser{
                     result = expr;
                     return false;
                 }
-                assert(changed);
+                cassert(changed, "evaluateSimpleOp: changed is false");
                 result = mkOper(expr->getSort(), op, l, r);
                 return true;
             }
@@ -681,7 +681,7 @@ namespace SMTLIBParser{
                     result = expr;
                     return false;
                 }
-                assert(changed);
+                cassert(changed, "evaluateSimpleOp: changed is false");
                 result = mkOper(expr->getSort(), op, {l, r, s});
                 return true;
             }
@@ -709,8 +709,8 @@ namespace SMTLIBParser{
                     result = expr;
                     return false;
                 }
-                assert(changed);
-                assert(!children.empty());
+                cassert(changed, "evaluateSimpleOp: changed is false");
+                cassert(!children.empty(), "evaluateSimpleOp: children is empty");
                 // compute the sum of the children that are constant
                 std::vector<std::shared_ptr<DAGNode>> const_children;
                 std::vector<std::shared_ptr<DAGNode>> non_const_children;
@@ -760,8 +760,8 @@ namespace SMTLIBParser{
                     result = expr;
                     return false;
                 }
-                assert(changed);
-                assert(!children.empty());
+                cassert(changed, "evaluateSimpleOp: changed is false");
+                cassert(!children.empty(), "evaluateSimpleOp: children is empty");
                 // compute the difference of the children that are constant
                 bool first_child_is_const = children[0]->isConst();
                 std::vector<std::shared_ptr<DAGNode>> const_children;
@@ -828,7 +828,7 @@ namespace SMTLIBParser{
                             children.emplace_back(child);
                         }
                         else{
-                            assert(!child->isConst());
+                            cassert(!child->isConst(), "evaluateSimpleOp: child is constant");
                             children.emplace_back(child);
                         }
                     }
@@ -841,8 +841,8 @@ namespace SMTLIBParser{
                     result = expr;
                     return false;
                 }
-                assert(changed);
-                assert(!children.empty());
+                cassert(changed, "evaluateSimpleOp: changed is false");
+                cassert(!children.empty(), "evaluateSimpleOp: children is empty");
                 if(children.size() == 1){
                     result = children.back();
                     return false;
@@ -853,7 +853,7 @@ namespace SMTLIBParser{
                 return true;
             }
             default:
-                assert(false);
+                cassert(false, "evaluateSimpleOp: unknown kind");
                 result = expr;
                 return false;
         }
@@ -880,7 +880,7 @@ namespace SMTLIBParser{
             result = expr;
             return false;
         }
-        assert(changed);
+        cassert(changed, "evaluateAnd: changed is false");
         if(children.empty()){
             result = mkTrue();
         }
@@ -912,7 +912,7 @@ namespace SMTLIBParser{
             result = expr;
             return false;
         }
-        assert(changed);
+        cassert(changed, "evaluateOr: changed is false");
         if(children.empty()){
             result = mkFalse();
         }
@@ -957,7 +957,7 @@ namespace SMTLIBParser{
             result = expr;
             return false;
         }
-        assert(changed);
+        cassert(changed, "evaluateXor: changed is false");
         // all children are constants
         if (remainingChildren.empty()) {
             // result depends on true count is odd or even
@@ -1003,12 +1003,12 @@ namespace SMTLIBParser{
             result = expr;
             return false;
         }
-        assert(changed);
+        cassert(changed, "evaluateEq: changed is false");
         if(children.empty()){
             result = const_val->isTrue() ? mkTrue() : mkFalse();
         }
         else if(children.size() == 1){
-            assert(!const_val->isNull());
+            cassert(!const_val->isNull(), "evaluateEq: const_val is null");
             result = mkEq(children[0], const_val);
         }
         else{
@@ -1049,9 +1049,9 @@ namespace SMTLIBParser{
             result = expr;
             return false;
         }
-        assert(changed);
+        cassert(changed, "evaluateDistinct: changed is false");
         if(children.empty()){
-            assert(const_vals.size() == expr->getChildrenSize());
+            cassert(const_vals.size() == expr->getChildrenSize(), "evaluateDistinct: const_vals.size() != expr->getChildrenSize()");
             result = mkTrue();
         }
         else{
@@ -1072,7 +1072,7 @@ namespace SMTLIBParser{
             result = expr;
             return false;
         }
-        assert(changed);
+        cassert(changed, "evaluateIte: changed is false");
         if(cond->isConst()){
             result = cond->isTrue() ? then_child : else_child;
         }
@@ -1102,8 +1102,8 @@ namespace SMTLIBParser{
             result = expr;
             return false;
         }
-        assert(changed);
-        assert(!children.empty());
+        cassert(changed, "evaluateDivInt: changed is false");
+        cassert(!children.empty(), "evaluateDivInt: children is empty");
         // compute the quotient of the children that are constant
         bool first_child_is_const = children[0]->isConst();
         std::vector<std::shared_ptr<DAGNode>> const_children;
