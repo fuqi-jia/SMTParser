@@ -304,6 +304,14 @@ namespace SMTLIBParser{
          * @return Vector of all variables
          */
         std::vector<std::shared_ptr<DAGNode>> getVariables() const;
+        
+        /**
+         * @brief Get variable
+         * 
+         * @param var_name Variable name
+         * @return Variable node
+         */
+        std::shared_ptr<DAGNode> getVariable(const std::string& var_name);
 
         /**
          * @brief Get functions
