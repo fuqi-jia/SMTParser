@@ -105,7 +105,15 @@ namespace SMTLIBParser{
                 logic_name == "QF_UFLIA" ||
                 logic_name == "QF_UFLRA" ||
                 logic_name == "QF_UFNIA" ||
-                logic_name == "QF_UFNRA" ) {
+                logic_name == "QF_UFNRA" ||
+                logic_name == "AUFLIA" ||
+                logic_name == "AUFLIRA" ||
+                logic_name == "AUFNIRA" ||
+                logic_name == "LIA" ||
+                logic_name == "LRA" ||
+                logic_name == "UFLRA" ||
+                logic_name == "UFNIA" ||
+                logic_name == "ALL") {
                     logic = logic_name;
                     return true;
                 } else {
