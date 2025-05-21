@@ -112,6 +112,9 @@ namespace SMTLIBParser{
 		}
 		return vars;
 	}
+	std::shared_ptr<DAGNode> Parser::getVariable(const std::string& var_name){
+		return node_list[var_names.at(var_name)];
+	}
 	std::vector<std::shared_ptr<DAGNode>> Parser::getFunctions() const{
 		std::vector<std::shared_ptr<DAGNode>> funs;
 		for(auto fun : function_names){

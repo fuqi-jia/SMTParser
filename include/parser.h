@@ -306,6 +306,14 @@ namespace SMTLIBParser{
         std::vector<std::shared_ptr<DAGNode>> getVariables() const;
 
         /**
+         * @brief Get variable
+         * 
+         * @param var_name Variable name
+         * @return Variable node
+         */
+        std::shared_ptr<DAGNode> getVariable(const std::string& var_name);
+
+        /**
          * @brief Get functions
          * 
          * Returns a vector of all functions. Use (define-fun name (params) body) to define a function.
