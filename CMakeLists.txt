@@ -66,6 +66,8 @@ set(SOURCES
     src/sort.cpp
     src/model.cpp
     src/number.cpp
+    src/interval.cpp
+    src/value.cpp
 )
 
 # define public headers
@@ -79,6 +81,8 @@ set(PUBLIC_HEADERS
     include/options.h
     include/model.h
     include/number.h
+    include/interval.h
+    include/value.h
 )
 
 # create include directory

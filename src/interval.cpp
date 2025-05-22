@@ -1,0 +1,1412 @@
+/* -*- Source -*-
+ *
+ * The Interval Source
+ *
+ * Author: Fuqi Jia <jiafq@ios.ac.cn>
+ *
+ * Copyright (C) 2025 Fuqi Jia
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ */
+
+#include "interval.h"
+#include "common.h"
+
+namespace SMTLIBParser{
+
+    Interval::Interval(Number lower, Number upper, bool leftClosed, bool rightClosed)
+        : lower(lower), upper(upper), leftClosed(leftClosed), rightClosed(rightClosed){
+        if(lower > upper) {
+            throw std::invalid_argument("Lower bound is greater than upper bound");
+        }
+    }
+
+    Interval::Interval(const Interval& other)
+        : lower(other.lower), upper(other.upper), leftClosed(other.leftClosed), rightClosed(other.rightClosed) {
+        if(lower > upper) {
+            throw std::invalid_argument("Lower bound is greater than upper bound");
+        }
+    }
+
+    Interval::~Interval() {}
+    
+    Interval& Interval::operator=(const Interval& other) {
+        if(this != &other) {
+            lower = other.lower;
+            upper = other.upper;
+            leftClosed = other.leftClosed;
+            rightClosed = other.rightClosed;
+        }
+        return *this;
+    }
+
+    bool Interval::operator==(const Interval& other) const {
+        return lower == other.lower && upper == other.upper && leftClosed == other.leftClosed && rightClosed == other.rightClosed;
+    }
+
+    bool Interval::operator!=(const Interval& other) const {
+        return !(*this == other);
+    }
+
+    void Interval::setLower(const Number& lower) {
+        if(lower > upper) {
+            throw std::invalid_argument("Lower bound is greater than upper bound");
+        }
+        this->lower = lower;
+    }
+
+    void Interval::setUpper(const Number& upper) {
+        if(upper < lower) {
+            throw std::invalid_argument("Upper bound is less than lower bound");
+        }
+        this->upper = upper;
+    }
+
+    void Interval::setLeftClosed(bool leftClosed) {
+        this->leftClosed = leftClosed;
+    }
+
+    void Interval::setRightClosed(bool rightClosed) {
+        this->rightClosed = rightClosed;
+    }
+
+    bool Interval::isLeftUnbounded() const {
+        return lower.isInfinity();
+    }
+
+    bool Interval::isRightUnbounded() const {
+        return upper.isInfinity();
+    }
+
+    Number Interval::midpoint() const {
+        return (lower + upper) / 2;
+    }
+
+    std::string Interval::toString() const {
+        std::string result = "";
+        if(leftClosed) {
+            result += "[";
+        } else {
+            result += "(";
+        }
+        result += lower.toString() + ", " + upper.toString();
+        if(rightClosed) {
+            result += "]";
+        } else {
+            result += ")";
+        }
+        return result;
+    }
+
+    void Interval::getIntegers(std::vector<Number>& integers) const {
+        if(lower.isInfinity() || upper.isInfinity()) {
+            throw std::invalid_argument("Interval is unbounded");
+        }
+        for(Number i = lower.ceil(); i <= upper.floor(); i++) {
+            integers.push_back(i);
+        }
+    }
+
+    bool Interval::isPoint() const {
+        return lower == upper;
+    }
+
+    bool Interval::isEmpty() const {
+        return lower > upper || (lower == upper && (!leftClosed || !rightClosed));
+    }
+
+    Number Interval::width() const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        return upper - lower;
+    }
+
+    bool Interval::contains(const Number& value) const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        return lower <= value && value <= upper;
+    }
+
+    bool Interval::isSubsetOf(const Interval& other) const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        // subset requirement:
+        // 1. A.lower >= B.lower, if A.lower == B.lower, then A.leftClosed <= B.leftClosed
+        // 2. A.upper <= B.upper, if A.upper == B.upper, then A.rightClosed <= B.rightClosed
+        return (lower > other.lower || (lower == other.lower && (!leftClosed || other.leftClosed))) &&
+               (upper < other.upper || (upper == other.upper && (!rightClosed || other.rightClosed)));
+    }
+
+    bool Interval::isSupersetOf(const Interval& other) const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        // superset requirement:
+        // 1. A.lower <= B.lower, if A.lower == B.lower, then A.leftClosed >= B.leftClosed
+        // 2. A.upper >= B.upper, if A.upper == B.upper, then A.rightClosed >= B.rightClosed
+        return (lower < other.lower || (lower == other.lower && (leftClosed || !other.leftClosed))) &&
+               (upper > other.upper || (upper == other.upper && (rightClosed || !other.rightClosed)));
+    }
+
+    bool Interval::isDisjointFrom(const Interval& other) const {
+        if(isEmpty() || other.isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        // disjoint requirement:
+        // 1. A.upper < B.lower, or 
+        // 2. A.upper = B.lower, but at least one is open
+        // 3. B.upper < A.lower, or
+        // 4. B.upper = A.lower, but at least one is open
+        return upper < other.lower || 
+               (upper == other.lower && (!rightClosed || !other.leftClosed)) ||
+               lower > other.upper || 
+               (lower == other.upper && (!leftClosed || !other.rightClosed));
+    }
+
+    bool Interval::isIntersectingWith(const Interval& other) const {
+        if(isEmpty() || other.isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        // intersecting requirement: not disjoint
+        return !isDisjointFrom(other);
+    }
+
+    Interval Interval::intersection(const Interval& other) const {
+        if(isEmpty() || other.isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        Number low = std::max(lower, other.lower);
+        Number high = std::min(upper, other.upper);
+        bool newLeftClosed = (lower < other.lower) ? other.leftClosed : 
+                             (lower > other.lower) ? leftClosed : 
+                             leftClosed && other.leftClosed;
+        bool newRightClosed = (upper > other.upper) ? other.rightClosed : 
+                              (upper < other.upper) ? rightClosed : 
+                              rightClosed && other.rightClosed;
+        return Interval(low, high, newLeftClosed, newRightClosed);
+    }
+
+    Interval Interval::unionWith(const Interval& other) const {
+        if(isEmpty() || other.isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        if(isDisjointFrom(other)) {
+            throw std::invalid_argument("Intervals are disjoint");
+        }
+        
+        // take the smaller lower bound, if equal, take the or of the left closedness
+        Number newLower = std::min(lower, other.lower);
+        bool newLeftClosed = (lower < other.lower) ? leftClosed : 
+                            (other.lower < lower) ? other.leftClosed :
+                            (leftClosed || other.leftClosed);
+        
+        // take the larger upper bound, if equal, take the or of the right closedness
+        Number newUpper = std::max(upper, other.upper);
+        bool newRightClosed = (upper > other.upper) ? rightClosed : 
+                             (other.upper > upper) ? other.rightClosed :
+                             (rightClosed || other.rightClosed);
+        
+        return Interval(newLower, newUpper, newLeftClosed, newRightClosed);
+    }
+
+    bool Interval::isSubsetEqOf(const Interval& other) const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        // subset requirement: all elements in A are in B
+        return lower >= other.lower && upper <= other.upper &&
+               (other.leftClosed || lower > other.lower || !leftClosed) &&
+               (other.rightClosed || upper < other.upper || !rightClosed);
+    }
+
+    size_t Interval::getIntervalIntCount() const {
+        if(isEmpty()) return 0;
+        if(isPoint() && lower.isInteger()) return 1;
+        
+        if(leftClosed && rightClosed) {
+            return static_cast<size_t>((upper.floor() - lower.ceil() + Number(1)).toInteger().toULong());
+        }
+        else if(leftClosed && !rightClosed) {
+            return static_cast<size_t>((upper.floor() - lower.ceil()).toInteger().toULong());
+        }
+        else if(!leftClosed && rightClosed) {
+            return static_cast<size_t>((upper.floor() - lower.ceil()).toInteger().toULong());
+        }
+        else {
+            // open interval
+            return static_cast<size_t>((upper.floor() - lower.ceil() - Number(1)).toInteger().toULong());
+        }
+    }
+
+    std::vector<Interval> Interval::difference(const Interval& other) const {
+        // if the intervals are disjoint, return A
+        if(isDisjointFrom(other)) {
+            return {*this};
+        }
+        
+        // if B is completely contained in A, return empty set
+        if(isSupersetOf(other)) {
+            return {};
+        }
+        
+        std::vector<Interval> result;
+        
+        // if B is inside A, split A into two intervals
+        if(isSubsetOf(other)) {
+            
+            // left interval: [a.low, b.low)
+            bool rightClosed = !other.leftClosed;
+            result.push_back(Interval(lower, other.lower, leftClosed, rightClosed));
+            
+            // right interval: (b.high, a.high]
+            bool leftClosed = !other.rightClosed;
+            result.push_back(Interval(other.upper, upper, leftClosed, rightClosed));
+            
+            return result;
+        }
+        
+        // if B covers part of A from the left
+        if((other.lower <= lower || (other.lower == lower && other.leftClosed >= leftClosed)) &&
+           (other.upper < upper || (other.upper == upper && !other.rightClosed && rightClosed))) {
+            
+            // right remaining part: (b.high, a.high]
+            bool leftClosed = !other.rightClosed;
+            result.push_back(Interval(other.upper, upper, leftClosed, rightClosed));
+            
+            return result;
+        }
+        
+        // if B covers part of A from the right
+        if((other.lower > lower || (other.lower == lower && !other.leftClosed && leftClosed)) &&
+           (other.upper >= upper || (other.upper == upper && other.rightClosed >= rightClosed))) {
+            
+            // left remaining part: [a.low, b.low)
+            bool rightClosed = !other.leftClosed;
+            result.push_back(Interval(lower, other.lower, leftClosed, rightClosed));
+            
+            return result;
+        }
+        
+        // theoretically should not reach here, but return empty set for safety
+        return {};
+    }
+
+    std::vector<Interval> Interval::unionMulti(const std::vector<Interval>& intervals) {
+        if(intervals.empty()) return {};
+        if(intervals.size() == 1) return {intervals[0]};
+        
+        // sort the intervals by the lower bound
+        std::vector<Interval> sortedIntervals = intervals;
+        std::sort(sortedIntervals.begin(), sortedIntervals.end(), 
+                  [](const Interval& a, const Interval& b) { 
+                      return a.lower < b.lower || (a.lower == b.lower && a.leftClosed > b.leftClosed); 
+                  });
+        
+        std::vector<Interval> result;
+        Interval current = sortedIntervals[0];
+        
+        for(size_t i = 1; i < sortedIntervals.size(); ++i) {
+            // check if the current interval intersects with the next interval
+            bool intersectOrAdjacent = !current.isDisjointFrom(sortedIntervals[i]);
+            
+            if(intersectOrAdjacent) {
+                // if they intersect or are adjacent, merge the intervals
+                current = Interval(
+                    std::min(current.lower, sortedIntervals[i].lower),
+                    std::max(current.upper, sortedIntervals[i].upper),
+                    (current.lower < sortedIntervals[i].lower) ? current.leftClosed : 
+                    (sortedIntervals[i].lower < current.lower) ? sortedIntervals[i].leftClosed :
+                    (current.leftClosed || sortedIntervals[i].leftClosed),
+                    (current.upper > sortedIntervals[i].upper) ? current.rightClosed : 
+                    (sortedIntervals[i].upper > current.upper) ? sortedIntervals[i].rightClosed :
+                    (current.rightClosed || sortedIntervals[i].rightClosed)
+                );
+            } else {
+                // if they are disjoint, add the current interval to the result, and update the current interval to the next interval
+                result.push_back(current);
+                current = sortedIntervals[i];
+            }
+        }
+        
+        // add the last interval
+        result.push_back(current);
+        
+        return result;
+    }
+
+    
+    Interval Interval::operator++() const {
+        return Interval(lower + 1, upper + 1, leftClosed, rightClosed);
+    }
+    Interval Interval::operator--() const {
+        return Interval(lower - 1, upper - 1, leftClosed, rightClosed);
+    }
+    Interval Interval::operator-() const {
+        return Interval(-upper, -lower, rightClosed, leftClosed);
+    }
+    Interval Interval::operator+() const {
+        return *this;
+    }
+    Interval Interval::operator~() const {
+        return Interval(-upper, -lower, rightClosed, leftClosed);
+    }
+    Interval Interval::operator!() const {
+        return Interval(-upper, -lower, rightClosed, leftClosed);
+    }
+    Interval Interval::operator--(int) const {
+        return Interval(lower - 1, upper - 1, leftClosed, rightClosed);
+    }
+    Interval Interval::negate() const {
+        return Interval(-upper, -lower, rightClosed, leftClosed);
+    }
+    Interval Interval::abs() const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        if(lower >= 0) {
+            // [a,b] with a ≥ 0 -> [a,b]
+            return *this;
+        } else if(upper <= 0) {
+            // [a,b] with b ≤ 0 -> [-b,-a]
+            return Interval(-upper, -lower, rightClosed, leftClosed);
+        } else {
+            // [a,b] with a < 0 < b -> [0,max(|a|,|b|)]
+            Number maxAbs = std::max(-lower, upper);
+            return Interval(Number(0), maxAbs, true, (maxAbs == -lower) ? leftClosed : rightClosed);
+        }
+    }
+    Interval Interval::lb() const {
+        // log base 2
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        return Interval(lower.lb(), upper.lb(), leftClosed, rightClosed);
+    }
+    Interval Interval::ln() const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        return Interval(lower.ln(), upper.ln(), leftClosed, rightClosed);
+    }
+    Interval Interval::lg() const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        return Interval(lower.lg(), upper.lg(), leftClosed, rightClosed);
+    }
+    Interval Interval::exp() const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        return Interval(lower.exp(), upper.exp(), leftClosed, rightClosed);
+    }
+
+    Interval Interval::sqrt() const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        if(lower < 0) {
+            throw std::domain_error("Cannot compute square root of interval containing negative numbers");
+        }
+        return Interval(lower.sqrt(), upper.sqrt(), leftClosed, rightClosed);
+    }
+
+    Interval Interval::safesqrt() const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        Number newLower = (lower < 0) ? Number(0) : lower;
+        return Interval(newLower.sqrt(), upper.sqrt(), leftClosed, rightClosed);
+    }
+
+    Interval Interval::sin() const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        
+        // define the period
+        const Number TWO_PI = Number(2) * Number::pi();
+        
+        // check if the interval covers the whole period
+        if((upper - lower) >= TWO_PI) {
+            return Interval(Number(-1), Number(1), true, true); // full range [-1, 1]
+        }
+        
+        // normalize to [0, 2π)
+        Number factor = (lower / TWO_PI).floor();
+        Number lowNorm = lower - factor * TWO_PI;
+        if(lowNorm < Number(0)) lowNorm += TWO_PI;
+        
+        factor = (upper / TWO_PI).floor();
+        Number highNorm = upper - factor * TWO_PI;
+        if(highNorm < Number(0)) highNorm += TWO_PI;
+        
+        // if the interval crosses the period boundary
+        if(highNorm < lowNorm) {
+            highNorm += TWO_PI;
+        }
+        
+        // calculate the endpoint values
+        Number sinLow = lowNorm.sin();
+        Number sinHigh = highNorm.sin();
+        
+        Number minVal = std::min(sinLow, sinHigh);
+        Number maxVal = std::max(sinLow, sinHigh);
+        bool newLeftClosed = sinLow < sinHigh ? leftClosed : rightClosed;
+        bool newRightClosed = sinLow < sinHigh ? rightClosed : leftClosed;
+        
+        // check if the interval passes the extreme points π/2 or 3π/2
+        Number PI_HALF = Number::pi() / Number(2);
+        Number THREE_PI_HALF = Number(3) * Number::pi() / Number(2);
+        
+        // check if the interval contains π/2 (sine maximum is 1)
+        if((lowNorm <= PI_HALF && highNorm >= PI_HALF) ||
+           (lowNorm <= PI_HALF + TWO_PI && highNorm >= PI_HALF + TWO_PI)) {
+            maxVal = Number(1);
+            newLeftClosed = true;
+        }
+        
+        // check if the interval contains 3π/2 (sine minimum is -1)
+        if((lowNorm <= THREE_PI_HALF && highNorm >= THREE_PI_HALF) ||
+           (lowNorm <= THREE_PI_HALF + TWO_PI && highNorm >= THREE_PI_HALF + TWO_PI)) {
+            minVal = Number(-1);
+            newRightClosed = true;
+        }
+        
+        // ensure that the interval does not exceed the range of the sine function [-1, 1]
+        minVal = std::max(minVal, Number(-1));
+        maxVal = std::min(maxVal, Number(1));
+        
+        return Interval(minVal, maxVal, newLeftClosed, newRightClosed);
+    }
+
+    Interval Interval::cos() const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        
+        // define the period
+        const Number TWO_PI = Number(2) * Number::pi();
+        
+        // check if the interval covers the whole period
+        if((upper - lower) >= TWO_PI) {
+            return Interval(Number(-1), Number(1), true, true); // full range [-1, 1]
+        }
+        
+        // normalize to [0, 2π)
+        Number factor = (lower / TWO_PI).floor();
+        Number lowNorm = lower - factor * TWO_PI;
+        if(lowNorm < Number(0)) lowNorm += TWO_PI;
+        
+        factor = (upper / TWO_PI).floor();
+        Number highNorm = upper - factor * TWO_PI;
+        if(highNorm < Number(0)) highNorm += TWO_PI;
+
+        // if the interval crosses the period boundary
+        if(highNorm < lowNorm) {
+            highNorm += TWO_PI;
+        }
+        
+        // calculate the endpoint values
+        Number cosLow = lowNorm.cos();
+        Number cosHigh = highNorm.cos();
+        
+        Number minVal = std::min(cosLow, cosHigh);
+        Number maxVal = std::max(cosLow, cosHigh);
+        
+        bool newLeftClosed = cosLow < cosHigh ? leftClosed : rightClosed;
+        bool newRightClosed = cosLow < cosHigh ? rightClosed : leftClosed;
+        
+        // check if the interval passes the extreme points 0 or π
+        Number ZERO = Number(0);
+        Number PI = Number::pi();
+        
+        // check if the interval contains 0 (cosine maximum is 1)
+        if((lowNorm <= ZERO && highNorm >= ZERO) ||
+           (lowNorm <= ZERO + TWO_PI && highNorm >= ZERO + TWO_PI)) {
+            maxVal = Number(1);
+            newLeftClosed = true;
+        }
+        
+        // check if the interval contains π (cosine minimum is -1)
+        if((lowNorm <= PI && highNorm >= PI) ||
+           (lowNorm <= PI + TWO_PI && highNorm >= PI + TWO_PI)) {
+            minVal = Number(-1);
+            newRightClosed = true;
+        }
+        
+        // ensure that the interval does not exceed the range of the cosine function [-1, 1]
+        minVal = std::max(minVal, Number(-1));
+        maxVal = std::min(maxVal, Number(1));
+        
+        return Interval(minVal, maxVal, newLeftClosed, newRightClosed);
+    }
+
+    Interval Interval::tan() const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        
+        // define the constants
+        const Number PI_HALF = Number::pi() / Number(2);
+        const Number PI = Number::pi();
+        
+        // normalize to [-π/2, π/2)
+        Number factor = (lower / PI).floor();
+        Number lowMod = lower - factor * PI;
+        if(lowMod < -PI_HALF) lowMod += PI;
+        if(lowMod >= PI_HALF) lowMod -= PI;
+        
+        factor = (upper / PI).floor();
+        Number highMod = upper - factor * PI;
+        if(highMod < -PI_HALF) highMod += PI;
+        if(highMod >= PI_HALF) highMod -= PI;
+        
+        // check if the interval contains odd multiples of π/2 (tangent singularities)
+        if((lowMod <= -PI_HALF && highMod >= -PI_HALF) ||
+           (lowMod <= PI_HALF && highMod >= PI_HALF)) {
+            // return infinite interval (tangent is unbounded)
+            return Interval(Number::negativeInfinity(), Number::positiveInfinity(), false, false);
+        }
+        
+        // calculate the tangent values at the endpoints
+        Number tanLow = lower.tan();
+        Number tanHigh = upper.tan();
+
+        bool newLeftClosed = leftClosed;
+        bool newRightClosed = rightClosed;
+        
+        if(tanLow > tanHigh) {
+            std::swap(tanLow, tanHigh);
+            std::swap(newLeftClosed, newRightClosed);
+        }
+        return Interval(tanLow, tanHigh, newLeftClosed, newRightClosed);
+    }
+
+    Interval Interval::cot() const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        
+        // cotangent function is the reciprocal of tangent function
+        Interval tanInterval = this->tan();
+        
+        // if the tan interval contains 0, the cotangent function has singularities
+        if(tanInterval.contains(Number(0))) {
+            return Interval(Number::negativeInfinity(), Number::positiveInfinity(), false, false);
+        }
+        
+        // cotangent function cot(x) = 1/tan(x)
+        Number cotLow = Number(1) / tanInterval.getUpper();
+        Number cotHigh = Number(1) / tanInterval.getLower();
+        bool newLeftClosed = leftClosed;
+        bool newRightClosed = rightClosed;
+        if(cotLow > cotHigh) {
+            std::swap(cotLow, cotHigh);
+            std::swap(newLeftClosed, newRightClosed);
+        }
+        
+        return Interval(cotLow, cotHigh, newLeftClosed, newRightClosed);
+    }
+
+    Interval Interval::sec() const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        
+        // secant function is the reciprocal of cosine function
+        Interval cosInterval = this->cos();
+        
+        // if the cos interval contains 0, the secant function has singularities
+        if(cosInterval.contains(Number(0))) {
+            return Interval(Number::negativeInfinity(), Number::positiveInfinity(), false, false);
+        }
+        
+        // secant function sec(x) = 1/cos(x)
+        Number secLow = Number(1) / cosInterval.getUpper();
+        Number secHigh = Number(1) / cosInterval.getLower();
+        bool newLeftClosed = leftClosed;
+        bool newRightClosed = rightClosed;
+        if(secLow > secHigh) {
+            std::swap(secLow, secHigh);
+            std::swap(newLeftClosed, newRightClosed);
+        }
+        
+        return Interval(secLow, secHigh, newLeftClosed, newRightClosed);
+    }
+
+    Interval Interval::csc() const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        
+        // cosecant function is the reciprocal of sine function
+        Interval sinInterval = this->sin();
+        
+        // if the sin interval contains 0, the cosecant function has singularities
+        if(sinInterval.contains(Number(0))) {
+            return Interval(Number::negativeInfinity(), Number::positiveInfinity(), false, false);
+        }
+        
+        // cosecant function csc(x) = 1/sin(x)
+        Number cscLow = Number(1) / sinInterval.getUpper();
+        Number cscHigh = Number(1) / sinInterval.getLower();
+        bool newLeftClosed = leftClosed;
+        bool newRightClosed = rightClosed;
+        if(cscLow > cscHigh) {
+            std::swap(cscLow, cscHigh);
+            std::swap(newLeftClosed, newRightClosed);
+        }
+        
+        return Interval(cscLow, cscHigh, newLeftClosed, newRightClosed);
+    }
+
+    Interval Interval::asin() const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        
+        // asin function domain is [-1, 1]
+        if(lower < Number(-1) || upper > Number(1)) {
+            throw std::domain_error("Argument for asin must be in range [-1, 1]");
+        }
+        
+        // asin function is monotonically increasing
+        Number asinLow = lower.asin();
+        Number asinHigh = upper.asin();
+        
+        return Interval(asinLow, asinHigh, leftClosed, rightClosed);
+    }
+
+    Interval Interval::acos() const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        
+        // acos function domain is [-1, 1]
+        if(lower < Number(-1) || upper > Number(1)) {
+            throw std::domain_error("Argument for acos must be in range [-1, 1]");
+        }
+        
+        // acos function is monotonically decreasing
+        Number acosLow = upper.acos();
+        Number acosHigh = lower.acos();
+        
+        return Interval(acosLow, acosHigh, rightClosed, leftClosed);
+    }
+
+    Interval Interval::atan() const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        
+        // atan function is monotonically increasing, domain is the whole real number set
+        Number atanLow = lower.atan();
+        Number atanHigh = upper.atan();
+        
+        return Interval(atanLow, atanHigh, leftClosed, rightClosed);
+    }
+
+    Interval Interval::acot() const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        
+        // acot function is monotonically decreasing, domain is the whole real number set
+        // acot(x) = π/2 - atan(x)
+        Number acotLow = Number::pi() / Number(2) - upper.atan();
+        Number acotHigh = Number::pi() / Number(2) - lower.atan();
+        
+        return Interval(acotLow, acotHigh, rightClosed, leftClosed);
+    }
+
+    Interval Interval::asec() const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        
+        // asec function domain is (-∞, -1] ∪ [1, ∞)
+        if(lower > Number(-1) && upper < Number(1)) {
+            throw std::domain_error("Argument for asec must be outside range (-1, 1)");
+        }
+        
+        // handle special case: interval crosses -1 or 1
+        if(lower <= Number(-1) && upper >= Number(1)) {
+            // return possible entire value range
+            return Interval(Number(0), Number::pi(), true, true);
+        }
+        
+        Number asecLow, asecHigh;
+        bool newLeftClosed = leftClosed;
+        bool newRightClosed = rightClosed;
+        
+        if(upper <= Number(-1)) {
+            // interval on the negative half axis
+            asecLow = upper.asec();
+            asecHigh = lower.asec();
+            std::swap(newLeftClosed, newRightClosed);
+        } else {
+            // interval on the positive half axis
+            asecLow = lower.asec();
+            asecHigh = upper.asec();
+        }
+        
+        return Interval(asecLow, asecHigh, newLeftClosed, newRightClosed);
+    }
+
+    Interval Interval::acsc() const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        
+        // acsc function domain is (-∞, -1] ∪ [1, ∞)
+        if(lower > Number(-1) && upper < Number(1)) {
+            throw std::domain_error("Argument for acsc must be outside range (-1, 1)");
+        }
+        
+        // handle special case: interval crosses -1 or 1
+        if(lower <= Number(-1) && upper >= Number(1)) {
+            // return possible entire value range
+            return Interval(-Number::pi() / Number(2), Number::pi() / Number(2), true, true);
+        }
+        
+        Number acscLow, acscHigh;
+        bool newLeftClosed = leftClosed;
+        bool newRightClosed = rightClosed;
+        
+        if(upper <= Number(-1)) {
+            // interval on the negative half axis
+            acscLow = upper.acsc();
+            acscHigh = lower.acsc();
+            std::swap(newLeftClosed, newRightClosed);
+        } else {
+            // interval on the positive half axis
+            acscLow = lower.acsc();
+            acscHigh = upper.acsc();
+        }
+        
+        return Interval(acscLow, acscHigh, newLeftClosed, newRightClosed);
+    }
+    
+    Interval Interval::sinh() const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        
+        // sinh function is monotonically increasing
+        Number sinhLow = lower.sinh();
+        Number sinhHigh = upper.sinh();
+        
+        return Interval(sinhLow, sinhHigh, leftClosed, rightClosed);
+    }
+    
+    Interval Interval::cosh() const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        
+        // cosh function is monotonically increasing, value range is [1, ∞)
+        if(lower <= Number(0) && upper >= Number(0)) {
+            // interval contains 0 point
+            Number absLower = lower.abs();
+            Number absUpper = upper.abs();
+            Number maxAbs = std::max(absLower, absUpper);
+            bool newRightClosed = absLower > absUpper ? leftClosed : rightClosed;
+            return Interval(Number(1), maxAbs.cosh(), true, newRightClosed);
+        } else if(upper < Number(0)) {
+            // interval on the negative half axis
+            return Interval(upper.cosh(), lower.cosh(), rightClosed, leftClosed);
+        } else {
+            // interval on the positive half axis
+            return Interval(lower.cosh(), upper.cosh(), leftClosed, rightClosed);
+        }
+    }
+    
+    Interval Interval::tanh() const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        
+        // tanh function is monotonically increasing, value range is (-1, 1)
+        Number tanhLow = lower.tanh();
+        Number tanhHigh = upper.tanh();
+        
+        return Interval(tanhLow, tanhHigh, leftClosed, rightClosed);
+    }
+    
+    Interval Interval::coth() const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        
+        // coth function has singularities at 0
+        if(lower <= Number(0) && upper >= Number(0)) {
+            return Interval(Number::negativeInfinity(), Number::positiveInfinity(), false, false);
+        }
+        
+        // coth function coth(x) = 1/tanh(x)
+        Number cothLow = Number(1) / upper.tanh();
+        Number cothHigh = Number(1) / lower.tanh();
+        
+        return Interval(cothLow, cothHigh, rightClosed, leftClosed);
+    }
+    
+    Interval Interval::sech() const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        
+        // sech function sech(x) = 1/cosh(x)
+        Interval coshInterval = this->cosh();
+        
+        // sech function value range is (0, 1], maximum value is 1 at 0
+        Number sechLow = Number(1) / coshInterval.getUpper();
+        Number sechHigh = Number(1) / coshInterval.getLower();
+        
+        return Interval(sechLow, sechHigh, coshInterval.isRightClosed(), coshInterval.isLeftClosed());
+    }
+    
+    Interval Interval::csch() const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        
+        // csch function has singularities at 0
+        if(lower <= Number(0) && upper >= Number(0)) {
+            return Interval(Number::negativeInfinity(), Number::positiveInfinity(), false, false);
+        }
+        
+        // csch function csch(x) = 1/sinh(x)
+        Number cschLow = Number(1) / upper.sinh();
+        Number cschHigh = Number(1) / lower.sinh();
+        
+        return Interval(cschLow, cschHigh, rightClosed, leftClosed);
+    }
+    
+    Interval Interval::asinh() const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        
+        // asinh function is monotonically increasing, domain is the whole real number set
+        Number asinhLow = lower.asinh();
+        Number asinhHigh = upper.asinh();
+        
+        return Interval(asinhLow, asinhHigh, leftClosed, rightClosed);
+    }
+    
+    Interval Interval::acosh() const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        
+        // acosh function domain is [1, ∞)
+        if(lower < Number(1)) {
+            throw std::domain_error("Argument for acosh must be >= 1");
+        }
+        
+        // acosh function is monotonically increasing
+        Number acoshLow = lower.acosh();
+        Number acoshHigh = upper.acosh();
+        
+        return Interval(acoshLow, acoshHigh, leftClosed, rightClosed);
+    }
+    
+    Interval Interval::atanh() const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        
+        // atanh function domain is (-1, 1)
+        if(lower <= Number(-1) || upper >= Number(1)) {
+            throw std::domain_error("Argument for atanh must be in range (-1, 1)");
+        }
+        
+        // atanh function is monotonically increasing
+        Number atanhLow = lower.atanh();
+        Number atanhHigh = upper.atanh();
+        
+        return Interval(atanhLow, atanhHigh, leftClosed, rightClosed);
+    }
+    
+    Interval Interval::acoth() const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        
+        // acoth function domain is (-∞, -1) ∪ (1, ∞)
+        if(lower >= Number(-1) && upper <= Number(1)) {
+            throw std::domain_error("Argument for acoth must be outside range [-1, 1]");
+        }
+        
+        // acoth function acoth(x) = atanh(1/x)
+        Number acothLow, acothHigh;
+        bool newLeftClosed = leftClosed;
+        bool newRightClosed = rightClosed;
+        
+        if(upper < Number(-1)) {
+            // interval on the negative half axis
+            acothLow = upper.acoth();
+            acothHigh = lower.acoth();
+            std::swap(newLeftClosed, newRightClosed);
+        } else if(lower > Number(1)) {
+            // interval on the positive half axis
+            acothLow = lower.acoth();
+            acothHigh = upper.acoth();
+        } else {
+            // interval crosses zero, result cannot be represented by a single interval
+            throw std::domain_error("Interval crosses zero, acoth not defined");
+        }
+        
+        return Interval(acothLow, acothHigh, newLeftClosed, newRightClosed);
+    }
+    
+    Interval Interval::asech() const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        
+        // asech function domain is (0, 1]
+        if(lower <= Number(0) || upper > Number(1)) {
+            throw std::domain_error("Argument for asech must be in range (0, 1]");
+        }
+        
+        // asech function is monotonically decreasing
+        Number asechLow = upper.asech();
+        Number asechHigh = lower.asech();
+        
+        return Interval(asechLow, asechHigh, rightClosed, leftClosed);
+    }
+    
+    Interval Interval::acsch() const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        
+        // acsch function domain is R\{0}
+        if(lower <= Number(0) && upper >= Number(0)) {
+            throw std::domain_error("Argument for acsch cannot be 0");
+        }
+        
+        // acsch function is monotonically decreasing
+        Number acschLow, acschHigh;
+        bool newLeftClosed = leftClosed;
+        bool newRightClosed = rightClosed;
+        
+        if(upper < Number(0)) {
+            // interval on the negative half axis
+            acschLow = upper.acsch();
+            acschHigh = lower.acsch();
+            std::swap(newLeftClosed, newRightClosed);
+        } else {
+            // interval on the positive half axis
+            acschLow = upper.acsch();
+            acschHigh = lower.acsch();
+            std::swap(newLeftClosed, newRightClosed);
+        }
+        
+        return Interval(acschLow, acschHigh, newLeftClosed, newRightClosed);
+    }
+
+
+    Interval Interval::operator+(const Number& value) const {
+        return Interval(lower + value, upper + value, leftClosed, rightClosed);
+    }
+
+    Interval Interval::operator-(const Number& value) const {
+        return Interval(lower - value, upper - value, leftClosed, rightClosed);
+    }
+
+    Interval Interval::operator*(const Number& value) const {
+        if(value >= 0) {
+            return Interval(lower * value, upper * value, leftClosed, rightClosed);
+        } else {
+            return Interval(upper * value, lower * value, rightClosed, leftClosed);
+        }
+    }
+    Interval Interval::operator/(const Number& value) const {
+        if(value == 0) {
+            throw std::domain_error("Division by zero");
+        }
+        if(value > 0) {
+            return Interval(lower / value, upper / value, leftClosed, rightClosed);
+        } else {
+            return Interval(upper / value, lower / value, rightClosed, leftClosed);
+        }
+    }
+
+    Interval Interval::operator+(const Interval& other) const {
+        return Interval(lower + other.lower, upper + other.upper, leftClosed && other.leftClosed, rightClosed && other.rightClosed);
+    }
+
+    Interval Interval::operator-(const Interval& other) const {
+        return Interval(lower - other.upper, upper - other.lower, leftClosed && other.rightClosed, rightClosed && other.leftClosed);
+    }
+
+    Interval Interval::operator*(const Interval& other) const {
+        Number p1 = lower * other.lower;
+        Number p2 = lower * other.upper;
+        Number p3 = upper * other.lower;
+        Number p4 = upper * other.upper;
+        
+        Number newLower = std::min({p1, p2, p3, p4});
+        Number newUpper = std::max({p1, p2, p3, p4});
+        bool newLeftClosed = false;
+        bool newRightClosed = false;
+        if(p1 == newLower) {
+            newLeftClosed = leftClosed && other.leftClosed;
+        }
+        else if(p2 == newLower) {
+            newLeftClosed = leftClosed && other.rightClosed;
+        }
+        else if(p3 == newLower) {
+            newLeftClosed = rightClosed && other.leftClosed;
+        }
+        else if(p4 == newLower) {
+            newLeftClosed = rightClosed && other.rightClosed;
+        }
+
+        if(p1 == newUpper) {
+            newRightClosed = leftClosed && other.leftClosed;
+        }
+        else if(p2 == newUpper) {
+            newRightClosed = leftClosed && other.rightClosed;
+        }
+        else if(p3 == newUpper) {
+            newRightClosed = rightClosed && other.leftClosed;
+        }
+        else if(p4 == newUpper) {
+            newRightClosed = rightClosed && other.rightClosed;
+        }
+        
+        return Interval(newLower, newUpper, newLeftClosed, newRightClosed);
+    }
+
+    Interval Interval::add(const Number& value) const {
+        return *this + value;
+    }
+
+    Interval Interval::add(const Interval& other) const {
+        return *this + other;
+    }
+
+    Interval Interval::sub(const Number& value) const {
+        return *this - value;
+    }
+
+    Interval Interval::sub(const Interval& other) const {
+        return *this - other;
+    }
+
+    Interval Interval::mul(const Number& value) const {
+        return *this * value;
+    }
+
+    Interval Interval::mul(const Interval& other) const {
+        return *this * other;
+    }
+
+    Number Interval::getLower() const {
+        return lower;
+    }
+
+    Number Interval::getUpper() const {
+        return upper;
+    }
+
+    bool Interval::isLeftClosed() const {
+        return leftClosed;
+    }
+
+    bool Interval::isRightClosed() const {
+        return rightClosed;
+    }
+
+    Interval Interval::divReal(const Number& value) const {
+        if(value == 0) {
+            throw std::domain_error("Division by zero");
+        }
+        if(value > 0) {
+            return Interval(lower / value, upper / value, leftClosed, rightClosed);
+        } else {
+            return Interval(upper / value, lower / value, rightClosed, leftClosed);
+        }
+    }
+
+    Interval Interval::divReal(const Interval& other) const {
+        // if the divisor interval contains 0, the result is undefined
+        if((other.lower < 0 && other.upper > 0) ||
+           (other.lower == 0 && other.leftClosed) ||
+           (other.upper == 0 && other.rightClosed)) {
+            throw std::domain_error("Division by interval containing zero");
+        }
+        
+        Number p1 = lower / other.lower;
+        Number p2 = lower / other.upper;
+        Number p3 = upper / other.lower;
+        Number p4 = upper / other.upper;
+        Number newLower = std::min({p1, p2, p3, p4});
+        Number newUpper = std::max({p1, p2, p3, p4});
+        bool newLeftClosed = false;
+        bool newRightClosed = false;
+        if(p1 == newLower) {
+            newLeftClosed = leftClosed && other.leftClosed;
+        }
+        else if(p2 == newLower) {
+            newLeftClosed = leftClosed && other.rightClosed;
+        }
+        else if(p3 == newLower) {
+            newLeftClosed = rightClosed && other.leftClosed;
+        }
+        else if(p4 == newLower) {
+            newLeftClosed = rightClosed && other.rightClosed;
+        }
+
+        if(p1 == newUpper) {
+            newRightClosed = leftClosed && other.leftClosed;
+        }
+        else if(p2 == newUpper) {
+            newRightClosed = leftClosed && other.rightClosed;
+        }
+        else if(p3 == newUpper) {
+            newRightClosed = rightClosed && other.leftClosed;
+        }
+        else if(p4 == newUpper) {
+            newRightClosed = rightClosed && other.rightClosed;
+        }
+        
+        return Interval(newLower, newUpper, newLeftClosed, newRightClosed);
+    }
+
+    Interval Interval::divInt(const Number& value) const {
+        if(value == 0) {
+            throw std::domain_error("Division by zero");
+        }
+        // divInt
+        if(value > 0) {
+            return Interval((lower / value).floor(), (upper / value).floor(), leftClosed, rightClosed);
+        } else {
+            return Interval((upper / value).floor(), (lower / value).floor(), rightClosed, leftClosed);
+        }
+    }
+
+    Interval Interval::divInt(const Interval& other) const {
+        // if the divisor interval contains 0, the result is undefined
+        if((other.lower < 0 && other.upper > 0) ||
+           (other.lower == 0 && other.leftClosed) ||
+           (other.upper == 0 && other.rightClosed)) {
+            throw std::domain_error("Division by interval containing zero");
+        }
+        
+        Number p1 = (lower / other.lower).floor();
+        Number p2 = (lower / other.upper).floor();
+        Number p3 = (upper / other.lower).floor();
+        Number p4 = (upper / other.upper).floor();
+        Number newLower = std::min({p1, p2, p3, p4});
+        Number newUpper = std::max({p1, p2, p3, p4});
+        bool newLeftClosed = false;
+        bool newRightClosed = false;
+        if(p1 == newLower) {
+            newLeftClosed = leftClosed && other.leftClosed;
+        }
+        else if(p2 == newLower) {
+            newLeftClosed = leftClosed && other.rightClosed;
+        }
+        else if(p3 == newLower) {
+            newLeftClosed = rightClosed && other.leftClosed;
+        }
+        else if(p4 == newLower) {
+            newLeftClosed = rightClosed && other.rightClosed;
+        }
+
+        if(p1 == newUpper) {
+            newRightClosed = leftClosed && other.leftClosed;
+        }
+        else if(p2 == newUpper) {
+            newRightClosed = leftClosed && other.rightClosed;
+        }
+        else if(p3 == newUpper) {
+            newRightClosed = rightClosed && other.leftClosed;
+        }
+        else if(p4 == newUpper) {
+            newRightClosed = rightClosed && other.rightClosed;
+        }
+        
+        
+        return Interval(newLower, newUpper, newLeftClosed, newRightClosed);
+    }
+
+    Interval Interval::mod(const Number& value) const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        if(value == Number(0)) {
+            throw std::domain_error("Modulo by zero");
+        }
+        else if(value < Number(0)) {
+            throw std::domain_error("Modulo by negative value");
+        }
+        
+        // For modulo operation, the result is usually in the range [0, |value|)
+        Number absValue = value.abs();
+        Number newLower = Number(0);
+        Number newUpper = absValue - Number(1);
+        
+        // Handle boundary conditions based on the original interval
+        bool newLeftClosed = true; // Lower bound is always 0 with closed interval
+        bool newRightClosed = true;
+        
+        // Adjust upper bound if necessary
+        if(newUpper > upper) {
+            newUpper = upper;
+            newRightClosed = rightClosed;
+        }
+        else if(newUpper < lower) {
+            // If modulus is smaller than lower bound of original interval,
+            // take closedness from the lower bound
+            newRightClosed = leftClosed;
+        }
+        
+        return Interval(newLower, newUpper, newLeftClosed, newRightClosed);
+    }
+
+    Interval Interval::mod(const Interval& other) const {
+        if(isEmpty() || other.isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        
+        // Check for zero in divisor interval
+        if((other.lower < Number(0) && other.upper > Number(0)) ||
+           (other.lower == Number(0) && other.leftClosed) ||
+           (other.upper == Number(0) && other.rightClosed)) {
+            throw std::domain_error("Modulo by interval containing zero");
+        }
+        
+        // For negative divisors, convert to positive (|a| mod |b| = a mod b for b > 0)
+        Number absLower = other.lower.abs();
+        Number absUpper = other.upper.abs();
+        
+        // The result of modulo is always in [0, max(|divisor|))
+        Number maxDivisor = std::max(absLower, absUpper);
+        
+        // Conservatively, the result can be anywhere in [0, maxDivisor-1]
+        // A more precise implementation would consider the specific values
+        // in both intervals, but this is a safe approximation
+        Number resultLower = Number(0);
+        Number resultUpper = maxDivisor - Number(1);
+        
+        // Refine the upper bound if the original interval is smaller
+        if(upper < resultUpper) {
+            resultUpper = upper;
+            return Interval(resultLower, resultUpper, true, rightClosed);
+        }
+        
+        return Interval(resultLower, resultUpper, true, true);
+    }
+
+    bool Interval::operator<(const Interval& other) const {
+        if(isEmpty() || other.isEmpty()) {
+            throw std::invalid_argument("Cannot compare empty intervals");
+        }
+        
+        // An interval A is strictly less than interval B if:
+        // The upper bound of A is less than the lower bound of B
+        // Or they touch at a single point but at least one interval is open at that point
+        return upper < other.lower || 
+               (upper == other.lower && (!rightClosed || !other.leftClosed));
+    }
+
+    bool Interval::operator<=(const Interval& other) const {
+        if(isEmpty() || other.isEmpty()) {
+            throw std::invalid_argument("Cannot compare empty intervals");
+        }
+        
+        // A <= B means that it's not true that A > B
+        return !(*this > other);
+    }
+
+    bool Interval::operator>(const Interval& other) const {
+        if(isEmpty() || other.isEmpty()) {
+            throw std::invalid_argument("Cannot compare empty intervals");
+        }
+        
+        // An interval A is strictly greater than interval B if:
+        // The lower bound of A is greater than the upper bound of B
+        // Or they touch at a single point but at least one interval is open at that point
+        return lower > other.upper || 
+               (lower == other.upper && (!leftClosed || !other.rightClosed));
+    }
+
+    bool Interval::operator>=(const Interval& other) const {
+        if(isEmpty() || other.isEmpty()) {
+            throw std::invalid_argument("Cannot compare empty intervals");
+        }
+        
+        // A >= B means that it's not true that A < B
+        return !(*this < other);
+    }
+
+    Interval& Interval::operator+=(const Number& value) {
+        lower += value;
+        upper += value;
+        return *this;
+    }
+
+    Interval& Interval::operator-=(const Number& value) {
+        lower -= value;
+        upper -= value;
+        return *this;
+    }
+
+    Interval& Interval::operator*=(const Number& value) {
+        if(value >= 0) {
+            lower *= value;
+            upper *= value;
+        } else {
+            Number temp = lower;
+            lower = upper * value;
+            upper = temp * value;
+            bool tempClosed = leftClosed;
+            leftClosed = rightClosed;
+            rightClosed = tempClosed;
+        }
+        return *this;
+    }
+
+    Interval& Interval::operator/=(const Number& value) {
+        if(value == 0) {
+            throw std::domain_error("Division by zero");
+        }
+        if(value > 0) {
+            lower /= value;
+            upper /= value;
+        } else {
+            Number temp = lower;
+            lower = upper / value;
+            upper = temp / value;
+            bool tempClosed = leftClosed;
+            leftClosed = rightClosed;
+            rightClosed = tempClosed;
+        }
+        return *this;
+    }
+}

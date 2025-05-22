@@ -1070,6 +1070,68 @@ HighPrecisionReal Number::toReal(mpfr_prec_t precision) const {
     }
 }
 
+Number Number::zero() {
+    return Number(0, false);
+}
+Number Number::one() {
+    return Number(1, false);
+}
+Number Number::infinity() {
+    Number result;
+    mpfr_set_inf(result.realValue.getMPFR(), 1);
+    return result;
+}
+Number Number::negativeInfinity() {
+    Number result;
+    mpfr_set_inf(result.realValue.getMPFR(), -1);
+    return result;
+}
+Number Number::positiveInfinity() {
+    Number result;
+    mpfr_set_inf(result.realValue.getMPFR(), 1);
+    return result;
+}
+bool Number::isZero() const {
+    if(type == INT_TYPE) {
+        return intValue == 0;
+    }
+    return realValue == 0;
+}
+bool Number::isOne() const {
+    if(type == INT_TYPE) {
+        return intValue == 1;
+    }
+    return realValue == 1;
+}
+bool Number::isInfinity() const {
+    if(type == INT_TYPE) {
+        return false;
+    }
+    return mpfr_inf_p(realValue.getMPFR()) != 0;
+}
+
+Number Number::pi(size_t precision) {
+    return Number(HighPrecisionReal::pi(precision));
+}
+Number Number::e(size_t precision) {
+    return Number(HighPrecisionReal::e(precision));
+}
+Number Number::phi(size_t precision) {
+    return Number(HighPrecisionReal::phi(precision));
+}
+Number Number::ln2(size_t precision) {
+    return Number(HighPrecisionReal::ln2(precision));
+}
+Number Number::ln10(size_t precision) {
+    return Number(HighPrecisionReal::ln10(precision));
+}
+Number Number::log2_e(size_t precision) {
+    return Number(HighPrecisionReal::log2_e(precision));
+}
+Number Number::log10_e(size_t precision) {
+    return Number(HighPrecisionReal::log10_e(precision));
+}
+
 // Basic operations
 Number Number::operator+(const Number& other) const {
     // If both are integers, the result is an integer

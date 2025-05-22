@@ -31,6 +31,7 @@
 #include "kind.h"
 #include "sort.h"
 #include "util.h"
+#include "value.h"
 
 #include <iostream>
 #include <fstream>
@@ -54,13 +55,13 @@ namespace SMTLIBParser{
         std::shared_ptr<Sort>                   sort;
         NODE_KIND		                        kind;
         std::string		                        name;
-        Number                                  value;
+        std::shared_ptr<Value>                  value;
         std::vector<std::shared_ptr<DAGNode>>   children;
 
         std::string                             children_hash;
 
     public:
-        DAGNode(std::shared_ptr<Sort> sort, NODE_KIND kind, std::string name, std::vector<std::shared_ptr<DAGNode>> children): sort(sort), kind(kind), name(name), value(Number()), children(children){
+        DAGNode(std::shared_ptr<Sort> sort, NODE_KIND kind, std::string name, std::vector<std::shared_ptr<DAGNode>> children): sort(sort), kind(kind), name(name), value(nullptr), children(children){
             // value is not used for hash
             children_hash = "";
             for(auto& child : children){
@@ -70,78 +71,80 @@ namespace SMTLIBParser{
 
             if(kind == NODE_KIND::NT_CONST){
                 if(isIntUtil(name)){
-                    value = Number(name, true);
+                    value = newValue(Number(name, true));
                 } else if(isRealUtil(name)){
-                    value = Number(name, false);
+                    value = newValue(Number(name, false));
                 } 
+                // TODO for value
             }
         }
-        DAGNode(std::shared_ptr<Sort> sort, NODE_KIND kind, std::string name): sort(sort), kind(kind), name(name), value(Number()) {
+        DAGNode(std::shared_ptr<Sort> sort, NODE_KIND kind, std::string name): sort(sort), kind(kind), name(name), value(nullptr) {
             children_hash = "";
 
             if(kind == NODE_KIND::NT_CONST){
                 if(isIntUtil(name)){
-                    value = Number(name, true);
+                    value = newValue(Number(name, true));
                 } else if(isRealUtil(name)){
-                    value = Number(name, false);
+                    value = newValue(Number(name, false));
                 } 
+                // TODO for value
             }
         }
-        DAGNode(std::shared_ptr<Sort> sort, NODE_KIND kind): sort(sort), kind(kind), name(""), value(Number()) {
+        DAGNode(std::shared_ptr<Sort> sort, NODE_KIND kind): sort(sort), kind(kind), name(""), value(nullptr) {
             children_hash = "";
 
             if(kind == NODE_KIND::NT_CONST){
-                value = Number();
+                value = newValue(Number());
             }
         }
-        DAGNode(std::shared_ptr<Sort> sort): sort(sort), kind(NODE_KIND::NT_UNKNOWN), name(""), value(Number()) {
+        DAGNode(std::shared_ptr<Sort> sort): sort(sort), kind(NODE_KIND::NT_UNKNOWN), name(""), value(nullptr) {
             children_hash = "";
 
             if(kind == NODE_KIND::NT_CONST){
-                value = Number();
+                value = newValue(Number());
             }
         }
-        DAGNode(): sort(NULL_SORT), kind(NODE_KIND::NT_UNKNOWN), name(""), value(Number()), children_hash("") {
+        DAGNode(): sort(NULL_SORT), kind(NODE_KIND::NT_UNKNOWN), name(""), value(nullptr), children_hash("") {
             children_hash = "";
         }
         DAGNode(const DAGNode& other): sort(other.sort), kind(other.kind), name(other.name), value(other.value), children(other.children), children_hash(other.children_hash) {}
 
         // other initialization
-        DAGNode(NODE_KIND kind, std::string name): sort(NULL_SORT), kind(kind), name(name), value(Number()) {
+        DAGNode(NODE_KIND kind, std::string name): sort(NULL_SORT), kind(kind), name(name), value(nullptr) {
             children_hash = "";
 
             if(kind == NODE_KIND::NT_CONST){
                 if(isIntUtil(name)){
-                    value = Number(name, true);
+                    value = newValue(Number(name, true));
                 } else if(isRealUtil(name)){
-                    value = Number(name, false);
+                    value = newValue(Number(name, false));
                 } 
             }
         }
-        DAGNode(NODE_KIND kind): sort(NULL_SORT), kind(kind), name(""), value(Number()) {
+        DAGNode(NODE_KIND kind): sort(NULL_SORT), kind(kind), name(""), value(nullptr) {
             children_hash = "";
 
             if(kind == NODE_KIND::NT_CONST){
-                value = Number();
+                value = newValue(Number());
             }
         }
-        DAGNode(std::shared_ptr<Sort> sort, const Integer& v): sort(sort), kind(NODE_KIND::NT_CONST), name(""), value(v) {
+        DAGNode(std::shared_ptr<Sort> sort, const Integer& v): sort(sort), kind(NODE_KIND::NT_CONST), name(""), value(newValue(v)) {
             children_hash = "";
             name = v.toString();
         }
-        DAGNode(std::shared_ptr<Sort> sort, const Real& v): sort(sort), kind(NODE_KIND::NT_CONST), name(""), value(v) {
+        DAGNode(std::shared_ptr<Sort> sort, const Real& v): sort(sort), kind(NODE_KIND::NT_CONST), name(""), value(newValue(v)) {
             children_hash = "";
             name = v.toString();
         }
-        DAGNode(std::shared_ptr<Sort> sort, const double& v): sort(sort), kind(NODE_KIND::NT_CONST), name(""), value(v) {
+        DAGNode(std::shared_ptr<Sort> sort, const double& v): sort(sort), kind(NODE_KIND::NT_CONST), name(""), value(newValue(v)) {
             children_hash = "";
             name = std::to_string(v);
         }
-        DAGNode(std::shared_ptr<Sort> sort, const int& v): sort(sort), kind(NODE_KIND::NT_CONST), name(""), value(v) {
+        DAGNode(std::shared_ptr<Sort> sort, const int& v): sort(sort), kind(NODE_KIND::NT_CONST), name(""), value(newValue(v)) {
             children_hash = "";
             name = std::to_string(v);
         }
-        DAGNode(std::shared_ptr<Sort> sort, const bool& v): sort(sort), kind(NODE_KIND::NT_CONST), name(""), value(Number()) {
+        DAGNode(std::shared_ptr<Sort> sort, const bool& v): sort(sort), kind(NODE_KIND::NT_CONST), name(""), value(newValue(v)) {
             children_hash = "";
             name = v ? "true" : "false";
         }
@@ -175,11 +178,11 @@ namespace SMTLIBParser{
             } else if(isIntUtil(n)){
                 sort = INT_SORT;
                 kind = NODE_KIND::NT_CONST;
-                value = Number(n, true);
+                value = newValue(Number(n, true));
             } else if(isRealUtil(n)){
                 sort = REAL_SORT;
                 kind = NODE_KIND::NT_CONST;
-                value = Number(n, false);
+                value = newValue(Number(n, false));
             } 
             // else if(isBVUtil(n)){
             //     sort = BV_SORT;
@@ -567,15 +570,25 @@ namespace SMTLIBParser{
          * 
          * @return The value of the node
          */
-        Number getValue()           const { return value; };
+        std::shared_ptr<Value> getValue()           const { return value; };
 
         /**
          * @brief Set the value of the node
          * 
          * @param v The value to set
          */
-        void setValue(Number v)           { value = v; };
+        void setValue(std::shared_ptr<Value> v) { value = v; };
 
+        void setValue(const Integer& v) { value = newValue(v); };
+
+        void setValue(const Real& v) { value = newValue(v); };
+
+        void setValue(const double& v) { value = newValue(v); };
+
+        void setValue(const int& v) { value = newValue(v); };
+
+        void setValue(const Interval& v) { value = newValue(v); };
+        
         /**
          * @brief Get the number of children of the node
          * 

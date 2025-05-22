@@ -249,6 +249,18 @@ namespace SMTLIBParser {
                 UNKNOWN_TYPE // Unknown
             };
 
+            // Constant
+            static Number ZERO;
+            static Number ONE;
+            static Number INFINITY;
+            static Number pi(size_t precision = 128);
+            static Number e(size_t precision = 128);
+            static Number phi(size_t precision = 128);
+            static Number ln2(size_t precision = 128);
+            static Number ln10(size_t precision = 128);
+            static Number log2_e(size_t precision = 128);
+            static Number log10_e(size_t precision = 128);
+
             // Constructor
             Number();                                  // Default constructor, create integer 0
             Number(const HighPrecisionInteger& i);     // Construct from integer
@@ -278,6 +290,16 @@ namespace SMTLIBParser {
             // Type conversion
             HighPrecisionInteger toInteger() const;
             HighPrecisionReal toReal(mpfr_prec_t precision = 128) const;
+
+            // Constants
+            static Number zero();
+            static Number one();
+            static Number infinity();
+            static Number negativeInfinity();
+            static Number positiveInfinity();
+            bool isZero() const;
+            bool isOne() const;
+            bool isInfinity() const;
 
             // Basic operations
             Number operator+(const Number& other) const;

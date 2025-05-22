@@ -138,11 +138,11 @@ namespace SMTLIBParser{
 		cassert(expr->isCReal() || expr->isCInt(), "Cannot convert non-constant expression to real");
 		if(expr->isPi()) return Real::pi(getEvaluatePrecision());
 		if(expr->isE()) return Real::e(getEvaluatePrecision());
-		return expr->getValue().toReal(getEvaluatePrecision());
+		return expr->getValue()->getNumberValue().toReal(getEvaluatePrecision());
 	}
 	Integer Parser::toInt(std::shared_ptr<DAGNode> expr){
 		cassert(expr->isCInt(), "Cannot convert non-integer expression to integer");
-		return expr->getValue().toInteger();
+		return expr->getValue()->getNumberValue().toInteger();
 	}
 	bool Parser::isZero(std::shared_ptr<DAGNode> expr){
 		if(expr->isCReal()) return toReal(expr) == 0.0;
