@@ -1222,6 +1222,34 @@ Number& Number::operator%=(const Number& other) {
     return *this;
 }
 
+
+Number& Number::operator++() {
+    if (type == INT_TYPE) {
+        intValue++;
+    } else {
+        realValue = realValue + 1;
+    }
+    return *this;
+}
+Number Number::operator++(int) {
+    Number temp = *this;
+    operator++();
+    return temp;
+}
+Number& Number::operator--() {
+    if (type == INT_TYPE) {
+        intValue--;
+    } else {
+        realValue = realValue - 1;
+    }
+    return *this;
+}
+Number Number::operator--(int) {
+    Number temp = *this;
+    operator--();
+    return temp;
+}
+
 // Comparison operators
 bool Number::operator==(const Number& other) const {
     if (type == other.type) {
