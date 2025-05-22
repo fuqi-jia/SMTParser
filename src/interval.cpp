@@ -372,6 +372,9 @@ namespace SMTLIBParser{
     Interval Interval::operator!() const {
         return Interval(-upper, -lower, rightClosed, leftClosed);
     }
+    Interval Interval::operator++(int) const {
+        return Interval(lower + 1, upper + 1, leftClosed, rightClosed);
+    }
     Interval Interval::operator--(int) const {
         return Interval(lower - 1, upper - 1, leftClosed, rightClosed);
     }
@@ -1101,6 +1104,10 @@ namespace SMTLIBParser{
         return Interval(newLower, newUpper, newLeftClosed, newRightClosed);
     }
 
+    Interval Interval::operator/(const Interval& other) const {
+        return this->divReal(other);
+    }
+
     Interval Interval::add(const Number& value) const {
         return *this + value;
     }
@@ -1321,6 +1328,264 @@ namespace SMTLIBParser{
         }
         
         return Interval(resultLower, resultUpper, true, true);
+    }
+
+    Interval Interval::operator%(const Interval& other) const {
+        return this->mod(other);
+    }
+
+    Interval Interval::operator%(const Number& value) const {
+        return this->mod(value);
+    }
+
+    Interval Interval::operator^(const Interval& other) const {
+        return this->pow(other);
+    }
+
+    Interval Interval::operator^(const Number& value) const {
+        return this->pow(value);
+    }
+
+    Interval Interval::pow(const Number& exp) const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        
+        // If exp is an integer
+        if(exp.isInteger()) {
+            int n = exp.toInteger().toInt();
+            
+            if(n == 0) {
+                // x^0 = 1 (assuming x != 0)
+                return Interval(Number(1), Number(1), true, true);
+            } else if(n > 0) {
+                if(n % 2 == 0) {
+                    // even power
+                    if(lower >= Number(0)) {
+                        // [0, inf) ^ even = [0, inf)
+                        return Interval(lower.pow(n), upper.pow(n), leftClosed, rightClosed);
+                    } else if(upper <= Number(0)) {
+                        // (-inf, 0] ^ even = [0, inf)
+                        // flip the closedness, because the even power of negative number will reverse the interval direction
+                        return Interval(upper.pow(n), lower.pow(n), rightClosed, leftClosed);
+                    } else {
+                        // the interval crosses zero, the minimum value is at x=0
+                        Number maxVal = std::max(lower.abs().pow(n), upper.abs().pow(n));
+                        return Interval(Number(0), maxVal, true, 
+                           ((lower.abs() > upper.abs()) ? leftClosed : rightClosed));
+                    }
+                } else {
+                    // odd power - monotonically increasing
+                    return Interval(lower.pow(n), upper.pow(n), leftClosed, rightClosed);
+                }
+            } else { // n < 0
+                // negative power - need to handle the case of division by zero
+                if(lower <= Number(0) && upper >= Number(0)) {
+                    // the interval crosses zero - division by zero
+                    throw std::domain_error("Cannot compute negative power of interval containing zero");
+                } else {
+                    // apply x^(-n) = 1/(x^n)
+                    if(n % 2 == 0) {
+                        // even negative power
+                        if(lower > Number(0) || upper < Number(0)) {
+                            // positive or negative base
+                            // for even negative power, the result is always positive
+                            // when the base is positive, the function is monotonically decreasing
+                            if(lower > Number(0)) {
+                                return Interval(upper.pow(n), lower.pow(n), rightClosed, leftClosed);
+                            } 
+                            // when the base is negative, the function is monotonically decreasing
+                            else {
+                                // for negative number, compare the absolute value
+                                return Interval(lower.abs().pow(n), upper.abs().pow(n), leftClosed, rightClosed);
+                            }
+                        }
+                    } else {
+                        // odd negative power
+                        // for odd negative power, the function is monotonically decreasing
+                        // and keep the sign of the original number
+                        return Interval(upper.pow(n), lower.pow(n), rightClosed, leftClosed);
+                    }
+                }
+            }
+        }
+        
+        // non-integer power
+        // only when the base is positive has meaning
+        if(lower > Number(0)) {
+            return Interval(lower.pow(exp), upper.pow(exp), leftClosed, rightClosed);
+        } else if(lower <= Number(0) && exp >= Number(0)) {
+            // if the base contains 0 or negative number, and the exponent is non-negative, then special processing is needed
+            if(upper <= Number(0)) {
+                // if the whole interval is negative, and the exponent is not an integer, the result is undefined
+                throw std::domain_error("Cannot compute non-integer power of negative interval");
+            }
+            // the interval crosses zero, the result starts from 0
+            return Interval(Number(0), upper.pow(exp), true, rightClosed);
+        } else {
+            // for negative number, the non-integer power is undefined
+            throw std::domain_error("Cannot compute non-integer power with negative base");
+        }
+    }
+
+    Interval Interval::pow(const Interval& exp) const {
+        if(isEmpty() || exp.isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        
+        // if the base interval is completely positive
+        if(lower > Number(0)) {
+            // calculate the four corner points
+            Number vals[4] = {
+                lower.pow(exp.getLower()),
+                lower.pow(exp.getUpper()),
+                upper.pow(exp.getLower()),
+                upper.pow(exp.getUpper())
+            };
+            
+            // find the minimum and maximum values
+            Number minVal = std::min({vals[0], vals[1], vals[2], vals[3]});
+            Number maxVal = std::max({vals[0], vals[1], vals[2], vals[3]});
+            
+            // the closedness depends on the relation between the corner points and the boundary values
+            bool newLeftClosed = false, newRightClosed = false;
+            
+            if(minVal == vals[0])
+                newLeftClosed = leftClosed && exp.isLeftClosed();
+            else if(minVal == vals[1])
+                newLeftClosed = leftClosed && exp.isRightClosed();
+            else if(minVal == vals[2])
+                newLeftClosed = rightClosed && exp.isLeftClosed();
+            else if(minVal == vals[3])
+                newLeftClosed = rightClosed && exp.isRightClosed();
+            
+            if(maxVal == vals[0])
+                newRightClosed = leftClosed && exp.isLeftClosed();
+            else if(maxVal == vals[1])
+                newRightClosed = leftClosed && exp.isRightClosed();
+            else if(maxVal == vals[2])
+                newRightClosed = rightClosed && exp.isLeftClosed();
+            else if(maxVal == vals[3])
+                newRightClosed = rightClosed && exp.isRightClosed();
+            
+            return Interval(minVal, maxVal, newLeftClosed, newRightClosed);
+        }
+        
+        // if the exponent interval is a fixed integer
+        if(exp.isPoint() && exp.getLower().isInteger()) {
+            return pow(exp.getLower()); // call Interval::pow(const Number&)
+        }
+        
+        // if the base contains 0 or negative number, and the exponent is not a fixed integer, then special processing is needed
+        // this case is very complex, and may need to discuss different intervals
+        throw std::domain_error("Cannot compute interval power with negative or zero base and non-integer exponent");
+    }
+
+    Interval Interval::atan2(const Number& x) const {
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        
+        // the domain of atan2(y, x) is the whole plane, and it will not cause division by zero problem
+        // the range of atan2 is [-π, π]
+        
+        // if x is a fixed number, then the result is the atan2 of each point in the interval
+        Number low = Number::atan2(lower, x);
+        Number high = Number::atan2(upper, x);
+        
+        // special case: if the interval crosses the x-axis, and x < 0, then the result will cross the π or -π discontinuity point
+        if(lower < Number(0) && upper > Number(0) && x < Number(0)) {
+            // in this case, the result of atan2 is the complete range of [-π, π]
+            return Interval(-Number::pi(), Number::pi(), true, true);
+        }
+        bool newLeftClosed = leftClosed;
+        bool newRightClosed = rightClosed;
+        // check if the result needs to be sorted in ascending order
+        if(low > high) {
+            std::swap(low, high);
+            std::swap(newLeftClosed, newRightClosed);
+        }
+        
+        return Interval(low, high, newLeftClosed, newRightClosed);
+    }
+
+    Interval Interval::atan2(const Interval& x) const {
+        if(isEmpty() || x.isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        
+        // the domain of atan2(y, x) is the whole plane, and the range is [-π, π]
+        
+        // we need to check if there are some special cases:
+        
+        // 1. if y and x interval both contain 0, then the result can be any angle
+        if((lower <= Number(0) && upper >= Number(0)) && 
+           (x.getLower() <= Number(0) && x.getUpper() >= Number(0))) {
+            return Interval(-Number::pi(), Number::pi(), true, true);
+        }
+        
+        // 2. if y interval crosses 0, and x is completely positive or negative
+        if(lower < Number(0) && upper > Number(0)) {
+            if(x.getUpper() < Number(0)) {
+                // x is completely negative, the result is [-π, 0] U [0, π], which is the whole [-π, π]
+                return Interval(-Number::pi(), Number::pi(), true, true);
+            } else if(x.getLower() > Number(0)) {
+                // x is completely positive, the result is [-π/2, π/2]
+                return Interval(-Number::pi() / Number(2), Number::pi() / Number(2), true, true);
+            }
+        }
+        
+        // 3. if x interval crosses 0, and y is completely positive or negative
+        if(x.getLower() < Number(0) && x.getUpper() > Number(0)) {
+            if(lower > Number(0)) {
+                // y is completely positive, the result is [0, π]
+                return Interval(Number(0), Number::pi(), true, true);
+            } else if(upper < Number(0)) {
+                // y is completely negative, the result is [-π, 0]
+                return Interval(-Number::pi(), Number(0), true, true);
+            }
+        }
+        
+        // for other cases, we need to calculate the four corner points
+        Number vals[4] = {
+            Number::atan2(lower, x.getLower()),
+            Number::atan2(lower, x.getUpper()),
+            Number::atan2(upper, x.getLower()),
+            Number::atan2(upper, x.getUpper())
+        };
+        
+        // find the minimum and maximum values
+        Number minVal = std::min({vals[0], vals[1], vals[2], vals[3]});
+        Number maxVal = std::max({vals[0], vals[1], vals[2], vals[3]});
+        
+        // check if it crosses the discontinuity point π or -π
+        if(maxVal - minVal > Number::pi()) {
+            // if the maximum value and minimum value differ by more than π, it means it crosses the discontinuity point
+            return Interval(-Number::pi(), Number::pi(), true, true);
+        }
+        
+        // the closedness depends on the relation between the corner points and the boundary values
+        bool newLeftClosed = false, newRightClosed = false;
+        
+        if(minVal == vals[0])
+            newLeftClosed = leftClosed && x.isLeftClosed();
+        else if(minVal == vals[1])
+            newLeftClosed = leftClosed && x.isRightClosed();
+        else if(minVal == vals[2])
+            newLeftClosed = rightClosed && x.isLeftClosed();
+        else if(minVal == vals[3])
+            newLeftClosed = rightClosed && x.isRightClosed();
+        
+        if(maxVal == vals[0])
+            newRightClosed = leftClosed && x.isLeftClosed();
+        else if(maxVal == vals[1])
+            newRightClosed = leftClosed && x.isRightClosed();
+        else if(maxVal == vals[2])
+            newRightClosed = rightClosed && x.isLeftClosed();
+        else if(maxVal == vals[3])
+            newRightClosed = rightClosed && x.isRightClosed();
+        
+        return Interval(minVal, maxVal, newLeftClosed, newRightClosed);
     }
 
     bool Interval::operator<(const Interval& other) const {

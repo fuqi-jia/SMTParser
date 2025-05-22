@@ -132,8 +132,6 @@ class Interval {
         Interval operator/(const Interval& other) const;
         Interval operator%(const Interval& other) const;
         Interval operator^(const Interval& other) const;
-        Interval operator|(const Interval& other) const;
-        Interval operator&(const Interval& other) const;
         Interval add(const Number& value) const;
         Interval add(const Interval& other) const;
         Interval sub(const Number& value) const;
