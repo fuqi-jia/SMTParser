@@ -2229,6 +2229,66 @@ namespace SMTLIBParser{
 		}
 	}
 
+	std::shared_ptr<DAGNode> Parser::arithNormalize(std::shared_ptr<DAGNode> expr){
+		bool is_changed = false;
+		return arithNormalize(expr, is_changed);
+	}
+
+	std::shared_ptr<DAGNode> Parser::arithNormalize(std::shared_ptr<DAGNode> expr, bool& is_changed){
+		if(expr->isErr()){
+			return expr;
+		}
+		if(expr->isArithTerm()){
+			return expr;
+		}
+		if(expr->isConst()){
+			return expr;
+		}
+		else if(expr->isVar()){
+			return expr;
+		}
+		else if(expr->isArithComp()){
+			cassert(expr->getChildrenSize() == 2, "ArithComp should have two children");
+			std::shared_ptr<DAGNode> left_side = expr->getChild(0);
+			std::shared_ptr<DAGNode> right_side = expr->getChild(1);
+			cassert(left_side->isArithTerm() && right_side->isArithTerm(), "ArithComp should have two arith terms");
+			if(right_side->isConst()){
+				// no need to change
+				is_changed = false;
+				return expr;
+			}
+			else{
+				// need to change
+				is_changed = true;
+				std::shared_ptr<DAGNode> left = mkOper(left_side->getSort(), NODE_KIND::NT_SUB, {left_side, right_side});
+				return mkOper(BOOL_SORT, expr->getKind(), {left, getZero(left_side->getSort())});
+			}
+		}
+		else{
+			std::vector<std::shared_ptr<DAGNode>> record;
+			for(size_t i=0;i<expr->getChildrenSize();i++){
+				bool child_changed = false;
+				record.emplace_back(arithNormalize(expr->getChild(i), child_changed));
+				is_changed = is_changed || child_changed;
+			}
+			if(is_changed){
+				std::shared_ptr<DAGNode> res = mkOper(expr->getSort(), expr->getKind(), record);
+				is_changed = true;
+				return res;
+			}
+			else{
+				return expr;
+			}
+		}
+	}
+
+	std::vector<std::shared_ptr<DAGNode>> Parser::arithNormalize(std::vector<std::shared_ptr<DAGNode>> exprs){
+		std::vector<std::shared_ptr<DAGNode>> res;
+		for(auto& expr : exprs){
+			res.emplace_back(arithNormalize(expr));
+		}
+		return res;
+	}
 
 
 	// aux functions

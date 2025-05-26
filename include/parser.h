@@ -3031,6 +3031,25 @@ namespace SMTLIBParser{
          */
         std::shared_ptr<DAGNode>                toNNF(std::vector<std::shared_ptr<DAGNode>> exprs);
 
+        /**
+         * @brief Normalize an expression
+         * 
+         * @note make the right hand side of the expression a constant, e.g. f(x) < g(x) -> f(x) - g(x) < 0
+         *       If expr is a constraint, the function will traverse the children of the constraint and normalize each child.
+         * 
+         * @param expr Expression to normalize 
+         * @return Normalized expression
+         */
+        std::shared_ptr<DAGNode>                arithNormalize(std::shared_ptr<DAGNode> expr);
+
+        /**
+         * @brief Normalize a vector of expressions
+         * 
+         * @param exprs Expressions to normalize
+         * @return Normalized expressions
+         */
+        std::vector<std::shared_ptr<DAGNode>>   arithNormalize(std::vector<std::shared_ptr<DAGNode>> exprs);
+
         // print
         /**
          * @brief Print an expression
@@ -3155,6 +3174,8 @@ namespace SMTLIBParser{
         std::shared_ptr<DAGNode>                flattenDNF(std::shared_ptr<DAGNode> expr);
         
         std::shared_ptr<DAGNode>                toNNF(std::shared_ptr<DAGNode> expr, bool is_not);
+
+        std::shared_ptr<DAGNode>                arithNormalize(std::shared_ptr<DAGNode> expr, bool& is_changed);
         
         //errors & warnings
         // mk errror node
