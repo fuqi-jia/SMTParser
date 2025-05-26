@@ -66,12 +66,33 @@ namespace SMTLIBParser{
         }
     }
 
+    bool canExempt(std::shared_ptr<Sort> l, std::shared_ptr<Sort> r){
+        if((l->isInt() || l->isReal()) && (r->isInt() || r->isReal())){
+            return true;
+        }
+        return false;
+    }
     std::shared_ptr<Sort> Parser::getSort(const std::vector<std::shared_ptr<DAGNode>>& params){
         std::shared_ptr<Sort> sort = nullptr;
-        for(size_t i=0;i<params.size();i++){
-            if(!params[i]->isConst()){
-                sort = params[i]->getSort();
-                break;
+        // use the maximum sort only for int/real
+        bool is_int_real_sort = params[0]->getSort()->isInt() || params[0]->getSort()->isReal();
+        if(is_int_real_sort){
+            for(size_t i=0;i<params.size();i++){
+                if(params[i]->getSort()->isReal()){
+                    sort = REAL_SORT;
+                    break;
+                }
+            }
+            if(sort == nullptr){
+                sort = INT_SORT;
+            }
+        }
+        else{
+            for(size_t i=0;i<params.size();i++){
+                if(!params[i]->isConst()){
+                    sort = params[i]->getSort();
+                    break;
+                }
             }
         }
         // all constant -> nullptr
@@ -245,7 +266,7 @@ namespace SMTLIBParser{
     (= A A+ :chainable), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkEq(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(!l->getSort()->isEqTo(r->getSort())) {
+        if(!l->getSort()->isEqTo(r->getSort()) && !canExempt(l->getSort(), r->getSort())) {
             err_all(l, "Type mismatch in equality", line_number);
             err_all(r, "Type mismatch in equality", line_number);
             return mkUnknown();
@@ -299,7 +320,7 @@ namespace SMTLIBParser{
         std::vector<std::shared_ptr<DAGNode>> new_params;
 
         for(size_t i=0;i<params.size();i++){
-            if(sort != nullptr && !params[i]->getSort()->isEqTo(sort)) {
+            if(sort != nullptr && !params[i]->getSort()->isEqTo(sort) && !canExempt(params[i]->getSort(), sort)) {
                 err_all(params[i], "Type mismatch in equality", line_number);
                 return mkUnknown();
             }
@@ -328,7 +349,7 @@ namespace SMTLIBParser{
     (distinct A A+ :std::pairwise), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkDistinct(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(!l->getSort()->isEqTo(r->getSort())) {
+        if(!l->getSort()->isEqTo(r->getSort()) && !canExempt(l->getSort(), r->getSort())) {
             err_all(l, "Type mismatch in distinct", line_number);
             err_all(r, "Type mismatch in distinct", line_number);
             return mkUnknown();
@@ -385,7 +406,7 @@ namespace SMTLIBParser{
 
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) {
+            if(sort != nullptr && !params[i]->getSort()->isEqTo(sort) && !canExempt(params[i]->getSort(), sort)) {
                 err_all(params[i], "Type mismatch in distinct", line_number);
                 return mkUnknown();
             }
@@ -890,7 +911,7 @@ namespace SMTLIBParser{
 
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) {
+            if(sort != nullptr && !params[i]->getSort()->isEqTo(sort) && !canExempt(params[i]->getSort(), sort)) {
                 err_all(params[i], "Type mismatch in add", line_number);
                 return mkUnknown();
             }
@@ -956,7 +977,7 @@ namespace SMTLIBParser{
 
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) {
+            if(sort != nullptr && !params[i]->getSort()->isEqTo(sort) && !canExempt(params[i]->getSort(), sort)) {
                 err_all(params[i], "Type mismatch in mul", line_number);
                 return mkUnknown();
             }
@@ -1035,7 +1056,7 @@ namespace SMTLIBParser{
         std::vector<std::shared_ptr<DAGNode>> new_params;
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) {
+            if(sort != nullptr && !params[i]->getSort()->isEqTo(sort) && !canExempt(params[i]->getSort(), sort)) {
                 err_all(params[i], "Type mismatch in iand", line_number);
                 return mkUnknown();
             }
@@ -1095,7 +1116,7 @@ namespace SMTLIBParser{
         // (- a b c)
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !params[i]->getSort()->isEqTo(sort)) {
+            if(sort != nullptr && !params[i]->getSort()->isEqTo(sort) && !canExempt(params[i]->getSort(), sort)) {
                 err_all(params[i], "Type mismatch in sub", line_number);
                 return mkUnknown();
             }
@@ -1289,7 +1310,7 @@ namespace SMTLIBParser{
     (log Real Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkLog(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(!l->getSort()->isEqTo(r->getSort())) {
+        if(!l->getSort()->isEqTo(r->getSort()) && !canExempt(l->getSort(), r->getSort())) {
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in log", line_number);
             return mkUnknown();
         }
@@ -1478,7 +1499,7 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkLe(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         
-        if(!l->getSort()->isEqTo(r->getSort())) {
+        if(!l->getSort()->isEqTo(r->getSort()) && !canExempt(l->getSort(), r->getSort())) {
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in le", line_number);
             return mkUnknown();
         }
@@ -1489,7 +1510,7 @@ namespace SMTLIBParser{
     }
     std::shared_ptr<DAGNode> Parser::mkLt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         
-        if(!l->getSort()->isEqTo(r->getSort())) {
+        if(!l->getSort()->isEqTo(r->getSort()) && !canExempt(l->getSort(), r->getSort())) {
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in lt", line_number);
             return mkUnknown();
         }
@@ -1500,7 +1521,7 @@ namespace SMTLIBParser{
     }
     std::shared_ptr<DAGNode> Parser::mkGe(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         
-        if(!l->getSort()->isEqTo(r->getSort())) {
+        if(!l->getSort()->isEqTo(r->getSort()) && !canExempt(l->getSort(), r->getSort())) {
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in ge", line_number);
             return mkUnknown();
         }
@@ -1511,7 +1532,7 @@ namespace SMTLIBParser{
     }
     std::shared_ptr<DAGNode> Parser::mkGt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         
-        if(!l->getSort()->isEqTo(r->getSort())) {
+        if(!l->getSort()->isEqTo(r->getSort()) && !canExempt(l->getSort(), r->getSort())) {
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in gt", line_number);
             return mkUnknown();
         }
@@ -1536,7 +1557,7 @@ namespace SMTLIBParser{
         // pair-wise comparison: (<= a b c d) <=> (and (<= a b) (<= b c) (<= c d))
         for(size_t i=0;i<params.size() - 1;i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) {
+            if(sort != nullptr && !params[i]->getSort()->isEqTo(sort) && !canExempt(params[i]->getSort(), sort)) {
                 err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in le", line_number);
                 return mkUnknown();
             }
@@ -1563,7 +1584,7 @@ namespace SMTLIBParser{
         // pair-wise comparison: (< a b c d) <=> (and (< a b) (< b c) (< c d))
         for(size_t i=0;i<params.size() - 1;i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) {
+            if(sort != nullptr && !params[i]->getSort()->isEqTo(sort) && !canExempt(params[i]->getSort(), sort)) {
                 err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in lt", line_number);
                 return mkUnknown();
             }
@@ -1590,7 +1611,7 @@ namespace SMTLIBParser{
         // pair-wise comparison: (>= a b c d) <=> (and (>= a b) (>= b c) (>= c d))
         for(size_t i=0;i<params.size() - 1;i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) {
+            if(sort != nullptr && !params[i]->getSort()->isEqTo(sort) && !canExempt(params[i]->getSort(), sort)) {
                 err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in ge", line_number);
                 return mkUnknown();
             }
@@ -1617,7 +1638,7 @@ namespace SMTLIBParser{
         // pair-wise comparison: (> a b c d) <=> (and (> a b) (> b c) (> c d))
         for(size_t i=0;i<params.size() - 1;i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) {
+            if(sort != nullptr && !params[i]->getSort()->isEqTo(sort) && !canExempt(params[i]->getSort(), sort)) {
                 err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in gt", line_number);
                 return mkUnknown();
             }
