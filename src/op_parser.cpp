@@ -3779,6 +3779,35 @@ namespace SMTLIBParser{
         return mkNot(atom);
     }
 
+    std::shared_ptr<DAGNode> Parser::flipComp(std::shared_ptr<DAGNode> atom){
+        if(atom->isErr()) return atom;
+
+        if(atom->isEq() || atom->isDistinct()){
+            return atom;
+        }
+
+        // negate an arithmetic atom
+        if(atom->isArithComp()){
+            return mkOper(BOOL_SORT, atom->getKind(), {atom->getChild(1), atom->getChild(0)});
+        }
+
+        // negate a bitvector atom
+        if(atom->isBVCompOp()){
+            return mkOper(BOOL_SORT, atom->getKind(), {atom->getChild(1), atom->getChild(0)});
+        }
+
+        if(atom->isFPComp()){
+            return mkOper(BOOL_SORT, atom->getKind(), {atom->getChild(1), atom->getChild(0)});
+        }
+
+        if(atom->isStrComp()){
+            return mkOper(BOOL_SORT, atom->getKind(), {atom->getChild(1), atom->getChild(0)});
+        }
+
+        // for other types of atoms, use the general negation operation
+        return atom;
+    }
+
     int Parser::getArity(NODE_KIND k) const{
         switch(k){
             // zero-ary

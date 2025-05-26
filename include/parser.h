@@ -2845,6 +2845,15 @@ namespace SMTLIBParser{
          */
         std::shared_ptr<DAGNode>	            negateComp(std::shared_ptr<DAGNode> atom);
 
+        // flip a comparison atom
+        /**
+         * @brief Flip a comparison atom
+         * 
+         * @param atom Comparison atom to flip
+         * @return Flipped comparison atom
+         */
+        std::shared_ptr<DAGNode>	            flipComp(std::shared_ptr<DAGNode> atom);
+        
         // evaluate: return true if the evaluation has changed the expression
         /**
          * @brief Set the precision for evaluation
