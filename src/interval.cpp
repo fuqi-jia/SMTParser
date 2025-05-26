@@ -393,8 +393,8 @@ namespace SMTLIBParser{
             return Interval(-upper, -lower, rightClosed, leftClosed);
         } else {
             // [a,b] with a < 0 < b -> [0,max(|a|,|b|)]
-            Number maxAbs = std::max(-lower, upper);
-            return Interval(Number(0), maxAbs, true, (maxAbs == -lower) ? leftClosed : rightClosed);
+            Number maxAbs = std::max(lower.abs(), upper.abs());
+            return Interval(Number(0), maxAbs, true, (maxAbs == lower.abs()) ? leftClosed : rightClosed);
         }
     }
     Interval Interval::lb() const {
@@ -438,7 +438,7 @@ namespace SMTLIBParser{
             throw std::invalid_argument("Interval is empty");
         }
         Number newLower = (lower < 0) ? Number(0) : lower;
-        return Interval(newLower.sqrt(), upper.sqrt(), leftClosed, rightClosed);
+        return Interval(newLower.sqrt(), upper.sqrt(), (lower < 0) ? true : leftClosed, rightClosed);
     }
 
     Interval Interval::sin() const {

@@ -38,9 +38,12 @@ namespace SMTLIBParser{
                 if(p->isTrue()){
                     return mkFalse();
                 }
-                else{
-                    // p is false
+                else if(p->isFalse()){
                     return mkTrue();
+                }
+                else{
+                    // err_all(p, "Not on non-boolean", line_number);
+                    return mkUnknown();
                 }
             }
             case NODE_KIND::NT_NEG:{
@@ -56,7 +59,7 @@ namespace SMTLIBParser{
                     );
                 }
                 else{
-                    err_all(p, "Negation on non-integer or non-real", line_number);
+                    // err_all(p, "Negation on non-integer or non-real", line_number);
                     return mkUnknown();
                 }
             }
@@ -81,27 +84,39 @@ namespace SMTLIBParser{
                     }
                 }
                 else{
-                    err_all(p, "Absolute value on non-integer or non-real", line_number);
+                    // err_all(p, "Absolute value on non-integer or non-real", line_number);
                     return mkUnknown();
                 }
             }
             case NODE_KIND::NT_SQRT:{
                 // use floating point to approximate
-                if(getEvaluateUseFloating()){
-                    return mkConstReal(toReal(p).sqrt());
+                if(p->isCInt()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).sqrt());
+                    }
                 }
-                else{
-                    return mkUnknown();
+                else if(p->isCReal()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).sqrt());
+                    }
                 }
+                // err_all(p, "Square root on non-integer or non-real", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_SAFESQRT:{
                 // use floating point to approximate
-                if(getEvaluateUseFloating()){
-                    return mkConstReal(toReal(p).safeSqrt());
+                if(p->isCInt()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).safeSqrt());
+                    }
                 }
-                else{
-                    return mkUnknown();
+                else if(p->isCReal()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).safeSqrt());
+                    }
                 }
+                // err_all(p, "Safe square root on non-integer or non-real", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_CEIL:{
                 if(p->isCInt()){
@@ -109,10 +124,10 @@ namespace SMTLIBParser{
                 }
                 else if(p->isCReal()){
                     // p is a real number
-                    return mkConstReal(ceil(toReal(p)));
+                    return mkConstReal(toReal(p).ceil());
                 }
                 else{
-                    err_all(p, "Ceiling on non-integer or non-real", line_number);
+                    // err_all(p, "Ceiling on non-integer or non-real", line_number);
                     return mkUnknown();
                 }
             }
@@ -122,10 +137,10 @@ namespace SMTLIBParser{
                 }
                 else if(p->isCReal()){
                     // p is a real number
-                    return mkConstReal(floor(toReal(p)));
+                    return mkConstReal(toReal(p).floor());
                 }
                 else{
-                    err_all(p, "Floor on non-integer or non-real", line_number);
+                    // err_all(p, "Floor on non-integer or non-real", line_number);
                     return mkUnknown();
                 }
             }
@@ -135,439 +150,435 @@ namespace SMTLIBParser{
                 }
                 else if(p->isCReal()){
                     // p is a real number
-                    return mkConstReal(round(toReal(p)));
+                    return mkConstReal(toReal(p).round());
                 }
                 else{
-                    err_all(p, "Round on non-integer or non-real", line_number);
+                    // err_all(p, "Round on non-integer or non-real", line_number);
                     return mkUnknown();
                 }
             }
             case NODE_KIND::NT_EXP:{
-                if(getEvaluateUseFloating()){
-                    return mkConstReal(toReal(p).exp());
+                if(p->isCInt()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).exp());
+                    }
                 }
-                else{
-                    return mkUnknown();
+                else if(p->isCReal()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).exp());
+                    }
                 }
+                // err_all(p, "Exponentiation on non-integer or non-real", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_LN:{
                 // ln(x) = ln(e^ln(x)) = ln(e) + ln(x)
-                if(getEvaluateUseFloating()){
-                    return mkConstReal(toReal(p).ln());
-                }
-                else{
-                    // simple evaluation
-                    if(p->isCInt()){
-                        if(toInt(p) <= 0){
-                            err_all(p, "Natural logarithm of non-positive integer", line_number);
-                            return mkUnknown();
-                        }
-                        else if(toInt(p) == 1){
-                            return mkConstReal(0.0);
-                        }
+                if(p->isCInt()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).ln());
                     }
-                    else if(p->isCReal()){
-                        if(toReal(p) <= 0.0){
-                            err_all(p, "Natural logarithm of non-positive real number", line_number);
-                            return mkUnknown();
-                        }
-                        else if(toReal(p) == 1.0){
-                            return mkConstReal(0.0);
-                        }
-                        else if(p->isE()){
-                            return mkConstReal(1.0);
-                        }
-                    }
-                    return mkUnknown();
                 }
+                else if(p->isCReal()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).ln());
+                    }
+                }
+                // err_all(p, "Natural logarithm of non-integer or non-real", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_LG:{
-                if(getEvaluateUseFloating()){
-                    return mkConstReal(toReal(p).lg());
-                }
-                else{
-                    // simple evaluation
-                    if(p->isCInt()){
-                        if(toInt(p) <= 0){
-                            return mkErr(ERROR_TYPE::ERR_NEG_PARAM);
-                        }
-                        else if(toInt(p) == 1){
-                            return mkConstReal(0.0);
-                        }
-                        else if(toInt(p) == 10){
-                            return mkConstReal(1.0);
-                        }
-                        else if(toInt(p) == 100){
-                            return mkConstReal(2.0);
-                        }
-                        else if(toInt(p) == 1000){
-                            return mkConstReal(3.0);
-                        }
-                        else if(toInt(p) == 10000){
-                            return mkConstReal(4.0);
-                        }
-                        else if(toInt(p) == 100000){
-                            return mkConstReal(5.0);
-                        }
-                        else if(toInt(p) == 1000000){
-                            return mkConstReal(6.0);
-                        }
-                        else if(toInt(p) == 10000000){
-                            return mkConstReal(7.0);
-                        }
-                        else if(toInt(p) == 100000000){
-                            return mkConstReal(8.0);
-                        }
-                        else if(toInt(p) == 1000000000){
-                            return mkConstReal(9.0);
-                        }
-                        else if(toInt(p) == 10000000000){
-                            return mkConstReal(10.0);
-                        }
-                        // ... ...
+                if(p->isCInt()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).lg());
                     }
-                    else if(p->isCReal()){
-                        if(toReal(p) <= 0.0){
-                            return mkErr(ERROR_TYPE::ERR_NEG_PARAM);
-                        }
-                        else if(toReal(p) == 1.0){
-                            return mkConstReal(0.0);
-                        }
-                        else if(toReal(p) == 10.0){
-                            return mkConstReal(1.0);
-                        }
-                        else if(toReal(p) == 100.0){
-                            return mkConstReal(2.0);
-                        }
-                        else if(toReal(p) == 1000.0){
-                            return mkConstReal(3.0);
-                        }
-                        else if(toReal(p) == 10000.0){
-                            return mkConstReal(4.0);
-                        }
-                        else if(toReal(p) == 100000.0){
-                            return mkConstReal(5.0);
-                        }
-                        else if(toReal(p) == 1000000.0){
-                            return mkConstReal(6.0);
-                        }
-                        else if(toReal(p) == 10000000.0){
-                            return mkConstReal(7.0);
-                        }
-                        else if(toReal(p) == 100000000.0){
-                            return mkConstReal(8.0);
-                        }
-                        else if(toReal(p) == 1000000000.0){
-                            return mkConstReal(9.0);
-                        }
-                        else if(toReal(p) == 10000000000.0){
-                            return mkConstReal(10.0);
-                        }
-                        // ... ...
-                    }
-                    return mkUnknown();
                 }
+                else if(p->isCReal()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).lg());
+                    }
+                }
+                // err_all(p, "Common logarithm of non-integer or non-real", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_LB:{
-                if(getEvaluateUseFloating()){
-                    return mkConstReal(toReal(p).lb());
-                }
-                else{
-                    // simple evaluation
-                    if(p->isCInt()){
-                        if(toInt(p) <= 0){
-                            return mkErr(ERROR_TYPE::ERR_NEG_PARAM);
-                        }
-                        else if(toInt(p) == 1){
-                            return mkConstReal(0.0);
-                        }
-                        else if(toInt(p) == 2){
-                            return mkConstReal(1.0);
-                        }
-                        else if(toInt(p) == 4){
-                            return mkConstReal(2.0);
-                        }
-                        else if(toInt(p) == 8){
-                            return mkConstReal(3.0);
-                        }
-                        else if(toInt(p) == 16){
-                            return mkConstReal(4.0);
-                        }
-                        else if(toInt(p) == 32){
-                            return mkConstReal(5.0);
-                        }
-                        else if(toInt(p) == 64){
-                            return mkConstReal(6.0);
-                        }
-                        else if(toInt(p) == 128){
-                            return mkConstReal(7.0);
-                        }
-                        else if(toInt(p) == 256){
-                            return mkConstReal(8.0);
-                        }
-                        else if(toInt(p) == 512){
-                            return mkConstReal(9.0);
-                        }
-                        else if(toInt(p) == 1024){
-                            return mkConstReal(10.0);
-                        }
+                if(p->isCInt()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).lb());
                     }
-                    else if(p->isCReal()){
-                        if(toReal(p) <= 0.0){
-                            return mkErr(ERROR_TYPE::ERR_NEG_PARAM);
-                        }
-                        else if(toReal(p) == 1.0){
-                            return mkConstReal(0.0);
-                        }
-                        else if(toReal(p) == 2.0){
-                            return mkConstReal(1.0);
-                        }
-                        else if(toReal(p) == 4.0){
-                            return mkConstReal(2.0);
-                        }
-                        else if(toReal(p) == 8.0){
-                            return mkConstReal(3.0);
-                        }
-                        else if(toReal(p) == 16.0){
-                            return mkConstReal(4.0);
-                        }
-                        else if(toReal(p) == 32.0){
-                            return mkConstReal(5.0);
-                        }
-                        else if(toReal(p) == 64.0){
-                            return mkConstReal(6.0);
-                        }
-                        else if(toReal(p) == 128.0){
-                            return mkConstReal(7.0);
-                        }
-                        else if(toReal(p) == 256.0){
-                            return mkConstReal(8.0);
-                        }
-                        else if(toReal(p) == 512.0){
-                            return mkConstReal(9.0);
-                        }
-                        else if(toReal(p) == 1024.0){
-                            return mkConstReal(10.0);
-                        }
-                    }
-                    return mkUnknown();
                 }
+                else if(p->isCReal()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).lb());
+                    }
+                }
+                // err_all(p, "Logarithm base 2 of non-integer or non-real", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_SIN:{
-                if(getEvaluateUseFloating()){
-                    return mkConstReal(toReal(p).sin());
+                if(p->isCInt()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).sin());
+                    }
                 }
-                else{
-                    return mkUnknown();
+                else if(p->isCReal()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).sin());
+                    }
                 }
+                // err_all(p, "Sine of non-integer or non-real", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_COS:{
-                if(getEvaluateUseFloating()){
-                    return mkConstReal(toReal(p).cos());
+                if(p->isCInt()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).cos());
+                    }
                 }
-                else{
-                    return mkUnknown();
+                else if(p->isCReal()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).cos());
+                    }
                 }
+                // err_all(p, "Cosine of non-integer or non-real", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_SEC:{
-                if(getEvaluateUseFloating()){   
-                    return mkConstReal(toReal(p).sec());
+                if(p->isCInt()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).sec());
+                    }
                 }
-                else{
-                    return mkUnknown();
+                else if(p->isCReal()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).sec());
+                    }
                 }
+                // err_all(p, "Secant of non-integer or non-real", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_CSC:{
-                if(getEvaluateUseFloating()){
-                    return mkConstReal(toReal(p).csc());
+                if(p->isCInt()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).csc());
+                    }
                 }
-                else{
-                    return mkUnknown();
+                else if(p->isCReal()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).csc());
+                    }
                 }
+                // err_all(p, "Cosecant of non-integer or non-real", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_TAN:{
-                if(getEvaluateUseFloating()){
-                    return mkConstReal(toReal(p).tan());
+                if(p->isCInt()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).tan());
+                    }
                 }
-                else{
-                    return mkUnknown();
+                else if(p->isCReal()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).tan());
+                    }
                 }
+                // err_all(p, "Tangent of non-integer or non-real", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_COT:{
-                if(getEvaluateUseFloating()){
-                    return mkConstReal(toReal(p).cot());
+                if(p->isCInt()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).cot());
+                    }
                 }
-                else{
-                    return mkUnknown();
+                else if(p->isCReal()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).cot());
+                    }
                 }
+                // err_all(p, "Cotangent of non-integer or non-real", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_ASIN:{
-                if(getEvaluateUseFloating()){
-                    return mkConstReal(toReal(p).asin());
+                if(p->isCInt()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).asin());
+                    }
                 }
-                else{
-                    return mkUnknown();
+                else if(p->isCReal()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).asin());
+                    }
                 }
+                // err_all(p, "Arcsine of non-integer or non-real", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_ACOS:{
-                if(getEvaluateUseFloating()){
-                    return mkConstReal(toReal(p).acos());
+                if(p->isCInt()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).acos());
+                    }
                 }
-                else{
-                    return mkUnknown();
+                else if(p->isCReal()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).acos());
+                    }
                 }
+                // err_all(p, "Arccosine of non-integer or non-real", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_ASEC:{
-                if(getEvaluateUseFloating()){
-                    return mkConstReal(toReal(p).asec());
+                if(p->isCInt()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).asec());
+                    }
                 }
-                else{
-                    return mkUnknown();
+                else if(p->isCReal()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).asec());
+                    }
                 }
+                // err_all(p, "Arcsecant of non-integer or non-real", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_ACSC:{
-                if(getEvaluateUseFloating()){
-                    return mkConstReal(toReal(p).acsc());
+                if(p->isCInt()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).acsc());
+                    }
                 }
-                else{
-                    return mkUnknown();
+                else if(p->isCReal()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).acsc());
+                    }
                 }
+                // err_all(p, "Arccosecant of non-integer or non-real", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_ATAN:{
-                if(getEvaluateUseFloating()){
-                    return mkConstReal(toReal(p).atan());
+                if(p->isCInt()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).atan());
+                    }
                 }
-                else{
-                    return mkUnknown();
+                else if(p->isCReal()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).atan());
+                    }
                 }
+                // err_all(p, "Arctangent of non-integer or non-real", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_ACOT:{
-                if(getEvaluateUseFloating()){
-                    return mkConstReal(toReal(p).acot());
+                if(p->isCInt()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).acot());
+                    }
                 }
-                else{
-                    return mkUnknown();
+                else if(p->isCReal()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).acot());
+                    }
                 }
+                // err_all(p, "Arccotangent of non-integer or non-real", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_SINH:{
-                if(getEvaluateUseFloating()){
-                    return mkConstReal(toReal(p).sinh());
+                if(p->isCInt()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).sinh());
+                    }
                 }
-                else{
-                    return mkUnknown();
+                else if(p->isCReal()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).sinh());
+                    }
                 }
+                // err_all(p, "Hyperbolic sine of non-integer or non-real", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_COSH:{
-                if(getEvaluateUseFloating()){
-                    return mkConstReal(toReal(p).cosh());
+                if(p->isCInt()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).cosh());
+                    }
                 }
-                else{
-                    return mkUnknown();
+                else if(p->isCReal()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).cosh());
+                    }
                 }
+                // err_all(p, "Hyperbolic cosine of non-integer or non-real", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_TANH:{
-                if(getEvaluateUseFloating()){
-                    return mkConstReal(toReal(p).tanh());
+                if(p->isCInt()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).tanh());
+                    }
                 }
-                else{
-                    return mkUnknown();
+                else if(p->isCReal()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).tanh());
+                    }
                 }
+                // err_all(p, "Hyperbolic tangent of non-integer or non-real", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_SECH:{
-                if(getEvaluateUseFloating()){
-                    return mkConstReal(toReal(p).sech());
+                if(p->isCInt()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).sech());
+                    }
                 }
-                else{
-                    return mkUnknown();
+                else if(p->isCReal()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).sech());
+                    }
                 }
+                // err_all(p, "Hyperbolic secant of non-integer or non-real", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_CSCH:{
-                if(getEvaluateUseFloating()){
-                    return mkConstReal(toReal(p).csch());
+                if(p->isCInt()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).csch());
+                    }
                 }
-                else{
-                    return mkUnknown();
+                else if(p->isCReal()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).csch());
+                    }
                 }
+                // err_all(p, "Hyperbolic cosecant of non-integer or non-real", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_COTH:{
-                if(getEvaluateUseFloating()){
-                    return mkConstReal(toReal(p).coth());
+                if(p->isCInt()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).coth());
+                    }
                 }
-                else{
-                    return mkUnknown();
+                else if(p->isCReal()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).coth());
+                    }
                 }
+                // err_all(p, "Hyperbolic cotangent of non-integer or non-real", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_ASINH:{
-                if(getEvaluateUseFloating()){
-                    return mkConstReal(toReal(p).asinh());
+                if(p->isCInt()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).asinh());
+                    }
                 }
-                else{
-                    return mkUnknown();
+                else if(p->isCReal()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).asinh());
+                    }
                 }
+                // err_all(p, "Hyperbolic arcsine of non-integer or non-real", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_ACOSH:{
-                if(getEvaluateUseFloating()){
-                    return mkConstReal(toReal(p).acosh());
+                if(p->isCInt()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).acosh());
+                    }
                 }
-                else{
-                    return mkUnknown();
+                else if(p->isCReal()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).acosh());
+                    }
                 }
+                // err_all(p, "Hyperbolic arccosine of non-integer or non-real", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_ATANH:{
-                if(getEvaluateUseFloating()){
-                    return mkConstReal(toReal(p).atanh());
+                if(p->isCInt()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).atanh());
+                    }
                 }
-                else{
-                    return mkUnknown();
+                else if(p->isCReal()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).atanh());
+                    }
                 }
+                // err_all(p, "Hyperbolic arctangent of non-integer or non-real", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_ASECH:{
-                if(getEvaluateUseFloating()){
-                    return mkConstReal(toReal(p).asech());
+                if(p->isCInt()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).asech());
+                    }
                 }
-                else{
-                    return mkUnknown();
+                else if(p->isCReal()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).asech());
+                    }
                 }
+                // err_all(p, "Hyperbolic arcsecant of non-integer or non-real", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_ACSCH:{
-                if(getEvaluateUseFloating()){
-                    return mkConstReal(toReal(p).acsch());
+                if(p->isCInt()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).acsch());
+                    }
                 }
-                else{
-                    return mkUnknown();
+                else if(p->isCReal()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).acsch());
+                    }
                 }
+                // err_all(p, "Hyperbolic arccosecant of non-integer or non-real", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_ACOTH:{
-                if(getEvaluateUseFloating()){
-                    return mkConstReal(toReal(p).acoth());
+                if(p->isCInt()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).acoth());
+                    }
                 }
-                else{
-                    return mkUnknown();
+                else if(p->isCReal()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(p).acoth());
+                    }
                 }
+                // err_all(p, "Hyperbolic arccotangent of non-integer or non-real", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_TO_INT:{
                 if(p->isCInt()){
                     return p;
                 }
-                else{
-                    return mkConstInt(floor(toReal(p)));
+                else if(p->isCReal()){
+                    return mkConstReal(toReal(p).floor());
                 }
+                // err_all(p, "Conversion to integer on non-integer or non-real", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_TO_REAL:{
                 if(p->isCInt()){
                     return mkConstReal(toInt(p));
                 }
-                else{
+                else if(p->isCReal()){
                     return p;
                 }
+                // err_all(p, "Conversion to real on non-integer or non-real", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_IS_INT:{
                 if(p->isCInt()){
                     return mkTrue();
                 }
-                else{
+                else if(p->isCReal()){
                     return mkFalse();
                 }
+                // err_all(p, "Integer check on non-integer or non-real", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_IS_PRIME:{
                 if(p->isCInt()){
@@ -637,19 +648,15 @@ namespace SMTLIBParser{
                 if(p->isCBV()){
                     return mkConstBv(bvNot(p->toString()), p->getSort()->getBitWidth());
                 }
-                else{
-                    err_all(p, "Bitwise NOT on non-bitvector", line_number);
-                    return mkUnknown();
-                }
+                // err_all(p, "Bitwise NOT on non-bitvector", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_BV_NEG:{
                 if(p->isCBV()){
                     return mkConstBv(bvNeg(p->toString()), p->getSort()->getBitWidth());
                 }
-                else{
-                    err_all(p, "Bitwise NEG on non-bitvector", line_number);
-                    return mkUnknown();
-                }
+                // err_all(p, "Bitwise NEG on non-bitvector", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_FP_ABS:
             case NODE_KIND::NT_FP_NEG:
@@ -672,55 +679,43 @@ namespace SMTLIBParser{
                 if(p->isCStr()){
                     return mkConstInt(p->toString().size());
                 }
-                else{
-                    err_all(p, "String length on non-string", line_number);
-                    return mkUnknown();
-                }
+                // err_all(p, "String length on non-string", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_STR_TO_LOWER:{
                 if(p->isCStr()){
                     return mkConstStr(strToLower(p->toString()));
                 }
-                else{
-                    err_all(p, "String to lower on non-string", line_number);
-                    return mkUnknown();
-                }
+                // err_all(p, "String to lower on non-string", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_STR_TO_UPPER:{
                 if(p->isCStr()){
                     return mkConstStr(strToUpper(p->toString()));
                 }
-                else{
-                    err_all(p, "String to upper on non-string", line_number);
-                    return mkUnknown();
-                }
+                // err_all(p, "String to upper on non-string", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_STR_REV:{
                 if(p->isCStr()){
                     return mkConstStr(strRev(p->toString()));
                 }
-                else{
-                    err_all(p, "String reverse on non-string", line_number);
-                    return mkUnknown();
-                }
+                // err_all(p, "String reverse on non-string", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_STR_IS_DIGIT:{
                 if(p->isCStr()){
                     return isIntUtil(p->toString()) ? mkTrue() : mkFalse();
                 }
-                else{
-                    err_all(p, "String is digit on non-string", line_number);
-                    return mkUnknown();
-                }
+                // err_all(p, "String is digit on non-string", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_STR_FROM_INT:{
                 if(p->isCInt()){
                     return mkConstStr(p->toString());
                 }
-                else{
-                    err_all(p, "String from int on non-integer", line_number);
-                    return mkUnknown();
-                }
+                // err_all(p, "String from int on non-integer", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_STR_TO_INT:{
                 if(p->isCStr()){
@@ -732,10 +727,8 @@ namespace SMTLIBParser{
                         return mkUnknown();
                     }
                 }
-                else{
-                    err_all(p, "String to int on non-string", line_number);
-                    return mkUnknown();
-                }
+                // err_all(p, "String to int on non-string", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_STR_TO_CODE:{
                 if(p->isCStr()){
@@ -747,10 +740,8 @@ namespace SMTLIBParser{
                         return mkUnknown();
                     }
                 }
-                else{
-                    err_all(p, "String to code on non-string", line_number);
-                    return mkUnknown();
-                }
+                // err_all(p, "String to code on non-string", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_STR_FROM_CODE:{
                 if(p->isCInt()){
@@ -762,10 +753,8 @@ namespace SMTLIBParser{
                         return mkUnknown();
                     }
                 }
-                else{
-                    err_all(p, "String from code on non-integer", line_number);
-                    return mkUnknown();
-                }
+                // err_all(p, "String from code on non-integer", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_REG_STAR:
             case NODE_KIND::NT_REG_PLUS:
@@ -778,19 +767,15 @@ namespace SMTLIBParser{
                 if(p->isCBV()){
                     return mkConstInt(bvToNat(p->toString()));
                 }
-                else{
-                    err_all(p, "Bitvector to natural on non-bitvector", line_number);
-                    return mkUnknown();
-                }
+                // err_all(p, "Bitvector to natural on non-bitvector", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_BV_TO_INT:{
                 if(p->isCBV()){
                     return mkConstInt(bvToInt(p->toString()));
                 }
-                else{
-                    err_all(p, "Bitvector to integer on non-bitvector", line_number);
-                    return mkUnknown();
-                }
+                // err_all(p, "Bitvector to integer on non-bitvector", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_POW2:{
                 if(p->isCInt()){
@@ -799,10 +784,8 @@ namespace SMTLIBParser{
                 else if(p->isCReal()){
                     return mkUnknown();
                 }
-                else{
-                    err_all(p, "Pow2 on non-integer or non-real", line_number);
-                    return mkUnknown();
-                }
+                // err_all(p, "Pow2 on non-integer or non-real", line_number);
+                return mkUnknown();
             }
             
             // Multi-parameter operation - accepts arbitrary number of parameters
@@ -848,7 +831,7 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_MAX:
             case NODE_KIND::NT_MIN: {
                 return p;
-            }    
+            }
             default:
                 return mkUnknown();
         }
@@ -868,7 +851,7 @@ namespace SMTLIBParser{
                         return mkFalse();
                     }
                 }
-                else if(l->isCReal() && r->isCReal()){
+                else if((l->isCReal() && r->isCReal()) || (l->isCInt() && r->isCReal()) || (l->isCReal() && r->isCInt())){
                     if(toReal(l) == toReal(r)){
                         return mkTrue();
                     }
@@ -876,128 +859,165 @@ namespace SMTLIBParser{
                         return mkFalse();
                     }
                 }
-                else if(l->toString() == r->toString()){
-                    return mkTrue();
+                else if(l->isCBV() && r->isCBV()){
+                    if(l->toString() == r->toString()){
+                        return mkTrue();
+                    }
+                    else{
+                        return mkFalse();
+                    }
                 }
-                else{
-                    return mkFalse();
+                else if(l->isCStr() && r->isCStr()){
+                    if(l->toString() == r->toString()){
+                        return mkTrue();
+                    }
+                    else{
+                        return mkFalse();
+                    }
                 }
+                return mkUnknown();
             }
             case NODE_KIND::NT_POW:{
                 if(l->isCInt() && r->isCInt()){
-                    return mkConstInt(pow(toInt(l), toInt(r)));
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(l).pow(toReal(r)));
+                    }
                 }
-                else{
-                    return mkUnknown();
+                else if(l->isCReal() && r->isCReal()){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(l).pow(toReal(r)));
+                    }
                 }
+                else if((l->isCInt() && r->isCReal()) || (l->isCReal() && r->isCInt())){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(l).pow(toReal(r)));
+                    }
+                }
+                return mkUnknown();
             }
             case NODE_KIND::NT_DIV_INT:{
                 if(l->isCInt() && r->isCInt()){
                     return mkConstInt(toInt(l) / toInt(r));
                 }
-                else{
-                    return mkUnknown();
+                else if((l->isCReal() && r->isCReal()) || (l->isCInt() && r->isCReal()) || (l->isCReal() && r->isCInt()) || (l->isCInt() && r->isCInt())){
+                    if(getEvaluateUseFloating()){
+                        return mkConstInt((toReal(l) / toReal(r)).floor().toInt());
+                    }
                 }
+                return mkUnknown();
             }
             case NODE_KIND::NT_DIV_REAL:{
-                if(l->isCReal() && r->isCReal()){
-                    return mkConstReal(toReal(l) / toReal(r));
+                if((l->isCReal() && r->isCReal()) || (l->isCInt() && r->isCReal()) || (l->isCReal() && r->isCInt()) || (l->isCInt() && r->isCInt())){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(toReal(l) / toReal(r));
+                    }
                 }
-                else{
-                    return mkUnknown();
-                }
+                return mkUnknown();
             }
             case NODE_KIND::NT_MOD:{
                 if(l->isCInt() && r->isCInt()){
                     return mkConstInt(toInt(l) % toInt(r));
                 }
-                else{
-                    return mkUnknown();
-                }
+                return mkUnknown();
             }
             case NODE_KIND::NT_LOG:{
-                if(getEvaluateUseFloating()){
-                    // log_r(l)
-                    return mkConstReal(toReal(l).log(toReal(r)));
-                }
-                else{
-                    // simple evaluation
-                    if(l->isCInt() && r->isCInt()){
-                        if(toInt(l) <= 0 || toInt(r) <= 0){
-                            return l->isErr()?l:r;
-                        }
-                        else if(toInt(l) == 1){
-                            return l->isErr()?l:r;
-                        }
-                        else if(toInt(r) == 1){
-                            return mkConstReal(0.0);
-                        }
+                if((l->isCReal() && r->isCReal()) || (l->isCInt() && r->isCReal()) || (l->isCReal() && r->isCInt()) || (l->isCInt() && r->isCInt())){
+                    if(getEvaluateUseFloating()){
+                        // log_r(l)
+                        return mkConstReal(toReal(l).log(toReal(r)));
                     }
-                    else if(l->isCReal() && r->isCReal()){
-                        if(toReal(l) <= 0.0 || toReal(r) <= 0.0){
-                            return l->isErr()?l:r;
-                        }
-                        else if(toReal(l) == 1.0){
-                            return l->isErr()?l:r;
-                        }
-                        else if(toReal(r) == 1.0){
-                            return mkConstReal(0.0);
-                        }
-                    }
-                    return mkUnknown();
                 }
+                return mkUnknown();
             }
             case NODE_KIND::NT_ATAN2:{
-                if(getEvaluateUseFloating()){
-                    return mkConstReal(Real::atan2(toReal(l), toReal(r)));
+                if((l->isCReal() && r->isCReal()) || (l->isCInt() && r->isCReal()) || (l->isCReal() && r->isCInt()) || (l->isCInt() && r->isCInt())){
+                    if(getEvaluateUseFloating()){
+                        return mkConstReal(Real::atan2(toReal(l), toReal(r)));
+                    }
                 }
-                else{
-                    return mkUnknown();
-                }
+                return mkUnknown();
             }
             case NODE_KIND::NT_LE:{
                 if(l->isCInt() && r->isCInt()){
-                    return toInt(l) <= toInt(r) ? mkTrue() : mkFalse();
+                    if(toInt(l) <= toInt(r)){
+                        return mkTrue();
+                    }
+                    else{
+                        return mkFalse();
+                    }
                 }
-                else if(l->isCReal() && r->isCReal()){
-                    return toReal(l) <= toReal(r) ? mkTrue() : mkFalse();
+                else if((l->isCReal() && r->isCReal()) || (l->isCInt() && r->isCReal()) || (l->isCReal() && r->isCInt())){
+                    if(toReal(l) <= toReal(r)){
+                        return mkTrue();
+                    }
+                    else{
+                        return mkFalse();
+                    }
                 }
-                else{
-                    return mkUnknown();
-                }
+                return mkUnknown();
             }
             case NODE_KIND::NT_LT:{
                 if(l->isCInt() && r->isCInt()){
-                    return toInt(l) < toInt(r) ? mkTrue() : mkFalse();
+                    if(toInt(l) < toInt(r)){
+                        return mkTrue();
+                    }
+                    else{
+                        return mkFalse();
+                    }
                 }
-                else if(l->isCReal() && r->isCReal()){
-                    return toReal(l) < toReal(r) ? mkTrue() : mkFalse();
+                else if((l->isCReal() && r->isCReal()) || (l->isCInt() && r->isCReal()) || (l->isCReal() && r->isCInt())){
+                    if(getEvaluateUseFloating()){
+                        if(toReal(l) < toReal(r)){
+                            return mkTrue();
+                        }
+                        else{
+                            return mkFalse();
+                        }
+                    }
                 }
-                else{
-                    return mkUnknown();
-                }
+                return mkUnknown();
             }
             case NODE_KIND::NT_GE:{
                 if(l->isCInt() && r->isCInt()){
-                    return toInt(l) >= toInt(r) ? mkTrue() : mkFalse();
+                    if(toInt(l) >= toInt(r)){
+                        return mkTrue();
+                    }
+                    else{
+                        return mkFalse();
+                    }
                 }
-                else if(l->isCReal() && r->isCReal()){
-                    return toReal(l) >= toReal(r) ? mkTrue() : mkFalse();
+                else if((l->isCReal() && r->isCReal()) || (l->isCInt() && r->isCReal()) || (l->isCReal() && r->isCInt())){
+                    if(getEvaluateUseFloating()){
+                        if(toReal(l) >= toReal(r)){
+                            return mkTrue();
+                        }
+                        else{
+                            return mkFalse();
+                        }
+                    }
                 }
-                else{
-                    return mkUnknown();
-                }
+                return mkUnknown();
             }
             case NODE_KIND::NT_GT:{
                 if(l->isCInt() && r->isCInt()){
-                    return toInt(l) > toInt(r) ? mkTrue() : mkFalse();
+                    if(toInt(l) > toInt(r)){
+                        return mkTrue();
+                    }
+                    else{
+                        return mkFalse();
+                    }
                 }
                 else if(l->isCReal() && r->isCReal()){
-                    return toReal(l) > toReal(r) ? mkTrue() : mkFalse();
+                    if(getEvaluateUseFloating()){
+                        if(toReal(l) > toReal(r)){
+                            return mkTrue();
+                        }
+                        else{
+                            return mkFalse();
+                        }
+                    }
                 }
-                else{
-                    return mkUnknown();
-                }
+                return mkUnknown();
             }
             case NODE_KIND::NT_IS_DIVISIBLE:{
                 if(l->isCInt() && r->isCInt()){
@@ -1037,9 +1057,7 @@ namespace SMTLIBParser{
                 else if(l->isCBV() && r->isCBV()){
                     return mkConstBv(bvUdiv(l->toString(), r->toString()), l->getSort()->getBitWidth());
                 }
-                else{
-                    return mkUnknown();
-                }
+                return mkUnknown();
             }
             case NODE_KIND::NT_BV_SDIV:{            
                 // bvsdiv by zero evaluates to all ones if it's positive, otherwise 1.
@@ -1054,9 +1072,7 @@ namespace SMTLIBParser{
                 else if(l->isCBV() && r->isCBV()){
                     return mkConstBv(bvSdiv(l->toString(), r->toString()), l->getSort()->getBitWidth());
                 }
-                else{
-                    return mkUnknown();
-                }
+                return mkUnknown();
             }
             case NODE_KIND::NT_BV_UREM:{
                 // remainder by zero evaluates to the first operand.
@@ -1066,9 +1082,7 @@ namespace SMTLIBParser{
                 else if(l->isCBV() && r->isCBV()){
                     return mkConstBv(bvUrem(l->toString(), r->toString()), l->getSort()->getBitWidth());
                 }
-                else{
-                    return mkUnknown();
-                }
+                return mkUnknown();
             }
             case NODE_KIND::NT_BV_SREM:{
                 // bvsrem by zero evaluates to the first operand.
@@ -1078,9 +1092,7 @@ namespace SMTLIBParser{
                 else if(l->isCBV() && r->isCBV()){
                     return mkConstBv(bvSrem(l->toString(), r->toString()), r->getSort()->getBitWidth());
                 }
-                else{
-                    return mkUnknown();
-                }
+                return mkUnknown();
             }
             case NODE_KIND::NT_BV_UMOD:{
                 if(r->isCBV() && isZero(r)){
@@ -1089,9 +1101,7 @@ namespace SMTLIBParser{
                 else if(l->isCBV() && r->isCBV()){
                     return mkConstBv(bvUmod(l->toString(), r->toString()), l->getSort()->getBitWidth());
                 }
-                else{
-                    return mkUnknown();
-                }
+                return mkUnknown();
             }
             case NODE_KIND::NT_BV_SMOD:{
                 // bvsmod by zero evaluates to the first operand.
@@ -1101,9 +1111,7 @@ namespace SMTLIBParser{
                 else if(l->isCBV() && r->isCBV()){
                     return mkConstBv(bvSmod(l->toString(), r->toString()), r->getSort()->getBitWidth());
                 }
-                else{
-                    return mkUnknown();
-                }
+                return mkUnknown();
             }
             case NODE_KIND::NT_BV_SDIVO:
             case NODE_KIND::NT_BV_UDIVO:
@@ -1121,9 +1129,7 @@ namespace SMTLIBParser{
                 else if(l->isCBV() && r->isCBV()){
                     return mkConstBv(bvShl(l->toString(), r->toString()), l->getSort()->getBitWidth());
                 }
-                else{
-                    return mkUnknown();
-                }
+                return mkUnknown();
             }
             case NODE_KIND::NT_BV_LSHR:{
                 // shift amount is zero evaluates to the first operand.
@@ -1133,9 +1139,7 @@ namespace SMTLIBParser{
                 else if(l->isCBV() && r->isCBV()){
                     return mkConstBv(bvLshr(l->toString(), r->toString()), l->getSort()->getBitWidth());
                 }
-                else{
-                    return mkUnknown();
-                }
+                return mkUnknown();
             }
             case NODE_KIND::NT_BV_ASHR:{
                 // shift amount is zero evaluates to the first operand.
@@ -1145,9 +1149,7 @@ namespace SMTLIBParser{
                 else if(l->isCBV() && r->isCBV()){
                     return mkConstBv(bvAshr(l->toString(), r->toString()), l->getSort()->getBitWidth());
                 }
-                else{
-                    return mkUnknown();
-                }
+                return mkUnknown();
             }
             case NODE_KIND::NT_BV_ULT:
             case NODE_KIND::NT_BV_ULE:
@@ -1160,31 +1162,25 @@ namespace SMTLIBParser{
                 if(l->isCBV() && r->isCBV()){
                     return bvComp(l->toString(), r->toString(), t) ? mkTrue() : mkFalse();
                 }
-                else{
-                    err_all(l, "Comparison on non-bitvector", line_number);
-                    err_all(r, "Comparison on non-bitvector", line_number);
-                    return mkUnknown();
-                }
+                // err_all(l, "Comparison on non-bitvector", line_number);
+                // err_all(r, "Comparison on non-bitvector", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_NAT_TO_BV:{
                 if(l->isCInt() && r->isCInt()){
                     return mkConstBv(natToBv(toInt(l), toInt(r)), toInt(r).toULong());
                 }
-                else{
-                    err_all(l, "Natural to bitvector on non-integer", line_number);
-                    err_all(r, "Natural to bitvector on non-integer", line_number);
-                    return mkUnknown();
-                }
+                // err_all(l, "Natural to bitvector on non-integer", line_number);
+                // err_all(r, "Natural to bitvector on non-integer", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_INT_TO_BV:{
                 if(l->isCInt() && r->isCInt()){
                     return mkConstBv(intToBv(toInt(l), toInt(r)), toInt(r).toULong());
                 }
-                else{
-                    err_all(l, "Integer to bitvector on non-integer", line_number);
-                    err_all(r, "Integer to bitvector on non-integer", line_number);
-                    return mkUnknown();
-                }
+                // err_all(l, "Integer to bitvector on non-integer", line_number);
+                // err_all(r, "Integer to bitvector on non-integer", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_FP_DIV:
             case NODE_KIND::NT_FP_REM:
@@ -1201,31 +1197,25 @@ namespace SMTLIBParser{
                 if(l->isCStr() && r->isCStr()){
                     return strPrefixof(l->toString(), r->toString()) ? mkTrue() : mkFalse();
                 }
-                else{   
-                    err_all(l, "Prefixof on non-string", line_number);
-                    err_all(r, "Prefixof on non-string", line_number);
-                    return mkUnknown();
-                }
+                // err_all(l, "Prefixof on non-string", line_number);
+                // err_all(r, "Prefixof on non-string", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_STR_SUFFIXOF:{
                 if(l->isCStr() && r->isCStr()){
                     return strSuffixof(l->toString(), r->toString()) ? mkTrue() : mkFalse();
                 }
-                else{
-                    err_all(l, "Suffixof on non-string", line_number);
-                    err_all(r, "Suffixof on non-string", line_number);
-                    return mkUnknown();
-                }
+                // err_all(l, "Suffixof on non-string", line_number);
+                // err_all(r, "Suffixof on non-string", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_STR_CHARAT:{
                 if(l->isCStr() && r->isCInt()){
                     return mkConstStr(strCharAt(l->toString(), toInt(r)));
                 }
-                else{
-                    err_all(l, "Charat on non-string", line_number);
-                    err_all(r, "Charat on non-integer", line_number);
-                    return mkUnknown();
-                }
+                // err_all(l, "Charat on non-string", line_number);
+                // err_all(r, "Charat on non-integer", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_STR_SPLIT:{
                 return mkUnknown();
@@ -1234,51 +1224,41 @@ namespace SMTLIBParser{
                 if(l->isCStr() && r->isCStr()){
                     return l->toString() < r->toString() ? mkTrue() : mkFalse();
                 }
-                else{
-                    err_all(l, "Lt on non-string", line_number);
-                    err_all(r, "Lt on non-string", line_number);
-                    return mkUnknown();
-                }
+                // err_all(l, "Lt on non-string", line_number);
+                // err_all(r, "Lt on non-string", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_STR_LE:{
                 if(l->isCStr() && r->isCStr()){
                     return l->toString() <= r->toString() ? mkTrue() : mkFalse();
                 }
-                else{
-                    err_all(l, "Le on non-string", line_number);
-                    err_all(r, "Le on non-string", line_number);
-                    return mkUnknown();
-                }
+                // err_all(l, "Le on non-string", line_number);
+                // err_all(r, "Le on non-string", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_STR_GT:{
                 if(l->isCStr() && r->isCStr()){ 
                     return l->toString() > r->toString() ? mkTrue() : mkFalse();
                 }
-                else{
-                    err_all(l, "Gt on non-string", line_number);
-                    err_all(r, "Gt on non-string", line_number);
-                    return mkUnknown();
-                }
+                // err_all(l, "Gt on non-string", line_number);
+                // err_all(r, "Gt on non-string", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_STR_GE:{
                 if(l->isCStr() && r->isCStr()){
                     return l->toString() >= r->toString() ? mkTrue() : mkFalse();
                 }
-                else{
-                    err_all(l, "Ge on non-string", line_number);
-                    err_all(r, "Ge on non-string", line_number);
-                    return mkUnknown();
-                }
+                // err_all(l, "Ge on non-string", line_number);
+                // err_all(r, "Ge on non-string", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_STR_CONTAINS:{
                 if(l->isCStr() && r->isCStr()){
                     return strContains(l->toString(), r->toString()) ? mkTrue() : mkFalse();
                 }
-                else{
-                    err_all(l, "Contains on non-string", line_number);
-                    err_all(r, "Contains on non-string", line_number);
-                    return mkUnknown();
-                }
+                // err_all(l, "Contains on non-string", line_number);
+                // err_all(r, "Contains on non-string", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_STR_IN_REG:
             case NODE_KIND::NT_REG_RANGE:
@@ -1306,12 +1286,13 @@ namespace SMTLIBParser{
                         return mkTrue();
                     }
                 }
-                else if(l->toString() == r->toString()){
-                    return mkFalse();
+                else if(l->isCBV() && r->isCBV()){
+                    return l->toString() == r->toString() ? mkFalse() : mkTrue();
                 }
-                else{
-                    return mkTrue();
+                else if(l->isCStr() && r->isCStr()){
+                    return l->toString() == r->toString() ? mkFalse() : mkTrue();
                 }
+                return mkUnknown();
             }
             case NODE_KIND::NT_AND:{
                 if(l->isFalse() || r->isFalse()){
@@ -1320,11 +1301,9 @@ namespace SMTLIBParser{
                 else if(l->isTrue() || r->isTrue()){
                     return mkTrue();
                 }
-                else{
-                    err_all(l, "And on non-boolean", line_number);
-                    err_all(r, "And on non-boolean", line_number);
-                    return mkUnknown();
-                }
+                // err_all(l, "And on non-boolean", line_number);
+                // err_all(r, "And on non-boolean", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_OR:{
                 if(l->isTrue() || r->isTrue()){
@@ -1333,11 +1312,9 @@ namespace SMTLIBParser{
                 else if(l->isFalse() && r->isFalse()){
                     return mkFalse();
                 }
-                else{
-                    err_all(l, "Or on non-boolean", line_number);
-                    err_all(r, "Or on non-boolean", line_number);
-                    return mkUnknown();
-                }
+                // err_all(l, "Or on non-boolean", line_number);
+                // err_all(r, "Or on non-boolean", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_IMPLIES:{
                 if(l->isTrue() && r->isFalse()){
@@ -1346,11 +1323,9 @@ namespace SMTLIBParser{
                 else if(l->isFalse() || r->isTrue()){
                     return mkTrue();
                 }
-                else{
-                    err_all(l, "Implies on non-boolean", line_number);
-                    err_all(r, "Implies on non-boolean", line_number);
-                    return mkUnknown();
-                }
+                // err_all(l, "Implies on non-boolean", line_number);
+                // err_all(r, "Implies on non-boolean", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_XOR:{
                 if(l->isTrue() && r->isTrue()){
@@ -1365,11 +1340,9 @@ namespace SMTLIBParser{
                 else if(l->isFalse() && r->isTrue()){
                     return mkTrue();
                 }
-                else{
-                    err_all(l, "Xor on non-boolean", line_number);
-                    err_all(r, "Xor on non-boolean", line_number);
-                    return mkUnknown();
-                }
+                // err_all(l, "Xor on non-boolean", line_number);
+                // err_all(r, "Xor on non-boolean", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_ADD:{
                 if(l->isCInt() && r->isCInt()){
@@ -1378,11 +1351,9 @@ namespace SMTLIBParser{
                 else if(l->isCReal() && r->isCReal()){
                     return mkConstReal(toReal(l) + toReal(r));
                 }
-                else{
-                    err_all(l, "Add on non-integer or non-real", line_number);
-                    err_all(r, "Add on non-integer or non-real", line_number);
-                    return mkUnknown();
-                }
+                // err_all(l, "Add on non-integer or non-real", line_number);
+                // err_all(r, "Add on non-integer or non-real", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_MUL:{
                 if(l->isCInt() && r->isCInt()){
@@ -1391,21 +1362,17 @@ namespace SMTLIBParser{
                 else if(l->isCReal() && r->isCReal()){
                     return mkConstReal(toReal(l) * toReal(r));
                 }
-                else{
-                    err_all(l, "Mul on non-integer or non-real", line_number);
-                    err_all(r, "Mul on non-integer or non-real", line_number);
-                    return mkUnknown();
-                }
+                // err_all(l, "Mul on non-integer or non-real", line_number);
+                // err_all(r, "Mul on non-integer or non-real", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_IAND:{
                 if(l->isCInt() && r->isCInt()){
                     return mkConstInt(toInt(l) & toInt(r));
                 }
-                else{
-                    err_all(l, "Iand on non-integer", line_number);
-                    err_all(r, "Iand on non-integer", line_number);
-                    return mkUnknown();
-                }
+                // err_all(l, "Iand on non-integer", line_number);
+                // err_all(r, "Iand on non-integer", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_SUB:{
                 if(l->isCInt() && r->isCInt()){
@@ -1420,111 +1387,89 @@ namespace SMTLIBParser{
                 else if(isZero(r)){
                     return l;
                 }
-                else{
-                    err_all(l, "Sub on non-integer or non-real", line_number);
-                    err_all(r, "Sub on non-integer or non-real", line_number);
-                    return mkUnknown();
-                }
+                // err_all(l, "Sub on non-integer or non-real", line_number);
+                // err_all(r, "Sub on non-integer or non-real", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_BV_AND:{
                 if(l->isCBV() && r->isCBV()){
                     return mkConstBv(bvAnd(l->toString(), r->toString()), l->getSort()->getBitWidth());
                 }
-                else{
-                    err_all(l, "And on non-bitvector", line_number);
-                    err_all(r, "And on non-bitvector", line_number);
-                    return mkUnknown();
-                }
+                // err_all(l, "And on non-bitvector", line_number);
+                // err_all(r, "And on non-bitvector", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_BV_OR:{
                 if(l->isCBV() && r->isCBV()){
                     return mkConstBv(bvOr(l->toString(), r->toString()), l->getSort()->getBitWidth());
                 }
-                else{
-                    err_all(l, "Or on non-bitvector", line_number);
-                    err_all(r, "Or on non-bitvector", line_number);
-                    return mkUnknown();
-                }
+                // err_all(l, "Or on non-bitvector", line_number);
+                // err_all(r, "Or on non-bitvector", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_BV_XOR:{
                 if(l->isCBV() && r->isCBV()){
                     return mkConstBv(bvXor(l->toString(), r->toString()), l->getSort()->getBitWidth());
                 }
-                else{
-                    err_all(l, "Xor on non-bitvector", line_number);
-                    err_all(r, "Xor on non-bitvector", line_number);
-                    return mkUnknown();
-                }
+                // err_all(l, "Xor on non-bitvector", line_number);
+                // err_all(r, "Xor on non-bitvector", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_BV_NAND:{
                 if(l->isCBV() && r->isCBV()){
                     return mkConstBv(bvNand(l->toString(), r->toString()), l->getSort()->getBitWidth());
                 }
-                else{
-                    err_all(l, "Nand on non-bitvector", line_number);
-                    err_all(r, "Nand on non-bitvector", line_number);
-                    return mkUnknown();
-                }
+                // err_all(l, "Nand on non-bitvector", line_number);
+                // err_all(r, "Nand on non-bitvector", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_BV_NOR:{
                 if(l->isCBV() && r->isCBV()){
                     return mkConstBv(bvNor(l->toString(), r->toString()), l->getSort()->getBitWidth());
                 }
-                else{
-                    err_all(l, "Nor on non-bitvector", line_number);
-                    err_all(r, "Nor on non-bitvector", line_number);
-                    return mkUnknown();
-                }
+                // err_all(l, "Nor on non-bitvector", line_number);
+                // err_all(r, "Nor on non-bitvector", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_BV_XNOR:{
                 if(l->isCBV() && r->isCBV()){
                     return mkConstBv(bvXnor(l->toString(), r->toString()), l->getSort()->getBitWidth());
                 }
-                else{
-                    err_all(l, "Xnor on non-bitvector", line_number);
-                    err_all(r, "Xnor on non-bitvector", line_number);
-                    return mkUnknown();
-                }
+                // err_all(l, "Xnor on non-bitvector", line_number);
+                // err_all(r, "Xnor on non-bitvector", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_BV_COMP:{
                 if(l->isCBV() && r->isCBV()){
                     return bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_COMP) ? mkTrue() : mkFalse();
                 }
-                else{
-                    err_all(l, "Comp on non-bitvector", line_number);
-                    err_all(r, "Comp on non-bitvector", line_number);
-                    return mkUnknown();
-                }
+                // err_all(l, "Comp on non-bitvector", line_number);
+                // err_all(r, "Comp on non-bitvector", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_BV_ADD:{
                 if(l->isCBV() && r->isCBV()){
                     return mkConstBv(bvAdd(l->toString(), r->toString()), l->getSort()->getBitWidth());
                 }
-                else{
-                    err_all(l, "Add on non-bitvector", line_number);
-                    err_all(r, "Add on non-bitvector", line_number);
-                    return mkUnknown();
-                }
+                // err_all(l, "Add on non-bitvector", line_number);
+                // err_all(r, "Add on non-bitvector", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_BV_SUB:{
                 if(l->isCBV() && r->isCBV()){
                     return mkConstBv(bvSub(l->toString(), r->toString()), l->getSort()->getBitWidth());
                 }
-                else{
-                    err_all(l, "Sub on non-bitvector", line_number);
-                    err_all(r, "Sub on non-bitvector", line_number);
-                    return mkUnknown();
-                }
+                // err_all(l, "Sub on non-bitvector", line_number);
+                // err_all(r, "Sub on non-bitvector", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_BV_MUL:{
                 if(l->isCBV() && r->isCBV()){
                     return mkConstBv(bvMul(l->toString(), r->toString()), l->getSort()->getBitWidth());
                 }
-                else{
-                    err_all(l, "Mul on non-bitvector", line_number);
-                    err_all(r, "Mul on non-bitvector", line_number);
-                    return mkUnknown();
-                }
+                // err_all(l, "Mul on non-bitvector", line_number);
+                // err_all(r, "Mul on non-bitvector", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_BV_SADDO:
             case NODE_KIND::NT_BV_UADDO:
@@ -1536,21 +1481,17 @@ namespace SMTLIBParser{
                 if(l->isCBV() && r->isCBV()){
                     return mkConstBv(bvConcat(l->toString(), r->toString()), l->getSort()->getBitWidth() + r->getSort()->getBitWidth());
                 }
-                else{
-                    err_all(l, "Concat on non-bitvector", line_number);
-                    err_all(r, "Concat on non-bitvector", line_number);
-                    return mkUnknown();
-                }
+                // err_all(l, "Concat on non-bitvector", line_number);
+                // err_all(r, "Concat on non-bitvector", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_STR_CONCAT:{
                 if(l->isCStr() && r->isCStr()){
                     return mkConstStr(l->toString() + r->toString());
                 }
-                else{
-                    err_all(l, "Concat on non-string", line_number);
-                    err_all(r, "Concat on non-string", line_number);
-                    return mkUnknown();
-                }
+                // err_all(l, "Concat on non-string", line_number);
+                // err_all(r, "Concat on non-string", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_MAX:{
                 std::shared_ptr<Sort> sort = getSort({l, r});
@@ -1561,13 +1502,8 @@ namespace SMTLIBParser{
                     else if(sort->isInt()){
                         return mkConstInt(std::max(toInt(l), toInt(r)));
                     }
-                    else{
-                        return mkUnknown();
-                    }
                 }
-                else{
-                    return mkOper(sort, NODE_KIND::NT_MAX, l, r);
-                }
+                return mkUnknown();
             }
             case NODE_KIND::NT_MIN:{
                 std::shared_ptr<Sort> sort = getSort({l, r});
@@ -1578,13 +1514,8 @@ namespace SMTLIBParser{
                     else if(sort->isInt()){
                         return mkConstInt(std::min(toInt(l), toInt(r)));
                     }
-                    else{
-                        return mkUnknown();
-                    }
                 }
-                else{
-                    return mkOper(sort, NODE_KIND::NT_MIN, l, r);
-                }
+                return mkUnknown();
             }
             case NODE_KIND::NT_FP_ADD:
             case NODE_KIND::NT_FP_SUB:
@@ -1620,56 +1551,46 @@ namespace SMTLIBParser{
                 if(l->isCStr() && m->isCInt() && r->isCInt()){
                     return mkConstStr(l->toString().substr(toInt(m).toULong(), toInt(r).toULong()));
                 }
-                else{
-                    err_all(l, "Substr on non-string", line_number);
-                    err_all(m, "Substr on non-integer", line_number);
-                    err_all(r, "Substr on non-integer", line_number);
-                    return mkUnknown();
-                }
+                // err_all(l, "Substr on non-string", line_number);
+                // err_all(m, "Substr on non-integer", line_number);
+                // err_all(r, "Substr on non-integer", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_STR_INDEXOF:{
                 if(l->isCStr() && m->isCStr() && r->isCInt()){
                     return mkConstInt(l->toString().find(m->toString()));
                 }
-                else{
-                    err_all(l, "Indexof on non-string", line_number);
-                    err_all(m, "Indexof on non-string", line_number);
-                    err_all(r, "Indexof on non-integer", line_number);
-                    return mkUnknown();
-                }
+                // err_all(l, "Indexof on non-string", line_number);
+                // err_all(m, "Indexof on non-string", line_number);
+                // err_all(r, "Indexof on non-integer", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_STR_UPDATE:{
                 if(l->isCStr() && m->isCInt() && r->isCStr()){
                     return mkConstStr(strUpdate(l->toString(), toInt(m), r->toString()));
                 }
-                else{
-                    err_all(l, "Update on non-string", line_number);
-                    err_all(m, "Update on non-integer", line_number);
-                    err_all(r, "Update on non-string", line_number);
-                    return mkUnknown();
-                }
+                // err_all(l, "Update on non-string", line_number);
+                // err_all(m, "Update on non-integer", line_number);
+                // err_all(r, "Update on non-string", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_STR_REPLACE:{
                 if(l->isCStr() && m->isCStr() && r->isCStr()){
                     return mkConstStr(strReplace(l->toString(), m->toString(), r->toString()));
                 }
-                else{
-                    err_all(l, "Replace on non-string", line_number);
-                    err_all(m, "Replace on non-string", line_number);
-                    err_all(r, "Replace on non-string", line_number);
-                    return mkUnknown();
-                }
+                // err_all(l, "Replace on non-string", line_number);
+                // err_all(m, "Replace on non-string", line_number);
+                // err_all(r, "Replace on non-string", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_STR_REPLACE_ALL:{
                 if(l->isCStr() && m->isCStr() && r->isCStr()){
                     return mkConstStr(strReplaceAll(l->toString(), m->toString(), r->toString()));
                 }
-                else{
-                    err_all(l, "ReplaceAll on non-string", line_number);
-                    err_all(m, "ReplaceAll on non-string", line_number);
-                    err_all(r, "ReplaceAll on non-string", line_number);
-                    return mkUnknown();
-                }
+                // err_all(l, "ReplaceAll on non-string", line_number);
+                // err_all(m, "ReplaceAll on non-string", line_number);
+                // err_all(r, "ReplaceAll on non-string", line_number);
+                return mkUnknown();
             }
             case NODE_KIND::NT_REG_LOOP:
             case NODE_KIND::NT_REPLACE_REG:
@@ -1683,12 +1604,10 @@ namespace SMTLIBParser{
                     Integer size = (toInt(m) - toInt(r));
                     return mkConstBv(bvExtract(l->toString(), toInt(m), toInt(r)), size.toULong());
                 }
-                else{
-                    err_all(l, "Extract on non-bitvector", line_number);
-                    err_all(m, "Extract on non-integer", line_number);
-                    err_all(r, "Extract on non-integer", line_number);
-                    return mkUnknown();
-                }
+                // err_all(l, "Extract on non-bitvector", line_number);
+                // err_all(m, "Extract on non-integer", line_number);
+                // err_all(r, "Extract on non-integer", line_number);
+                return mkUnknown();
             }
 
             // Multi-parameter operation - accepts arbitrary number of parameters
@@ -1711,12 +1630,10 @@ namespace SMTLIBParser{
                         return mkFalse();
                     }
                 }
-                else if(l->toString() == m->toString() && m->toString() == r->toString()){
+                else if(simp_oper(NODE_KIND::NT_EQ, l, m)->isTrue() && simp_oper(NODE_KIND::NT_EQ, m, r)->isTrue()){
                     return mkTrue();
                 }
-                else{
-                    return mkFalse();
-                }
+                return mkUnknown();
             }
             case NODE_KIND::NT_DISTINCT:
             case NODE_KIND::NT_DISTINCT_BOOL:
@@ -1737,12 +1654,10 @@ namespace SMTLIBParser{
                         return mkFalse();
                     }
                 }
-                else if(l->toString() != m->toString() && l->toString() != r->toString() && m->toString() != r->toString()){
+                else if(simp_oper(NODE_KIND::NT_DISTINCT, l, m)->isTrue() && simp_oper(NODE_KIND::NT_DISTINCT, l, r)->isTrue() && simp_oper(NODE_KIND::NT_DISTINCT, m, r)->isTrue()){
                     return mkTrue();
                 }
-                else{
-                    return mkFalse();
-                }
+                return mkUnknown();
             }
             // convert to multi-pairs using {{l, m}, r}
             case NODE_KIND::NT_AND:
@@ -1818,12 +1733,22 @@ namespace SMTLIBParser{
                 }
                 else{
                     auto common = p[0]->toString();
+                    bool is_constant = true;
                     for(size_t i=1;i<p.size();i++){
-                        if(p[i]->toString() != common){
+                        auto res = simp_oper(NODE_KIND::NT_EQ, p[i], p[0]);
+                        if(res->isFalse()){
                             return mkFalse();
                         }
+                        if(!res->isTrue()){
+                            is_constant = false;
+                        }
                     }
-                    return mkTrue();
+                    if(is_constant){
+                        return mkTrue();
+                    }
+                    else{
+                        return mkUnknown();
+                    }
                 }
             }
             case NODE_KIND::NT_DISTINCT:
@@ -1851,30 +1776,53 @@ namespace SMTLIBParser{
                 }
                 else{
                     boost::unordered_set<std::string> s;
+                    bool is_constant = true;
                     for(size_t i=0;i<p.size();i++){
-                        if(s.count(p[i]->toString())){
-                            return mkFalse();
+                        for(size_t j=i+1;j<p.size();j++){
+                            auto res = simp_oper(NODE_KIND::NT_DISTINCT, p[i], p[j]);
+                            if(res->isFalse()){
+                                return mkFalse();
+                            }
+                            if(!res->isTrue()){
+                                is_constant = false;
+                            }
                         }
-                        s.insert(p[i]->toString());
                     }
-                    return mkTrue();
+                    if(is_constant){
+                        return mkTrue();
+                    }
+                    else{
+                        return mkUnknown();
+                    }
                 }
             }
             case NODE_KIND::NT_IMPLIES:{
                 // -p[0] -p[1] -p[2] -p[3] ... p[n]
+                bool is_constant = true;
                 for(size_t i=0;i<p.size();i++){
                     if(i != p.size()-1){
                         if(p[i]->isFalse()){
                             return mkTrue();
+                        }
+                        if(!p[i]->isTrue()){
+                            is_constant = false;
                         }
                     }
                     else{
                         if(p[i]->isTrue()){
                             return mkTrue();
                         }
+                        if(!p[i]->isFalse()){
+                            is_constant = false;
+                        }
                     }
                 }
-                return mkFalse();
+                if(is_constant){
+                    return mkFalse();
+                }
+                else{
+                    return mkUnknown();
+                }
             }
             // convert to multi-pairs using {{l, m}, r}
             case NODE_KIND::NT_AND:
@@ -1901,6 +1849,9 @@ namespace SMTLIBParser{
                 std::shared_ptr<DAGNode> result = p[0];
                 for(size_t i=1;i<p.size();i++){
                     result = simp_oper(t, result, p[i]);
+                    if(result->isUnknown()){
+                        return mkUnknown();
+                    }
                 }
                 return result;
             }

@@ -164,7 +164,7 @@ class Interval {
         Interval& operator*=(const Number& value);
         Interval& operator/=(const Number& value);
 
-        // 静态方法，用于处理多个区间
+        // static method, for handling multiple intervals
         static std::vector<Interval> unionMulti(const std::vector<Interval>& intervals);
 };
 
