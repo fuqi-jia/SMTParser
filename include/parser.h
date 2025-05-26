@@ -3036,6 +3036,14 @@ namespace SMTLIBParser{
         void                                    collectAtoms(std::vector<std::shared_ptr<DAGNode>> exprs, boost::unordered_set<std::shared_ptr<DAGNode>>& atoms);    
 
         /**
+         * @brief Collect variables from an expression
+         * 
+         * @param expr Expression to collect variables from
+         * @param vars Variables (stored in a set)
+         */
+        void                                    collectVars(std::shared_ptr<DAGNode> expr, boost::unordered_set<std::shared_ptr<DAGNode>>& vars);
+
+        /**
          * @brief Replace atoms in an expression
          * 
          * @param expr Expression to replace atoms in
@@ -3277,6 +3285,7 @@ namespace SMTLIBParser{
 
         // collect atoms
         void        collectAtoms(std::shared_ptr<DAGNode> expr, boost::unordered_set<std::shared_ptr<DAGNode>>& atoms, boost::unordered_set<std::shared_ptr<DAGNode>>& visited);
+        void        collectVars(std::shared_ptr<DAGNode> expr, boost::unordered_set<std::shared_ptr<DAGNode>>& vars, boost::unordered_set<std::shared_ptr<DAGNode>>& visited);
         // evaluate functions
         bool		evaluateSimpleOp(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result, NODE_KIND op);
         bool		evaluateAnd(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);

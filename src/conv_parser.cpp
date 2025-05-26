@@ -58,6 +58,26 @@ namespace SMTLIBParser {
         }
     }
 
+    void Parser::collectVars(std::shared_ptr<DAGNode> expr, boost::unordered_set<std::shared_ptr<DAGNode>>& vars) {
+        boost::unordered_set<std::shared_ptr<DAGNode>> visited;
+        collectVars(expr, vars, visited);
+    }
+
+    void Parser::collectVars(std::shared_ptr<DAGNode> expr, boost::unordered_set<std::shared_ptr<DAGNode>>& vars, boost::unordered_set<std::shared_ptr<DAGNode>>& visited) {
+        if (visited.find(expr) != visited.end()) {
+            return;
+        }
+        visited.insert(expr);
+        if (expr->isVar()) {
+            vars.insert(expr);
+        }
+        else{
+            for (size_t i = 0; i < expr->getChildrenSize(); i++) {
+                collectVars(expr->getChild(i), vars, visited);
+            }
+        }
+    }
+
     std::shared_ptr<DAGNode> Parser::replaceAtoms(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& atom_map) {
         boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> visited;
         bool is_changed = false;
