@@ -102,6 +102,7 @@ namespace SMTLIBParser{
         std::shared_ptr<DAGNode> let_body = nullptr;
         if(is_let){
             let_body = root->getLetBody();
+            return dumpSMTLIB2(let_body);
         }
         
         while (!todo.empty()) {
