@@ -1185,6 +1185,12 @@ namespace SMTLIBParser{
                     toReal(new_params[0]) - toReal(new_params[1])
                 );
             }
+            else if(isZero(new_params[0])){
+                return mkNeg(new_params[1]);
+            }
+            else if(isZero(new_params[1])){
+                return new_params[0];
+            }
         }
         return mkOper(sort, NODE_KIND::NT_SUB, new_params);
     }

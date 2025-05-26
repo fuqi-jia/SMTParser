@@ -1412,6 +1412,12 @@ namespace SMTLIBParser{
                 else if(l->isCReal() && r->isCReal()){
                     return mkConstReal(toReal(l) - toReal(r));
                 }
+                else if(isZero(l)){
+                    return mkNeg(r);
+                }
+                else if(isZero(r)){
+                    return l;
+                }
                 else{
                     err_all(l, "Sub on non-integer or non-real", line_number);
                     err_all(r, "Sub on non-integer or non-real", line_number);
