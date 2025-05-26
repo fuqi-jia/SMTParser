@@ -37,50 +37,55 @@ namespace SMTLIBParser{
             std::shared_ptr<Parser> parser;
             std::shared_ptr<DAGNode> lower;
             std::shared_ptr<DAGNode> upper;
-            bool leftClosed;
-            bool rightClosed;
+            std::shared_ptr<DAGNode> leftClosed;
+            std::shared_ptr<DAGNode> rightClosed;
         public:
             SMTInterval(
                 std::shared_ptr<Parser> parser,
                 std::shared_ptr<DAGNode> lower, 
                 std::shared_ptr<DAGNode> upper, 
-                bool leftClosed, 
-                bool rightClosed
+                std::shared_ptr<DAGNode> leftClosed, 
+                std::shared_ptr<DAGNode> rightClosed
             );
             SMTInterval(const SMTInterval& other);
+            SMTInterval(std::shared_ptr<Parser> parser, const Interval& other);
             SMTInterval& operator=(const SMTInterval& other);
+            bool operator==(const SMTInterval& other) const;
+            bool operator!=(const SMTInterval& other) const;
             ~SMTInterval();
 
             // setters
             // warning: these functions will change the SMTInterval
-            void setLower(std::shared_ptr<DAGNode> lower);
-            void setUpper(std::shared_ptr<DAGNode> upper);
-            void setLeftClosed(bool leftClosed);
-            void setRightClosed(bool rightClosed);
+            bool setLower(std::shared_ptr<DAGNode> lower);
+            bool setUpper(std::shared_ptr<DAGNode> upper);
+            bool setLeftClosed(std::shared_ptr<DAGNode> leftClosed);
+            bool setRightClosed(std::shared_ptr<DAGNode> rightClosed);
+            bool setLower(const Number& lower);
+            bool setUpper(const Number& upper);
+            bool setLeftClosed(bool leftClosed);
+            bool setRightClosed(bool rightClosed);
 
             // getters
             std::shared_ptr<DAGNode> getLower() const;
             std::shared_ptr<DAGNode> getUpper() const;
-            bool isLeftClosed() const;
-            bool isRightClosed() const;
+            std::shared_ptr<DAGNode> isLeftClosed() const;
+            std::shared_ptr<DAGNode> isRightClosed() const;
             bool isLeftUnbounded() const;
             bool isRightUnbounded() const;
             std::shared_ptr<DAGNode> midpoint() const;
             std::string toString() const;
-            void getIntegers(std::vector<std::shared_ptr<DAGNode>>& integers) const;
-            bool isPoint() const;
-            bool isEmpty() const;
+            std::shared_ptr<DAGNode> isPoint() const;
+            std::shared_ptr<DAGNode> isEmpty() const;
             std::shared_ptr<DAGNode> width() const;
-            bool contains(const std::shared_ptr<DAGNode>& value) const;
-            bool isSubsetOf(const SMTInterval& other) const;
-            bool isSubsetEqOf(const SMTInterval& other) const;
-            bool isSupersetOf(const SMTInterval& other) const;
-            bool isDisjointFrom(const SMTInterval& other) const;
-            bool isIntersectingWith(const SMTInterval& other) const;
+            std::shared_ptr<DAGNode> contains(const std::shared_ptr<DAGNode>& value) const;
+            std::shared_ptr<DAGNode> isSubsetOf(const SMTInterval& other) const;
+            std::shared_ptr<DAGNode> isSubsetEqOf(const SMTInterval& other) const;
+            std::shared_ptr<DAGNode> isSupersetOf(const SMTInterval& other) const;
+            std::shared_ptr<DAGNode> isDisjointFrom(const SMTInterval& other) const;
+            std::shared_ptr<DAGNode> isIntersectingWith(const SMTInterval& other) const;
             SMTInterval intersection(const SMTInterval& other) const;
             SMTInterval unionWith(const SMTInterval& other) const;
             std::vector<SMTInterval> difference(const SMTInterval& other) const;
-            size_t getIntervalIntCount() const;
 
             // unary operators
             SMTInterval operator++() const;
@@ -156,21 +161,18 @@ namespace SMTLIBParser{
             
 
             // comparison operators
-            bool operator==(const SMTInterval& other) const;
-            bool operator!=(const SMTInterval& other) const;
-            bool operator<(const SMTInterval& other) const;
-            bool operator<=(const SMTInterval& other) const;
-            bool operator>(const SMTInterval& other) const;
-            bool operator>=(const SMTInterval& other) const;
+            std::shared_ptr<DAGNode> isEqualTo(const SMTInterval& other) const;
+            std::shared_ptr<DAGNode> isNotEqualTo(const SMTInterval& other) const;
+            std::shared_ptr<DAGNode> isLessThan(const SMTInterval& other) const;
+            std::shared_ptr<DAGNode> isLessThanOrEqualTo(const SMTInterval& other) const;
+            std::shared_ptr<DAGNode> isGreaterThan(const SMTInterval& other) const;
+            std::shared_ptr<DAGNode> isGreaterThanOrEqualTo(const SMTInterval& other) const;
 
             // assignment operators
             SMTInterval& operator+=(const Number& value);
             SMTInterval& operator-=(const Number& value);
             SMTInterval& operator*=(const Number& value);
             SMTInterval& operator/=(const Number& value);
-
-            // 静态方法，用于处理多个区间
-            static std::vector<SMTInterval> unionMulti(const std::vector<SMTInterval>& intervals);
     };
 }
 

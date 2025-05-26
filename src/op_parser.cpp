@@ -472,6 +472,9 @@ namespace SMTLIBParser{
     std::shared_ptr<DAGNode> Parser::mkConstInt(const int& v){
         return mkConstInt(Integer(v));
     }
+    std::shared_ptr<DAGNode> Parser::mkConstInt(const Number& v){
+        return mkConstInt(v.toInteger());
+    }
     std::shared_ptr<DAGNode> Parser::mkConstReal(const std::string &v){
         cassert(isRealUtil(v) || v == "e" || v == "pi", "mkConstReal: invalid real constant");
         if(v == "e") return E_NODE;
@@ -521,6 +524,9 @@ namespace SMTLIBParser{
             node_list.emplace_back(newconst);
             return newconst;
         }
+    }
+    std::shared_ptr<DAGNode> Parser::mkConstReal(const Number& v){
+        return mkConstReal(v.toReal());
     }
     std::shared_ptr<DAGNode> Parser::mkConstStr(const std::string &v){
         if(constants_str.find(v) != constants_str.end()){
@@ -1836,14 +1842,62 @@ namespace SMTLIBParser{
     std::shared_ptr<DAGNode> Parser::mkE(){
         return E_NODE;
     }
-    std::shared_ptr<DAGNode> Parser::mkInfinity(){
-        return INF_NODE;
+    std::shared_ptr<DAGNode> Parser::mkInfinity(std::shared_ptr<Sort> sort){
+        if(sort->isEqTo(STR_SORT)){
+            return STR_INF_NODE;
+        }
+        else if(sort->isEqTo(INT_SORT)){
+            return INT_INF_NODE;
+        }
+        else if(sort->isEqTo(REAL_SORT)){
+            return REAL_INF_NODE;
+        }
+        else{
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in infinity", line_number);
+            return mkUnknown();
+        }
+    }
+    std::shared_ptr<DAGNode> Parser::mkPosInfinity(std::shared_ptr<Sort> sort){
+        if(sort->isEqTo(STR_SORT)){
+            return STR_POS_INF_NODE;
+        }
+        else if(sort->isEqTo(INT_SORT)){
+            return INT_POS_INF_NODE;
+        }
+        else if(sort->isEqTo(REAL_SORT)){
+            return REAL_POS_INF_NODE;
+        }
+        else{
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in pos_infinity", line_number);
+            return mkUnknown();
+        }
+    }
+    std::shared_ptr<DAGNode> Parser::mkNegInfinity(std::shared_ptr<Sort> sort){
+        if(sort->isEqTo(STR_SORT)){
+            return STR_NEG_INF_NODE;
+        }
+        else if(sort->isEqTo(INT_SORT)){
+            return INT_NEG_INF_NODE;
+        }
+        else if(sort->isEqTo(REAL_SORT)){
+            return REAL_NEG_INF_NODE;
+        }
+        else{
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in neg_infinity", line_number);
+            return mkUnknown();
+        }
     }
     std::shared_ptr<DAGNode> Parser::mkNan(){
         return NAN_NODE;
     }
     std::shared_ptr<DAGNode> Parser::mkEpsilon(){
         return EPSILON_NODE;
+    }
+    std::shared_ptr<DAGNode> Parser::mkPosEpsilon(){
+        return POS_EPSILON_NODE;
+    }
+    std::shared_ptr<DAGNode> Parser::mkNegEpsilon(){
+        return NEG_EPSILON_NODE;
     }
     // ARITHMATIC FUNCTIONS
     // /*
@@ -4002,8 +4056,12 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_CONST_PI:
             case NODE_KIND::NT_CONST_E:
             case NODE_KIND::NT_INFINITY:
+            case NODE_KIND::NT_POS_INFINITY:
+            case NODE_KIND::NT_NEG_INFINITY:
             case NODE_KIND::NT_NAN:
             case NODE_KIND::NT_EPSILON:
+            case NODE_KIND::NT_POS_EPSILON:
+            case NODE_KIND::NT_NEG_EPSILON:
             case NODE_KIND::NT_REG_NONE:
             case NODE_KIND::NT_REG_ALL:
             case NODE_KIND::NT_REG_ALLCHAR:

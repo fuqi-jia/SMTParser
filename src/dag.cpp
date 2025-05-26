@@ -396,11 +396,23 @@ namespace SMTLIBParser{
                 case NODE_KIND::NT_INFINITY:
                     res = "inf";
                     break;
+                case NODE_KIND::NT_POS_INFINITY:
+                    res = "+inf";
+                    break;
+                case NODE_KIND::NT_NEG_INFINITY:
+                    res = "-inf";
+                    break;
                 case NODE_KIND::NT_NAN:
                     res = "NaN";
                     break;
                 case NODE_KIND::NT_EPSILON:
                     res = "epsilon";
+                    break;
+                case NODE_KIND::NT_POS_EPSILON:
+                    res = "+epsilon";
+                    break;
+                case NODE_KIND::NT_NEG_EPSILON:
+                    res = "-epsilon";
                     break;
                 case NODE_KIND::NT_REG_NONE:
                     res = "re.none";
@@ -737,11 +749,23 @@ namespace SMTLIBParser{
         case NODE_KIND::NT_INFINITY:
             ofs << "inf";
             break;
+        case NODE_KIND::NT_POS_INFINITY:
+            ofs << "+inf";
+            break;
+        case NODE_KIND::NT_NEG_INFINITY:
+            ofs << "-inf";
+            break;
         case NODE_KIND::NT_NAN:
             ofs << "NaN";
             break;
         case NODE_KIND::NT_EPSILON:
             ofs << "epsilon";
+            break;
+        case NODE_KIND::NT_POS_EPSILON:
+            ofs << "+epsilon";
+            break;
+        case NODE_KIND::NT_NEG_EPSILON:
+            ofs << "-epsilon";
             break;
         case NODE_KIND::NT_GCD:
         case NODE_KIND::NT_LCM:

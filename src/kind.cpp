@@ -201,10 +201,18 @@ namespace SMTLIBParser{
             return "e";
         case NODE_KIND::NT_INFINITY:
             return "inf";
+        case NODE_KIND::NT_POS_INFINITY:
+            return "+inf";
+        case NODE_KIND::NT_NEG_INFINITY:
+            return "-inf";
         case NODE_KIND::NT_NAN:
             return "NaN";
         case NODE_KIND::NT_EPSILON:
             return "epsilon";
+        case NODE_KIND::NT_POS_EPSILON:
+            return "+epsilon";
+        case NODE_KIND::NT_NEG_EPSILON:
+            return "-epsilon";
         // ARITHMATIC FUNCTIONS
         // case NODE_KIND::NT_SUM:
         //     return "sum";
