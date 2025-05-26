@@ -121,7 +121,7 @@ namespace SMTLIBParser{
         // simplify
         if(p->isConst()){
             auto res = simp_oper(t, p);
-            if(res->isConst()){
+            if(!res->isUnknown()){
                 return res;
             }
         }
@@ -132,7 +132,7 @@ namespace SMTLIBParser{
     std::shared_ptr<DAGNode> Parser::mkOper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(l->isConst() && r->isConst()){
             auto res = simp_oper(t, l, r);
-            if(res->isConst()){
+            if(!res->isUnknown()){
                 return res;
             }
         }
@@ -144,7 +144,7 @@ namespace SMTLIBParser{
     std::shared_ptr<DAGNode> Parser::mkOper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> m, std::shared_ptr<DAGNode> r){
         if(l->isConst() && m->isConst() && r->isConst()){
             auto res = simp_oper(t, l, m, r);
-            if(res->isConst()){
+            if(!res->isUnknown()){
                 return res;
             }
         }
@@ -162,7 +162,7 @@ namespace SMTLIBParser{
         }
         if(is_all_const){
             auto res = simp_oper(t, p);
-            if(res->isConst()){
+            if(!res->isUnknown()){
                 return res;
             }
         }
