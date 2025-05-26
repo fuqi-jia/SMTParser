@@ -97,8 +97,17 @@ namespace SMTLIBParser{
         
         // Initialize stack, start from root node
         todo.push(root);
+
+        bool is_let = root->isLet();
+        std::shared_ptr<DAGNode> let_body = nullptr;
+        if(is_let){
+            let_body = root->getLetBody();
+        }
         
         while (!todo.empty()) {
+            // if the let body has been processed, break
+            if(is_let && processed[let_body]){break;}
+
             std::shared_ptr<DAGNode> current = todo.top();
             
             // If current node has been processed, pop it
@@ -476,7 +485,9 @@ namespace SMTLIBParser{
                 processed[current] = true;
             }
         }
-        
+        if(is_let){
+            return results[let_body];
+        }
         return results[root];
     }
     
