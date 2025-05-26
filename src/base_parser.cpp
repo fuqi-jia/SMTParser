@@ -1033,7 +1033,33 @@ namespace SMTLIBParser{
 
 	
 	std::shared_ptr<DAGNode> Parser::parseConstFunc(const std::string& s){
-		if(s == "pi"){
+		// these have the highest priority
+		if(let_key_map.find(s) != let_key_map.end()){
+			return let_key_map[s];
+		}
+		else if(fun_key_map.find(s) != fun_key_map.end()){
+			// function name
+			return fun_key_map[s];
+		}
+		else if(fun_var_map.find(s) != fun_var_map.end()){
+			// function variable name
+			return fun_var_map[s];
+		}
+		else if(var_names.find(s) != var_names.end()){
+			// variable name
+			return node_list[var_names[s]];
+		}
+		// following Common Lisp's conventions, enclosing
+		// a simple symbol in vertical bars does not produce a new symbol.
+		else if(s.size() > 1 && 
+				s[0] == '|'  && 
+				s[s.size() - 1] == '|' &&
+				var_names.find(s.substr(1, s.size() - 2)) != var_names.end()){
+			// string
+			return node_list[var_names[s.substr(1, s.size() - 2)]];
+		}
+		// otherwise, it is a constant
+		else if(s == "pi"){
 			return mkPi();
 		}
 		else if(s == "e"){
@@ -1088,31 +1114,7 @@ namespace SMTLIBParser{
 			return mkRegAllChar();
 		}
 		else {
-			if(let_key_map.find(s) != let_key_map.end()){
-				return let_key_map[s];
-			}
-			else if(fun_key_map.find(s) != fun_key_map.end()){
-				// function name
-				return fun_key_map[s];
-			}
-			else if(fun_var_map.find(s) != fun_var_map.end()){
-				// function variable name
-				return fun_var_map[s];
-			}
-			else if(var_names.find(s) != var_names.end()){
-				// variable name
-				return node_list[var_names[s]];
-			}
-			// following Common Lisp's conventions, enclosing
-			// a simple symbol in vertical bars does not produce a new symbol.
-			else if(s.size() > 1 && 
-					s[0] == '|'  && 
-					s[s.size() - 1] == '|' &&
-					var_names.find(s.substr(1, s.size() - 2)) != var_names.end()){
-				// string
-				return node_list[var_names[s.substr(1, s.size() - 2)]];
-			}
-			else return mkErr(ERROR_TYPE::ERR_UNKWN_SYM);
+			return mkErr(ERROR_TYPE::ERR_UNKWN_SYM);
 		}
 	}
 
@@ -2234,6 +2236,7 @@ namespace SMTLIBParser{
 		return arithNormalize(expr, is_changed);
 	}
 
+
 	std::shared_ptr<DAGNode> Parser::arithNormalize(std::shared_ptr<DAGNode> expr, bool& is_changed){
 		if(expr->isErr()){
 			return expr;
@@ -2270,18 +2273,20 @@ namespace SMTLIBParser{
 			}
 		}
 		else{
+			bool cur_is_changed = false;
 			std::vector<std::shared_ptr<DAGNode>> record;
 			for(size_t i=0;i<expr->getChildrenSize();i++){
 				bool child_changed = false;
 				record.emplace_back(arithNormalize(expr->getChild(i), child_changed));
-				is_changed = is_changed || child_changed;
+				cur_is_changed = cur_is_changed || child_changed;
 			}
-			if(is_changed){
+			if(cur_is_changed){
 				std::shared_ptr<DAGNode> res = mkOper(expr->getSort(), expr->getKind(), record);
 				is_changed = true;
 				return res;
 			}
 			else{
+				is_changed = false;
 				return expr;
 			}
 		}
@@ -2315,10 +2320,10 @@ namespace SMTLIBParser{
 		return SMTLIBParser::getOppositeKind(kind);
 	}
 	std::shared_ptr<DAGNode> Parser::getZero(std::shared_ptr<Sort> sort){
-		if(sort == INT_SORT){
+		if(sort->isInt() || sort->isIntOrReal()){
 			return mkConstInt(0);
 		}
-		else if(sort == REAL_SORT){
+		else if(sort->isReal()){
 			return mkConstReal(0.0);
 		}
 		else if(sort->isBv()){

@@ -62,7 +62,7 @@ namespace SMTLIBParser{
                 return name;
             }
         }
-        else if(sort->isInt()){
+        else if(sort->isInt() || sort->isIntOrReal()){
             if(name[0] == '-'){
                 return "(- " + name.substr(1) + ")";
             }

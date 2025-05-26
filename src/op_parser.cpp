@@ -1175,7 +1175,7 @@ namespace SMTLIBParser{
             }
         }
         if(new_params.size() == 2){
-            if(sort->isInt() && new_params[0]->isCInt() && new_params[1]->isCInt()){
+            if((sort->isInt() || sort->isIntOrReal()) && new_params[0]->isCInt() && new_params[1]->isCInt()){
                 return mkConstInt(
                     toInt(new_params[0]) - toInt(new_params[1])
                 );
