@@ -858,7 +858,23 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_EQ:
             case NODE_KIND::NT_EQ_BOOL:
             case NODE_KIND::NT_EQ_OTHER:{
-                if(l->toString() == r->toString()){
+                if(l->isCInt() && r->isCInt()){
+                    if(toInt(l) == toInt(r)){
+                        return mkTrue();
+                    }
+                    else{
+                        return mkFalse();
+                    }
+                }
+                else if(l->isCReal() && r->isCReal()){
+                    if(toReal(l) == toReal(r)){
+                        return mkTrue();
+                    }
+                    else{
+                        return mkFalse();
+                    }
+                }
+                else if(l->toString() == r->toString()){
                     return mkTrue();
                 }
                 else{
@@ -1272,7 +1288,23 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_DISTINCT:
             case NODE_KIND::NT_DISTINCT_BOOL:
             case NODE_KIND::NT_DISTINCT_OTHER:{
-                if(l->toString() == r->toString()){
+                if(l->isCInt() && r->isCInt()){
+                    if(toInt(l) == toInt(r)){
+                        return mkFalse();
+                    }
+                    else{
+                        return mkTrue();
+                    }
+                }
+                else if(l->isCReal() && r->isCReal()){
+                    if(toReal(l) == toReal(r)){
+                        return mkFalse();
+                    }
+                    else{
+                        return mkTrue();
+                    }
+                }
+                else if(l->toString() == r->toString()){
                     return mkFalse();
                 }
                 else{
@@ -1621,7 +1653,23 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_EQ:
             case NODE_KIND::NT_EQ_BOOL:
             case NODE_KIND::NT_EQ_OTHER:{
-                if(l->toString() == r->toString() && m->toString() == r->toString()){
+                if(l->isCInt() && m->isCInt() && r->isCInt()){
+                    if(toInt(l) == toInt(m) && toInt(m) == toInt(r)){
+                        return mkTrue();
+                    }
+                    else{
+                        return mkFalse();
+                    }
+                }
+                else if(l->isCReal() && m->isCReal() && r->isCReal()){
+                    if(toReal(l) == toReal(m) && toReal(m) == toReal(r)){
+                        return mkTrue();
+                    }
+                    else{
+                        return mkFalse();
+                    }
+                }
+                else if(l->toString() == m->toString() && m->toString() == r->toString()){
                     return mkTrue();
                 }
                 else{
@@ -1631,7 +1679,23 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_DISTINCT:
             case NODE_KIND::NT_DISTINCT_BOOL:
             case NODE_KIND::NT_DISTINCT_OTHER:{
-                if(l->toString() != m->toString() && l->toString() != r->toString() && m->toString() != r->toString()){
+                if(l->isCInt() && m->isCInt() && r->isCInt()){
+                    if(toInt(l) != toInt(m) && toInt(l) != toInt(r) && toInt(m) != toInt(r)){
+                        return mkTrue();
+                    }
+                    else{
+                        return mkFalse();
+                    }
+                }
+                else if(l->isCReal() && m->isCReal() && r->isCReal()){
+                    if(toReal(l) != toReal(m) && toReal(l) != toReal(r) && toReal(m) != toReal(r)){
+                        return mkTrue();
+                    }
+                    else{
+                        return mkFalse();
+                    }
+                }
+                else if(l->toString() != m->toString() && l->toString() != r->toString() && m->toString() != r->toString()){
                     return mkTrue();
                 }
                 else{
@@ -1690,25 +1754,67 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_EQ:
             case NODE_KIND::NT_EQ_BOOL:
             case NODE_KIND::NT_EQ_OTHER:{
-                auto common = p[0]->toString();
-                for(size_t i=1;i<p.size();i++){
-                    if(p[i]->toString() != common){
-                        return mkFalse();
+                if(p[0]->isCInt()){
+                    auto common = toInt(p[0]);
+                    for(size_t i=1;i<p.size();i++){
+                        if(toInt(p[i]) != common){
+                            return mkFalse();
+                        }
                     }
+                    return mkTrue();
                 }
-                return mkTrue();
+                else if(p[0]->isCReal()){
+                    auto common = toReal(p[0]);
+                    for(size_t i=1;i<p.size();i++){
+                        if(toReal(p[i]) != common){
+                            return mkFalse();
+                        }
+                    }
+                    return mkTrue();
+                }
+                else{
+                    auto common = p[0]->toString();
+                    for(size_t i=1;i<p.size();i++){
+                        if(p[i]->toString() != common){
+                            return mkFalse();
+                        }
+                    }
+                    return mkTrue();
+                }
             }
             case NODE_KIND::NT_DISTINCT:
             case NODE_KIND::NT_DISTINCT_BOOL:
             case NODE_KIND::NT_DISTINCT_OTHER:{
-                boost::unordered_set<std::string> s;
-                for(size_t i=0;i<p.size();i++){
-                    if(s.count(p[i]->toString())){
-                        return mkFalse();
+                if(p[0]->isCInt()){
+                    boost::unordered_set<std::string> s;
+                    for(size_t i=0;i<p.size();i++){
+                        if(s.count(toInt(p[i]).toString())){
+                            return mkFalse();
+                        }
+                        s.insert(toInt(p[i]).toString());
                     }
-                    s.insert(p[i]->toString());
+                    return mkTrue();
                 }
-                return mkTrue();
+                else if(p[0]->isCReal()){
+                    boost::unordered_set<std::string> s;
+                    for(size_t i=0;i<p.size();i++){
+                        if(s.count(toReal(p[i]).toString())){
+                            return mkFalse();
+                        }
+                        s.insert(toReal(p[i]).toString());
+                    }
+                    return mkTrue();
+                }
+                else{
+                    boost::unordered_set<std::string> s;
+                    for(size_t i=0;i<p.size();i++){
+                        if(s.count(p[i]->toString())){
+                            return mkFalse();
+                        }
+                        s.insert(p[i]->toString());
+                    }
+                    return mkTrue();
+                }
             }
             case NODE_KIND::NT_IMPLIES:{
                 // -p[0] -p[1] -p[2] -p[3] ... p[n]
