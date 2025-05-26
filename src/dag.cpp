@@ -104,10 +104,10 @@ namespace SMTLIBParser{
             let_body = root->getLetBody();
             return dumpSMTLIB2(let_body);
         }
+
+        cassert(!root->isLet(), "dumpSMTLIB2: root cannot be a let");
         
         while (!todo.empty()) {
-            // if the let body has been processed, break
-            if(is_let && results.find(let_body) != results.end()){break;}
 
             std::shared_ptr<DAGNode> current = todo.top();
             
