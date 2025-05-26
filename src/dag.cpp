@@ -362,7 +362,9 @@ namespace SMTLIBParser{
                 case NODE_KIND::NT_REG_CONCAT:
                 case NODE_KIND::NT_REG_UNION:
                 case NODE_KIND::NT_REG_INTER:
-                case NODE_KIND::NT_REG_DIFF: {
+                case NODE_KIND::NT_REG_DIFF:
+                case NODE_KIND::NT_MAX:
+                case NODE_KIND::NT_MIN: {
                     res = "(" + kindToString(kind);
                     for (auto& child : current->getChildren()) {
                         res += " " + results[child];
@@ -1000,6 +1002,11 @@ namespace SMTLIBParser{
             break;
         case NODE_KIND::NT_REG_COMPLEMENT:
             dumpSingleOp(kind, node->getChild(0), visited, ofs);
+            break;
+        // INTERVAL
+        case NODE_KIND::NT_MAX:
+        case NODE_KIND::NT_MIN:
+            dumpChainOp(kind, node->getChildren(), visited, ofs);
             break;
         // STRINGS RE FUNCTIONS
         case NODE_KIND::NT_REPLACE_REG:

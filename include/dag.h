@@ -244,6 +244,10 @@ namespace SMTLIBParser{
         bool isTempVar() 			const { return kind == NODE_KIND::NT_TEMP_VAR; };
         bool isVar() 				const { return (isVBool() || isVInt() || isVReal() || isVBV() || isVFP() || isVStr() || isTempVar()); };
         
+        // interval
+        bool isMax() 				const { return kind == NODE_KIND::NT_MAX; };
+        bool isMin() 				const { return kind == NODE_KIND::NT_MIN; };
+
         // check array
         bool isArray() 			    const { return kind == NODE_KIND::NT_VAR && sort->isArray(); };
         
@@ -326,7 +330,9 @@ namespace SMTLIBParser{
         bool isArithTerm() 			const { return (isArithOp() || isArithConv() || isRealNonlinearOp() || isTranscendentalOp() || 
                                                     (isVar() && (isVInt() || isVReal())) ||
                                                     (isConst() && (isCInt() || isCReal())) ||
-                                                    (isIte() && getChild(1)->isArithTerm() && getChild(2)->isArithTerm())); };
+                                                    (isIte() && getChild(1)->isArithTerm() && getChild(2)->isArithTerm()) ||
+                                                    (isMax() && getChild(0)->isArithTerm() && getChild(1)->isArithTerm()) ||
+                                                    (isMin() && getChild(0)->isArithTerm() && getChild(1)->isArithTerm())); };
         bool isArithComp() 			const { return ((isEq() && getChild(0)->isArithTerm())|| 
                                                     (isDistinct() && getChild(0)->isArithTerm()) || 
                                                     isLe() || isLt() || isGe() || isGt()); };
@@ -413,7 +419,9 @@ namespace SMTLIBParser{
         bool isBVTerm()    		    const { return (isBVOp() ||
                                                     (isVar() && isVBV()) ||
                                                     (isConst() && isCBV()) ||
-                                                    (isIte() && getChild(1)->isBVTerm() && getChild(2)->isBVTerm())); };
+                                                    (isIte() && getChild(1)->isBVTerm() && getChild(2)->isBVTerm()) ||
+                                                    (isMax() && getChild(0)->isBVTerm() && getChild(1)->isBVTerm()) ||
+                                                    (isMin() && getChild(0)->isBVTerm() && getChild(1)->isBVTerm())); };
         bool isBVCompOp()     		const { return ((isEq() && getChild(0)->isBVTerm()) ||
                                                     (isDistinct() && getChild(0)->isBVTerm()) ||
                                                     isBVUlt() || isBVUle() || isBVUgt() || isBVUge() || isBVSlt() || isBVSle() || isBVSgt() || isBVSge()); };

@@ -60,6 +60,8 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_BV_XOR:
             case NODE_KIND::NT_EQ:
             case NODE_KIND::NT_DISTINCT:
+            case NODE_KIND::NT_MAX:
+            case NODE_KIND::NT_MIN:
                 return true;
             default:
                 return false;
@@ -3788,6 +3790,66 @@ namespace SMTLIBParser{
         return mkOper(INT_SORT, NODE_KIND::NT_INDEXOF_REG, l, r);
     }
 
+    // INTERVAL
+    std::shared_ptr<DAGNode> Parser::mkMax(const std::vector<std::shared_ptr<DAGNode>> &params){
+        if(params.size() == 0){
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for max", line_number);
+            return mkUnknown();
+        }
+        else if(params.size() == 1){
+            return params[0];
+        }
+        std::shared_ptr<Sort> sort = getSort(params);
+
+        std::vector<std::shared_ptr<DAGNode>> new_params;
+
+        // pair-wise comparison: (< a b c d) <=> (and (< a b) (< b c) (< c d))
+        for(size_t i=0;i<params.size() - 1;i++){
+            if(params[i]->isErr()) return params[i];
+            if(sort != nullptr && !params[i]->getSort()->isEqTo(sort)) {
+                if(canExempt(params[i]->getSort(), sort)){
+                    std::cerr << "Type mismatch in max, but now exempt for int/real"<<std::endl;
+                }
+                else{
+                    err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in max", line_number);
+                    return mkUnknown();
+                }
+            }
+            new_params.emplace_back(params[i]);
+        }
+
+        return mkOper(sort, NODE_KIND::NT_MAX, new_params);
+    }
+    std::shared_ptr<DAGNode> Parser::mkMin(const std::vector<std::shared_ptr<DAGNode>> &params){
+        if(params.size() == 0){
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for min", line_number);
+            return mkUnknown();
+        }
+        else if(params.size() == 1){
+            return params[0];
+        }
+        std::shared_ptr<Sort> sort = getSort(params);
+
+        std::vector<std::shared_ptr<DAGNode>> new_params;
+
+        // pair-wise comparison: (< a b c d) <=> (and (< a b) (< b c) (< c d))
+        for(size_t i=0;i<params.size() - 1;i++){
+            if(params[i]->isErr()) return params[i];
+            if(sort != nullptr && !params[i]->getSort()->isEqTo(sort)) {
+                if(canExempt(params[i]->getSort(), sort)){
+                    std::cerr << "Type mismatch in min, but now exempt for int/real"<<std::endl;
+                }
+                else{
+                    err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in min", line_number);
+                    return mkUnknown();
+                }
+            }
+            new_params.emplace_back(params[i]);
+        }
+
+        return mkOper(sort, NODE_KIND::NT_MIN, new_params);
+    }
+
     // negate an atom
     std::shared_ptr<DAGNode> Parser::negateComp(std::shared_ptr<DAGNode> atom){
         if(atom->isErr()) return atom;
@@ -4153,7 +4215,9 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_REG_INTER:
             case NODE_KIND::NT_REG_DIFF:
             case NODE_KIND::NT_FORALL:
-            case NODE_KIND::NT_EXISTS: 
+            case NODE_KIND::NT_EXISTS:
+            case NODE_KIND::NT_MAX:
+            case NODE_KIND::NT_MIN:
                 return -1;
 
             default:

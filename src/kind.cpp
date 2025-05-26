@@ -480,6 +480,11 @@ namespace SMTLIBParser{
             return "str.replace_re_all";
         case NODE_KIND::NT_INDEXOF_REG:
             return "str.indexof";
+        // INTERVAL
+        case NODE_KIND::NT_MAX:
+            return "max";
+        case NODE_KIND::NT_MIN:
+            return "min";
         // LET
         case NODE_KIND::NT_LET:
             return "let";

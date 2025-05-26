@@ -2722,6 +2722,23 @@ namespace SMTLIBParser{
          */
         std::shared_ptr<DAGNode> mkIndexofReg(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // indexof(l, r)
         
+        // INTERVAL
+        /**
+         * @brief Create a max node
+         * 
+         * @param params List of parameters
+         * @return Max node (max(p1, p2, ...))
+         */
+        std::shared_ptr<DAGNode> mkMax(const std::vector<std::shared_ptr<DAGNode>> &params); // max(p1, p2, ...)
+        
+        /**
+         * @brief Create a min node
+         * 
+         * @param params List of parameters
+         * @return Min node (min(p1, p2, ...))
+         */
+        std::shared_ptr<DAGNode> mkMin(const std::vector<std::shared_ptr<DAGNode>> &params); // min(p1, p2, ...)
+
         // LET 
         /**
          * @brief Create a let node
@@ -3377,6 +3394,8 @@ namespace SMTLIBParser{
         bool		evaluateRegComplement(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
         bool		evaluateApplyFun(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
         bool		evaluateLet(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
+        bool        evaluateMax(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
+        bool        evaluateMin(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
     };
 
 

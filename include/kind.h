@@ -110,6 +110,9 @@ namespace SMTLIBParser{
         NT_REPLACE_REG, NT_REPLACE_REG_ALL,NT_INDEXOF_REG, 
         // SEQUENCE
 
+        // INTERVAL
+        NT_MAX, NT_MIN, 
+
         // LET 
         NT_LET, 
         // ITE

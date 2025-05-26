@@ -844,7 +844,9 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_REG_CONCAT:
             case NODE_KIND::NT_REG_UNION:
             case NODE_KIND::NT_REG_INTER:
-            case NODE_KIND::NT_REG_DIFF: {
+            case NODE_KIND::NT_REG_DIFF:
+            case NODE_KIND::NT_MAX:
+            case NODE_KIND::NT_MIN: {
                 return p;
             }    
             default:
@@ -1550,6 +1552,40 @@ namespace SMTLIBParser{
                     return mkUnknown();
                 }
             }
+            case NODE_KIND::NT_MAX:{
+                std::shared_ptr<Sort> sort = getSort({l, r});
+                if(l->isConst() && r->isConst()){
+                    if(sort->isReal()){
+                        return mkConstReal(std::max(toReal(l), toReal(r)));
+                    }
+                    else if(sort->isInt()){
+                        return mkConstInt(std::max(toInt(l), toInt(r)));
+                    }
+                    else{
+                        return mkUnknown();
+                    }
+                }
+                else{
+                    return mkOper(sort, NODE_KIND::NT_MAX, l, r);
+                }
+            }
+            case NODE_KIND::NT_MIN:{
+                std::shared_ptr<Sort> sort = getSort({l, r});
+                if(l->isConst() && r->isConst()){
+                    if(sort->isReal()){
+                        return mkConstReal(std::min(toReal(l), toReal(r)));
+                    }
+                    else if(sort->isInt()){
+                        return mkConstInt(std::min(toInt(l), toInt(r)));
+                    }
+                    else{
+                        return mkUnknown();
+                    }
+                }
+                else{
+                    return mkOper(sort, NODE_KIND::NT_MIN, l, r);
+                }
+            }
             case NODE_KIND::NT_FP_ADD:
             case NODE_KIND::NT_FP_SUB:
             case NODE_KIND::NT_FP_MUL:
@@ -1727,7 +1763,9 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_BV_SUB:
             case NODE_KIND::NT_BV_MUL:
             case NODE_KIND::NT_BV_CONCAT:
-            case NODE_KIND::NT_STR_CONCAT:{
+            case NODE_KIND::NT_STR_CONCAT:
+            case NODE_KIND::NT_MAX:
+            case NODE_KIND::NT_MIN:{
                 // convert to multi-pairs using {{l, m}, r}
                 std::shared_ptr<DAGNode> result = l;
                 result = simp_oper(t, result, m);
@@ -1856,7 +1894,9 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_BV_SUB:
             case NODE_KIND::NT_BV_MUL:
             case NODE_KIND::NT_BV_CONCAT:
-            case NODE_KIND::NT_STR_CONCAT:{
+            case NODE_KIND::NT_STR_CONCAT:
+            case NODE_KIND::NT_MAX:
+            case NODE_KIND::NT_MIN:{
                 // convert to multi-pairs using {{l, m}, r}
                 std::shared_ptr<DAGNode> result = p[0];
                 for(size_t i=1;i<p.size();i++){

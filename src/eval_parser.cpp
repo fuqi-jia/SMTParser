@@ -697,6 +697,8 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_BV_XNOR:
             case NODE_KIND::NT_BV_ADD:
             case NODE_KIND::NT_BV_MUL:
+            case NODE_KIND::NT_MAX:
+            case NODE_KIND::NT_MIN:
             {
                 changed = false;
                 std::vector<std::shared_ptr<DAGNode>> children;
@@ -1719,6 +1721,13 @@ namespace SMTLIBParser{
     std::shared_ptr<DAGNode> Parser::expandLet(std::shared_ptr<DAGNode> expr){
         return expr->getLetBody();
     }
+    bool Parser::evaluateMax(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_MAX);
+    }
+    bool Parser::evaluateMin(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_MIN);
+    }
+    
 }
 
 
