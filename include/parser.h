@@ -555,7 +555,15 @@ namespace SMTLIBParser{
          * @return Integer constant node
          */
         std::shared_ptr<DAGNode> mkConstInt(const Integer &v); // CONST_INT
-        
+
+        /**
+         * @brief Create a real constant from number
+         *
+         * @param v Value (Number)
+         * @return Real constant node
+         */
+        std::shared_ptr<DAGNode> mkConstInt(const Number& v); // CONST_INT
+
         /**
          * @brief Create a real constant from string
          *
@@ -587,6 +595,14 @@ namespace SMTLIBParser{
          * @return Real constant node
          */
         std::shared_ptr<DAGNode> mkConstReal(const Integer &v); // CONST_REAL
+
+        /**
+         * @brief Create a real constant from number
+         *
+         * @param v Value (Number)
+         * @return Real constant node
+         */
+        std::shared_ptr<DAGNode> mkConstReal(const Number& v); // CONST_REAL
         
         /**
          * @brief Create a string constant
@@ -1509,7 +1525,21 @@ namespace SMTLIBParser{
          * 
          * @return Infinity node (infinity)
          */
-        std::shared_ptr<DAGNode> mkInfinity(); // infinity
+        std::shared_ptr<DAGNode> mkInfinity(std::shared_ptr<Sort> sort); // infinity
+
+        /**
+         * @brief Create a positive infinity node
+         * 
+         * @return Positive infinity node (+infinity)
+         */
+        std::shared_ptr<DAGNode> mkPosInfinity(std::shared_ptr<Sort> sort); // +infinity
+
+        /**
+         * @brief Create a negative infinity node
+         * 
+         * @return Negative infinity node (-infinity)
+         */
+        std::shared_ptr<DAGNode> mkNegInfinity(std::shared_ptr<Sort> sort); // -infinity
 
         /**
          * @brief Create a nan node
@@ -1524,6 +1554,20 @@ namespace SMTLIBParser{
          * @return Epsilon node (epsilon, i.e., a infinitesimal number)
          */
         std::shared_ptr<DAGNode> mkEpsilon(); // epsilon
+        
+        /**
+         * @brief Create a positive epsilon node
+         * 
+         * @return Positive epsilon node (+epsilon)
+         */
+        std::shared_ptr<DAGNode> mkPosEpsilon(); // +epsilon
+
+        /**
+         * @brief Create a negative epsilon node
+         * 
+         * @return Negative epsilon node (-epsilon)
+         */ 
+        std::shared_ptr<DAGNode> mkNegEpsilon(); // -epsilon
         
         // ARITHMATIC FUNCTIONS
         
@@ -2722,6 +2766,23 @@ namespace SMTLIBParser{
          */
         std::shared_ptr<DAGNode> mkIndexofReg(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // indexof(l, r)
         
+        // INTERVAL
+        /**
+         * @brief Create a max node
+         * 
+         * @param params List of parameters
+         * @return Max node (max(p1, p2, ...))
+         */
+        std::shared_ptr<DAGNode> mkMax(const std::vector<std::shared_ptr<DAGNode>> &params); // max(p1, p2, ...)
+        
+        /**
+         * @brief Create a min node
+         * 
+         * @param params List of parameters
+         * @return Min node (min(p1, p2, ...))
+         */
+        std::shared_ptr<DAGNode> mkMin(const std::vector<std::shared_ptr<DAGNode>> &params); // min(p1, p2, ...)
+
         // LET 
         /**
          * @brief Create a let node
@@ -3377,6 +3438,8 @@ namespace SMTLIBParser{
         bool		evaluateRegComplement(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
         bool		evaluateApplyFun(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
         bool		evaluateLet(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
+        bool        evaluateMax(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
+        bool        evaluateMin(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
     };
 
 

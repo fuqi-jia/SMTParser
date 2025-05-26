@@ -363,7 +363,9 @@ namespace SMTLIBParser{
                 case NODE_KIND::NT_REG_CONCAT:
                 case NODE_KIND::NT_REG_UNION:
                 case NODE_KIND::NT_REG_INTER:
-                case NODE_KIND::NT_REG_DIFF: {
+                case NODE_KIND::NT_REG_DIFF:
+                case NODE_KIND::NT_MAX:
+                case NODE_KIND::NT_MIN: {
                     res = "(" + kindToString(kind);
                     for (auto& child : current->getChildren()) {
                         res += " " + results[child];
@@ -395,11 +397,23 @@ namespace SMTLIBParser{
                 case NODE_KIND::NT_INFINITY:
                     res = "inf";
                     break;
+                case NODE_KIND::NT_POS_INFINITY:
+                    res = "+inf";
+                    break;
+                case NODE_KIND::NT_NEG_INFINITY:
+                    res = "-inf";
+                    break;
                 case NODE_KIND::NT_NAN:
                     res = "NaN";
                     break;
                 case NODE_KIND::NT_EPSILON:
                     res = "epsilon";
+                    break;
+                case NODE_KIND::NT_POS_EPSILON:
+                    res = "+epsilon";
+                    break;
+                case NODE_KIND::NT_NEG_EPSILON:
+                    res = "-epsilon";
                     break;
                 case NODE_KIND::NT_REG_NONE:
                     res = "re.none";
@@ -736,11 +750,23 @@ namespace SMTLIBParser{
         case NODE_KIND::NT_INFINITY:
             ofs << "inf";
             break;
+        case NODE_KIND::NT_POS_INFINITY:
+            ofs << "+inf";
+            break;
+        case NODE_KIND::NT_NEG_INFINITY:
+            ofs << "-inf";
+            break;
         case NODE_KIND::NT_NAN:
             ofs << "NaN";
             break;
         case NODE_KIND::NT_EPSILON:
             ofs << "epsilon";
+            break;
+        case NODE_KIND::NT_POS_EPSILON:
+            ofs << "+epsilon";
+            break;
+        case NODE_KIND::NT_NEG_EPSILON:
+            ofs << "-epsilon";
             break;
         case NODE_KIND::NT_GCD:
         case NODE_KIND::NT_LCM:
@@ -1001,6 +1027,11 @@ namespace SMTLIBParser{
             break;
         case NODE_KIND::NT_REG_COMPLEMENT:
             dumpSingleOp(kind, node->getChild(0), visited, ofs);
+            break;
+        // INTERVAL
+        case NODE_KIND::NT_MAX:
+        case NODE_KIND::NT_MIN:
+            dumpChainOp(kind, node->getChildren(), visited, ofs);
             break;
         // STRINGS RE FUNCTIONS
         case NODE_KIND::NT_REPLACE_REG:

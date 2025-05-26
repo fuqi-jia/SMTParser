@@ -44,10 +44,19 @@ namespace SMTLIBParser{
 		node_list.emplace_back(UNKNOWN_NODE);
 		node_list.emplace_back(E_NODE);
 		node_list.emplace_back(PI_NODE);
-		node_list.emplace_back(INF_NODE);
+		node_list.emplace_back(STR_INF_NODE);
+		node_list.emplace_back(STR_POS_INF_NODE);
+		node_list.emplace_back(STR_NEG_INF_NODE);
+		node_list.emplace_back(INT_INF_NODE);
+		node_list.emplace_back(INT_POS_INF_NODE);
+		node_list.emplace_back(INT_NEG_INF_NODE);
+		node_list.emplace_back(REAL_INF_NODE);
+		node_list.emplace_back(REAL_POS_INF_NODE);
+		node_list.emplace_back(REAL_NEG_INF_NODE);
 		node_list.emplace_back(NAN_NODE);
 		node_list.emplace_back(EPSILON_NODE);
-		
+		node_list.emplace_back(POS_EPSILON_NODE);
+		node_list.emplace_back(NEG_EPSILON_NODE);
 		options = std::make_shared<GlobalOptions>();
 	}
 
@@ -69,9 +78,18 @@ namespace SMTLIBParser{
 		node_list.emplace_back(UNKNOWN_NODE);
 		node_list.emplace_back(E_NODE);
 		node_list.emplace_back(PI_NODE);
-		node_list.emplace_back(INF_NODE);
+		node_list.emplace_back(STR_INF_NODE);
+		node_list.emplace_back(STR_POS_INF_NODE);
+		node_list.emplace_back(STR_NEG_INF_NODE);
+		node_list.emplace_back(INT_INF_NODE);
+		node_list.emplace_back(INT_POS_INF_NODE);
+		node_list.emplace_back(INT_NEG_INF_NODE);
+		node_list.emplace_back(REAL_INF_NODE);
+		node_list.emplace_back(REAL_POS_INF_NODE);
 		node_list.emplace_back(NAN_NODE);
 		node_list.emplace_back(EPSILON_NODE);
+		node_list.emplace_back(POS_EPSILON_NODE);
+		node_list.emplace_back(NEG_EPSILON_NODE);
 
 		options = std::make_shared<GlobalOptions>();
 
@@ -1066,10 +1084,22 @@ namespace SMTLIBParser{
 			return mkE();
 		}
 		else if(s == "inf"){
-			return mkInfinity();
+			return mkInfinity(options->isIntTheory()? INT_SORT : REAL_SORT);
+		}
+		else if(s == "+inf"){
+			return mkPosInfinity(options->isIntTheory()? INT_SORT : REAL_SORT);
+		}
+		else if(s == "-inf"){
+			return mkNegInfinity(options->isIntTheory()? INT_SORT : REAL_SORT);
 		}
 		else if(s == "epsion"){
 			return mkEpsilon();
+		}
+		else if(s == "+epsilon"){
+			return mkPosEpsilon();
+		}
+		else if(s == "-epsilon"){
+			return mkNegEpsilon();
 		}
 		else if(s == "NaN"){
 			return mkNan();

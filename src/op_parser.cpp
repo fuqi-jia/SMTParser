@@ -60,6 +60,8 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_BV_XOR:
             case NODE_KIND::NT_EQ:
             case NODE_KIND::NT_DISTINCT:
+            case NODE_KIND::NT_MAX:
+            case NODE_KIND::NT_MIN:
                 return true;
             default:
                 return false;
@@ -119,7 +121,7 @@ namespace SMTLIBParser{
         // simplify
         if(p->isConst()){
             auto res = simp_oper(t, p);
-            if(res->isConst()){
+            if(!res->isUnknown()){
                 return res;
             }
         }
@@ -130,7 +132,7 @@ namespace SMTLIBParser{
     std::shared_ptr<DAGNode> Parser::mkOper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(l->isConst() && r->isConst()){
             auto res = simp_oper(t, l, r);
-            if(res->isConst()){
+            if(!res->isUnknown()){
                 return res;
             }
         }
@@ -142,7 +144,7 @@ namespace SMTLIBParser{
     std::shared_ptr<DAGNode> Parser::mkOper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> m, std::shared_ptr<DAGNode> r){
         if(l->isConst() && m->isConst() && r->isConst()){
             auto res = simp_oper(t, l, m, r);
-            if(res->isConst()){
+            if(!res->isUnknown()){
                 return res;
             }
         }
@@ -160,7 +162,7 @@ namespace SMTLIBParser{
         }
         if(is_all_const){
             auto res = simp_oper(t, p);
-            if(res->isConst()){
+            if(!res->isUnknown()){
                 return res;
             }
         }
@@ -470,6 +472,9 @@ namespace SMTLIBParser{
     std::shared_ptr<DAGNode> Parser::mkConstInt(const int& v){
         return mkConstInt(Integer(v));
     }
+    std::shared_ptr<DAGNode> Parser::mkConstInt(const Number& v){
+        return mkConstInt(v.toInteger());
+    }
     std::shared_ptr<DAGNode> Parser::mkConstReal(const std::string &v){
         cassert(isRealUtil(v) || v == "e" || v == "pi", "mkConstReal: invalid real constant");
         if(v == "e") return E_NODE;
@@ -519,6 +524,9 @@ namespace SMTLIBParser{
             node_list.emplace_back(newconst);
             return newconst;
         }
+    }
+    std::shared_ptr<DAGNode> Parser::mkConstReal(const Number& v){
+        return mkConstReal(v.toReal());
     }
     std::shared_ptr<DAGNode> Parser::mkConstStr(const std::string &v){
         if(constants_str.find(v) != constants_str.end()){
@@ -1834,14 +1842,62 @@ namespace SMTLIBParser{
     std::shared_ptr<DAGNode> Parser::mkE(){
         return E_NODE;
     }
-    std::shared_ptr<DAGNode> Parser::mkInfinity(){
-        return INF_NODE;
+    std::shared_ptr<DAGNode> Parser::mkInfinity(std::shared_ptr<Sort> sort){
+        if(sort->isEqTo(STR_SORT)){
+            return STR_INF_NODE;
+        }
+        else if(sort->isEqTo(INT_SORT)){
+            return INT_INF_NODE;
+        }
+        else if(sort->isEqTo(REAL_SORT)){
+            return REAL_INF_NODE;
+        }
+        else{
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in infinity", line_number);
+            return mkUnknown();
+        }
+    }
+    std::shared_ptr<DAGNode> Parser::mkPosInfinity(std::shared_ptr<Sort> sort){
+        if(sort->isEqTo(STR_SORT)){
+            return STR_POS_INF_NODE;
+        }
+        else if(sort->isEqTo(INT_SORT)){
+            return INT_POS_INF_NODE;
+        }
+        else if(sort->isEqTo(REAL_SORT)){
+            return REAL_POS_INF_NODE;
+        }
+        else{
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in pos_infinity", line_number);
+            return mkUnknown();
+        }
+    }
+    std::shared_ptr<DAGNode> Parser::mkNegInfinity(std::shared_ptr<Sort> sort){
+        if(sort->isEqTo(STR_SORT)){
+            return STR_NEG_INF_NODE;
+        }
+        else if(sort->isEqTo(INT_SORT)){
+            return INT_NEG_INF_NODE;
+        }
+        else if(sort->isEqTo(REAL_SORT)){
+            return REAL_NEG_INF_NODE;
+        }
+        else{
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in neg_infinity", line_number);
+            return mkUnknown();
+        }
     }
     std::shared_ptr<DAGNode> Parser::mkNan(){
         return NAN_NODE;
     }
     std::shared_ptr<DAGNode> Parser::mkEpsilon(){
         return EPSILON_NODE;
+    }
+    std::shared_ptr<DAGNode> Parser::mkPosEpsilon(){
+        return POS_EPSILON_NODE;
+    }
+    std::shared_ptr<DAGNode> Parser::mkNegEpsilon(){
+        return NEG_EPSILON_NODE;
     }
     // ARITHMATIC FUNCTIONS
     // /*
@@ -3788,6 +3844,66 @@ namespace SMTLIBParser{
         return mkOper(INT_SORT, NODE_KIND::NT_INDEXOF_REG, l, r);
     }
 
+    // INTERVAL
+    std::shared_ptr<DAGNode> Parser::mkMax(const std::vector<std::shared_ptr<DAGNode>> &params){
+        if(params.size() == 0){
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for max", line_number);
+            return mkUnknown();
+        }
+        else if(params.size() == 1){
+            return params[0];
+        }
+        std::shared_ptr<Sort> sort = getSort(params);
+
+        std::vector<std::shared_ptr<DAGNode>> new_params;
+
+        // pair-wise comparison: (< a b c d) <=> (and (< a b) (< b c) (< c d))
+        for(size_t i=0;i<params.size() - 1;i++){
+            if(params[i]->isErr()) return params[i];
+            if(sort != nullptr && !params[i]->getSort()->isEqTo(sort)) {
+                if(canExempt(params[i]->getSort(), sort)){
+                    std::cerr << "Type mismatch in max, but now exempt for int/real"<<std::endl;
+                }
+                else{
+                    err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in max", line_number);
+                    return mkUnknown();
+                }
+            }
+            new_params.emplace_back(params[i]);
+        }
+
+        return mkOper(sort, NODE_KIND::NT_MAX, new_params);
+    }
+    std::shared_ptr<DAGNode> Parser::mkMin(const std::vector<std::shared_ptr<DAGNode>> &params){
+        if(params.size() == 0){
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for min", line_number);
+            return mkUnknown();
+        }
+        else if(params.size() == 1){
+            return params[0];
+        }
+        std::shared_ptr<Sort> sort = getSort(params);
+
+        std::vector<std::shared_ptr<DAGNode>> new_params;
+
+        // pair-wise comparison: (< a b c d) <=> (and (< a b) (< b c) (< c d))
+        for(size_t i=0;i<params.size() - 1;i++){
+            if(params[i]->isErr()) return params[i];
+            if(sort != nullptr && !params[i]->getSort()->isEqTo(sort)) {
+                if(canExempt(params[i]->getSort(), sort)){
+                    std::cerr << "Type mismatch in min, but now exempt for int/real"<<std::endl;
+                }
+                else{
+                    err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in min", line_number);
+                    return mkUnknown();
+                }
+            }
+            new_params.emplace_back(params[i]);
+        }
+
+        return mkOper(sort, NODE_KIND::NT_MIN, new_params);
+    }
+
     // negate an atom
     std::shared_ptr<DAGNode> Parser::negateComp(std::shared_ptr<DAGNode> atom){
         if(atom->isErr()) return atom;
@@ -3940,8 +4056,12 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_CONST_PI:
             case NODE_KIND::NT_CONST_E:
             case NODE_KIND::NT_INFINITY:
+            case NODE_KIND::NT_POS_INFINITY:
+            case NODE_KIND::NT_NEG_INFINITY:
             case NODE_KIND::NT_NAN:
             case NODE_KIND::NT_EPSILON:
+            case NODE_KIND::NT_POS_EPSILON:
+            case NODE_KIND::NT_NEG_EPSILON:
             case NODE_KIND::NT_REG_NONE:
             case NODE_KIND::NT_REG_ALL:
             case NODE_KIND::NT_REG_ALLCHAR:
@@ -4153,7 +4273,9 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_REG_INTER:
             case NODE_KIND::NT_REG_DIFF:
             case NODE_KIND::NT_FORALL:
-            case NODE_KIND::NT_EXISTS: 
+            case NODE_KIND::NT_EXISTS:
+            case NODE_KIND::NT_MAX:
+            case NODE_KIND::NT_MIN:
                 return -1;
 
             default:

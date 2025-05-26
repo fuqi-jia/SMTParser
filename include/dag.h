@@ -244,6 +244,10 @@ namespace SMTLIBParser{
         bool isTempVar() 			const { return kind == NODE_KIND::NT_TEMP_VAR; };
         bool isVar() 				const { return (isVBool() || isVInt() || isVReal() || isVBV() || isVFP() || isVStr() || isTempVar()); };
         
+        // interval
+        bool isMax() 				const { return kind == NODE_KIND::NT_MAX; };
+        bool isMin() 				const { return kind == NODE_KIND::NT_MIN; };
+
         // check array
         bool isArray() 			    const { return kind == NODE_KIND::NT_VAR && sort->isArray(); };
         
@@ -326,7 +330,9 @@ namespace SMTLIBParser{
         bool isArithTerm() 			const { return (isArithOp() || isArithConv() || isRealNonlinearOp() || isTranscendentalOp() || 
                                                     (isVar() && (isVInt() || isVReal())) ||
                                                     (isConst() && (isCInt() || isCReal())) ||
-                                                    (isIte() && getChild(1)->isArithTerm() && getChild(2)->isArithTerm())); };
+                                                    (isIte() && getChild(1)->isArithTerm() && getChild(2)->isArithTerm()) ||
+                                                    (isMax() && getChild(0)->isArithTerm() && getChild(1)->isArithTerm()) ||
+                                                    (isMin() && getChild(0)->isArithTerm() && getChild(1)->isArithTerm())); };
         bool isArithComp() 			const { return ((isEq() && getChild(0)->isArithTerm())|| 
                                                     (isDistinct() && getChild(0)->isArithTerm()) || 
                                                     isLe() || isLt() || isGe() || isGt()); };
@@ -347,9 +353,14 @@ namespace SMTLIBParser{
         // check arithmetic constants
         bool isPi() 				const { return (kind == NODE_KIND::NT_CONST_PI); };
         bool isE() 					const { return (kind == NODE_KIND::NT_CONST_E); };
-        bool isInfinity() 			const { return (kind == NODE_KIND::NT_INFINITY); };
+        bool isInfinity() 			const { return (kind == NODE_KIND::NT_INFINITY || kind == NODE_KIND::NT_POS_INFINITY || kind == NODE_KIND::NT_NEG_INFINITY); };
+        bool isPosInfinity() 		const { return (kind == NODE_KIND::NT_POS_INFINITY); };
+        bool isNegInfinity() 		const { return (kind == NODE_KIND::NT_NEG_INFINITY); };
         bool isNan() 				const { return (kind == NODE_KIND::NT_NAN); };
-        bool isEpsilon() 			const { return (kind == NODE_KIND::NT_EPSILON); };
+        bool isEpsilon() 			const { return (kind == NODE_KIND::NT_EPSILON || kind == NODE_KIND::NT_POS_EPSILON || kind == NODE_KIND::NT_NEG_EPSILON ); };
+        bool isPosEpsilon() 		const { return (kind == NODE_KIND::NT_POS_EPSILON); };
+        bool isNegEpsilon() 		const { return (kind == NODE_KIND::NT_NEG_EPSILON); };
+
         // check arithmetic functions
         // bool isSum() 				const { return (kind == NODE_KIND::NT_SUM); };
         // bool isProd() 				const { return (kind == NODE_KIND::NT_PROD); };
@@ -413,7 +424,9 @@ namespace SMTLIBParser{
         bool isBVTerm()    		    const { return (isBVOp() ||
                                                     (isVar() && isVBV()) ||
                                                     (isConst() && isCBV()) ||
-                                                    (isIte() && getChild(1)->isBVTerm() && getChild(2)->isBVTerm())); };
+                                                    (isIte() && getChild(1)->isBVTerm() && getChild(2)->isBVTerm()) ||
+                                                    (isMax() && getChild(0)->isBVTerm() && getChild(1)->isBVTerm()) ||
+                                                    (isMin() && getChild(0)->isBVTerm() && getChild(1)->isBVTerm())); };
         bool isBVCompOp()     		const { return ((isEq() && getChild(0)->isBVTerm()) ||
                                                     (isDistinct() && getChild(0)->isBVTerm()) ||
                                                     isBVUlt() || isBVUle() || isBVUgt() || isBVUge() || isBVSlt() || isBVSle() || isBVSgt() || isBVSge()); };
@@ -756,10 +769,27 @@ namespace SMTLIBParser{
     inline const std::shared_ptr<DAGNode> FALSE_NODE = std::make_shared<DAGNode>(BOOL_SORT, NODE_KIND::NT_CONST_FALSE, "false");
     inline const std::shared_ptr<DAGNode> E_NODE = std::make_shared<DAGNode>(REAL_SORT, NODE_KIND::NT_CONST_E, "e");
     inline const std::shared_ptr<DAGNode> PI_NODE = std::make_shared<DAGNode>(REAL_SORT, NODE_KIND::NT_CONST_PI, "pi");
-    inline const std::shared_ptr<DAGNode> INF_NODE = std::make_shared<DAGNode>(EXT_SORT, NODE_KIND::NT_INFINITY, "INF");
+    // inline const std::shared_ptr<DAGNode> INF_NODE = std::make_shared<DAGNode>(EXT_SORT, NODE_KIND::NT_INFINITY, "INF");
+    // inline const std::shared_ptr<DAGNode> POS_INF_NODE = std::make_shared<DAGNode>(EXT_SORT, NODE_KIND::NT_POS_INFINITY, "+INF");
+    // inline const std::shared_ptr<DAGNode> NEG_INF_NODE = std::make_shared<DAGNode>(EXT_SORT, NODE_KIND::NT_NEG_INFINITY, "-INF");
     inline const std::shared_ptr<DAGNode> NAN_NODE = std::make_shared<DAGNode>(EXT_SORT, NODE_KIND::NT_NAN, "NaN");
     inline const std::shared_ptr<DAGNode> EPSILON_NODE = std::make_shared<DAGNode>(EXT_SORT, NODE_KIND::NT_EPSILON, "EPSILON");
+    inline const std::shared_ptr<DAGNode> POS_EPSILON_NODE = std::make_shared<DAGNode>(EXT_SORT, NODE_KIND::NT_POS_EPSILON, "+EPSILON");
+    inline const std::shared_ptr<DAGNode> NEG_EPSILON_NODE = std::make_shared<DAGNode>(EXT_SORT, NODE_KIND::NT_NEG_EPSILON, "-EPSILON");
     
+    // infinity
+    inline const std::shared_ptr<DAGNode> STR_INF_NODE = std::make_shared<DAGNode>(STR_SORT, NODE_KIND::NT_INFINITY, "INF");
+    inline const std::shared_ptr<DAGNode> STR_POS_INF_NODE = std::make_shared<DAGNode>(STR_SORT, NODE_KIND::NT_POS_INFINITY, "+INF");
+    inline const std::shared_ptr<DAGNode> STR_NEG_INF_NODE = std::make_shared<DAGNode>(STR_SORT, NODE_KIND::NT_NEG_INFINITY, "-INF");
+    inline const std::shared_ptr<DAGNode> INT_INF_NODE = std::make_shared<DAGNode>(INT_SORT, NODE_KIND::NT_INFINITY, "INF");
+    inline const std::shared_ptr<DAGNode> INT_POS_INF_NODE = std::make_shared<DAGNode>(INT_SORT, NODE_KIND::NT_POS_INFINITY, "+INF");
+    inline const std::shared_ptr<DAGNode> INT_NEG_INF_NODE = std::make_shared<DAGNode>(INT_SORT, NODE_KIND::NT_NEG_INFINITY, "-INF");
+    inline const std::shared_ptr<DAGNode> REAL_INF_NODE = std::make_shared<DAGNode>(REAL_SORT, NODE_KIND::NT_INFINITY, "INF");
+    inline const std::shared_ptr<DAGNode> REAL_POS_INF_NODE = std::make_shared<DAGNode>(REAL_SORT, NODE_KIND::NT_POS_INFINITY, "+INF");
+    inline const std::shared_ptr<DAGNode> REAL_NEG_INF_NODE = std::make_shared<DAGNode>(REAL_SORT, NODE_KIND::NT_NEG_INFINITY, "-INF");
+    
+
+
     struct NodeHash {
         size_t operator()(const std::shared_ptr<DAGNode>& node) const {
             return std::hash<std::string>{}(node->hashString());
