@@ -106,7 +106,7 @@ namespace SMTLIBParser{
         
         while (!todo.empty()) {
             // if the let body has been processed, break
-            if(is_let && processed[let_body]){break;}
+            if(is_let && results.find(let_body) != results.end()){break;}
 
             std::shared_ptr<DAGNode> current = todo.top();
             
