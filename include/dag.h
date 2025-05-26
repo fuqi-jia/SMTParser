@@ -325,7 +325,8 @@ namespace SMTLIBParser{
         bool isGt() 				const { return (kind == NODE_KIND::NT_GT); };
         bool isArithTerm() 			const { return (isArithOp() || isArithConv() || isRealNonlinearOp() || isTranscendentalOp() || 
                                                     (isVar() && (isVInt() || isVReal())) ||
-                                                    (isConst() && (isCInt() || isCReal()))); };
+                                                    (isConst() && (isCInt() || isCReal())) ||
+                                                    (isIte() && getChild(1)->isArithTerm() && getChild(2)->isArithTerm())); };
         bool isArithComp() 			const { return ((isEq() && getChild(0)->isArithTerm())|| 
                                                     (isDistinct() && getChild(0)->isArithTerm()) || 
                                                     isLe() || isLt() || isGe() || isGt()); };
@@ -411,7 +412,8 @@ namespace SMTLIBParser{
         bool isBVSge() 	    		const { return (kind == NODE_KIND::NT_BV_SGE); };
         bool isBVTerm()    		    const { return (isBVOp() ||
                                                     (isVar() && isVBV()) ||
-                                                    (isConst() && isCBV())); };
+                                                    (isConst() && isCBV()) ||
+                                                    (isIte() && getChild(1)->isBVTerm() && getChild(2)->isBVTerm())); };
         bool isBVCompOp()     		const { return ((isEq() && getChild(0)->isBVTerm()) ||
                                                     (isDistinct() && getChild(0)->isBVTerm()) ||
                                                     isBVUlt() || isBVUle() || isBVUgt() || isBVUge() || isBVSlt() || isBVSle() || isBVSgt() || isBVSge()); };

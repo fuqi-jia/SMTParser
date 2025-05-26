@@ -2238,6 +2238,11 @@ namespace SMTLIBParser{
 		if(expr->isErr()){
 			return expr;
 		}
+		// expand let
+		if(expr->isLet()){
+			expr = expandLet(expr);
+		}
+		
 		if(expr->isArithTerm()){
 			return expr;
 		}

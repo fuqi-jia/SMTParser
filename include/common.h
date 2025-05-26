@@ -34,7 +34,7 @@
 #define cassert(cond, msg) \
     do { \
         if (!(cond)) { \
-            std::cerr << "[" << __FILE__ << ":" << __LINE__ << "] " << msg; \
+            std::cerr << "[" << __FILE__ << ":" << __LINE__ << "] " << msg << std::endl; \
             std::abort(); \
         } \
     } while(0)
