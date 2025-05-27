@@ -517,6 +517,11 @@ namespace SMTLIBParser {
         // make a large AND node -> the same atom will use the same variable 
         // assume exprs is a vector of assertions, so we can first collect all top atoms
 
+        // rebuild the maps
+        cnf_atom_map.clear();
+        cnf_bool_var_map.clear();
+        cnf_map.clear();
+
         // create a new variable for each top atom
         boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> atom_map;
         // a new vector to store the new assertions

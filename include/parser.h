@@ -3081,14 +3081,6 @@ namespace SMTLIBParser{
         std::shared_ptr<DAGNode>                toTseitinCNF(std::shared_ptr<DAGNode> expr, std::vector<std::shared_ptr<DAGNode>>& clauses);
 
         /**
-         * @brief Convert an expression to CNF
-         * 
-         * @param expr Expression to convert
-         * @return Expression in CNF
-         */
-        std::shared_ptr<DAGNode>                toCNF(std::shared_ptr<DAGNode> expr);
-
-        /**
          * @brief Convert a vector of expressions to CNF
          * 
          * @param exprs Expressions to convert
@@ -3316,6 +3308,7 @@ namespace SMTLIBParser{
                                                             boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& atom_map, 
                                                             boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited, 
                                                             bool& is_changed);
+        std::shared_ptr<DAGNode>                toCNF(std::shared_ptr<DAGNode> expr);
         std::shared_ptr<DAGNode>                toTseitinCNF(std::shared_ptr<DAGNode> expr, 
                                                             boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited, 
                                                             std::vector<std::shared_ptr<DAGNode>>& clauses);
