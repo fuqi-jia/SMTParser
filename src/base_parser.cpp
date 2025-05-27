@@ -2041,6 +2041,13 @@ namespace SMTLIBParser{
 			return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
 		}
 
+		// For declare-fun (uninterpreted functions), create a function application node
+		if(fun->getFuncBody()->isNull()){
+			// Create a simple function application node directly
+			std::shared_ptr<DAGNode> result = std::make_shared<DAGNode>(fun->getSort(), NODE_KIND::NT_APPLY_UF, fun->getName(), params);
+			return result;
+		}
+
 		if(fun->getFuncBody()->isErr()){
 			return fun->getFuncBody();
 		}
