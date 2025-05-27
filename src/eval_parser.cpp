@@ -555,6 +555,7 @@ namespace SMTLIBParser{
         switch(op){
             // unary operations
             case NODE_KIND::NT_NOT:
+            case NODE_KIND::NT_NEG:
             case NODE_KIND::NT_ABS:
             case NODE_KIND::NT_SQRT:
             case NODE_KIND::NT_SAFESQRT:
@@ -569,21 +570,27 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_SIN:
             case NODE_KIND::NT_COS:
             case NODE_KIND::NT_TAN:
+            case NODE_KIND::NT_COT:
+            case NODE_KIND::NT_CSC:
+            case NODE_KIND::NT_SEC:
             case NODE_KIND::NT_ASIN:
             case NODE_KIND::NT_ACOS:
             case NODE_KIND::NT_ATAN:
-            case NODE_KIND::NT_SINH:
-            case NODE_KIND::NT_COSH:
-            case NODE_KIND::NT_TANH:
-            case NODE_KIND::NT_ASINH:
-            case NODE_KIND::NT_ACOSH:
-            case NODE_KIND::NT_ATANH:
             case NODE_KIND::NT_ASEC:
             case NODE_KIND::NT_ACSC:
             case NODE_KIND::NT_ACOT:
+            case NODE_KIND::NT_SINH:
+            case NODE_KIND::NT_COSH:
+            case NODE_KIND::NT_TANH:
             case NODE_KIND::NT_SECH:
             case NODE_KIND::NT_CSCH:
             case NODE_KIND::NT_COTH:
+            case NODE_KIND::NT_ASINH:
+            case NODE_KIND::NT_ACOSH:
+            case NODE_KIND::NT_ATANH:
+            case NODE_KIND::NT_ACOTH:
+            case NODE_KIND::NT_ASECH:
+            case NODE_KIND::NT_ACSCH:
             case NODE_KIND::NT_TO_REAL:
             case NODE_KIND::NT_TO_INT:
             case NODE_KIND::NT_IS_INT:
@@ -619,6 +626,7 @@ namespace SMTLIBParser{
             }
             // binary operations
             case NODE_KIND::NT_IMPLIES:
+            case NODE_KIND::NT_MOD:
             case NODE_KIND::NT_LOG:
             case NODE_KIND::NT_POW:
             case NODE_KIND::NT_ATAN2:
@@ -881,7 +889,7 @@ namespace SMTLIBParser{
                 return true;
             }
             default:
-                cassert(false, "evaluateSimpleOp: unknown kind");
+                cassert(false, "evaluateSimpleOp: no implementation for this kind");
                 result = expr;
                 return false;
         }
@@ -1235,6 +1243,16 @@ namespace SMTLIBParser{
     bool Parser::evaluateTan(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
         return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_TAN);
 	}
+    bool Parser::evaluateCot(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_COT);
+	}
+    bool Parser::evaluateCsc(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_CSC);
+	}
+    bool Parser::evaluateSec(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_SEC);
+	}
+    
     bool Parser::evaluateAsin(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
         return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_ASIN);
 	}
@@ -1244,6 +1262,16 @@ namespace SMTLIBParser{
     bool Parser::evaluateAtan(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
         return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_ATAN);
 	}
+    bool Parser::evaluateAsec(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_ASEC);
+	}
+    bool Parser::evaluateAcsc(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_ACSC);
+	}
+    bool Parser::evaluateAcot(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_ACOT);
+	}
+    
     bool Parser::evaluateSinh(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
         return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_SINH);
 	}
@@ -1253,6 +1281,16 @@ namespace SMTLIBParser{
     bool Parser::evaluateTanh(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
         return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_TANH);
 	}
+    bool Parser::evaluateSech(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_SECH);
+	}
+    bool Parser::evaluateCsch(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_CSCH);
+	}
+    bool Parser::evaluateCoth(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_COTH);
+	}
+
     bool Parser::evaluateAsinh(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
         return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_ASINH);
 	}
@@ -1271,6 +1309,7 @@ namespace SMTLIBParser{
     bool Parser::evaluateAcoth(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
         return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_ACOTH);
 	}
+
     bool Parser::evaluateAtan2(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
         return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_ATAN2);
 	}
