@@ -3201,6 +3201,16 @@ namespace SMTLIBParser{
          */
         std::vector<std::shared_ptr<DAGNode>>   arithNormalize(std::vector<std::shared_ptr<DAGNode>> exprs);
 
+        /**
+         * @brief Split an expression into a vector of expressions
+         * 
+         * @note Split comparison into two inequalities, i.e., x != y -> x < y or x > y, x >= y -> x > y or x = y, etc.
+         * 
+         * @param expr Expression to split
+         * @return Vector of expressions
+         */
+        std::shared_ptr<DAGNode>                splitArithComp(std::shared_ptr<DAGNode> expr);
+
         // print
         /**
          * @brief Print an expression
@@ -3327,6 +3337,7 @@ namespace SMTLIBParser{
         std::shared_ptr<DAGNode>                toNNF(std::shared_ptr<DAGNode> expr, bool is_not);
 
         std::shared_ptr<DAGNode>                arithNormalize(std::shared_ptr<DAGNode> expr, bool& is_changed);
+        std::shared_ptr<DAGNode>                splitArithComp(std::shared_ptr<DAGNode> expr, bool& is_changed, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited);
         
         //errors & warnings
         // mk errror node
