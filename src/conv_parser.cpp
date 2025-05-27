@@ -59,8 +59,8 @@ namespace SMTLIBParser {
     }
     
     std::shared_ptr<DAGNode> Parser::getCNFAtom(std::shared_ptr<DAGNode> bool_var) {
-        if(cnf_bool_var_map.find(bool_var) != cnf_bool_var_map.end()){
-            return cnf_bool_var_map[bool_var];
+        if(cnf_atom_map.find(bool_var) != cnf_atom_map.end()){
+            return cnf_atom_map[bool_var];
         }
         return NULL_NODE;
     }
@@ -72,8 +72,8 @@ namespace SMTLIBParser {
         return atoms;
     }
     std::shared_ptr<DAGNode> Parser::getCNFBoolVar(std::shared_ptr<DAGNode> atom) {
-        if(cnf_atom_map.find(atom) != cnf_atom_map.end()){
-            return cnf_atom_map[atom];
+        if(cnf_bool_var_map.find(atom) != cnf_bool_var_map.end()){
+            return cnf_bool_var_map[atom];
         }
         return NULL_NODE;
     }
