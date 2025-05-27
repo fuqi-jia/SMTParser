@@ -128,10 +128,26 @@ namespace SMTLIBParser{
 		for(auto& var : var_names){
 			vars.emplace_back(node_list[var.second]);
 		}
+		for(auto& var : temp_var_names){
+			vars.emplace_back(node_list[var.second]);
+		}
+		return vars;
+	}
+	std::vector<std::shared_ptr<DAGNode>> Parser::getDeclaredVariables() const{
+		std::vector<std::shared_ptr<DAGNode>> vars;
+		for(auto& var : var_names){
+			vars.emplace_back(node_list[var.second]);
+		}
 		return vars;
 	}
 	std::shared_ptr<DAGNode> Parser::getVariable(const std::string& var_name){
-		return node_list[var_names.at(var_name)];
+		if(var_names.find(var_name) != var_names.end()){
+			return node_list[var_names.at(var_name)];
+		}
+		else if(temp_var_names.find(var_name) != temp_var_names.end()){
+			return node_list[temp_var_names.at(var_name)];
+		}
+		return NULL_NODE;
 	}
 	std::vector<std::shared_ptr<DAGNode>> Parser::getFunctions() const{
 		std::vector<std::shared_ptr<DAGNode>> funs;
