@@ -559,6 +559,7 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_FLOOR:
             case NODE_KIND::NT_ROUND:
             case NODE_KIND::NT_EXP:
+            case NODE_KIND::NT_POW2:
             case NODE_KIND::NT_LN:
             case NODE_KIND::NT_LG:
             case NODE_KIND::NT_LB:
@@ -616,6 +617,7 @@ namespace SMTLIBParser{
             // binary operations
             case NODE_KIND::NT_IMPLIES:
             case NODE_KIND::NT_LOG:
+            case NODE_KIND::NT_POW:
             case NODE_KIND::NT_ATAN2:
             case NODE_KIND::NT_LE:
             case NODE_KIND::NT_LT:
