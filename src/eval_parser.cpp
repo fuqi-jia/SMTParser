@@ -90,6 +90,9 @@ namespace SMTLIBParser{
         else if(expr->isAdd()){
             return evaluateAdd(expr, model, result);
         }
+        else if(expr->isNeg()){
+            return evaluateNeg(expr, model, result);
+        }
         else if(expr->isSub()){
             return evaluateSub(expr, model, result);
         }
@@ -1108,6 +1111,9 @@ namespace SMTLIBParser{
     }
     bool Parser::evaluateAdd(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
         return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_ADD);
+    }
+    bool Parser::evaluateNeg(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_NEG);
     }
     bool Parser::evaluateSub(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
         return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_SUB);
