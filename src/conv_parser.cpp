@@ -64,6 +64,18 @@ namespace SMTLIBParser {
         }
         return NULL_NODE;
     }
+    std::shared_ptr<DAGNode> Parser::getTExplanation(std::shared_ptr<DAGNode> expr) {
+        if(cnf_atom_map.find(expr) != cnf_atom_map.end()){
+            return cnf_atom_map[expr];
+        }
+        return NULL_NODE;
+    }
+    bool Parser::isTAbstraction(std::shared_ptr<DAGNode> expr) {
+        if(cnf_atom_map.find(expr) != cnf_atom_map.end()){
+            return true;
+        }
+        return false;
+    }
     std::vector<std::shared_ptr<DAGNode>> Parser::getCNFAtoms() {
         std::vector<std::shared_ptr<DAGNode>> atoms;
         for(auto& [bool_var, atom] : cnf_atom_map){

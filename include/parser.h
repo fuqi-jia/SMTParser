@@ -3100,6 +3100,24 @@ namespace SMTLIBParser{
         std::shared_ptr<DAGNode>                getCNFAtom(std::shared_ptr<DAGNode> bool_var);
 
         /**
+         * @brief Get the T-explanation of an expression
+         * 
+         * @note The same as getCNFAtom, but the function will return the original atom instead of the CNF atom.
+         * 
+         * @param expr Expression to get T-explanation from
+         * @return T-explanation
+         */
+        std::shared_ptr<DAGNode>                getTExplanation(std::shared_ptr<DAGNode> expr);
+
+        /**
+         * @brief Check if an expression is a T-abstraction
+         * 
+         * @param expr Expression to check
+         * @return true if the expression is a T-abstraction, false otherwise
+         */
+        bool                                    isTAbstraction(std::shared_ptr<DAGNode> expr);
+
+        /**
          * @brief Get all CNF atoms from an expression
          * 
          * @param expr Expression to get CNF atoms from
