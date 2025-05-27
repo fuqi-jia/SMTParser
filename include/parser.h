@@ -3204,6 +3204,15 @@ namespace SMTLIBParser{
          */
         std::shared_ptr<DAGNode>                splitOp(std::shared_ptr<DAGNode> expr, const boost::unordered_set<NODE_KIND>& op_set);
 
+        /**
+         * @brief Remove all the nodes in the expression
+         * 
+         * @param expr Expression to remove nodes from
+         * @param nodes Nodes to remove
+         * @return Expression with removed nodes
+         */
+        std::shared_ptr<DAGNode>                remove(std::shared_ptr<DAGNode> expr, const boost::unordered_set<std::shared_ptr<DAGNode>>& nodes);
+
         // print
         /**
          * @brief Print an expression
@@ -3335,6 +3344,8 @@ namespace SMTLIBParser{
                                                         const boost::unordered_set<NODE_KIND>& op_set, 
                                                         bool& is_changed, 
                                                         boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited);
+        
+        std::shared_ptr<DAGNode>                remove(std::shared_ptr<DAGNode> expr, const boost::unordered_set<std::shared_ptr<DAGNode>>& nodes, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited);
         
         //errors & warnings
         // mk errror node

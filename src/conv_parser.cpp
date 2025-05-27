@@ -1322,4 +1322,39 @@ namespace SMTLIBParser {
         visited[expr] = expr;
         return expr;
     }
+
+    // remove all the nodes in the expression
+    std::shared_ptr<DAGNode> Parser::remove(std::shared_ptr<DAGNode> expr, const boost::unordered_set<std::shared_ptr<DAGNode>>& nodes){
+        boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> visited;
+        return remove(expr, nodes, visited);
+    }
+
+    std::shared_ptr<DAGNode> Parser::remove(std::shared_ptr<DAGNode> expr, const boost::unordered_set<std::shared_ptr<DAGNode>>& nodes, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited){
+        if(visited.find(expr) != visited.end()){
+            return visited[expr];
+        }
+        if(nodes.find(expr) != nodes.end()){
+            return NULL_NODE;
+        }
+        bool is_changed = false;
+        std::vector<std::shared_ptr<DAGNode>> children;
+        for(size_t i = 0; i < expr->getChildrenSize(); i++){
+            std::shared_ptr<DAGNode> child = expr->getChild(i);
+            std::shared_ptr<DAGNode> removed_child = remove(child, nodes, visited);
+            if(removed_child != NULL_NODE){
+                children.emplace_back(removed_child);
+            }
+            else{
+                is_changed = true;
+            }
+        }
+        if(is_changed){
+            std::shared_ptr<DAGNode> result = mkOper(expr->getSort(), expr->getKind(), children);
+            visited[expr] = result;
+            return result;
+        }
+        visited[expr] = expr;
+        return expr;
+    }
+    
 }
