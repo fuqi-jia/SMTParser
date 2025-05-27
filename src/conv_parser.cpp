@@ -57,10 +57,13 @@ namespace SMTLIBParser {
             }
         }
     }
+    
 
-    void Parser::collectVars(std::shared_ptr<DAGNode> expr, boost::unordered_set<std::shared_ptr<DAGNode>>& vars) {
+    void Parser::collectVars(std::vector<std::shared_ptr<DAGNode>> exprs, boost::unordered_set<std::shared_ptr<DAGNode>>& vars) {
         boost::unordered_set<std::shared_ptr<DAGNode>> visited;
-        collectVars(expr, vars, visited);
+        for(auto& expr : exprs) {
+            collectVars(expr, vars, visited);
+        }
     }
 
     void Parser::collectVars(std::shared_ptr<DAGNode> expr, boost::unordered_set<std::shared_ptr<DAGNode>>& vars, boost::unordered_set<std::shared_ptr<DAGNode>>& visited) {
@@ -502,23 +505,25 @@ namespace SMTLIBParser {
         boost::unordered_set<std::shared_ptr<DAGNode>> atoms;
         collectAtoms(expr, atoms);
 
+
         // create a new variable for each atom
         boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> atom_map;
         for (auto& atom : atoms) {
             std::shared_ptr<DAGNode> new_var = mkTempVar(BOOL_SORT);
-            atom_map[atom] = new_var;
+            cnf_atom_map[new_var] = atom;
+            cnf_bool_var_map[atom] = new_var;
             // add to cnf_map
-            cnf_map[atom] = new_var;
-            cnf_map[mkNot(atom)] = mkNot(new_var);
+            atom_map[atom] = new_var;
+            atom_map[mkNot(atom)] = mkNot(new_var);
         }
 
-        // use Tseitin transformation for each atom
-        for(auto& atom : atoms){
-            // not(atom) -> (new_var)
-            clauses.emplace_back(mkOr({mkNot(atom), atom_map[atom]}));
-            // (new_var) -> (atom)
-            clauses.emplace_back(mkOr({mkNot(atom_map[atom]), atom}));
-        }
+        // // use Tseitin transformation for each atom
+        // for(auto& atom : atoms){
+        //     // not(atom) -> (new_var)
+        //     clauses.emplace_back(mkOr({mkNot(atom), atom_map[atom]}));
+        //     // (new_var) -> (atom)
+        //     clauses.emplace_back(mkOr({mkNot(atom_map[atom]), atom}));
+        // }
 
         // create a new formula with Tseitin variables
         std::shared_ptr<DAGNode> new_expr = replaceAtoms(expr, atom_map);

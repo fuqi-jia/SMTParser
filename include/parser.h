@@ -158,6 +158,10 @@ namespace SMTLIBParser{
         boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>
                                                         cnf_map;
         boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>
+                                                        cnf_atom_map; // bool_var -> atom
+        boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>
+                                                        cnf_bool_var_map; // atom -> bool_var
+        boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>
                                                         dnf_map;
         boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>
                                                         nnf_map;
@@ -3033,7 +3037,15 @@ namespace SMTLIBParser{
          * @param exprs Expressions to collect atoms from
          * @param atoms Atoms (stored in a set)
          */
-        void                                    collectAtoms(std::vector<std::shared_ptr<DAGNode>> exprs, boost::unordered_set<std::shared_ptr<DAGNode>>& atoms);    
+        void                                    collectAtoms(std::vector<std::shared_ptr<DAGNode>> exprs, boost::unordered_set<std::shared_ptr<DAGNode>>& atoms);   
+
+        /**
+         * @brief Collect variables from a vector of expressions
+         * 
+         * @param exprs Expressions to collect variables from
+         * @param vars Variables (stored in a set)
+         */
+        void                                    collectVars(std::vector<std::shared_ptr<DAGNode>> exprs, boost::unordered_set<std::shared_ptr<DAGNode>>& vars);
 
         /**
          * @brief Collect variables from an expression
@@ -3076,6 +3088,26 @@ namespace SMTLIBParser{
          * @return Expressions in CNF
          */
         std::shared_ptr<DAGNode>                toCNF(std::vector<std::shared_ptr<DAGNode>> exprs);
+
+        /**
+         * @brief Get the original atom from the CNF atom
+         * 
+         * @note If the bool_var is not a CNF atom, the function will return NULL_NODE.
+         * 
+         * @param bool_var Boolean variable
+         * @return Original atom
+         */
+        std::shared_ptr<DAGNode>                getCNFAtom(std::shared_ptr<DAGNode> bool_var);
+
+        /**
+         * @brief Get the CNF variable from the original atom
+         * 
+         * @note If the atom is not a CNF variable, the function will return NULL_NODE.
+         * 
+         * @param atom Original atom
+         * @return CNF variable
+         */
+        std::shared_ptr<DAGNode>                getCNFBoolVar(std::shared_ptr<DAGNode> atom);
 
         /**
          * @brief Convert an expression to DNF
