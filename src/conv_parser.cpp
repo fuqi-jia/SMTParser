@@ -88,6 +88,11 @@ namespace SMTLIBParser {
         }
     }
 
+    void Parser::collectVars(std::shared_ptr<DAGNode> expr, boost::unordered_set<std::shared_ptr<DAGNode>>& vars) {
+        boost::unordered_set<std::shared_ptr<DAGNode>> visited;
+        collectVars(expr, vars, visited);
+    }
+
     void Parser::collectVars(std::shared_ptr<DAGNode> expr, boost::unordered_set<std::shared_ptr<DAGNode>>& vars, boost::unordered_set<std::shared_ptr<DAGNode>>& visited) {
         if (visited.find(expr) != visited.end()) {
             return;
