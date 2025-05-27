@@ -507,9 +507,13 @@ namespace SMTLIBParser {
 
         // create a new variable for each top atom
         boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> atom_map;
+        // a new vector to store the new assertions
+        std::vector<std::shared_ptr<DAGNode>> new_exprs;
+        std::vector<std::shared_ptr<DAGNode>> new_children;
         for(auto& expr : exprs){
             if(expr->isAtom()){
                 std::shared_ptr<DAGNode> new_var = mkTempVar(BOOL_SORT);
+                new_children.emplace_back(new_var);
                 cnf_atom_map[new_var] = expr;
                 cnf_bool_var_map[expr] = new_var;
                 // add to cnf_map
@@ -520,16 +524,43 @@ namespace SMTLIBParser {
                 atom_map[expr] = new_var;
                 atom_map[not_atom] = not_new_var;
             }
+            else{
+                new_exprs.emplace_back(expr);
+            }
         }
         
-        std::shared_ptr<DAGNode> result = mkAnd(exprs);
+        std::shared_ptr<DAGNode> result = mkAnd(new_exprs);
         if(atom_map.size() != 0){
             // have some top atoms, replace them with new variables
             result = replaceAtoms(result, atom_map);
         }
 
-        // collect all atoms
+        // convert to CNF
         std::shared_ptr<DAGNode> cnf = toCNF(result);
+        // if there are top atoms, add them to the result
+        if(atom_map.size() != 0){
+            if(cnf->isAnd()){
+                if(cnf->getChildrenSize() == 0){ }
+                else if(cnf->getChildrenSize() == 1){
+                    new_children.emplace_back(cnf->getChild(0));
+                }
+                else{
+                    for(size_t i=0;i<cnf->getChildrenSize();i++){
+                        new_children.emplace_back(cnf->getChild(i));
+                    }
+                }
+                cnf = mkAnd(new_children);
+                cnf_map[result] = cnf;
+            }
+            else{
+                // cnf is a single node
+                if(cnf->isTrue()){ }
+                else if(cnf->isFalse()){ return cnf; }
+                else{ new_children.emplace_back(cnf); }
+                cnf = mkAnd(new_children);
+            }
+        }
+        // add to cnf_map
         cnf_map[result] = cnf;
         return cnf;
     }
