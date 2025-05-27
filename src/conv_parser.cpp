@@ -66,7 +66,7 @@ namespace SMTLIBParser {
     }
     std::vector<std::shared_ptr<DAGNode>> Parser::getCNFAtoms() {
         std::vector<std::shared_ptr<DAGNode>> atoms;
-        for(auto& [bool_var, atom] : cnf_bool_var_map){
+        for(auto& [bool_var, atom] : cnf_atom_map){
             atoms.emplace_back(atom);
         }
         return atoms;
@@ -79,7 +79,7 @@ namespace SMTLIBParser {
     }
     std::vector<std::shared_ptr<DAGNode>> Parser::getCNFBoolVars() {
         std::vector<std::shared_ptr<DAGNode>> bool_vars;
-        for(auto& [atom, bool_var] : cnf_atom_map){
+        for(auto& [atom, bool_var] : cnf_bool_var_map){
             bool_vars.emplace_back(bool_var);
         }
         return bool_vars;
