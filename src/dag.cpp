@@ -62,7 +62,7 @@ namespace SMTLIBParser{
                 return name;
             }
         }
-        else if(sort->isInt()){
+        else if(sort->isInt() || sort->isIntOrReal()){
             if(name[0] == '-'){
                 return "(- " + name.substr(1) + ")";
             }
@@ -97,8 +97,18 @@ namespace SMTLIBParser{
         
         // Initialize stack, start from root node
         todo.push(root);
+
+        bool is_let = root->isLet();
+        std::shared_ptr<DAGNode> let_body = nullptr;
+        if(is_let){
+            let_body = root->getLetBody();
+            return dumpSMTLIB2(let_body);
+        }
+
+        cassert(!root->isLet(), "dumpSMTLIB2: root cannot be a let");
         
         while (!todo.empty()) {
+
             std::shared_ptr<DAGNode> current = todo.top();
             
             // If current node has been processed, pop it
@@ -353,7 +363,9 @@ namespace SMTLIBParser{
                 case NODE_KIND::NT_REG_CONCAT:
                 case NODE_KIND::NT_REG_UNION:
                 case NODE_KIND::NT_REG_INTER:
-                case NODE_KIND::NT_REG_DIFF: {
+                case NODE_KIND::NT_REG_DIFF:
+                case NODE_KIND::NT_MAX:
+                case NODE_KIND::NT_MIN: {
                     res = "(" + kindToString(kind);
                     for (auto& child : current->getChildren()) {
                         res += " " + results[child];
@@ -385,11 +397,23 @@ namespace SMTLIBParser{
                 case NODE_KIND::NT_INFINITY:
                     res = "inf";
                     break;
+                case NODE_KIND::NT_POS_INFINITY:
+                    res = "+inf";
+                    break;
+                case NODE_KIND::NT_NEG_INFINITY:
+                    res = "-inf";
+                    break;
                 case NODE_KIND::NT_NAN:
                     res = "NaN";
                     break;
                 case NODE_KIND::NT_EPSILON:
                     res = "epsilon";
+                    break;
+                case NODE_KIND::NT_POS_EPSILON:
+                    res = "+epsilon";
+                    break;
+                case NODE_KIND::NT_NEG_EPSILON:
+                    res = "-epsilon";
                     break;
                 case NODE_KIND::NT_REG_NONE:
                     res = "re.none";
@@ -476,7 +500,9 @@ namespace SMTLIBParser{
                 processed[current] = true;
             }
         }
-        
+        if(is_let){
+            return results[let_body];
+        }
         return results[root];
     }
     
@@ -724,11 +750,23 @@ namespace SMTLIBParser{
         case NODE_KIND::NT_INFINITY:
             ofs << "inf";
             break;
+        case NODE_KIND::NT_POS_INFINITY:
+            ofs << "+inf";
+            break;
+        case NODE_KIND::NT_NEG_INFINITY:
+            ofs << "-inf";
+            break;
         case NODE_KIND::NT_NAN:
             ofs << "NaN";
             break;
         case NODE_KIND::NT_EPSILON:
             ofs << "epsilon";
+            break;
+        case NODE_KIND::NT_POS_EPSILON:
+            ofs << "+epsilon";
+            break;
+        case NODE_KIND::NT_NEG_EPSILON:
+            ofs << "-epsilon";
             break;
         case NODE_KIND::NT_GCD:
         case NODE_KIND::NT_LCM:
@@ -989,6 +1027,11 @@ namespace SMTLIBParser{
             break;
         case NODE_KIND::NT_REG_COMPLEMENT:
             dumpSingleOp(kind, node->getChild(0), visited, ofs);
+            break;
+        // INTERVAL
+        case NODE_KIND::NT_MAX:
+        case NODE_KIND::NT_MIN:
+            dumpChainOp(kind, node->getChildren(), visited, ofs);
             break;
         // STRINGS RE FUNCTIONS
         case NODE_KIND::NT_REPLACE_REG:

@@ -57,6 +57,60 @@ namespace SMTLIBParser {
             }
         }
     }
+    
+    std::shared_ptr<DAGNode> Parser::getCNFAtom(std::shared_ptr<DAGNode> bool_var) {
+        if(cnf_atom_map.find(bool_var) != cnf_atom_map.end()){
+            return cnf_atom_map[bool_var];
+        }
+        return NULL_NODE;
+    }
+    std::vector<std::shared_ptr<DAGNode>> Parser::getCNFAtoms() {
+        std::vector<std::shared_ptr<DAGNode>> atoms;
+        for(auto& [bool_var, atom] : cnf_atom_map){
+            atoms.emplace_back(atom);
+        }
+        return atoms;
+    }
+    std::shared_ptr<DAGNode> Parser::getCNFBoolVar(std::shared_ptr<DAGNode> atom) {
+        if(cnf_bool_var_map.find(atom) != cnf_bool_var_map.end()){
+            return cnf_bool_var_map[atom];
+        }
+        return NULL_NODE;
+    }
+    std::vector<std::shared_ptr<DAGNode>> Parser::getCNFBoolVars() {
+        std::vector<std::shared_ptr<DAGNode>> bool_vars;
+        for(auto& [atom, bool_var] : cnf_bool_var_map){
+            bool_vars.emplace_back(bool_var);
+        }
+        return bool_vars;
+    }
+
+    void Parser::collectVars(std::vector<std::shared_ptr<DAGNode>> exprs, boost::unordered_set<std::shared_ptr<DAGNode>>& vars) {
+        boost::unordered_set<std::shared_ptr<DAGNode>> visited;
+        for(auto& expr : exprs) {
+            collectVars(expr, vars, visited);
+        }
+    }
+
+    void Parser::collectVars(std::shared_ptr<DAGNode> expr, boost::unordered_set<std::shared_ptr<DAGNode>>& vars) {
+        boost::unordered_set<std::shared_ptr<DAGNode>> visited;
+        collectVars(expr, vars, visited);
+    }
+
+    void Parser::collectVars(std::shared_ptr<DAGNode> expr, boost::unordered_set<std::shared_ptr<DAGNode>>& vars, boost::unordered_set<std::shared_ptr<DAGNode>>& visited) {
+        if (visited.find(expr) != visited.end()) {
+            return;
+        }
+        visited.insert(expr);
+        if (expr->isVar()) {
+            vars.insert(expr);
+        }
+        else{
+            for (size_t i = 0; i < expr->getChildrenSize(); i++) {
+                collectVars(expr->getChild(i), vars, visited);
+            }
+        }
+    }
 
     std::shared_ptr<DAGNode> Parser::replaceAtoms(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& atom_map) {
         boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> visited;
@@ -448,8 +502,65 @@ namespace SMTLIBParser {
 
     // convert a list of expressions to CNF (a large AND node, whose children are all OR clauses)
     std::shared_ptr<DAGNode> Parser::toCNF(std::vector<std::shared_ptr<DAGNode>> exprs) {
-        std::shared_ptr<DAGNode> result = mkAnd(exprs);
+        // make a large AND node -> the same atom will use the same variable 
+        // assume exprs is a vector of assertions, so we can first collect all top atoms
+
+        // create a new variable for each top atom
+        boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> atom_map;
+        // a new vector to store the new assertions
+        std::vector<std::shared_ptr<DAGNode>> new_exprs;
+        std::vector<std::shared_ptr<DAGNode>> new_children;
+        for(auto& expr : exprs){
+            if(expr->isAtom()){
+                std::shared_ptr<DAGNode> new_var = mkTempVar(BOOL_SORT);
+                new_children.emplace_back(new_var);
+                cnf_atom_map[new_var] = expr;
+                cnf_bool_var_map[expr] = new_var;
+                // add to cnf_map
+                std::shared_ptr<DAGNode> not_atom = mkNot(expr);
+                std::shared_ptr<DAGNode> not_new_var = mkNot(new_var);
+                cnf_map[expr] = new_var;
+                cnf_map[not_atom] = not_new_var;
+                atom_map[expr] = new_var;
+                atom_map[not_atom] = not_new_var;
+            }
+            else{
+                new_exprs.emplace_back(expr);
+            }
+        }
+        
+        std::shared_ptr<DAGNode> result = mkAnd(new_exprs);
+        if(atom_map.size() != 0){
+            // have some top atoms, replace them with new variables
+            result = replaceAtoms(result, atom_map);
+        }
+
+        // convert to CNF
         std::shared_ptr<DAGNode> cnf = toCNF(result);
+        // if there are top atoms, add them to the result
+        if(atom_map.size() != 0){
+            if(cnf->isAnd()){
+                if(cnf->getChildrenSize() == 0){ }
+                else if(cnf->getChildrenSize() == 1){
+                    new_children.emplace_back(cnf->getChild(0));
+                }
+                else{
+                    for(size_t i=0;i<cnf->getChildrenSize();i++){
+                        new_children.emplace_back(cnf->getChild(i));
+                    }
+                }
+                cnf = mkAnd(new_children);
+                cnf_map[result] = cnf;
+            }
+            else{
+                // cnf is a single node
+                if(cnf->isTrue()){ }
+                else if(cnf->isFalse()){ return cnf; }
+                else{ new_children.emplace_back(cnf); }
+                cnf = mkAnd(new_children);
+            }
+        }
+        // add to cnf_map
         cnf_map[result] = cnf;
         return cnf;
     }
@@ -459,24 +570,12 @@ namespace SMTLIBParser {
         if(cnf_map.find(expr) != cnf_map.end()){
             return cnf_map[expr];
         }
-        // convert to NNF first
-        expr = toNNF(expr);
-        // simple check: if all children are atom, just return it
-        bool all_atoms = true;
-        for(size_t i=0;i<expr->getChildrenSize();i++){
-            if(!expr->getChild(i)->isAtom()){
-                all_atoms = false;
-                break;
-            }
-        }
-        if(all_atoms){
-            return expr;
-        }
-        cassert(!all_atoms, "toCNF: expr has non-atom children");
         // expand let
         if(expr->isLet()){
             expr = expandLet(expr);
         }
+        // convert to NNF first
+        expr = toNNF(expr);
         std::vector<std::shared_ptr<DAGNode>> clauses;
         // collect all atoms
         boost::unordered_set<std::shared_ptr<DAGNode>> atoms;
@@ -486,18 +585,15 @@ namespace SMTLIBParser {
         boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> atom_map;
         for (auto& atom : atoms) {
             std::shared_ptr<DAGNode> new_var = mkTempVar(BOOL_SORT);
-            atom_map[atom] = new_var;
+            cnf_atom_map[new_var] = atom;
+            cnf_bool_var_map[atom] = new_var;
             // add to cnf_map
+            std::shared_ptr<DAGNode> not_atom = mkNot(atom);
+            std::shared_ptr<DAGNode> not_new_var = mkNot(new_var);
             cnf_map[atom] = new_var;
-            cnf_map[mkNot(atom)] = mkNot(new_var);
-        }
-
-        // use Tseitin transformation for each atom
-        for(auto& atom : atoms){
-            // not(atom) -> (new_var)
-            clauses.emplace_back(mkOr({mkNot(atom), atom_map[atom]}));
-            // (new_var) -> (atom)
-            clauses.emplace_back(mkOr({mkNot(atom_map[atom]), atom}));
+            cnf_map[not_atom] = not_new_var;
+            atom_map[atom] = new_var;
+            atom_map[not_atom] = not_new_var;
         }
 
         // create a new formula with Tseitin variables

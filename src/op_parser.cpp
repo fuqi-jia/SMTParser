@@ -60,18 +60,41 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_BV_XOR:
             case NODE_KIND::NT_EQ:
             case NODE_KIND::NT_DISTINCT:
+            case NODE_KIND::NT_MAX:
+            case NODE_KIND::NT_MIN:
                 return true;
             default:
                 return false;
         }
     }
 
+    bool canExempt(std::shared_ptr<Sort> l, std::shared_ptr<Sort> r){
+        if((l->isInt() || l->isReal()) && (r->isInt() || r->isReal())){
+            return true;
+        }
+        return false;
+    }
     std::shared_ptr<Sort> Parser::getSort(const std::vector<std::shared_ptr<DAGNode>>& params){
         std::shared_ptr<Sort> sort = nullptr;
-        for(size_t i=0;i<params.size();i++){
-            if(!params[i]->isConst()){
-                sort = params[i]->getSort();
-                break;
+        // use the maximum sort only for int/real
+        bool is_int_real_sort = params[0]->getSort()->isInt() || params[0]->getSort()->isReal();
+        if(is_int_real_sort){
+            for(size_t i=0;i<params.size();i++){
+                if(params[i]->getSort()->isReal()){
+                    sort = REAL_SORT;
+                    break;
+                }
+            }
+            if(sort == nullptr){
+                sort = INT_SORT;
+            }
+        }
+        else{
+            for(size_t i=0;i<params.size();i++){
+                if(!params[i]->isConst()){
+                    sort = params[i]->getSort();
+                    break;
+                }
             }
         }
         // all constant -> nullptr
@@ -98,7 +121,7 @@ namespace SMTLIBParser{
         // simplify
         if(p->isConst()){
             auto res = simp_oper(t, p);
-            if(res->isConst()){
+            if(!res->isUnknown()){
                 return res;
             }
         }
@@ -109,7 +132,7 @@ namespace SMTLIBParser{
     std::shared_ptr<DAGNode> Parser::mkOper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(l->isConst() && r->isConst()){
             auto res = simp_oper(t, l, r);
-            if(res->isConst()){
+            if(!res->isUnknown()){
                 return res;
             }
         }
@@ -121,7 +144,7 @@ namespace SMTLIBParser{
     std::shared_ptr<DAGNode> Parser::mkOper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> m, std::shared_ptr<DAGNode> r){
         if(l->isConst() && m->isConst() && r->isConst()){
             auto res = simp_oper(t, l, m, r);
-            if(res->isConst()){
+            if(!res->isUnknown()){
                 return res;
             }
         }
@@ -139,7 +162,7 @@ namespace SMTLIBParser{
         }
         if(is_all_const){
             auto res = simp_oper(t, p);
-            if(res->isConst()){
+            if(!res->isUnknown()){
                 return res;
             }
         }
@@ -246,9 +269,14 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkEq(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(!l->getSort()->isEqTo(r->getSort())) {
-            err_all(l, "Type mismatch in equality", line_number);
-            err_all(r, "Type mismatch in equality", line_number);
-            return mkUnknown();
+            if(canExempt(l->getSort(), r->getSort())){
+                std::cerr << "Type mismatch in eq, but now exempt for int/real"<<std::endl;
+            }
+            else{
+                err_all(l, "Type mismatch in equality", line_number);
+                err_all(r, "Type mismatch in equality", line_number);
+                return mkUnknown();
+            }
         }
         
         if(l->isTrue() && r->isTrue()){
@@ -300,8 +328,13 @@ namespace SMTLIBParser{
 
         for(size_t i=0;i<params.size();i++){
             if(sort != nullptr && !params[i]->getSort()->isEqTo(sort)) {
-                err_all(params[i], "Type mismatch in equality", line_number);
-                return mkUnknown();
+                if(canExempt(params[i]->getSort(), sort)){
+                    std::cerr << "Type mismatch in eq, but now exempt for int/real"<<std::endl;
+                }
+                else{
+                    err_all(params[i], "Type mismatch in equality", line_number);
+                    return mkUnknown();
+                }
             }
             if(params[i]->isTrue()){
                 // x = true => x
@@ -329,9 +362,14 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkDistinct(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(!l->getSort()->isEqTo(r->getSort())) {
-            err_all(l, "Type mismatch in distinct", line_number);
-            err_all(r, "Type mismatch in distinct", line_number);
-            return mkUnknown();
+            if(canExempt(l->getSort(), r->getSort())){
+                std::cerr << "Type mismatch in distinct, but now exempt for int/real"<<std::endl;
+            }
+            else{
+                err_all(l, "Type mismatch in distinct", line_number);
+                err_all(r, "Type mismatch in distinct", line_number);
+                return mkUnknown();
+            }
         }
 
         if(l->isTrue() && r->isTrue()){
@@ -385,9 +423,14 @@ namespace SMTLIBParser{
 
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) {
-                err_all(params[i], "Type mismatch in distinct", line_number);
-                return mkUnknown();
+            if(sort != nullptr && !params[i]->getSort()->isEqTo(sort)) {
+                if(canExempt(params[i]->getSort(), sort)){
+                    std::cerr << "Type mismatch in distinct, but now exempt for int/real"<<std::endl;
+                }
+                else{
+                    err_all(params[i], "Type mismatch in distinct", line_number);
+                    return mkUnknown();
+                }
             }
             if(params[i]->isFalse()){
                 // x != False => x
@@ -428,6 +471,9 @@ namespace SMTLIBParser{
     }
     std::shared_ptr<DAGNode> Parser::mkConstInt(const int& v){
         return mkConstInt(Integer(v));
+    }
+    std::shared_ptr<DAGNode> Parser::mkConstInt(const Number& v){
+        return mkConstInt(v.toInteger());
     }
     std::shared_ptr<DAGNode> Parser::mkConstReal(const std::string &v){
         cassert(isRealUtil(v) || v == "e" || v == "pi", "mkConstReal: invalid real constant");
@@ -478,6 +524,9 @@ namespace SMTLIBParser{
             node_list.emplace_back(newconst);
             return newconst;
         }
+    }
+    std::shared_ptr<DAGNode> Parser::mkConstReal(const Number& v){
+        return mkConstReal(v.toReal());
     }
     std::shared_ptr<DAGNode> Parser::mkConstStr(const std::string &v){
         if(constants_str.find(v) != constants_str.end()){
@@ -890,9 +939,14 @@ namespace SMTLIBParser{
 
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) {
-                err_all(params[i], "Type mismatch in add", line_number);
-                return mkUnknown();
+            if(sort != nullptr && !params[i]->getSort()->isEqTo(sort)) {
+                if(canExempt(params[i]->getSort(), sort)){
+                    std::cerr << "Type mismatch in add, but now exempt for int/real"<<std::endl;
+                }
+                else{
+                    err_all(params[i], "Type mismatch in add", line_number);
+                    return mkUnknown();
+                }
             }
             if(isZero(params[i])){
                 continue;
@@ -956,9 +1010,14 @@ namespace SMTLIBParser{
 
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) {
-                err_all(params[i], "Type mismatch in mul", line_number);
-                return mkUnknown();
+            if(sort != nullptr && !params[i]->getSort()->isEqTo(sort)) {
+                if(canExempt(params[i]->getSort(), sort)){
+                    std::cerr << "Type mismatch in mul, but now exempt for int/real"<<std::endl;
+                }
+                else{
+                    err_all(params[i], "Type mismatch in mul", line_number);
+                    return mkUnknown();
+                }
             }
             if(isZero(params[i])){
                 if(options->isIntTheory()){
@@ -1035,9 +1094,14 @@ namespace SMTLIBParser{
         std::vector<std::shared_ptr<DAGNode>> new_params;
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) {
-                err_all(params[i], "Type mismatch in iand", line_number);
-                return mkUnknown();
+            if(sort != nullptr && !params[i]->getSort()->isEqTo(sort)) {
+                if(canExempt(params[i]->getSort(), sort)){
+                    std::cerr << "Type mismatch in iand, but now exempt for int/real"<<std::endl;
+                }
+                else{
+                    err_all(params[i], "Type mismatch in iand", line_number);
+                    return mkUnknown();
+                }
             }
 
             new_params.emplace_back(params[i]);
@@ -1096,8 +1160,13 @@ namespace SMTLIBParser{
         for(size_t i=0;i<params.size();i++){
             if(params[i]->isErr()) return params[i];
             if(sort != nullptr && !params[i]->getSort()->isEqTo(sort)) {
-                err_all(params[i], "Type mismatch in sub", line_number);
-                return mkUnknown();
+                if(canExempt(params[i]->getSort(), sort)){
+                    std::cerr << "Type mismatch in sub, but now exempt for int/real"<<std::endl;
+                }
+                else{
+                    err_all(params[i], "Type mismatch in sub", line_number);
+                    return mkUnknown();
+                }
             }
             new_params.emplace_back(params[i]);
         }
@@ -1114,7 +1183,7 @@ namespace SMTLIBParser{
             }
         }
         if(new_params.size() == 2){
-            if(sort->isInt() && new_params[0]->isCInt() && new_params[1]->isCInt()){
+            if((sort->isInt() || sort->isIntOrReal()) && new_params[0]->isCInt() && new_params[1]->isCInt()){
                 return mkConstInt(
                     toInt(new_params[0]) - toInt(new_params[1])
                 );
@@ -1123,6 +1192,12 @@ namespace SMTLIBParser{
                 return mkConstReal(
                     toReal(new_params[0]) - toReal(new_params[1])
                 );
+            }
+            else if(isZero(new_params[0])){
+                return mkNeg(new_params[1]);
+            }
+            else if(isZero(new_params[1])){
+                return new_params[0];
             }
         }
         return mkOper(sort, NODE_KIND::NT_SUB, new_params);
@@ -1139,9 +1214,14 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkDivInt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         
-        if(!isIntParam(l) || !isIntParam(r)) {
-            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in div", line_number);
-            return mkUnknown();
+        if((!isIntParam(l) || !isIntParam(r))) {
+            if(canExempt(l->getSort(), r->getSort())){
+                std::cerr << "Type mismatch in div_int, but now exempt for int/real"<<std::endl;
+            }
+            else{
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in div", line_number);
+                return mkUnknown();
+            }
         }
         return mkOper(INT_SORT, NODE_KIND::NT_DIV_INT, l, r);
     }
@@ -1169,9 +1249,14 @@ namespace SMTLIBParser{
     }
     std::shared_ptr<DAGNode> Parser::mkDivReal(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         
-        if(!isRealParam(l) || !isRealParam(r)) {
-            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in div", line_number);
-            return mkUnknown();
+        if((!isRealParam(l) || !isRealParam(r))) {
+            if(canExempt(l->getSort(), r->getSort())){
+                std::cerr << "Type mismatch in div_real, but now exempt for int/real"<<std::endl;
+            }
+            else{
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in div", line_number);
+                return mkUnknown();
+            }
         }
         return mkOper(REAL_SORT, NODE_KIND::NT_DIV_REAL, l, r);
     }
@@ -1290,11 +1375,14 @@ namespace SMTLIBParser{
     */
     std::shared_ptr<DAGNode> Parser::mkLog(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(!l->getSort()->isEqTo(r->getSort())) {
-            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in log", line_number);
-            return mkUnknown();
+            if(canExempt(l->getSort(), r->getSort())){
+                std::cerr << "Type mismatch in log, but now exempt for int/real"<<std::endl;
+            }
+            else{
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in log", line_number);
+                return mkUnknown();
+            }
         }
-
-
         return mkOper(REAL_SORT, NODE_KIND::NT_LOG, l, r);
     }
     /*
@@ -1479,8 +1567,13 @@ namespace SMTLIBParser{
     std::shared_ptr<DAGNode> Parser::mkLe(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         
         if(!l->getSort()->isEqTo(r->getSort())) {
-            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in le", line_number);
-            return mkUnknown();
+            if(canExempt(l->getSort(), r->getSort())){
+                std::cerr << "Type mismatch in le, but now exempt for int/real"<<std::endl;
+            }
+            else{
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in le", line_number);
+                return mkUnknown();
+            }
         }
         else if(l == r){
             return mkTrue();
@@ -1490,8 +1583,13 @@ namespace SMTLIBParser{
     std::shared_ptr<DAGNode> Parser::mkLt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         
         if(!l->getSort()->isEqTo(r->getSort())) {
-            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in lt", line_number);
-            return mkUnknown();
+            if(canExempt(l->getSort(), r->getSort())){
+                std::cerr << "Type mismatch in lt, but now exempt for int/real"<<std::endl;
+            }
+            else{
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in lt", line_number);
+                return mkUnknown();
+            }
         }
         else if(l == r){
             return mkFalse();
@@ -1501,8 +1599,13 @@ namespace SMTLIBParser{
     std::shared_ptr<DAGNode> Parser::mkGe(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         
         if(!l->getSort()->isEqTo(r->getSort())) {
-            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in ge", line_number);
-            return mkUnknown();
+            if(canExempt(l->getSort(), r->getSort())){
+                std::cerr << "Type mismatch in ge, but now exempt for int/real"<<std::endl;
+            }
+            else{
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in ge", line_number);
+                return mkUnknown();
+            }
         }
         else if(l == r){
             return mkTrue();
@@ -1512,8 +1615,13 @@ namespace SMTLIBParser{
     std::shared_ptr<DAGNode> Parser::mkGt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         
         if(!l->getSort()->isEqTo(r->getSort())) {
-            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in gt", line_number);
-            return mkUnknown();
+            if(canExempt(l->getSort(), r->getSort())){
+                std::cerr << "Type mismatch in gt, but now exempt for int/real"<<std::endl;
+            }
+            else{
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in gt", line_number);
+                return mkUnknown();
+            }
         }
         else if(l == r){
             return mkFalse();
@@ -1536,9 +1644,14 @@ namespace SMTLIBParser{
         // pair-wise comparison: (<= a b c d) <=> (and (<= a b) (<= b c) (<= c d))
         for(size_t i=0;i<params.size() - 1;i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) {
-                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in le", line_number);
-                return mkUnknown();
+            if(sort != nullptr && !params[i]->getSort()->isEqTo(sort)) {
+                if(canExempt(params[i]->getSort(), sort)){
+                    std::cerr << "Type mismatch in le, but now exempt for int/real"<<std::endl;
+                }
+                else{
+                    err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in le", line_number);
+                    return mkUnknown();
+                }
             }
             std::shared_ptr<DAGNode> le = mkLe(params[i], params[i + 1]);
             if(le->isErr()) return le;
@@ -1563,9 +1676,14 @@ namespace SMTLIBParser{
         // pair-wise comparison: (< a b c d) <=> (and (< a b) (< b c) (< c d))
         for(size_t i=0;i<params.size() - 1;i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) {
-                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in lt", line_number);
-                return mkUnknown();
+            if(sort != nullptr && !params[i]->getSort()->isEqTo(sort)) {
+                if(canExempt(params[i]->getSort(), sort)){
+                    std::cerr << "Type mismatch in lt, but now exempt for int/real"<<std::endl;
+                }
+                else{
+                    err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in lt", line_number);
+                    return mkUnknown();
+                }
             }
             std::shared_ptr<DAGNode> lt = mkLt(params[i], params[i + 1]);
             if(lt->isErr()) return lt;
@@ -1590,9 +1708,14 @@ namespace SMTLIBParser{
         // pair-wise comparison: (>= a b c d) <=> (and (>= a b) (>= b c) (>= c d))
         for(size_t i=0;i<params.size() - 1;i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) {
-                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in ge", line_number);
-                return mkUnknown();
+            if(sort != nullptr && !params[i]->getSort()->isEqTo(sort)) {
+                if(canExempt(params[i]->getSort(), sort)){
+                    std::cerr << "Type mismatch in ge, but now exempt for int/real"<<std::endl;
+                }
+                else{
+                    err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in ge", line_number);
+                    return mkUnknown();
+                }
             }
             std::shared_ptr<DAGNode> ge = mkGe(params[i], params[i + 1]);
             if(ge->isErr()) return ge;
@@ -1617,9 +1740,14 @@ namespace SMTLIBParser{
         // pair-wise comparison: (> a b c d) <=> (and (> a b) (> b c) (> c d))
         for(size_t i=0;i<params.size() - 1;i++){
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !params[i]->getSort() ->isEqTo(sort)) {
-                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in gt", line_number);
-                return mkUnknown();
+            if(sort != nullptr && !params[i]->getSort()->isEqTo(sort)) {
+                if(canExempt(params[i]->getSort(), sort)){
+                    std::cerr << "Type mismatch in gt, but now exempt for int/real"<<std::endl;
+                }
+                else{
+                    err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in gt", line_number);
+                    return mkUnknown();
+                }
             }
             std::shared_ptr<DAGNode> gt = mkGt(params[i], params[i + 1]);
             if(gt->isErr()) return gt;
@@ -1714,14 +1842,62 @@ namespace SMTLIBParser{
     std::shared_ptr<DAGNode> Parser::mkE(){
         return E_NODE;
     }
-    std::shared_ptr<DAGNode> Parser::mkInfinity(){
-        return INF_NODE;
+    std::shared_ptr<DAGNode> Parser::mkInfinity(std::shared_ptr<Sort> sort){
+        if(sort->isEqTo(STR_SORT)){
+            return STR_INF_NODE;
+        }
+        else if(sort->isEqTo(INT_SORT)){
+            return INT_INF_NODE;
+        }
+        else if(sort->isEqTo(REAL_SORT)){
+            return REAL_INF_NODE;
+        }
+        else{
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in infinity", line_number);
+            return mkUnknown();
+        }
+    }
+    std::shared_ptr<DAGNode> Parser::mkPosInfinity(std::shared_ptr<Sort> sort){
+        if(sort->isEqTo(STR_SORT)){
+            return STR_POS_INF_NODE;
+        }
+        else if(sort->isEqTo(INT_SORT)){
+            return INT_POS_INF_NODE;
+        }
+        else if(sort->isEqTo(REAL_SORT)){
+            return REAL_POS_INF_NODE;
+        }
+        else{
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in pos_infinity", line_number);
+            return mkUnknown();
+        }
+    }
+    std::shared_ptr<DAGNode> Parser::mkNegInfinity(std::shared_ptr<Sort> sort){
+        if(sort->isEqTo(STR_SORT)){
+            return STR_NEG_INF_NODE;
+        }
+        else if(sort->isEqTo(INT_SORT)){
+            return INT_NEG_INF_NODE;
+        }
+        else if(sort->isEqTo(REAL_SORT)){
+            return REAL_NEG_INF_NODE;
+        }
+        else{
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in neg_infinity", line_number);
+            return mkUnknown();
+        }
     }
     std::shared_ptr<DAGNode> Parser::mkNan(){
         return NAN_NODE;
     }
     std::shared_ptr<DAGNode> Parser::mkEpsilon(){
         return EPSILON_NODE;
+    }
+    std::shared_ptr<DAGNode> Parser::mkPosEpsilon(){
+        return POS_EPSILON_NODE;
+    }
+    std::shared_ptr<DAGNode> Parser::mkNegEpsilon(){
+        return NEG_EPSILON_NODE;
     }
     // ARITHMATIC FUNCTIONS
     // /*
@@ -3668,6 +3844,66 @@ namespace SMTLIBParser{
         return mkOper(INT_SORT, NODE_KIND::NT_INDEXOF_REG, l, r);
     }
 
+    // INTERVAL
+    std::shared_ptr<DAGNode> Parser::mkMax(const std::vector<std::shared_ptr<DAGNode>> &params){
+        if(params.size() == 0){
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for max", line_number);
+            return mkUnknown();
+        }
+        else if(params.size() == 1){
+            return params[0];
+        }
+        std::shared_ptr<Sort> sort = getSort(params);
+
+        std::vector<std::shared_ptr<DAGNode>> new_params;
+
+        // pair-wise comparison: (< a b c d) <=> (and (< a b) (< b c) (< c d))
+        for(size_t i=0;i<params.size() - 1;i++){
+            if(params[i]->isErr()) return params[i];
+            if(sort != nullptr && !params[i]->getSort()->isEqTo(sort)) {
+                if(canExempt(params[i]->getSort(), sort)){
+                    std::cerr << "Type mismatch in max, but now exempt for int/real"<<std::endl;
+                }
+                else{
+                    err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in max", line_number);
+                    return mkUnknown();
+                }
+            }
+            new_params.emplace_back(params[i]);
+        }
+
+        return mkOper(sort, NODE_KIND::NT_MAX, new_params);
+    }
+    std::shared_ptr<DAGNode> Parser::mkMin(const std::vector<std::shared_ptr<DAGNode>> &params){
+        if(params.size() == 0){
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for min", line_number);
+            return mkUnknown();
+        }
+        else if(params.size() == 1){
+            return params[0];
+        }
+        std::shared_ptr<Sort> sort = getSort(params);
+
+        std::vector<std::shared_ptr<DAGNode>> new_params;
+
+        // pair-wise comparison: (< a b c d) <=> (and (< a b) (< b c) (< c d))
+        for(size_t i=0;i<params.size() - 1;i++){
+            if(params[i]->isErr()) return params[i];
+            if(sort != nullptr && !params[i]->getSort()->isEqTo(sort)) {
+                if(canExempt(params[i]->getSort(), sort)){
+                    std::cerr << "Type mismatch in min, but now exempt for int/real"<<std::endl;
+                }
+                else{
+                    err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in min", line_number);
+                    return mkUnknown();
+                }
+            }
+            new_params.emplace_back(params[i]);
+        }
+
+        return mkOper(sort, NODE_KIND::NT_MIN, new_params);
+    }
+
     // negate an atom
     std::shared_ptr<DAGNode> Parser::negateComp(std::shared_ptr<DAGNode> atom){
         if(atom->isErr()) return atom;
@@ -3779,6 +4015,35 @@ namespace SMTLIBParser{
         return mkNot(atom);
     }
 
+    std::shared_ptr<DAGNode> Parser::flipComp(std::shared_ptr<DAGNode> atom){
+        if(atom->isErr()) return atom;
+
+        if(atom->isEq() || atom->isDistinct()){
+            return atom;
+        }
+
+        // negate an arithmetic atom
+        if(atom->isArithComp()){
+            return mkOper(BOOL_SORT, atom->getKind(), {atom->getChild(1), atom->getChild(0)});
+        }
+
+        // negate a bitvector atom
+        if(atom->isBVCompOp()){
+            return mkOper(BOOL_SORT, atom->getKind(), {atom->getChild(1), atom->getChild(0)});
+        }
+
+        if(atom->isFPComp()){
+            return mkOper(BOOL_SORT, atom->getKind(), {atom->getChild(1), atom->getChild(0)});
+        }
+
+        if(atom->isStrComp()){
+            return mkOper(BOOL_SORT, atom->getKind(), {atom->getChild(1), atom->getChild(0)});
+        }
+
+        // for other types of atoms, use the general negation operation
+        return atom;
+    }
+
     int Parser::getArity(NODE_KIND k) const{
         switch(k){
             // zero-ary
@@ -3791,8 +4056,12 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_CONST_PI:
             case NODE_KIND::NT_CONST_E:
             case NODE_KIND::NT_INFINITY:
+            case NODE_KIND::NT_POS_INFINITY:
+            case NODE_KIND::NT_NEG_INFINITY:
             case NODE_KIND::NT_NAN:
             case NODE_KIND::NT_EPSILON:
+            case NODE_KIND::NT_POS_EPSILON:
+            case NODE_KIND::NT_NEG_EPSILON:
             case NODE_KIND::NT_REG_NONE:
             case NODE_KIND::NT_REG_ALL:
             case NODE_KIND::NT_REG_ALLCHAR:
@@ -4004,7 +4273,9 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_REG_INTER:
             case NODE_KIND::NT_REG_DIFF:
             case NODE_KIND::NT_FORALL:
-            case NODE_KIND::NT_EXISTS: 
+            case NODE_KIND::NT_EXISTS:
+            case NODE_KIND::NT_MAX:
+            case NODE_KIND::NT_MIN:
                 return -1;
 
             default:

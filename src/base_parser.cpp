@@ -44,10 +44,19 @@ namespace SMTLIBParser{
 		node_list.emplace_back(UNKNOWN_NODE);
 		node_list.emplace_back(E_NODE);
 		node_list.emplace_back(PI_NODE);
-		node_list.emplace_back(INF_NODE);
+		node_list.emplace_back(STR_INF_NODE);
+		node_list.emplace_back(STR_POS_INF_NODE);
+		node_list.emplace_back(STR_NEG_INF_NODE);
+		node_list.emplace_back(INT_INF_NODE);
+		node_list.emplace_back(INT_POS_INF_NODE);
+		node_list.emplace_back(INT_NEG_INF_NODE);
+		node_list.emplace_back(REAL_INF_NODE);
+		node_list.emplace_back(REAL_POS_INF_NODE);
+		node_list.emplace_back(REAL_NEG_INF_NODE);
 		node_list.emplace_back(NAN_NODE);
 		node_list.emplace_back(EPSILON_NODE);
-		
+		node_list.emplace_back(POS_EPSILON_NODE);
+		node_list.emplace_back(NEG_EPSILON_NODE);
 		options = std::make_shared<GlobalOptions>();
 	}
 
@@ -69,9 +78,18 @@ namespace SMTLIBParser{
 		node_list.emplace_back(UNKNOWN_NODE);
 		node_list.emplace_back(E_NODE);
 		node_list.emplace_back(PI_NODE);
-		node_list.emplace_back(INF_NODE);
+		node_list.emplace_back(STR_INF_NODE);
+		node_list.emplace_back(STR_POS_INF_NODE);
+		node_list.emplace_back(STR_NEG_INF_NODE);
+		node_list.emplace_back(INT_INF_NODE);
+		node_list.emplace_back(INT_POS_INF_NODE);
+		node_list.emplace_back(INT_NEG_INF_NODE);
+		node_list.emplace_back(REAL_INF_NODE);
+		node_list.emplace_back(REAL_POS_INF_NODE);
 		node_list.emplace_back(NAN_NODE);
 		node_list.emplace_back(EPSILON_NODE);
+		node_list.emplace_back(POS_EPSILON_NODE);
+		node_list.emplace_back(NEG_EPSILON_NODE);
 
 		options = std::make_shared<GlobalOptions>();
 
@@ -112,6 +130,9 @@ namespace SMTLIBParser{
 		}
 		return vars;
 	}
+	std::shared_ptr<DAGNode> Parser::getVariable(const std::string& var_name){
+		return node_list[var_names.at(var_name)];
+	}
 	std::vector<std::shared_ptr<DAGNode>> Parser::getFunctions() const{
 		std::vector<std::shared_ptr<DAGNode>> funs;
 		for(auto fun : function_names){
@@ -135,11 +156,11 @@ namespace SMTLIBParser{
 		cassert(expr->isCReal() || expr->isCInt(), "Cannot convert non-constant expression to real");
 		if(expr->isPi()) return Real::pi(getEvaluatePrecision());
 		if(expr->isE()) return Real::e(getEvaluatePrecision());
-		return expr->getValue().toReal(getEvaluatePrecision());
+		return expr->getValue()->getNumberValue().toReal(getEvaluatePrecision());
 	}
 	Integer Parser::toInt(std::shared_ptr<DAGNode> expr){
 		cassert(expr->isCInt(), "Cannot convert non-integer expression to integer");
-		return expr->getValue().toInteger();
+		return expr->getValue()->getNumberValue().toInteger();
 	}
 	bool Parser::isZero(std::shared_ptr<DAGNode> expr){
 		if(expr->isCReal()) return toReal(expr) == 0.0;
@@ -1030,17 +1051,55 @@ namespace SMTLIBParser{
 
 	
 	std::shared_ptr<DAGNode> Parser::parseConstFunc(const std::string& s){
-		if(s == "pi"){
+		// these have the highest priority
+		if(let_key_map.find(s) != let_key_map.end()){
+			return let_key_map[s];
+		}
+		else if(fun_key_map.find(s) != fun_key_map.end()){
+			// function name
+			return fun_key_map[s];
+		}
+		else if(fun_var_map.find(s) != fun_var_map.end()){
+			// function variable name
+			return fun_var_map[s];
+		}
+		else if(var_names.find(s) != var_names.end()){
+			// variable name
+			return node_list[var_names[s]];
+		}
+		// following Common Lisp's conventions, enclosing
+		// a simple symbol in vertical bars does not produce a new symbol.
+		else if(s.size() > 1 && 
+				s[0] == '|'  && 
+				s[s.size() - 1] == '|' &&
+				var_names.find(s.substr(1, s.size() - 2)) != var_names.end()){
+			// string
+			return node_list[var_names[s.substr(1, s.size() - 2)]];
+		}
+		// otherwise, it is a constant
+		else if(s == "pi"){
 			return mkPi();
 		}
 		else if(s == "e"){
 			return mkE();
 		}
 		else if(s == "inf"){
-			return mkInfinity();
+			return mkInfinity(options->isIntTheory()? INT_SORT : REAL_SORT);
+		}
+		else if(s == "+inf"){
+			return mkPosInfinity(options->isIntTheory()? INT_SORT : REAL_SORT);
+		}
+		else if(s == "-inf"){
+			return mkNegInfinity(options->isIntTheory()? INT_SORT : REAL_SORT);
 		}
 		else if(s == "epsion"){
 			return mkEpsilon();
+		}
+		else if(s == "+epsilon"){
+			return mkPosEpsilon();
+		}
+		else if(s == "-epsilon"){
+			return mkNegEpsilon();
 		}
 		else if(s == "NaN"){
 			return mkNan();
@@ -1085,31 +1144,7 @@ namespace SMTLIBParser{
 			return mkRegAllChar();
 		}
 		else {
-			if(let_key_map.find(s) != let_key_map.end()){
-				return let_key_map[s];
-			}
-			else if(fun_key_map.find(s) != fun_key_map.end()){
-				// function name
-				return fun_key_map[s];
-			}
-			else if(fun_var_map.find(s) != fun_var_map.end()){
-				// function variable name
-				return fun_var_map[s];
-			}
-			else if(var_names.find(s) != var_names.end()){
-				// variable name
-				return node_list[var_names[s]];
-			}
-			// following Common Lisp's conventions, enclosing
-			// a simple symbol in vertical bars does not produce a new symbol.
-			else if(s.size() > 1 && 
-					s[0] == '|'  && 
-					s[s.size() - 1] == '|' &&
-					var_names.find(s.substr(1, s.size() - 2)) != var_names.end()){
-				// string
-				return node_list[var_names[s.substr(1, s.size() - 2)]];
-			}
-			else return mkErr(ERROR_TYPE::ERR_UNKWN_SYM);
+			return mkErr(ERROR_TYPE::ERR_UNKWN_SYM);
 		}
 	}
 
@@ -2233,6 +2268,74 @@ namespace SMTLIBParser{
 		}
 	}
 
+	std::shared_ptr<DAGNode> Parser::arithNormalize(std::shared_ptr<DAGNode> expr){
+		bool is_changed = false;
+		return arithNormalize(expr, is_changed);
+	}
+
+
+	std::shared_ptr<DAGNode> Parser::arithNormalize(std::shared_ptr<DAGNode> expr, bool& is_changed){
+		if(expr->isErr()){
+			return expr;
+		}
+		// expand let
+		if(expr->isLet()){
+			expr = expandLet(expr);
+		}
+		
+		if(expr->isArithTerm()){
+			return expr;
+		}
+		if(expr->isConst()){
+			return expr;
+		}
+		else if(expr->isVar()){
+			return expr;
+		}
+		else if(expr->isArithComp()){
+			cassert(expr->getChildrenSize() == 2, "ArithComp should have two children");
+			std::shared_ptr<DAGNode> left_side = expr->getChild(0);
+			std::shared_ptr<DAGNode> right_side = expr->getChild(1);
+			cassert(left_side->isArithTerm() && right_side->isArithTerm(), "ArithComp should have two arith terms");
+			if(right_side->isConst()){
+				// no need to change
+				is_changed = false;
+				return expr;
+			}
+			else{
+				// need to change
+				is_changed = true;
+				std::shared_ptr<DAGNode> left = mkOper(left_side->getSort(), NODE_KIND::NT_SUB, {left_side, right_side});
+				return mkOper(BOOL_SORT, expr->getKind(), {left, getZero(left_side->getSort())});
+			}
+		}
+		else{
+			bool cur_is_changed = false;
+			std::vector<std::shared_ptr<DAGNode>> record;
+			for(size_t i=0;i<expr->getChildrenSize();i++){
+				bool child_changed = false;
+				record.emplace_back(arithNormalize(expr->getChild(i), child_changed));
+				cur_is_changed = cur_is_changed || child_changed;
+			}
+			if(cur_is_changed){
+				std::shared_ptr<DAGNode> res = mkOper(expr->getSort(), expr->getKind(), record);
+				is_changed = true;
+				return res;
+			}
+			else{
+				is_changed = false;
+				return expr;
+			}
+		}
+	}
+
+	std::vector<std::shared_ptr<DAGNode>> Parser::arithNormalize(std::vector<std::shared_ptr<DAGNode>> exprs){
+		std::vector<std::shared_ptr<DAGNode>> res;
+		for(auto& expr : exprs){
+			res.emplace_back(arithNormalize(expr));
+		}
+		return res;
+	}
 
 
 	// aux functions
@@ -2254,10 +2357,10 @@ namespace SMTLIBParser{
 		return SMTLIBParser::getOppositeKind(kind);
 	}
 	std::shared_ptr<DAGNode> Parser::getZero(std::shared_ptr<Sort> sort){
-		if(sort == INT_SORT){
+		if(sort->isInt() || sort->isIntOrReal()){
 			return mkConstInt(0);
 		}
-		else if(sort == REAL_SORT){
+		else if(sort->isReal()){
 			return mkConstReal(0.0);
 		}
 		else if(sort->isBv()){

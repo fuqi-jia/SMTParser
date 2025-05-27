@@ -158,6 +158,10 @@ namespace SMTLIBParser{
         boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>
                                                         cnf_map;
         boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>
+                                                        cnf_atom_map; // bool_var -> atom
+        boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>
+                                                        cnf_bool_var_map; // atom -> bool_var
+        boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>
                                                         dnf_map;
         boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>
                                                         nnf_map;
@@ -304,6 +308,14 @@ namespace SMTLIBParser{
          * @return Vector of all variables
          */
         std::vector<std::shared_ptr<DAGNode>> getVariables() const;
+        
+        /**
+         * @brief Get variable
+         * 
+         * @param var_name Variable name
+         * @return Variable node
+         */
+        std::shared_ptr<DAGNode> getVariable(const std::string& var_name);
 
         /**
          * @brief Get functions
@@ -547,7 +559,15 @@ namespace SMTLIBParser{
          * @return Integer constant node
          */
         std::shared_ptr<DAGNode> mkConstInt(const Integer &v); // CONST_INT
-        
+
+        /**
+         * @brief Create a real constant from number
+         *
+         * @param v Value (Number)
+         * @return Real constant node
+         */
+        std::shared_ptr<DAGNode> mkConstInt(const Number& v); // CONST_INT
+
         /**
          * @brief Create a real constant from string
          *
@@ -579,6 +599,14 @@ namespace SMTLIBParser{
          * @return Real constant node
          */
         std::shared_ptr<DAGNode> mkConstReal(const Integer &v); // CONST_REAL
+
+        /**
+         * @brief Create a real constant from number
+         *
+         * @param v Value (Number)
+         * @return Real constant node
+         */
+        std::shared_ptr<DAGNode> mkConstReal(const Number& v); // CONST_REAL
         
         /**
          * @brief Create a string constant
@@ -1501,7 +1529,21 @@ namespace SMTLIBParser{
          * 
          * @return Infinity node (infinity)
          */
-        std::shared_ptr<DAGNode> mkInfinity(); // infinity
+        std::shared_ptr<DAGNode> mkInfinity(std::shared_ptr<Sort> sort); // infinity
+
+        /**
+         * @brief Create a positive infinity node
+         * 
+         * @return Positive infinity node (+infinity)
+         */
+        std::shared_ptr<DAGNode> mkPosInfinity(std::shared_ptr<Sort> sort); // +infinity
+
+        /**
+         * @brief Create a negative infinity node
+         * 
+         * @return Negative infinity node (-infinity)
+         */
+        std::shared_ptr<DAGNode> mkNegInfinity(std::shared_ptr<Sort> sort); // -infinity
 
         /**
          * @brief Create a nan node
@@ -1516,6 +1558,20 @@ namespace SMTLIBParser{
          * @return Epsilon node (epsilon, i.e., a infinitesimal number)
          */
         std::shared_ptr<DAGNode> mkEpsilon(); // epsilon
+        
+        /**
+         * @brief Create a positive epsilon node
+         * 
+         * @return Positive epsilon node (+epsilon)
+         */
+        std::shared_ptr<DAGNode> mkPosEpsilon(); // +epsilon
+
+        /**
+         * @brief Create a negative epsilon node
+         * 
+         * @return Negative epsilon node (-epsilon)
+         */ 
+        std::shared_ptr<DAGNode> mkNegEpsilon(); // -epsilon
         
         // ARITHMATIC FUNCTIONS
         
@@ -2714,6 +2770,23 @@ namespace SMTLIBParser{
          */
         std::shared_ptr<DAGNode> mkIndexofReg(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // indexof(l, r)
         
+        // INTERVAL
+        /**
+         * @brief Create a max node
+         * 
+         * @param params List of parameters
+         * @return Max node (max(p1, p2, ...))
+         */
+        std::shared_ptr<DAGNode> mkMax(const std::vector<std::shared_ptr<DAGNode>> &params); // max(p1, p2, ...)
+        
+        /**
+         * @brief Create a min node
+         * 
+         * @param params List of parameters
+         * @return Min node (min(p1, p2, ...))
+         */
+        std::shared_ptr<DAGNode> mkMin(const std::vector<std::shared_ptr<DAGNode>> &params); // min(p1, p2, ...)
+
         // LET 
         /**
          * @brief Create a let node
@@ -2837,6 +2910,15 @@ namespace SMTLIBParser{
          */
         std::shared_ptr<DAGNode>	            negateComp(std::shared_ptr<DAGNode> atom);
 
+        // flip a comparison atom
+        /**
+         * @brief Flip a comparison atom
+         * 
+         * @param atom Comparison atom to flip
+         * @return Flipped comparison atom
+         */
+        std::shared_ptr<DAGNode>	            flipComp(std::shared_ptr<DAGNode> atom);
+        
         // evaluate: return true if the evaluation has changed the expression
         /**
          * @brief Set the precision for evaluation
@@ -2955,7 +3037,23 @@ namespace SMTLIBParser{
          * @param exprs Expressions to collect atoms from
          * @param atoms Atoms (stored in a set)
          */
-        void                                    collectAtoms(std::vector<std::shared_ptr<DAGNode>> exprs, boost::unordered_set<std::shared_ptr<DAGNode>>& atoms);    
+        void                                    collectAtoms(std::vector<std::shared_ptr<DAGNode>> exprs, boost::unordered_set<std::shared_ptr<DAGNode>>& atoms);   
+
+        /**
+         * @brief Collect variables from a vector of expressions
+         * 
+         * @param exprs Expressions to collect variables from
+         * @param vars Variables (stored in a set)
+         */
+        void                                    collectVars(std::vector<std::shared_ptr<DAGNode>> exprs, boost::unordered_set<std::shared_ptr<DAGNode>>& vars);
+
+        /**
+         * @brief Collect variables from an expression
+         * 
+         * @param expr Expression to collect variables from
+         * @param vars Variables (stored in a set)
+         */
+        void                                    collectVars(std::shared_ptr<DAGNode> expr, boost::unordered_set<std::shared_ptr<DAGNode>>& vars);
 
         /**
          * @brief Replace atoms in an expression
@@ -2992,6 +3090,42 @@ namespace SMTLIBParser{
         std::shared_ptr<DAGNode>                toCNF(std::vector<std::shared_ptr<DAGNode>> exprs);
 
         /**
+         * @brief Get the original atom from the CNF atom
+         * 
+         * @note If the bool_var is not a CNF atom, the function will return NULL_NODE.
+         * 
+         * @param bool_var Boolean variable
+         * @return Original atom
+         */
+        std::shared_ptr<DAGNode>                getCNFAtom(std::shared_ptr<DAGNode> bool_var);
+
+        /**
+         * @brief Get all CNF atoms from an expression
+         * 
+         * @param expr Expression to get CNF atoms from
+         * @return CNF atoms
+         */
+        std::vector<std::shared_ptr<DAGNode>>   getCNFAtoms();
+
+        /**
+         * @brief Get the CNF variable from the original atom
+         * 
+         * @note If the atom is not a CNF variable, the function will return NULL_NODE.
+         * 
+         * @param atom Original atom
+         * @return CNF variable
+         */
+        std::shared_ptr<DAGNode>                getCNFBoolVar(std::shared_ptr<DAGNode> atom);
+
+        /**
+         * @brief Get all CNF variables from an expression
+         * 
+         * @param expr Expression to get CNF variables from
+         * @return CNF variables
+         */
+        std::vector<std::shared_ptr<DAGNode>>   getCNFBoolVars();
+
+        /**
          * @brief Convert an expression to DNF
          * 
          * @param expr Expression to convert
@@ -3022,6 +3156,25 @@ namespace SMTLIBParser{
          * @return Expressions in NNF
          */
         std::shared_ptr<DAGNode>                toNNF(std::vector<std::shared_ptr<DAGNode>> exprs);
+
+        /**
+         * @brief Normalize an expression
+         * 
+         * @note make the right hand side of the expression a constant, e.g. f(x) < g(x) -> f(x) - g(x) < 0
+         *       If expr is a constraint, the function will traverse the children of the constraint and normalize each child.
+         * 
+         * @param expr Expression to normalize 
+         * @return Normalized expression
+         */
+        std::shared_ptr<DAGNode>                arithNormalize(std::shared_ptr<DAGNode> expr);
+
+        /**
+         * @brief Normalize a vector of expressions
+         * 
+         * @param exprs Expressions to normalize
+         * @return Normalized expressions
+         */
+        std::vector<std::shared_ptr<DAGNode>>   arithNormalize(std::vector<std::shared_ptr<DAGNode>> exprs);
 
         // print
         /**
@@ -3147,6 +3300,8 @@ namespace SMTLIBParser{
         std::shared_ptr<DAGNode>                flattenDNF(std::shared_ptr<DAGNode> expr);
         
         std::shared_ptr<DAGNode>                toNNF(std::shared_ptr<DAGNode> expr, bool is_not);
+
+        std::shared_ptr<DAGNode>                arithNormalize(std::shared_ptr<DAGNode> expr, bool& is_changed);
         
         //errors & warnings
         // mk errror node
@@ -3178,6 +3333,7 @@ namespace SMTLIBParser{
 
         // collect atoms
         void        collectAtoms(std::shared_ptr<DAGNode> expr, boost::unordered_set<std::shared_ptr<DAGNode>>& atoms, boost::unordered_set<std::shared_ptr<DAGNode>>& visited);
+        void        collectVars(std::shared_ptr<DAGNode> expr, boost::unordered_set<std::shared_ptr<DAGNode>>& vars, boost::unordered_set<std::shared_ptr<DAGNode>>& visited);
         // evaluate functions
         bool		evaluateSimpleOp(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result, NODE_KIND op);
         bool		evaluateAnd(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
@@ -3339,6 +3495,8 @@ namespace SMTLIBParser{
         bool		evaluateRegComplement(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
         bool		evaluateApplyFun(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
         bool		evaluateLet(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
+        bool        evaluateMax(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
+        bool        evaluateMin(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
     };
 
 
