@@ -792,8 +792,9 @@ namespace SMTLIBParser{
                     }
                     else{
                         auto opposite_op = getOppositeKind(op);
-                        for(auto child : const_children){
-                            result = mkOper(expr->getSort(), opposite_op, result, child);
+                        result = const_children[0];
+                        for(size_t i = 1; i < const_children.size(); ++i){
+                            result = mkOper(expr->getSort(), opposite_op, result, const_children[i]);
                         }
                         non_const_children.emplace_back(result);
                         result = mkOper(expr->getSort(), op, non_const_children);
