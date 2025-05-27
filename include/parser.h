@@ -3204,12 +3204,13 @@ namespace SMTLIBParser{
         /**
          * @brief Split an expression into a vector of expressions
          * 
-         * @note Split comparison into two inequalities, i.e., x != y -> x < y or x > y, x >= y -> x > y or x = y, etc.
+         * @note E.g., split comparison into two inequalities, i.e., x != y -> x < y or x > y, x >= y -> x > y or x = y, etc.
          * 
          * @param expr Expression to split
+         * @param op_set Set of node kinds to split
          * @return Vector of expressions
          */
-        std::shared_ptr<DAGNode>                splitArithComp(std::shared_ptr<DAGNode> expr);
+        std::shared_ptr<DAGNode>                splitOp(std::shared_ptr<DAGNode> expr, const boost::unordered_set<NODE_KIND>& op_set);
 
         // print
         /**
@@ -3337,7 +3338,10 @@ namespace SMTLIBParser{
         std::shared_ptr<DAGNode>                toNNF(std::shared_ptr<DAGNode> expr, bool is_not);
 
         std::shared_ptr<DAGNode>                arithNormalize(std::shared_ptr<DAGNode> expr, bool& is_changed);
-        std::shared_ptr<DAGNode>                splitArithComp(std::shared_ptr<DAGNode> expr, bool& is_changed, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited);
+        std::shared_ptr<DAGNode>                splitOp(std::shared_ptr<DAGNode> expr, 
+                                                        const boost::unordered_set<NODE_KIND>& op_set, 
+                                                        bool& is_changed, 
+                                                        boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited);
         
         //errors & warnings
         // mk errror node

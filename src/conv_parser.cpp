@@ -1247,47 +1247,53 @@ namespace SMTLIBParser {
 
 
 
-    std::shared_ptr<DAGNode> Parser::splitArithComp(std::shared_ptr<DAGNode> expr){
+    std::shared_ptr<DAGNode> Parser::splitOp(std::shared_ptr<DAGNode> expr, const boost::unordered_set<NODE_KIND>& op_set){
         bool is_changed = false;
         boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> visited;
-        return splitArithComp(expr, is_changed, visited);
+        return splitOp(expr, op_set, is_changed, visited);
     }
 
-    std::shared_ptr<DAGNode> Parser::splitArithComp(std::shared_ptr<DAGNode> expr, bool& is_changed, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited){
+    std::shared_ptr<DAGNode> Parser::splitOp(std::shared_ptr<DAGNode> expr, const boost::unordered_set<NODE_KIND>& op_set, bool& is_changed, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited){
         if(visited.find(expr) != visited.end()){
             return visited[expr];
         }
-        if(expr->isArithComp()){
+        if(op_set.find(expr->getKind()) != op_set.end()){
             if(expr->isLt() || expr->isGt() || expr->isEq()){
+                std::cerr << "splitArithComp: " << expr->toString() << " is not supported"<< std::endl;
                 is_changed = false;
                 return expr;
             }
-            else{
+            else if(expr->isGe()){
                 is_changed = true;
                 std::shared_ptr<DAGNode> left = expr->getChild(0);
                 std::shared_ptr<DAGNode> right = expr->getChild(1);
-                if(expr->isLe()){
-                    return mkOr({
-                        mkLt(left, right),
-                        mkEq(left, right)
-                    });
-                }
-                else if(expr->isGe()){
-                    return mkOr({
-                        mkGt(left, right),
-                        mkEq(left, right)
-                    });
-                }
-                else if(expr->isDistinct()){
-                    return mkOr({
-                        mkLt(left, right),
-                        mkGt(left, right)
-                    });
-                }
-                else{
-                    err_all(ERROR_TYPE::ERR_TYPE_MIS, "unsupported arithmetic comparison: " + kindToString(expr->getKind()));
-                    return expr;
-                }
+                return mkOr({
+                    mkGt(left, right),
+                    mkEq(left, right)
+                });
+            }
+            else if(expr->isLe()){
+                is_changed = true;
+                std::shared_ptr<DAGNode> left = expr->getChild(0);
+                std::shared_ptr<DAGNode> right = expr->getChild(1);
+                return mkOr({
+                    mkLt(left, right),
+                    mkEq(left, right)
+                });
+            }
+            else if(expr->isDistinct()){
+                is_changed = true;
+                std::shared_ptr<DAGNode> left = expr->getChild(0);
+                std::shared_ptr<DAGNode> right = expr->getChild(1);
+                return mkOr({
+                    mkLt(left, right),
+                    mkGt(left, right)
+                });
+            }
+            else{
+                std::cerr << "splitArithComp: " << expr->toString() << " is not supported"<< std::endl;
+                is_changed = false;
+                return expr;
             }
         }
         else{
@@ -1296,10 +1302,11 @@ namespace SMTLIBParser {
                 bool child_changed = false;
                 is_changed = is_changed || child_changed;
                 std::shared_ptr<DAGNode> child = expr->getChild(i);
+                std::shared_ptr<DAGNode> split_child = splitOp(child, op_set, child_changed, visited);
                 if(visited.find(child) == visited.end()){
-                    visited[child] = splitArithComp(child, child_changed, visited);
+                    visited[child] = split_child;
                 }
-                children.emplace_back(visited[child]);
+                children.emplace_back(split_child);
             }
             if(is_changed){
                 std::shared_ptr<DAGNode> result = mkOper(expr->getSort(), expr->getKind(), children);
