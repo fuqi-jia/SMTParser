@@ -727,7 +727,12 @@ namespace SMTLIBParser{
                     }
                 }
                 if(const_children.empty()){
-                    result = mkOper(expr->getSort(), op, non_const_children);
+                    if(non_const_children.size() == 1){
+                        result = non_const_children[0];
+                    }
+                    else{
+                        result = mkOper(expr->getSort(), op, non_const_children);
+                    }
                 }
                 else{
                     // compute the and of the constant children
@@ -779,7 +784,12 @@ namespace SMTLIBParser{
                     }
                 }
                 if(const_children.empty()){
-                    result = mkSub(non_const_children);
+                    if(non_const_children.size() == 1){
+                        result = non_const_children[0];
+                    }
+                    else{
+                        result = mkOper(expr->getSort(), op, non_const_children);
+                    }
                 }
                 else{
                     if(first_child_is_const){
@@ -788,7 +798,12 @@ namespace SMTLIBParser{
                             result = mkOper(expr->getSort(), op, result, const_children[i]);
                         }
                         non_const_children.insert(non_const_children.begin(), result);
-                        result = mkOper(expr->getSort(), op, non_const_children);
+                        if(non_const_children.size() == 1){
+                            result = non_const_children[0];
+                        }
+                        else{
+                            result = mkOper(expr->getSort(), op, non_const_children);
+                        }
                     }
                     else{
                         auto opposite_op = getOppositeKind(op);
@@ -797,7 +812,12 @@ namespace SMTLIBParser{
                             result = mkOper(expr->getSort(), opposite_op, result, const_children[i]);
                         }
                         non_const_children.emplace_back(result);
-                        result = mkOper(expr->getSort(), op, non_const_children);
+                        if(non_const_children.size() == 1){
+                            result = non_const_children[0];
+                        }
+                        else{
+                            result = mkOper(expr->getSort(), op, non_const_children);
+                        }
                     }
                 }
                 return true;
