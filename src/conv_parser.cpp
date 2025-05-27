@@ -64,10 +64,12 @@ namespace SMTLIBParser {
         }
         return NULL_NODE;
     }
-    std::vector<std::shared_ptr<DAGNode>> Parser::getCNFAtoms(std::shared_ptr<DAGNode> expr) {
-        boost::unordered_set<std::shared_ptr<DAGNode>> atoms;
-        collectAtoms(expr, atoms);
-        return std::vector<std::shared_ptr<DAGNode>>(atoms.begin(), atoms.end());
+    std::vector<std::shared_ptr<DAGNode>> Parser::getCNFAtoms() {
+        std::vector<std::shared_ptr<DAGNode>> atoms;
+        for(auto& [bool_var, atom] : cnf_bool_var_map){
+            atoms.emplace_back(atom);
+        }
+        return atoms;
     }
     std::shared_ptr<DAGNode> Parser::getCNFBoolVar(std::shared_ptr<DAGNode> atom) {
         if(cnf_atom_map.find(atom) != cnf_atom_map.end()){
@@ -75,10 +77,12 @@ namespace SMTLIBParser {
         }
         return NULL_NODE;
     }
-    std::vector<std::shared_ptr<DAGNode>> Parser::getCNFBoolVars(std::shared_ptr<DAGNode> expr) {
-        boost::unordered_set<std::shared_ptr<DAGNode>> vars;
-        collectVars(expr, vars);
-        return std::vector<std::shared_ptr<DAGNode>>(vars.begin(), vars.end());
+    std::vector<std::shared_ptr<DAGNode>> Parser::getCNFBoolVars() {
+        std::vector<std::shared_ptr<DAGNode>> bool_vars;
+        for(auto& [atom, bool_var] : cnf_atom_map){
+            bool_vars.emplace_back(bool_var);
+        }
+        return bool_vars;
     }
 
     void Parser::collectVars(std::vector<std::shared_ptr<DAGNode>> exprs, boost::unordered_set<std::shared_ptr<DAGNode>>& vars) {
