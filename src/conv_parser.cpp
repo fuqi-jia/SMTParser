@@ -503,7 +503,32 @@ namespace SMTLIBParser {
     // convert a list of expressions to CNF (a large AND node, whose children are all OR clauses)
     std::shared_ptr<DAGNode> Parser::toCNF(std::vector<std::shared_ptr<DAGNode>> exprs) {
         // make a large AND node -> the same atom will use the same variable 
+        // assume exprs is a vector of assertions, so we can first collect all top atoms
+
+        // create a new variable for each top atom
+        boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> atom_map;
+        for(auto& expr : exprs){
+            if(expr->isAtom()){
+                std::shared_ptr<DAGNode> new_var = mkTempVar(BOOL_SORT);
+                cnf_atom_map[new_var] = expr;
+                cnf_bool_var_map[expr] = new_var;
+                // add to cnf_map
+                std::shared_ptr<DAGNode> not_atom = mkNot(expr);
+                std::shared_ptr<DAGNode> not_new_var = mkNot(new_var);
+                cnf_map[expr] = new_var;
+                cnf_map[not_atom] = not_new_var;
+                atom_map[expr] = new_var;
+                atom_map[not_atom] = not_new_var;
+            }
+        }
+        
         std::shared_ptr<DAGNode> result = mkAnd(exprs);
+        if(atom_map.size() != 0){
+            // have some top atoms, replace them with new variables
+            result = replaceAtoms(result, atom_map);
+        }
+
+        // collect all atoms
         std::shared_ptr<DAGNode> cnf = toCNF(result);
         cnf_map[result] = cnf;
         return cnf;
