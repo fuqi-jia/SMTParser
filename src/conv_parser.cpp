@@ -1305,12 +1305,9 @@ namespace SMTLIBParser {
             std::vector<std::shared_ptr<DAGNode>> children;
             for(size_t i = 0; i < expr->getChildrenSize(); i++){
                 bool child_changed = false;
-                is_changed = is_changed || child_changed;
                 std::shared_ptr<DAGNode> child = expr->getChild(i);
                 std::shared_ptr<DAGNode> split_child = splitOp(child, op_set, child_changed, visited);
-                if(visited.find(child) == visited.end()){
-                    visited[child] = split_child;
-                }
+                is_changed = is_changed || child_changed;
                 children.emplace_back(split_child);
             }
             if(is_changed){
