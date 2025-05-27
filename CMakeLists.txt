@@ -68,7 +68,6 @@ set(SOURCES
     src/number.cpp
     src/interval.cpp
     src/value.cpp
-    src/smt_interval.cpp
 )
 
 # define public headers
@@ -84,7 +83,6 @@ set(PUBLIC_HEADERS
     include/number.h
     include/interval.h
     include/value.h
-    include/smt_interval.h
 )
 
 # create include directory

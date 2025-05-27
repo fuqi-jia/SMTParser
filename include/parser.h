@@ -3100,6 +3100,14 @@ namespace SMTLIBParser{
         std::shared_ptr<DAGNode>                getCNFAtom(std::shared_ptr<DAGNode> bool_var);
 
         /**
+         * @brief Get all CNF atoms from an expression
+         * 
+         * @param expr Expression to get CNF atoms from
+         * @return CNF atoms
+         */
+        std::vector<std::shared_ptr<DAGNode>>   getCNFAtoms(std::shared_ptr<DAGNode> expr);
+
+        /**
          * @brief Get the CNF variable from the original atom
          * 
          * @note If the atom is not a CNF variable, the function will return NULL_NODE.
@@ -3108,6 +3116,14 @@ namespace SMTLIBParser{
          * @return CNF variable
          */
         std::shared_ptr<DAGNode>                getCNFBoolVar(std::shared_ptr<DAGNode> atom);
+
+        /**
+         * @brief Get all CNF variables from an expression
+         * 
+         * @param expr Expression to get CNF variables from
+         * @return CNF variables
+         */
+        std::vector<std::shared_ptr<DAGNode>>   getCNFBoolVars(std::shared_ptr<DAGNode> expr);
 
         /**
          * @brief Convert an expression to DNF
