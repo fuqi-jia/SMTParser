@@ -133,7 +133,8 @@ namespace SMTLIBParser{
 
     Number Interval::width() const {
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            // empty interval
+            return Number(-1);
         }
         return upper - lower;
     }
@@ -162,7 +163,7 @@ namespace SMTLIBParser{
 
     bool Interval::isSupersetOf(const Interval& other) const {
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return false;
         }
         // superset requirement:
         // 1. A.lower <= B.lower, if A.lower == B.lower, then A.leftClosed >= B.leftClosed
@@ -176,7 +177,7 @@ namespace SMTLIBParser{
 
     bool Interval::isDisjointFrom(const Interval& other) const {
         if(isEmpty() || other.isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return false;
         }
         // disjoint requirement:
         // 1. A.upper < B.lower, or 
@@ -191,7 +192,7 @@ namespace SMTLIBParser{
 
     bool Interval::isIntersectingWith(const Interval& other) const {
         if(isEmpty() || other.isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return false;
         }
         // intersecting requirement: not disjoint
         return !isDisjointFrom(other);
@@ -199,7 +200,7 @@ namespace SMTLIBParser{
 
     Interval Interval::intersection(const Interval& other) const {
         if(isEmpty() || other.isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         Number low = std::max(lower, other.lower);
         Number high = std::min(upper, other.upper);
@@ -214,7 +215,7 @@ namespace SMTLIBParser{
 
     Interval Interval::unionWith(const Interval& other) const {
         if(isEmpty() || other.isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         if(isDisjointFrom(other)) {
             throw std::invalid_argument("Intervals are disjoint");
@@ -237,7 +238,7 @@ namespace SMTLIBParser{
 
     bool Interval::isSubsetEqOf(const Interval& other) const {
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return true;
         }
         // subset requirement: all elements in A are in B
         return lower >= other.lower && upper <= other.upper &&
@@ -362,35 +363,62 @@ namespace SMTLIBParser{
 
     
     Interval Interval::operator++() const {
+        if(isEmpty()) {
+            return EmptyInterval;
+        }
         return Interval(lower + 1, upper + 1, leftClosed, rightClosed);
     }
     Interval Interval::operator--() const {
+        if(isEmpty()) {
+            return EmptyInterval;
+        }
         return Interval(lower - 1, upper - 1, leftClosed, rightClosed);
     }
     Interval Interval::operator-() const {
+        if(isEmpty()) {
+            return EmptyInterval;
+        }
         return Interval(-upper, -lower, rightClosed, leftClosed);
     }
     Interval Interval::operator+() const {
+        if(isEmpty()) {
+            return EmptyInterval;
+        }
         return *this;
     }
     Interval Interval::operator~() const {
+        if(isEmpty()) {
+            return EmptyInterval;
+        }
         return Interval(-upper, -lower, rightClosed, leftClosed);
     }
     Interval Interval::operator!() const {
+        if(isEmpty()) {
+            return EmptyInterval;
+        }
         return Interval(-upper, -lower, rightClosed, leftClosed);
     }
     Interval Interval::operator++(int) const {
+        if(isEmpty()) {
+            return EmptyInterval;
+        }
         return Interval(lower + 1, upper + 1, leftClosed, rightClosed);
     }
     Interval Interval::operator--(int) const {
+        if(isEmpty()) {
+            return EmptyInterval;
+        }
         return Interval(lower - 1, upper - 1, leftClosed, rightClosed);
     }
     Interval Interval::negate() const {
+        if(isEmpty()) {
+            return EmptyInterval;
+        }
         return Interval(-upper, -lower, rightClosed, leftClosed);
     }
     Interval Interval::abs() const {
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         if(lower >= 0) {
             // [a,b] with a ≥ 0 -> [a,b]
@@ -407,32 +435,128 @@ namespace SMTLIBParser{
     Interval Interval::lb() const {
         // log base 2
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
-        return Interval(lower.lb(), upper.lb(), leftClosed, rightClosed);
+        Number new_lower = 0;
+        Number new_upper = 0;
+        bool new_leftClosed = true;
+        bool new_rightClosed = true;
+        if(upper <= 0){
+            return EmptyInterval;
+        }
+        
+        // for lower bound
+        if(lower < 0){
+            new_lower = Number::negativeInfinity();
+            new_leftClosed = false;
+        }
+        else if(lower.isPositiveInfinity()){
+            new_lower = Number::positiveInfinity();
+            new_leftClosed = false;
+        }
+        else{
+            new_lower = lower.lb();
+            new_lower = new_lower.nextBelow();
+            new_leftClosed = false;
+        }
+
+        // for upper bound
+        if(upper.isPositiveInfinity()){
+            new_upper = Number::positiveInfinity();
+            new_rightClosed = false;
+        }
+        else{
+            new_upper = upper.lb();
+            new_upper = new_upper.nextAbove();
+            new_rightClosed = false;
+        }
+        
+        return Interval(new_lower, new_upper, new_leftClosed, new_rightClosed);
     }
     Interval Interval::ln() const {
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
-        return Interval(lower.ln(), upper.ln(), leftClosed, rightClosed);
+        Number new_lower = 0;
+        Number new_upper = 0;
+        bool new_leftClosed = true;
+        bool new_rightClosed = true;
+
+        // for lower bound
+        if(lower < 0){
+            new_lower = Number::negativeInfinity();
+            new_leftClosed = false;
+        }
+        else if(lower.isPositiveInfinity()){
+            new_lower = Number::positiveInfinity();
+            new_leftClosed = false;
+        }
+        else{
+            new_lower = lower.ln();
+            new_lower = new_lower.nextBelow();
+            new_leftClosed = false;
+        }
+
+        // for upper bound
+        if(upper.isPositiveInfinity()){
+            new_upper = Number::positiveInfinity();
+            new_rightClosed = false;
+        }
+        else{
+            new_upper = upper.ln();
+            new_upper = new_upper.nextAbove();
+            new_rightClosed = false;
+        }
+
+        return Interval(new_lower, new_upper, new_leftClosed, new_rightClosed);
     }
     Interval Interval::lg() const {
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
-        return Interval(lower.lg(), upper.lg(), leftClosed, rightClosed);
+        Number new_lower = 0;
+        Number new_upper = 0;
+        bool new_leftClosed = true;
+        bool new_rightClosed = true;
+        
+        // for lower bound
+        if(lower < 0){
+            new_lower = Number::negativeInfinity();
+            new_leftClosed = false;
+        }
+        else if(lower.isPositiveInfinity()){
+            new_lower = Number::positiveInfinity();
+            new_leftClosed = false;
+        }
+        else{
+            new_lower = lower.lg();
+            new_lower = new_lower.nextBelow();
+            new_leftClosed = false;
+        }
+
+        // for upper bound
+        if(upper.isPositiveInfinity()){
+            new_upper = Number::positiveInfinity();
+            new_rightClosed = false;
+        }
+        else{
+            new_upper = upper.lg();
+            new_upper = new_upper.nextAbove();
+            new_rightClosed = false;
+        }
+
+        return Interval(new_lower, new_upper, new_leftClosed, new_rightClosed);
     }
     Interval Interval::exp() const {
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         return Interval(lower.exp(), upper.exp(), leftClosed, rightClosed);
     }
 
     Interval Interval::sqrt() const {
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         if(lower < 0) {
             throw std::domain_error("Cannot compute square root of interval containing negative numbers");
@@ -442,7 +566,7 @@ namespace SMTLIBParser{
 
     Interval Interval::safesqrt() const {
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         Number newLower = (lower < 0) ? Number(0) : lower;
         return Interval(newLower.sqrt(), upper.sqrt(), (lower < 0) ? true : leftClosed, rightClosed);
@@ -450,7 +574,7 @@ namespace SMTLIBParser{
 
     Interval Interval::sin() const {
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         
         // define the period
@@ -511,7 +635,7 @@ namespace SMTLIBParser{
 
     Interval Interval::cos() const {
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         
         // define the period
@@ -573,7 +697,7 @@ namespace SMTLIBParser{
 
     Interval Interval::tan() const {
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         
         // define the constants
@@ -614,7 +738,7 @@ namespace SMTLIBParser{
 
     Interval Interval::cot() const {
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         
         // cotangent function is the reciprocal of tangent function
@@ -640,7 +764,7 @@ namespace SMTLIBParser{
 
     Interval Interval::sec() const {
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         
         // secant function is the reciprocal of cosine function
@@ -666,7 +790,7 @@ namespace SMTLIBParser{
 
     Interval Interval::csc() const {
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         
         // cosecant function is the reciprocal of sine function
@@ -692,7 +816,7 @@ namespace SMTLIBParser{
 
     Interval Interval::asin() const {
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         
         // asin function domain is [-1, 1]
@@ -709,7 +833,7 @@ namespace SMTLIBParser{
 
     Interval Interval::acos() const {
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         
         // acos function domain is [-1, 1]
@@ -726,7 +850,7 @@ namespace SMTLIBParser{
 
     Interval Interval::atan() const {
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         
         // atan function is monotonically increasing, domain is the whole real number set
@@ -738,7 +862,7 @@ namespace SMTLIBParser{
 
     Interval Interval::acot() const {
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         
         // acot function is monotonically decreasing, domain is the whole real number set
@@ -751,7 +875,7 @@ namespace SMTLIBParser{
 
     Interval Interval::asec() const {
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         
         // asec function domain is (-∞, -1] ∪ [1, ∞)
@@ -785,7 +909,7 @@ namespace SMTLIBParser{
 
     Interval Interval::acsc() const {
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         
         // acsc function domain is (-∞, -1] ∪ [1, ∞)
@@ -819,7 +943,7 @@ namespace SMTLIBParser{
     
     Interval Interval::sinh() const {
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         
         // sinh function is monotonically increasing
@@ -831,7 +955,7 @@ namespace SMTLIBParser{
     
     Interval Interval::cosh() const {
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         
         // cosh function is monotonically increasing, value range is [1, ∞)
@@ -853,7 +977,7 @@ namespace SMTLIBParser{
     
     Interval Interval::tanh() const {
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         
         // tanh function is monotonically increasing, value range is (-1, 1)
@@ -865,7 +989,7 @@ namespace SMTLIBParser{
     
     Interval Interval::coth() const {
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         
         // coth function has singularities at 0
@@ -882,7 +1006,7 @@ namespace SMTLIBParser{
     
     Interval Interval::sech() const {
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         
         // sech function sech(x) = 1/cosh(x)
@@ -897,7 +1021,7 @@ namespace SMTLIBParser{
     
     Interval Interval::csch() const {
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         
         // csch function has singularities at 0
@@ -914,7 +1038,7 @@ namespace SMTLIBParser{
     
     Interval Interval::asinh() const {
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         
         // asinh function is monotonically increasing, domain is the whole real number set
@@ -926,7 +1050,7 @@ namespace SMTLIBParser{
     
     Interval Interval::acosh() const {
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         
         // acosh function domain is [1, ∞)
@@ -943,7 +1067,7 @@ namespace SMTLIBParser{
     
     Interval Interval::atanh() const {
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         
         // atanh function domain is (-1, 1)
@@ -960,7 +1084,7 @@ namespace SMTLIBParser{
     
     Interval Interval::acoth() const {
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         
         // acoth function domain is (-∞, -1) ∪ (1, ∞)
@@ -992,7 +1116,7 @@ namespace SMTLIBParser{
     
     Interval Interval::asech() const {
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         
         // asech function domain is (0, 1]
@@ -1009,7 +1133,7 @@ namespace SMTLIBParser{
     
     Interval Interval::acsch() const {
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         
         // acsch function domain is R\{0}
@@ -1271,7 +1395,7 @@ namespace SMTLIBParser{
 
     Interval Interval::mod(const Number& value) const {
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         if(value == Number(0)) {
             throw std::domain_error("Modulo by zero");
@@ -1305,7 +1429,7 @@ namespace SMTLIBParser{
 
     Interval Interval::mod(const Interval& other) const {
         if(isEmpty() || other.isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         
         // Check for zero in divisor interval
@@ -1355,7 +1479,7 @@ namespace SMTLIBParser{
 
     Interval Interval::pow(const Number& exp) const {
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         
         // If exp is an integer
@@ -1437,7 +1561,7 @@ namespace SMTLIBParser{
 
     Interval Interval::pow(const Interval& exp) const {
         if(isEmpty() || exp.isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         
         // if the base interval is completely positive
@@ -1490,7 +1614,7 @@ namespace SMTLIBParser{
 
     Interval Interval::atan2(const Number& x) const {
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         
         // the domain of atan2(y, x) is the whole plane, and it will not cause division by zero problem
@@ -1518,7 +1642,7 @@ namespace SMTLIBParser{
 
     Interval Interval::atan2(const Interval& x) const {
         if(isEmpty() || x.isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         
         // the domain of atan2(y, x) is the whole plane, and the range is [-π, π]
@@ -1682,75 +1806,9 @@ namespace SMTLIBParser{
         return *this;
     }
 
-    Interval Interval::expandForSafety() const{
-        if(isEmpty()) {
-            return *this;
-        }
-        
-        // calculate the width of the interval
-        Number width = upper - lower;
-        
-        // if the interval is a point/integer/infinity, just return the interval
-        if( width == Number(0) || 
-            (lower.isInteger() && upper.isInteger())||
-            (lower.isInfinity() && upper.isInfinity())) {
-            return *this;
-        }
-        
-        // determine new bounds based on the type of each boundary
-        Number newLower = lower;
-        Number newUpper = upper;
-        bool newLeftClosed = leftClosed;
-        bool newRightClosed = rightClosed;
-        
-        // handle lower bound
-        if(lower.isInfinity() || lower.isInteger()) {
-            // infinity and integer: no expansion needed
-            newLower = lower;
-        } else {
-            // real number: apply MPFR nextbelow for expansion
-            if(lower.isReal()) {
-                HighPrecisionReal lowerReal = lower.getReal();
-                mpfr_nextbelow(lowerReal.getMPFR());
-                newLower = Number(lowerReal);
-                // use open interval for expanded real boundary
-                newLeftClosed = false;
-            } else {
-                // this case should not happen, but keep original for safety
-                newLower = lower;
-            }
-        }
-        
-        // handle upper bound
-        if(upper.isInfinity() || upper.isInteger()) {
-            // infinity and integer: no expansion needed
-            newUpper = upper;
-        } else {
-            // real number: apply MPFR nextabove for expansion
-            if(upper.isReal()) {
-                HighPrecisionReal upperReal = upper.getReal();
-                mpfr_nextabove(upperReal.getMPFR());
-                newUpper = Number(upperReal);
-                // use open interval for expanded real boundary
-                newRightClosed = false;
-            } else {
-                // this case should not happen, but keep original for safety
-                newUpper = upper;
-            }
-        }
-        
-        // ensure the expanded interval is valid
-        if(newLower > newUpper) {
-            // fallback to original interval if expansion causes invalid interval
-            return *this;
-        }
-        
-        return Interval(newLower, newUpper, newLeftClosed, newRightClosed);
-    }
-
     Interval Interval::operate(const NODE_KIND& kind) const{
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         
         switch(kind) {
@@ -1759,65 +1817,65 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_ABS:
                 return this->abs();
             case NODE_KIND::NT_LB:
-                return this->lb().expandForSafety();
+                return this->lb();
             case NODE_KIND::NT_LN:
-                return this->ln().expandForSafety();
+                return this->ln();
             case NODE_KIND::NT_LG:
-                return this->lg().expandForSafety();
+                return this->lg();
             case NODE_KIND::NT_EXP:
-                return this->exp().expandForSafety();
+                return this->exp();
             case NODE_KIND::NT_SQRT:
-                return this->sqrt().expandForSafety();
+                return this->sqrt();
             case NODE_KIND::NT_SAFESQRT:
-                return this->safesqrt().expandForSafety();
+                return this->safesqrt();
             case NODE_KIND::NT_SIN:
-                return this->sin().expandForSafety();
+                return this->sin();
             case NODE_KIND::NT_COS:
-                return this->cos().expandForSafety();
+                return this->cos();
             case NODE_KIND::NT_TAN:
-                return this->tan().expandForSafety();
+                return this->tan();
             case NODE_KIND::NT_COT:
-                return this->cot().expandForSafety();
+                return this->cot();
             case NODE_KIND::NT_SEC:
-                return this->sec().expandForSafety();
+                return this->sec();
             case NODE_KIND::NT_CSC:
-                return this->csc().expandForSafety();
+                return this->csc();
             case NODE_KIND::NT_ASIN:
-                return this->asin().expandForSafety();
+                return this->asin();
             case NODE_KIND::NT_ACOS:
-                return this->acos().expandForSafety();
+                return this->acos();
             case NODE_KIND::NT_ATAN:
-                return this->atan().expandForSafety();
+                return this->atan();
             case NODE_KIND::NT_ACOT:
-                return this->acot().expandForSafety();
+                return this->acot();
             case NODE_KIND::NT_ASEC:
-                return this->asec().expandForSafety();
+                return this->asec();
             case NODE_KIND::NT_ACSC:
-                return this->acsc().expandForSafety();
+                return this->acsc();
             case NODE_KIND::NT_SINH:
-                return this->sinh().expandForSafety();
+                return this->sinh();
             case NODE_KIND::NT_COSH:
-                return this->cosh().expandForSafety();
+                return this->cosh();
             case NODE_KIND::NT_TANH:
-                return this->tanh().expandForSafety();
+                return this->tanh();
             case NODE_KIND::NT_COTH:
-                return this->coth().expandForSafety();
+                return this->coth();
             case NODE_KIND::NT_SECH:
-                return this->sech().expandForSafety();
+                return this->sech();
             case NODE_KIND::NT_CSCH:
-                return this->csch().expandForSafety();
+                return this->csch();
             case NODE_KIND::NT_ASINH:
-                return this->asinh().expandForSafety();
+                return this->asinh();
             case NODE_KIND::NT_ACOSH:
-                return this->acosh().expandForSafety();
+                return this->acosh();
             case NODE_KIND::NT_ATANH:
-                return this->atanh().expandForSafety();
+                return this->atanh();
             case NODE_KIND::NT_ACOTH:
-                return this->acoth().expandForSafety();
+                return this->acoth();
             case NODE_KIND::NT_ASECH:
-                return this->asech().expandForSafety();
+                return this->asech();
             case NODE_KIND::NT_ACSCH:
-                return this->acsch().expandForSafety();
+                return this->acsch();
             default:
                 throw std::invalid_argument("Unsupported unary operation");
         }
@@ -1825,7 +1883,7 @@ namespace SMTLIBParser{
 
     Interval Interval::operate(const NODE_KIND& kind, const Number& value) const{
         if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
+            return EmptyInterval;
         }
         
         switch(kind) {
@@ -1844,7 +1902,7 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_POW:
                 return this->pow(value);
             case NODE_KIND::NT_ATAN2:
-                return this->atan2(value).expandForSafety();
+                return this->atan2(value);
             case NODE_KIND::NT_LT:
             case NODE_KIND::NT_LE:
             case NODE_KIND::NT_GT:
@@ -1879,7 +1937,7 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_POW:
                 return this->pow(other);
             case NODE_KIND::NT_ATAN2:
-                return this->atan2(other).expandForSafety();
+                return this->atan2(other);
             case NODE_KIND::NT_AND:
                 // and operation
                 if(this->isIntersectingWith(other)) {

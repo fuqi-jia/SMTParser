@@ -151,7 +151,6 @@ class Interval {
         Interval atan2(const Interval& x) const;
 
         // advanced functions
-        Interval expandForSafety() const;
         Interval operate(const NODE_KIND& kind) const;
         Interval operate(const NODE_KIND& kind, const Number& value) const;
         Interval operate(const NODE_KIND& kind, const Interval& other) const;
@@ -173,6 +172,8 @@ class Interval {
         // static method, for handling multiple intervals
         static std::vector<Interval> unionMulti(const std::vector<Interval>& intervals);
 };
+
+inline Interval EmptyInterval = Interval(1, -1, false, false);
 
 } // namespace SMTLIBParser
 

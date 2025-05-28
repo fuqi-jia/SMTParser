@@ -116,6 +116,10 @@ namespace SMTLIBParser {
             const mpz_class& getMPZ() const;
             mpz_class& getMPZ();
             const mpz_t* get_mpz_t() const;
+
+            // next functions
+            HighPrecisionInteger nextBelow() const;
+            HighPrecisionInteger nextAbove() const;
             
         private:
             mpz_class value;
@@ -235,6 +239,13 @@ namespace SMTLIBParser {
             // Access internal MPFR value
             mpfr_ptr getMPFR();
             mpfr_srcptr getMPFR() const;
+
+            // next functions
+            HighPrecisionReal nextBelow() const;
+            HighPrecisionReal nextAbove() const;
+            bool isInfinity() const;
+            bool isNegativeInfinity() const;
+            bool isPositiveInfinity() const;
             
         private:
             mpfr_t value;
@@ -304,6 +315,8 @@ namespace SMTLIBParser {
             bool isZero() const;
             bool isOne() const;
             bool isInfinity() const;
+            bool isNegativeInfinity() const;
+            bool isPositiveInfinity() const;
 
             // Basic operations
             Number operator+(const Number& other) const;
@@ -390,7 +403,10 @@ namespace SMTLIBParser {
             Number acoth() const;
             Number asech() const;
             Number acsch() const;
-            
+
+            // next functions
+            Number nextBelow() const;
+            Number nextAbove() const;
         private:
             Type type;                      // Identify type
             HighPrecisionInteger intValue;  // Integer value

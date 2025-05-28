@@ -649,6 +649,32 @@ mpfr_srcptr HighPrecisionReal::getMPFR() const {
     return value;
 }
 
+HighPrecisionReal HighPrecisionReal::nextBelow() const {
+    HighPrecisionReal result(mpfr_get_prec(value));
+    mpfr_set(result.value, value, MPFR_RNDN);
+    mpfr_nextbelow(result.value);
+    return result;
+}
+
+HighPrecisionReal HighPrecisionReal::nextAbove() const {
+    HighPrecisionReal result(mpfr_get_prec(value));
+    mpfr_set(result.value, value, MPFR_RNDN);
+    mpfr_nextabove(result.value);
+    return result;
+}
+
+bool HighPrecisionReal::isInfinity() const {
+    return mpfr_inf_p(value) != 0;
+}
+
+bool HighPrecisionReal::isNegativeInfinity() const {
+    return mpfr_inf_p(value) != 0 && mpfr_sgn(value) < 0;
+}
+
+bool HighPrecisionReal::isPositiveInfinity() const {
+    return mpfr_inf_p(value) != 0 && mpfr_sgn(value) > 0;
+}
+
 // HighPrecisionInteger implementation
 HighPrecisionInteger::HighPrecisionInteger(const mpz_t z) {
     mpz_set(value.get_mpz_t(), z);
@@ -1000,6 +1026,18 @@ mpz_class& HighPrecisionInteger::getMPZ() {
     return value;
 }
 
+HighPrecisionInteger HighPrecisionInteger::nextBelow() const {
+    HighPrecisionInteger result;
+    result.value = value - 1;
+    return result;
+}
+
+HighPrecisionInteger HighPrecisionInteger::nextAbove() const {
+    HighPrecisionInteger result;
+    result.value = value + 1;
+    return result;
+}
+
 // Number
 
 // Constructor
@@ -1129,9 +1167,21 @@ bool Number::isInfinity() const {
     if(type == INT_TYPE) {
         return false;
     }
-    return mpfr_inf_p(realValue.getMPFR()) != 0;
+    return realValue.isInfinity();
 }
 
+bool Number::isNegativeInfinity() const {
+    if(type == INT_TYPE) {
+        return false;
+    }
+    return realValue.isNegativeInfinity();
+}
+bool Number::isPositiveInfinity() const {
+    if(type == INT_TYPE) {
+        return false;
+    }
+    return realValue.isPositiveInfinity();
+}
 Number Number::pi(size_t precision) {
     return Number(HighPrecisionReal::pi(precision));
 }
@@ -1611,6 +1661,20 @@ Number Number::acoth() const{
     }
     return Number(val.acoth());
 }
-            
+Number Number::nextBelow() const {
+    if (type == INT_TYPE) {
+        return Number(intValue.nextBelow());
+    } else {
+        return Number(realValue.nextBelow());
+    }
+}
+
+Number Number::nextAbove() const {
+    if (type == INT_TYPE) {
+        return Number(intValue.nextAbove());
+    } else {
+        return Number(realValue.nextAbove());
+    }
+}
 
 } // namespace SMTLIBParser
