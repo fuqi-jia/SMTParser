@@ -333,7 +333,8 @@ namespace SMTLIBParser{
                                                     (isConst() && (isCInt() || isCReal())) ||
                                                     (isIte() && getChild(1)->isArithTerm() && getChild(2)->isArithTerm()) ||
                                                     (isMax() && getChild(0)->isArithTerm() && getChild(1)->isArithTerm()) ||
-                                                    (isMin() && getChild(0)->isArithTerm() && getChild(1)->isArithTerm())); };
+                                                    (isMin() && getChild(0)->isArithTerm() && getChild(1)->isArithTerm()) ||
+                                                    (isApplyUF() && (sort->isInt() || sort->isReal()))); };
         bool isArithComp() 			const { return ((isEq() && getChild(0)->isArithTerm())|| 
                                                     (isDistinct() && getChild(0)->isArithTerm()) || 
                                                     isLe() || isLt() || isGe() || isGt()); };
@@ -427,7 +428,8 @@ namespace SMTLIBParser{
                                                     (isConst() && isCBV()) ||
                                                     (isIte() && getChild(1)->isBVTerm() && getChild(2)->isBVTerm()) ||
                                                     (isMax() && getChild(0)->isBVTerm() && getChild(1)->isBVTerm()) ||
-                                                    (isMin() && getChild(0)->isBVTerm() && getChild(1)->isBVTerm())); };
+                                                    (isMin() && getChild(0)->isBVTerm() && getChild(1)->isBVTerm()) ||
+                                                    (isApplyUF() && sort->isBv())); };
         bool isBVCompOp()     		const { return ((isEq() && getChild(0)->isBVTerm()) ||
                                                     (isDistinct() && getChild(0)->isBVTerm()) ||
                                                     isBVUlt() || isBVUle() || isBVUgt() || isBVUge() || isBVSlt() || isBVSle() || isBVSgt() || isBVSge()); };
@@ -454,7 +456,7 @@ namespace SMTLIBParser{
         bool isFPRoToInt()  		const { return (kind == NODE_KIND::NT_FP_ROUND_TO_INTEGRAL); };
         bool isFPMin() 				const { return (kind == NODE_KIND::NT_FP_MIN); };
         bool isFPMax() 				const { return (kind == NODE_KIND::NT_FP_MAX); };
-        bool isFPOp() 				const { return (isFPAdd() || isFPSub() || isFPMul() || isFPDiv() || isFPAbs() || isFPNeg() || isFPRem() || isFPFMA() || isFPSqrt() || isFPRoToInt() || isFPMin() || isFPMax()); };
+        bool isFPOp() 				const { return (isFPAdd() || isFPSub() || isFPMul() || isFPDiv() || isFPAbs() || isFPNeg() || isFPRem() || isFPFMA() || isFPSqrt() || isFPRoToInt() || isFPMin() || isFPMax() || (isApplyUF() && sort->isFp())); };
 
         // check floating point comparison
         bool isFPLe() 				const { return (kind == NODE_KIND::NT_FP_LE); };
@@ -485,7 +487,7 @@ namespace SMTLIBParser{
         // check array
         bool isSelect() 			const { return (kind == NODE_KIND::NT_SELECT); };
         bool isStore() 				const { return (kind == NODE_KIND::NT_STORE); };
-        bool isArrayOp() 			const { return (isSelect() || isStore()); };
+        bool isArrayOp() 			const { return (isSelect() || isStore() || (isApplyUF() && sort->isArray())); };
 
         // check strings common operators
         bool isStrLen() 			const { return (kind == NODE_KIND::NT_STR_LEN); };
@@ -502,14 +504,15 @@ namespace SMTLIBParser{
         bool isStrToUpper() 		const { return (kind == NODE_KIND::NT_STR_TO_UPPER); };
         bool isStrRev() 			const { return (kind == NODE_KIND::NT_STR_REV); };
         bool isStrSplit() 			const { return (kind == NODE_KIND::NT_STR_SPLIT); };
-        bool isStrOp() 				const { return (isStrLen() || isStrConcat() || isStrSubstr() || isStrPrefixof() || isStrSuffixof() || isStrIndexof() || isStrCharat() || isStrUpdate() || isStrReplace() || isStrReplaceAll() || isStrToLower() || isStrToUpper() || isStrRev() || isStrSplit()); };
+        bool isStrOp() 				const { return (isStrLen() || isStrConcat() || isStrSubstr() || isStrPrefixof() || isStrSuffixof() || isStrIndexof() || isStrCharat() || isStrUpdate() || isStrReplace() || isStrReplaceAll() || isStrToLower() || isStrToUpper() || isStrRev() || isStrSplit() || (isApplyUF() && sort->isStr())); };
 
         // check strings comparison
         bool isStrLt() 				const { return (kind == NODE_KIND::NT_STR_LT); };
         bool isStrLe() 				const { return (kind == NODE_KIND::NT_STR_LE); };
         bool isStrGt() 				const { return (kind == NODE_KIND::NT_STR_GT); };
         bool isStrGe() 				const { return (kind == NODE_KIND::NT_STR_GE); };
-        bool isStrComp() 			const { return (isStrLt() || isStrLe() || isStrGt() || isStrGe()); };
+        bool isStrEq() 				const { return (isEq() && getChildrenSize() >= 2 && (getChild(0)->isVStr() || getChild(0)->isCStr() || getChild(0)->isStrOp())); };
+        bool isStrComp() 			const { return (isStrLt() || isStrLe() || isStrGt() || isStrGe() || isStrEq()); };
 
         // check strings properties
         bool isStrInReg() 			const { return (kind == NODE_KIND::NT_STR_IN_REG); };
@@ -544,7 +547,8 @@ namespace SMTLIBParser{
         bool isAtom()				const { return (isArithComp() || isArithProp() ||
                                                     isBVCompOp() || 
                                                     isFPComp() || isFPProp() ||
-                                                    isStrComp() || isStrProp()); };
+                                                    isStrComp() || isStrProp() ||
+                                                    (isApplyUF() && sort->isBool())); };
         // check let
         bool isLet()				const { return kind == NODE_KIND::NT_LET; };
 
