@@ -1255,6 +1255,7 @@ namespace SMTLIBParser {
     std::shared_ptr<DAGNode> Parser::splitOp(std::shared_ptr<DAGNode> expr, const boost::unordered_set<NODE_KIND>& op_set){
         bool is_changed = false;
         boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> visited;
+        split_lemmas.clear();
         return splitOp(expr, op_set, is_changed, visited);
     }
 
@@ -1272,27 +1273,45 @@ namespace SMTLIBParser {
                 is_changed = true;
                 std::shared_ptr<DAGNode> left = expr->getChild(0);
                 std::shared_ptr<DAGNode> right = expr->getChild(1);
+                std::shared_ptr<DAGNode> gt = mkGt(left, right);
+                std::shared_ptr<DAGNode> eq = mkEq(left, right);
+                split_lemmas.emplace_back(mkOr({
+                    mkNot(gt),
+                    mkNot(eq)
+                }));
                 return mkOr({
-                    mkGt(left, right),
-                    mkEq(left, right)
+                    gt,
+                    eq
                 });
             }
             else if(expr->isLe()){
                 is_changed = true;
                 std::shared_ptr<DAGNode> left = expr->getChild(0);
                 std::shared_ptr<DAGNode> right = expr->getChild(1);
+                std::shared_ptr<DAGNode> lt = mkLt(left, right);
+                std::shared_ptr<DAGNode> eq = mkEq(left, right);
+                split_lemmas.emplace_back(mkOr({
+                    mkNot(lt),
+                    mkNot(eq)
+                }));
                 return mkOr({
-                    mkLt(left, right),
-                    mkEq(left, right)
+                    lt,
+                    eq
                 });
             }
             else if(expr->isDistinct()){
                 is_changed = true;
                 std::shared_ptr<DAGNode> left = expr->getChild(0);
                 std::shared_ptr<DAGNode> right = expr->getChild(1);
+                std::shared_ptr<DAGNode> lt = mkLt(left, right);
+                std::shared_ptr<DAGNode> gt = mkGt(left, right);
+                split_lemmas.emplace_back(mkOr({
+                    mkNot(lt),
+                    mkNot(gt)
+                }));
                 return mkOr({
-                    mkLt(left, right),
-                    mkGt(left, right)
+                    lt,
+                    gt
                 });
             }
             else{
