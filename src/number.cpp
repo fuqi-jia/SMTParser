@@ -101,6 +101,19 @@ HighPrecisionReal HighPrecisionReal::catalan(mpfr_prec_t precision) {
     return result;
 }
 
+HighPrecisionReal HighPrecisionReal::epsilon(mpfr_prec_t precision) {
+    mpfr_t one, next, eps;
+    mpfr_init2(one, precision);
+    mpfr_init2(next, precision);
+    mpfr_init2(eps, precision);
+
+    mpfr_set_ui(one, 1, MPFR_RNDN);       // one = 1
+    mpfr_set(next, one, MPFR_RNDN);       // next = 1
+    mpfr_nextabove(next);                  // next = next representable number > 1
+    mpfr_sub(eps, next, one, MPFR_RNDN);  // eps = next - 1
+    return HighPrecisionReal(eps);
+}
+
 // Constructor
 HighPrecisionReal::HighPrecisionReal(mpfr_prec_t precision) {
     mpfr_init2(value, precision);
@@ -141,6 +154,11 @@ HighPrecisionReal::HighPrecisionReal(const char* s, mpfr_prec_t precision) {
         mpfr_clear(value);
         throw std::invalid_argument("Cannot convert string to high precision real number");
     }
+}
+
+HighPrecisionReal::HighPrecisionReal(const mpfr_t& t, mpfr_prec_t precision) {
+    mpfr_init2(value, precision);
+    mpfr_set(value, t, MPFR_RNDN);
 }
 
 HighPrecisionReal::HighPrecisionReal(const HighPrecisionReal& other) {
@@ -616,6 +634,10 @@ void HighPrecisionReal::setPrecision(mpfr_prec_t precision) {
 
 mpfr_prec_t HighPrecisionReal::getPrecision() const {
     return mpfr_get_prec(value);
+}
+
+bool HighPrecisionReal::isInteger() const {
+    return mpfr_integer_p(value);
 }
 
 // Access internal MPFR value
@@ -1130,6 +1152,9 @@ Number Number::log2_e(size_t precision) {
 }
 Number Number::log10_e(size_t precision) {
     return Number(HighPrecisionReal::log10_e(precision));
+}
+Number Number::epsilon(size_t precision) {
+    return Number(HighPrecisionReal::epsilon(precision));
 }
 
 // Basic operations

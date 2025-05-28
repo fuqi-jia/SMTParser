@@ -37,7 +37,7 @@
 namespace SMTLIBParser {
     class HighPrecisionInteger {
         public:
-            // 常量
+            // constants
             static HighPrecisionInteger factorial(unsigned long n);
             static HighPrecisionInteger fibonacci(unsigned long n);
             static HighPrecisionInteger gcd(const HighPrecisionInteger& a, const HighPrecisionInteger& b);
@@ -125,7 +125,7 @@ namespace SMTLIBParser {
     
     class HighPrecisionReal {
         public:
-            // 常量
+            // constants
             static HighPrecisionReal pi(mpfr_prec_t precision = 128);  // π (pi)
             static HighPrecisionReal e(mpfr_prec_t precision = 128);   // e (natural logarithm base)
             static HighPrecisionReal phi(mpfr_prec_t precision = 128); // φ (golden ratio)
@@ -135,7 +135,8 @@ namespace SMTLIBParser {
             static HighPrecisionReal log10_e(mpfr_prec_t precision = 128); // log₁₀(e)
             static HighPrecisionReal euler(mpfr_prec_t precision = 128); // γ (Euler constant)
             static HighPrecisionReal catalan(mpfr_prec_t precision = 128); // G (Catalan constant)
-            
+            static HighPrecisionReal epsilon(mpfr_prec_t precision = 128); // ε (machine epsilon)
+
             // Constructor
             HighPrecisionReal(mpfr_prec_t precision = 128);
             HighPrecisionReal(int i, mpfr_prec_t precision = 128);
@@ -144,6 +145,7 @@ namespace SMTLIBParser {
             HighPrecisionReal(const float& f, mpfr_prec_t precision = 128);
             HighPrecisionReal(const std::string& s, mpfr_prec_t precision = 128);
             HighPrecisionReal(const char* s, mpfr_prec_t precision = 128);
+            HighPrecisionReal(const mpfr_t& t, mpfr_prec_t precision = 128);
             HighPrecisionReal(const HighPrecisionReal& other);
             
             // Assignment operator
@@ -228,6 +230,7 @@ namespace SMTLIBParser {
             // Set and get precision
             void setPrecision(mpfr_prec_t precision);
             mpfr_prec_t getPrecision() const;
+            bool isInteger() const;
             
             // Access internal MPFR value
             mpfr_ptr getMPFR();
@@ -260,6 +263,7 @@ namespace SMTLIBParser {
             static Number ln10(size_t precision = 128);
             static Number log2_e(size_t precision = 128);
             static Number log10_e(size_t precision = 128);
+            static Number epsilon(size_t precision = 128);
 
             // Constructor
             Number();                                  // Default constructor, create integer 0
@@ -278,7 +282,7 @@ namespace SMTLIBParser {
             ~Number();
 
             // Type checking
-            bool isInteger() const { return type == INT_TYPE; }
+            bool isInteger() const { return type == INT_TYPE || (isReal() && getReal().isInteger()); }
             bool isReal() const { return type == REAL_TYPE; }
             bool isUnknown() const { return type == UNKNOWN_TYPE; }
             Type getType() const { return type; }

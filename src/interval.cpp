@@ -1682,46 +1682,70 @@ namespace SMTLIBParser{
         return *this;
     }
 
-
-    
-    Interval Interval::expandForPrecision(const Number& precision) const{
+    Interval Interval::expandForSafety() const{
         if(isEmpty()) {
-            return *this;
-        }
-        
-        // if precision is 0 or negative, do not expand
-        if(precision <= Number(0)) {
             return *this;
         }
         
         // calculate the width of the interval
         Number width = upper - lower;
         
-        // if the interval is a point, use absolute precision expansion
-        if(width == Number(0)) {
+        // if the interval is a point/integer/infinity, just return the interval
+        if( width == Number(0) || 
+            (lower.isInteger() && upper.isInteger())||
+            (lower.isInfinity() && upper.isInfinity())) {
             return *this;
         }
         
-        // for non-point intervals, use relative precision expansion
-        Number relativeExpansion = width * precision;
+        // determine new bounds based on the type of each boundary
+        Number newLower = lower;
+        Number newUpper = upper;
+        bool newLeftClosed = leftClosed;
+        bool newRightClosed = rightClosed;
         
-        // consider both absolute precision and relative precision, take the larger one
-        Number absoluteExpansion = precision;
-        Number expansion = std::max(relativeExpansion, absoluteExpansion);
+        // handle lower bound
+        if(lower.isInfinity() || lower.isInteger()) {
+            // infinity and integer: no expansion needed
+            newLower = lower;
+        } else {
+            // real number: apply MPFR nextbelow for expansion
+            if(lower.isReal()) {
+                HighPrecisionReal lowerReal = lower.getReal();
+                mpfr_nextbelow(lowerReal.getMPFR());
+                newLower = Number(lowerReal);
+                // use open interval for expanded real boundary
+                newLeftClosed = false;
+            } else {
+                // this case should not happen, but keep original for safety
+                newLower = lower;
+            }
+        }
         
-        // for integer, do not expand
-        if(lower.isInteger() && upper.isInteger()) {
+        // handle upper bound
+        if(upper.isInfinity() || upper.isInteger()) {
+            // infinity and integer: no expansion needed
+            newUpper = upper;
+        } else {
+            // real number: apply MPFR nextabove for expansion
+            if(upper.isReal()) {
+                HighPrecisionReal upperReal = upper.getReal();
+                mpfr_nextabove(upperReal.getMPFR());
+                newUpper = Number(upperReal);
+                // use open interval for expanded real boundary
+                newRightClosed = false;
+            } else {
+                // this case should not happen, but keep original for safety
+                newUpper = upper;
+            }
+        }
+        
+        // ensure the expanded interval is valid
+        if(newLower > newUpper) {
+            // fallback to original interval if expansion causes invalid interval
             return *this;
         }
-        else if(lower.isInteger() && !upper.isInteger()) {
-            return Interval(lower - expansion, upper, leftClosed, rightClosed);
-        }
-        else if(!lower.isInteger() && upper.isInteger()) {
-            return Interval(lower, upper + expansion, leftClosed, rightClosed);
-        }
         
-        // expand the interval, keep the closedness
-        return Interval(lower - expansion, upper + expansion, leftClosed, rightClosed);
+        return Interval(newLower, newUpper, newLeftClosed, newRightClosed);
     }
 
     Interval Interval::operate(const NODE_KIND& kind) const{
@@ -1735,65 +1759,65 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_ABS:
                 return this->abs();
             case NODE_KIND::NT_LB:
-                return this->lb().expandForPrecision(precision);
+                return this->lb().expandForSafety();
             case NODE_KIND::NT_LN:
-                return this->ln().expandForPrecision(precision);
+                return this->ln().expandForSafety();
             case NODE_KIND::NT_LG:
-                return this->lg().expandForPrecision(precision);
+                return this->lg().expandForSafety();
             case NODE_KIND::NT_EXP:
-                return this->exp().expandForPrecision(precision);
+                return this->exp().expandForSafety();
             case NODE_KIND::NT_SQRT:
-                return this->sqrt().expandForPrecision(precision);
+                return this->sqrt().expandForSafety();
             case NODE_KIND::NT_SAFESQRT:
-                return this->safesqrt().expandForPrecision(precision);
+                return this->safesqrt().expandForSafety();
             case NODE_KIND::NT_SIN:
-                return this->sin().expandForPrecision(precision);
+                return this->sin().expandForSafety();
             case NODE_KIND::NT_COS:
-                return this->cos().expandForPrecision(precision);
+                return this->cos().expandForSafety();
             case NODE_KIND::NT_TAN:
-                return this->tan().expandForPrecision(precision);
+                return this->tan().expandForSafety();
             case NODE_KIND::NT_COT:
-                return this->cot().expandForPrecision(precision);
+                return this->cot().expandForSafety();
             case NODE_KIND::NT_SEC:
-                return this->sec().expandForPrecision(precision);
+                return this->sec().expandForSafety();
             case NODE_KIND::NT_CSC:
-                return this->csc().expandForPrecision(precision);
+                return this->csc().expandForSafety();
             case NODE_KIND::NT_ASIN:
-                return this->asin().expandForPrecision(precision);
+                return this->asin().expandForSafety();
             case NODE_KIND::NT_ACOS:
-                return this->acos().expandForPrecision(precision);
+                return this->acos().expandForSafety();
             case NODE_KIND::NT_ATAN:
-                return this->atan().expandForPrecision(precision);
+                return this->atan().expandForSafety();
             case NODE_KIND::NT_ACOT:
-                return this->acot().expandForPrecision(precision);
+                return this->acot().expandForSafety();
             case NODE_KIND::NT_ASEC:
-                return this->asec().expandForPrecision(precision);
+                return this->asec().expandForSafety();
             case NODE_KIND::NT_ACSC:
-                return this->acsc().expandForPrecision(precision);
+                return this->acsc().expandForSafety();
             case NODE_KIND::NT_SINH:
-                return this->sinh().expandForPrecision(precision);
+                return this->sinh().expandForSafety();
             case NODE_KIND::NT_COSH:
-                return this->cosh().expandForPrecision(precision);
+                return this->cosh().expandForSafety();
             case NODE_KIND::NT_TANH:
-                return this->tanh().expandForPrecision(precision);
+                return this->tanh().expandForSafety();
             case NODE_KIND::NT_COTH:
-                return this->coth().expandForPrecision(precision);
+                return this->coth().expandForSafety();
             case NODE_KIND::NT_SECH:
-                return this->sech().expandForPrecision(precision);
+                return this->sech().expandForSafety();
             case NODE_KIND::NT_CSCH:
-                return this->csch().expandForPrecision(precision);
+                return this->csch().expandForSafety();
             case NODE_KIND::NT_ASINH:
-                return this->asinh().expandForPrecision(precision);
+                return this->asinh().expandForSafety();
             case NODE_KIND::NT_ACOSH:
-                return this->acosh().expandForPrecision(precision);
+                return this->acosh().expandForSafety();
             case NODE_KIND::NT_ATANH:
-                return this->atanh().expandForPrecision(precision);
+                return this->atanh().expandForSafety();
             case NODE_KIND::NT_ACOTH:
-                return this->acoth().expandForPrecision(precision);
+                return this->acoth().expandForSafety();
             case NODE_KIND::NT_ASECH:
-                return this->asech().expandForPrecision(precision);
+                return this->asech().expandForSafety();
             case NODE_KIND::NT_ACSCH:
-                return this->acsch().expandForPrecision(precision);
+                return this->acsch().expandForSafety();
             default:
                 throw std::invalid_argument("Unsupported unary operation");
         }
@@ -1820,7 +1844,7 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_POW:
                 return this->pow(value);
             case NODE_KIND::NT_ATAN2:
-                return this->atan2(value).expandForPrecision(precision);
+                return this->atan2(value).expandForSafety();
             case NODE_KIND::NT_LT:
             case NODE_KIND::NT_LE:
             case NODE_KIND::NT_GT:
@@ -1855,7 +1879,7 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_POW:
                 return this->pow(other);
             case NODE_KIND::NT_ATAN2:
-                return this->atan2(other).expandForPrecision(precision);
+                return this->atan2(other).expandForSafety();
             case NODE_KIND::NT_AND:
                 // and operation
                 if(this->isIntersectingWith(other)) {
