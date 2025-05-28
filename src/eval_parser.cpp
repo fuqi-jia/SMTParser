@@ -61,7 +61,13 @@ namespace SMTLIBParser{
         }
         else if(expr->isVar()){
             result = model->get(expr);
-            return result->isUnknown() ? false : true;
+            if(result->isUnknown()){
+                result = expr;
+                return false;
+            }
+            else{
+                return true;
+            }
         }
         else if(expr->isAnd()){
             return evaluateAnd(expr, model, result);
