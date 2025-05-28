@@ -2091,19 +2091,11 @@ namespace SMTLIBParser{
 		if (fun->getFuncParamsSize() != params.size()){
 			return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
 		}
-		// Create a simple function application node directly
-		// std::shared_ptr<DAGNode> result = std::make_shared<DAGNode>(fun->getSort(), NODE_KIND::NT_APPLY_UF, fun->getName(), params);
 
 		// For declare-fun (uninterpreted functions), create a function application node
 		if(fun->getFuncBody()->isNull()){
 			// Create a function application node with proper structure
-			// Don't include the function itself as a child, only the parameters
 			std::shared_ptr<DAGNode> result = std::make_shared<DAGNode>(fun->getSort(), NODE_KIND::NT_APPLY_UF, fun->getName(), params);
-			// std::vector<std::shared_ptr<DAGNode>> children;
-			// for(const auto& param : params) {
-			// 	children.push_back(param);  // Add all parameters as children
-			// }
-			// std::shared_ptr<DAGNode> result = std::make_shared<DAGNode>(fun->getSort(), NODE_KIND::NT_APPLY_UF, fun->getName(), children);
 			return result;
 		}
 
