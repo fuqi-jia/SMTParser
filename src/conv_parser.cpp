@@ -1339,6 +1339,10 @@ namespace SMTLIBParser {
         return expr;
     }
 
+    std::vector<std::shared_ptr<DAGNode>> Parser::getSplitLemmas(){
+        return split_lemmas;
+    }
+
     // remove all the nodes in the expression
     std::shared_ptr<DAGNode> Parser::remove(std::shared_ptr<DAGNode> expr, const boost::unordered_set<std::shared_ptr<DAGNode>>& nodes){
         boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> visited;
