@@ -266,6 +266,7 @@ namespace SMTLIBParser{
         bool isDistinctBool()       const { return (kind == NODE_KIND::NT_DISTINCT_BOOL); };
         bool isDistinctOther()      const { return (kind == NODE_KIND::NT_DISTINCT_OTHER); };
         bool isDistinct() 			const { return (kind == NODE_KIND::NT_DISTINCT || isDistinctBool() || isDistinctOther()); };
+        bool isNeq() 				const { return isDistinct(); };
 
         // check UF
         bool isApplyUF() 			const { return (kind == NODE_KIND::NT_APPLY_UF); };
