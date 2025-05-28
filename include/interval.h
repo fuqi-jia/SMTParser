@@ -29,6 +29,7 @@
 #define INTERVAL_HEADER
 
 #include "number.h"
+#include "kind.h"
 #include <vector>
 
 namespace SMTLIBParser {
@@ -39,6 +40,8 @@ class Interval {
         Number upper;
         bool leftClosed;
         bool rightClosed;
+
+        Number precision = Number(1e-15); // for precision expansion
     public:
         Interval(Number lower = Number::zero(), Number upper = Number::zero(), bool leftClosed = true, bool rightClosed = true);
         
@@ -52,6 +55,7 @@ class Interval {
         void setUpper(const Number& upper);
         void setLeftClosed(bool leftClosed);
         void setRightClosed(bool rightClosed);
+        void setPrecision(const Number& precision);
 
         // getters
         Number getLower() const;
@@ -148,7 +152,12 @@ class Interval {
         Interval pow(const Interval& exp) const;
         Interval atan2(const Number& x) const;
         Interval atan2(const Interval& x) const;
-        
+
+        // advanced functions
+        Interval expandForPrecision(const Number& precision) const;
+        Interval operate(const NODE_KIND& kind) const;
+        Interval operate(const NODE_KIND& kind, const Number& value) const;
+        Interval operate(const NODE_KIND& kind, const Interval& other) const;
 
         // comparison operators
         bool operator==(const Interval& other) const;

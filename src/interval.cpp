@@ -139,21 +139,25 @@ namespace SMTLIBParser{
     }
 
     bool Interval::contains(const Number& value) const {
-        if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
-        }
-        return lower <= value && value <= upper;
+        if(isEmpty()) return false;
+        bool lowerOk = leftClosed ? (lower <= value) : (lower < value);
+        bool upperOk = rightClosed ? (value <= upper) : (value < upper);
+        return lowerOk && upperOk;
     }
 
     bool Interval::isSubsetOf(const Interval& other) const {
-        if(isEmpty()) {
-            throw std::invalid_argument("Interval is empty");
-        }
-        // subset requirement:
-        // 1. A.lower >= B.lower, if A.lower == B.lower, then A.leftClosed <= B.leftClosed
-        // 2. A.upper <= B.upper, if A.upper == B.upper, then A.rightClosed <= B.rightClosed
-        return (lower > other.lower || (lower == other.lower && (!leftClosed || other.leftClosed))) &&
-               (upper < other.upper || (upper == other.upper && (!rightClosed || other.rightClosed)));
+        if(isEmpty()) return true;
+        if(other.isEmpty()) return false;
+        
+        // check lower bound
+        bool lowerOk = (lower > other.lower) || 
+                       (lower == other.lower && (!leftClosed || other.leftClosed));
+        
+        // check upper bound  
+        bool upperOk = (upper < other.upper) || 
+                       (upper == other.upper && (!rightClosed || other.rightClosed));
+        
+        return lowerOk && upperOk;
     }
 
     bool Interval::isSupersetOf(const Interval& other) const {
@@ -163,8 +167,11 @@ namespace SMTLIBParser{
         // superset requirement:
         // 1. A.lower <= B.lower, if A.lower == B.lower, then A.leftClosed >= B.leftClosed
         // 2. A.upper >= B.upper, if A.upper == B.upper, then A.rightClosed >= B.rightClosed
-        return (lower < other.lower || (lower == other.lower && (leftClosed || !other.leftClosed))) &&
-               (upper > other.upper || (upper == other.upper && (rightClosed || !other.rightClosed)));
+        bool lowerOk = (lower < other.lower) || 
+                       (lower == other.lower && (leftClosed || !other.leftClosed));
+        bool upperOk = (upper > other.upper) || 
+                       (upper == other.upper && (rightClosed || !other.rightClosed));
+        return lowerOk && upperOk;
     }
 
     bool Interval::isDisjointFrom(const Interval& other) const {
@@ -1673,5 +1680,210 @@ namespace SMTLIBParser{
             rightClosed = tempClosed;
         }
         return *this;
+    }
+
+
+    
+    Interval Interval::expandForPrecision(const Number& precision) const{
+        if(isEmpty()) {
+            return *this;
+        }
+        
+        // if precision is 0 or negative, do not expand
+        if(precision <= Number(0)) {
+            return *this;
+        }
+        
+        // calculate the width of the interval
+        Number width = upper - lower;
+        
+        // if the interval is a point, use absolute precision expansion
+        if(width == Number(0)) {
+            return *this;
+        }
+        
+        // for non-point intervals, use relative precision expansion
+        Number relativeExpansion = width * precision;
+        
+        // consider both absolute precision and relative precision, take the larger one
+        Number absoluteExpansion = precision;
+        Number expansion = std::max(relativeExpansion, absoluteExpansion);
+        
+        // for integer, do not expand
+        if(lower.isInteger() && upper.isInteger()) {
+            return *this;
+        }
+        else if(lower.isInteger() && !upper.isInteger()) {
+            return Interval(lower - expansion, upper, leftClosed, rightClosed);
+        }
+        else if(!lower.isInteger() && upper.isInteger()) {
+            return Interval(lower, upper + expansion, leftClosed, rightClosed);
+        }
+        
+        // expand the interval, keep the closedness
+        return Interval(lower - expansion, upper + expansion, leftClosed, rightClosed);
+    }
+
+    Interval Interval::operate(const NODE_KIND& kind) const{
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        
+        switch(kind) {
+            case NODE_KIND::NT_NEG:
+                return this->negate();
+            case NODE_KIND::NT_ABS:
+                return this->abs();
+            case NODE_KIND::NT_LB:
+                return this->lb().expandForPrecision(precision);
+            case NODE_KIND::NT_LN:
+                return this->ln().expandForPrecision(precision);
+            case NODE_KIND::NT_LG:
+                return this->lg().expandForPrecision(precision);
+            case NODE_KIND::NT_EXP:
+                return this->exp().expandForPrecision(precision);
+            case NODE_KIND::NT_SQRT:
+                return this->sqrt().expandForPrecision(precision);
+            case NODE_KIND::NT_SAFESQRT:
+                return this->safesqrt().expandForPrecision(precision);
+            case NODE_KIND::NT_SIN:
+                return this->sin().expandForPrecision(precision);
+            case NODE_KIND::NT_COS:
+                return this->cos().expandForPrecision(precision);
+            case NODE_KIND::NT_TAN:
+                return this->tan().expandForPrecision(precision);
+            case NODE_KIND::NT_COT:
+                return this->cot().expandForPrecision(precision);
+            case NODE_KIND::NT_SEC:
+                return this->sec().expandForPrecision(precision);
+            case NODE_KIND::NT_CSC:
+                return this->csc().expandForPrecision(precision);
+            case NODE_KIND::NT_ASIN:
+                return this->asin().expandForPrecision(precision);
+            case NODE_KIND::NT_ACOS:
+                return this->acos().expandForPrecision(precision);
+            case NODE_KIND::NT_ATAN:
+                return this->atan().expandForPrecision(precision);
+            case NODE_KIND::NT_ACOT:
+                return this->acot().expandForPrecision(precision);
+            case NODE_KIND::NT_ASEC:
+                return this->asec().expandForPrecision(precision);
+            case NODE_KIND::NT_ACSC:
+                return this->acsc().expandForPrecision(precision);
+            case NODE_KIND::NT_SINH:
+                return this->sinh().expandForPrecision(precision);
+            case NODE_KIND::NT_COSH:
+                return this->cosh().expandForPrecision(precision);
+            case NODE_KIND::NT_TANH:
+                return this->tanh().expandForPrecision(precision);
+            case NODE_KIND::NT_COTH:
+                return this->coth().expandForPrecision(precision);
+            case NODE_KIND::NT_SECH:
+                return this->sech().expandForPrecision(precision);
+            case NODE_KIND::NT_CSCH:
+                return this->csch().expandForPrecision(precision);
+            case NODE_KIND::NT_ASINH:
+                return this->asinh().expandForPrecision(precision);
+            case NODE_KIND::NT_ACOSH:
+                return this->acosh().expandForPrecision(precision);
+            case NODE_KIND::NT_ATANH:
+                return this->atanh().expandForPrecision(precision);
+            case NODE_KIND::NT_ACOTH:
+                return this->acoth().expandForPrecision(precision);
+            case NODE_KIND::NT_ASECH:
+                return this->asech().expandForPrecision(precision);
+            case NODE_KIND::NT_ACSCH:
+                return this->acsch().expandForPrecision(precision);
+            default:
+                throw std::invalid_argument("Unsupported unary operation");
+        }
+    }
+
+    Interval Interval::operate(const NODE_KIND& kind, const Number& value) const{
+        if(isEmpty()) {
+            throw std::invalid_argument("Interval is empty");
+        }
+        
+        switch(kind) {
+            case NODE_KIND::NT_ADD:
+                return (*this + value);
+            case NODE_KIND::NT_SUB:
+                return (*this - value);
+            case NODE_KIND::NT_MUL:
+                return (*this * value);
+            case NODE_KIND::NT_DIV_REAL:
+                return this->divReal(value);
+            case NODE_KIND::NT_DIV_INT:
+                return this->divInt(value);
+            case NODE_KIND::NT_MOD:
+                return this->mod(value);
+            case NODE_KIND::NT_POW:
+                return this->pow(value);
+            case NODE_KIND::NT_ATAN2:
+                return this->atan2(value).expandForPrecision(precision);
+            case NODE_KIND::NT_LT:
+            case NODE_KIND::NT_LE:
+            case NODE_KIND::NT_GT:
+            case NODE_KIND::NT_GE:
+            case NODE_KIND::NT_EQ:
+            case NODE_KIND::NT_DISTINCT:
+                // comparison operations return boolean values, not supported for interval arithmetic
+                throw std::invalid_argument("Comparison operations not supported for interval arithmetic");
+            default:
+                throw std::invalid_argument("Unsupported binary operation with Number");
+        }
+    }
+
+    Interval Interval::operate(const NODE_KIND& kind, const Interval& other) const{
+        if(isEmpty() || other.isEmpty()) {
+            throw std::invalid_argument("One or both intervals are empty");
+        }
+        
+        switch(kind) {
+            case NODE_KIND::NT_ADD:
+                return (*this + other);
+            case NODE_KIND::NT_SUB:
+                return (*this - other);
+            case NODE_KIND::NT_MUL:
+                return (*this * other);
+            case NODE_KIND::NT_DIV_REAL:
+                return this->divReal(other);
+            case NODE_KIND::NT_DIV_INT:
+                return this->divInt(other);
+            case NODE_KIND::NT_MOD:
+                return this->mod(other);
+            case NODE_KIND::NT_POW:
+                return this->pow(other);
+            case NODE_KIND::NT_ATAN2:
+                return this->atan2(other).expandForPrecision(precision);
+            case NODE_KIND::NT_AND:
+                // and operation
+                if(this->isIntersectingWith(other)) {
+                    return this->intersection(other);
+                } else {
+                    // return empty interval
+                    return Interval(Number(1), Number(0), false, false);
+                }
+            case NODE_KIND::NT_OR:
+                // or operation
+                if(this->isIntersectingWith(other) || !this->isDisjointFrom(other)) {
+                    return this->unionWith(other);
+                } else {
+                    // non-intersecting intervals cannot be represented by a single interval, return the smallest interval containing both
+                    Number newLower = std::min(lower, other.lower);
+                    Number newUpper = std::max(upper, other.upper);
+                    return Interval(newLower, newUpper, false, false);
+                }
+            case NODE_KIND::NT_LT:
+            case NODE_KIND::NT_LE:
+            case NODE_KIND::NT_GT:
+            case NODE_KIND::NT_GE:
+            case NODE_KIND::NT_EQ:
+            case NODE_KIND::NT_DISTINCT:
+                // comparison operations return boolean values, not supported for interval arithmetic
+                throw std::invalid_argument("Comparison operations not supported for interval arithmetic");
+            default:
+                throw std::invalid_argument("Unsupported binary operation with Interval");
+        }
     }
 }
