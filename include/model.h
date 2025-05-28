@@ -94,6 +94,11 @@ namespace SMTLIBParser{
             void clear();
 
             /**
+             * @brief Clear the values of the model
+             */
+            void clearValues();
+
+            /**
              * @brief Get the size of the model
              * 
              * @return The size of the model

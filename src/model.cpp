@@ -108,6 +108,12 @@ namespace SMTLIBParser{
         model_name_index.clear();
     }
 
+    void Model::clearValues(){
+        for(size_t i = 0; i < model_vars.size(); i++){
+            model_values[i] = UNKNOWN_NODE;
+        }
+    }
+
     size_t Model::size() const{
         return model_vars.size();
     }
