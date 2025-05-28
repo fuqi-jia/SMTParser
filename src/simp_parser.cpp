@@ -1580,87 +1580,78 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_EQ:
             case NODE_KIND::NT_EQ_BOOL:
             case NODE_KIND::NT_EQ_OTHER:{
-                if(p[0]->isCInt()){
-                    auto common = toInt(p[0]);
-                    for(size_t i=1;i<p.size();i++){
-                        if(toInt(p[i]) != common){
-                            return mkFalse();
-                        }
+                // convert to multi-pairs using {{l, m}, r}
+                // find the first constant parameter
+                int first_const_idx = -1;
+                for(size_t i=0;i<p.size();i++){
+                    if(p[i]->isConst()){
+                        first_const_idx = (int)i;
+                        break;
                     }
+                }
+                if(first_const_idx == -1){
+                    // all parameters are non-constants
+                    return mkUnknown();
+                }
+                cassert(first_const_idx != -1, "the first constant parameter index is -1");
+                std::vector<std::shared_ptr<DAGNode>> params;
+                for(size_t i=0;i<p.size();i++){
+                    if(i == (size_t)first_const_idx){
+                        continue;
+                    }
+                    auto child_result = simp_oper(t, p[first_const_idx], p[i]);
+                    if(child_result->isUnknown()){
+                        params.push_back(p[i]);
+                    }
+                    else if(child_result->isTrue()){
+                        continue;
+                    }
+                    else if(child_result->isFalse()){
+                        return mkFalse();
+                    }
+                }
+                if(params.size() == 0){
+                    // all parameters are constants and all equivalent
                     return mkTrue();
                 }
-                else if(p[0]->isCReal()){
-                    auto common = toReal(p[0]);
-                    for(size_t i=1;i<p.size();i++){
-                        if(toReal(p[i]) != common){
-                            return mkFalse();
-                        }
-                    }
-                    return mkTrue();
+                else if(params.size() == 1){
+                    // one parameter is constant and the other parameter is non-constant
+                    return simp_oper(t, params[0], p[first_const_idx]);
                 }
                 else{
-                    auto common = p[0]->toString();
-                    bool is_constant = true;
-                    for(size_t i=1;i<p.size();i++){
-                        auto res = simp_oper(NODE_KIND::NT_EQ, p[i], p[0]);
-                        if(res->isFalse()){
-                            return mkFalse();
-                        }
-                        if(!res->isTrue()){
-                            is_constant = false;
-                        }
-                    }
-                    if(is_constant){
-                        return mkTrue();
+                    if(params.size() == p.size() - 1){
+                        // only p[first_const_idx] is constant, while all other parameters are non-constants
+                        return mkUnknown();
                     }
                     else{
-                        return mkUnknown();
+                        // multiple parameters are constants and all equivalent
+                        params.emplace_back(p[first_const_idx]); // add the constant parameter to the end of the vector
+                        cassert(params.size() < p.size(), "the size of params is greater than or equal to the size of p, which may cause infinite loop");
+                        return simp_oper(t, params);
                     }
                 }
             }
             case NODE_KIND::NT_DISTINCT:
             case NODE_KIND::NT_DISTINCT_BOOL:
             case NODE_KIND::NT_DISTINCT_OTHER:{
-                if(p[0]->isCInt()){
-                    boost::unordered_set<std::string> s;
-                    for(size_t i=0;i<p.size();i++){
-                        if(s.count(toInt(p[i]).toString())){
+                // convert to multi-pairs using {{l, m}, r}
+                bool is_unknown = false;
+                for(size_t i=0;i<p.size();i++){
+                    for(size_t j=i+1;j<p.size();j++){
+                        auto child_result = simp_oper(t, p[i], p[j]);
+                        if(child_result->isUnknown()){
+                            is_unknown = true;
+                        }
+                        else if(child_result->isFalse()){
                             return mkFalse();
                         }
-                        s.insert(toInt(p[i]).toString());
                     }
-                    return mkTrue();
                 }
-                else if(p[0]->isCReal()){
-                    boost::unordered_set<std::string> s;
-                    for(size_t i=0;i<p.size();i++){
-                        if(s.count(toReal(p[i]).toString())){
-                            return mkFalse();
-                        }
-                        s.insert(toReal(p[i]).toString());
-                    }
-                    return mkTrue();
+                if(is_unknown){
+                    return mkUnknown();
                 }
                 else{
-                    boost::unordered_set<std::string> s;
-                    bool is_constant = true;
-                    for(size_t i=0;i<p.size();i++){
-                        for(size_t j=i+1;j<p.size();j++){
-                            auto res = simp_oper(NODE_KIND::NT_DISTINCT, p[i], p[j]);
-                            if(res->isFalse()){
-                                return mkFalse();
-                            }
-                            if(!res->isTrue()){
-                                is_constant = false;
-                            }
-                        }
-                    }
-                    if(is_constant){
-                        return mkTrue();
-                    }
-                    else{
-                        return mkUnknown();
-                    }
+                    return mkTrue();
                 }
             }
             case NODE_KIND::NT_IMPLIES:{
