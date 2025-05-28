@@ -119,22 +119,18 @@ namespace SMTLIBParser{
     }
     std::shared_ptr<DAGNode> Parser::mkOper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, std::shared_ptr<DAGNode> p){
         // simplify
-        if(p->isConst()){
-            auto res = simp_oper(t, p);
-            if(!res->isUnknown()){
-                return res;
-            }
+        auto res = simp_oper(t, p);
+        if(!res->isUnknown()){
+            return res;
         }
         std::vector<std::shared_ptr<DAGNode>> params;
         params.emplace_back(p);
         return mkOper(sort, t, params);
     }
     std::shared_ptr<DAGNode> Parser::mkOper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(l->isConst() && r->isConst()){
-            auto res = simp_oper(t, l, r);
-            if(!res->isUnknown()){
-                return res;
-            }
+        auto res = simp_oper(t, l, r);
+        if(!res->isUnknown()){
+            return res;
         }
         std::vector<std::shared_ptr<DAGNode>> params;
         params.emplace_back(l);
@@ -142,11 +138,9 @@ namespace SMTLIBParser{
         return mkOper(sort, t, params);
     }
     std::shared_ptr<DAGNode> Parser::mkOper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> m, std::shared_ptr<DAGNode> r){
-        if(l->isConst() && m->isConst() && r->isConst()){
-            auto res = simp_oper(t, l, m, r);
-            if(!res->isUnknown()){
-                return res;
-            }
+        auto res = simp_oper(t, l, m, r);
+        if(!res->isUnknown()){
+            return res;
         }
         std::vector<std::shared_ptr<DAGNode>> params;
         params.emplace_back(l);
@@ -155,21 +149,17 @@ namespace SMTLIBParser{
         return mkOper(sort, t, params);
     }
     std::shared_ptr<DAGNode> Parser::mkOper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, const std::vector<std::shared_ptr<DAGNode>> &p){
-        bool is_all_const = true;
-        for(auto &param: p){
-            
-            if(!param->isConst()) is_all_const = false;
-        }
-        if(is_all_const){
-            auto res = simp_oper(t, p);
-            if(!res->isUnknown()){
-                return res;
-            }
-        }
         if(p.size() == 0){
             err_all(ERROR_TYPE::ERR_PARAM_MIS, "No parameters for operation", line_number);
             return mkUnknown();
         }
+        auto res = simp_oper(t, p);
+        if(!res->isUnknown()){
+            return res;
+        }
+        return mkInternalOper(sort, t, p);
+    }
+    std::shared_ptr<DAGNode> Parser::mkInternalOper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, const std::vector<std::shared_ptr<DAGNode>> &p){
         // make the params unique
         std::vector<std::shared_ptr<DAGNode>> params(p);
         if(isCommutative(t)){

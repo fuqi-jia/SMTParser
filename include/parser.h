@@ -3316,6 +3316,9 @@ namespace SMTLIBParser{
 
         
         // auxilary functions
+        
+        std::shared_ptr<DAGNode>                mkInternalOper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, const std::vector<std::shared_ptr<DAGNode>>& p);
+
         std::shared_ptr<DAGNode>	            bindLetVar(const std::string &key, std::shared_ptr<DAGNode> expr);
         std::shared_ptr<DAGNode>	            bindFunVar(const std::string &key, std::shared_ptr<DAGNode> expr);
         // conversion
