@@ -27,7 +27,7 @@
 
 #include "model.h"
 
-namespace SMTLIBParser{
+namespace SMTParser{
     Model::Model(){
 
     }

@@ -27,7 +27,7 @@
 
 #include "sort.h"
 
-namespace SMTLIBParser{
+namespace SMTParser{
 
     std::shared_ptr<Sort> mkBVSort(size_t width){
         return std::make_shared<Sort>(SORT_KIND::SK_BV, "BV", 0, std::vector<std::shared_ptr<Sort>>{std::make_shared<Sort>(SORT_KIND::SK_NULL, "Width", width)});

@@ -48,7 +48,7 @@
 #include <boost/unordered_map.hpp>
 #include <boost/unordered_set.hpp>
 
-namespace SMTLIBParser{
+namespace SMTParser{
     class DAGNode {
     // <sort, kind, name> --- <sort, node_kind, name>
     private:

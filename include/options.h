@@ -30,7 +30,7 @@
 #include "common.h"
 #include <boost/unordered_map.hpp>
 
-namespace SMTLIBParser{
+namespace SMTParser{
     class GlobalOptions {
     public:
         // ENUM_LOGIC logic = UNKNOWN_LOGIC;

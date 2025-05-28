@@ -29,7 +29,7 @@
 #include <queue>
 #include <stack>
 
-namespace SMTLIBParser{
+namespace SMTParser{
 
 	Parser::Parser(){
 		buffer = nullptr;
@@ -2370,7 +2370,7 @@ namespace SMTLIBParser{
 		}
 	}
 	NODE_KIND Parser::getOppositeKind(NODE_KIND kind){
-		return SMTLIBParser::getOppositeKind(kind);
+		return SMTParser::getOppositeKind(kind);
 	}
 	std::shared_ptr<DAGNode> Parser::getZero(std::shared_ptr<Sort> sort){
 		if(sort->isInt() || sort->isIntOrReal()){

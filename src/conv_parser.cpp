@@ -27,7 +27,7 @@
 
 #include "parser.h"
 
-namespace SMTLIBParser {
+namespace SMTParser {
 
     void Parser::collectAtoms(std::shared_ptr<DAGNode> expr, boost::unordered_set<std::shared_ptr<DAGNode>>& atoms) {
         boost::unordered_set<std::shared_ptr<DAGNode>> visited;

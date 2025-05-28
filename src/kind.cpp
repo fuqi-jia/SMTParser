@@ -27,7 +27,7 @@
 
 #include "kind.h"
 
-namespace SMTLIBParser{
+namespace SMTParser{
 
     std::string kindToString(const NODE_KIND& nk){
         switch (nk)

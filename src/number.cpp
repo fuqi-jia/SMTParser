@@ -31,7 +31,7 @@
 #include <cmath>
 #include <climits> // For LLONG_MAX and LLONG_MIN
 
-namespace SMTLIBParser {
+namespace SMTParser {
 
 // Constants
 HighPrecisionReal HighPrecisionReal::pi(mpfr_prec_t precision) {
@@ -1677,4 +1677,4 @@ Number Number::nextAbove() const {
     }
 }
 
-} // namespace SMTLIBParser
+} // namespace SMTParser

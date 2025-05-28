@@ -27,7 +27,7 @@
 
 #include "parser.h"
 
-namespace SMTLIBParser{
+namespace SMTParser{
     void precision_warning(const std::string& op){
         std::cerr << "Precision warning: " << op << " will use double precision" << std::endl;
     }

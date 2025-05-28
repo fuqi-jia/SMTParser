@@ -30,7 +30,7 @@
 #include <algorithm>
 #include <cctype>
 
-namespace SMTLIBParser {
+namespace SMTParser {
     // Default constructor
     Value::Value() : value_type(UNKNOWN) {}
 

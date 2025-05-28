@@ -37,7 +37,7 @@
 #include <vector>
 #include <cstdint>
 
-namespace SMTLIBParser{
+namespace SMTParser{
 
     bool isIntUtil(const std::string& str);
     bool isRealUtil(const std::string& str);

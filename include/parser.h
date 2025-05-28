@@ -36,7 +36,7 @@
 
 #include <boost/unordered_set.hpp>
 
-namespace SMTLIBParser{
+namespace SMTParser{
     #undef assert
     enum class SCAN_MODE {
         SM_COMMON,

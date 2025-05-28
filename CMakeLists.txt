@@ -49,7 +49,7 @@ if(NOT MPFR_FOUND)
 endif()
 
 # set library name
-set(LIB_NAME "smtlibparser")
+set(LIB_NAME "smtparser")
 
 # add source files
 set(SOURCES

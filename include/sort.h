@@ -35,7 +35,7 @@
 #include <string>
 #include <memory>
 
-namespace SMTLIBParser{
+namespace SMTParser{
     
     // supported const/variable types
     enum class SORT_KIND {

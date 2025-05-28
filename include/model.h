@@ -30,7 +30,7 @@
 
 #include "dag.h"
 
-namespace SMTLIBParser{
+namespace SMTParser{
     class Model{
         public:
             Model();

@@ -30,7 +30,7 @@
 
 #include "dag.h"
 
-namespace SMTLIBParser{
+namespace SMTParser{
     enum class OPT_KIND{
         // single objective
         OPT_MINIMIZE, OPT_MAXIMIZE, OPT_MAXSAT, OPT_MINSAT, 

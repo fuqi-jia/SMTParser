@@ -29,7 +29,7 @@
 #include <queue>
 #include <stack>
 
-namespace SMTLIBParser{
+namespace SMTParser{
 
     bool isIntParam(std::shared_ptr<DAGNode> param){return param->getSort()->isInt() || param->getSort()->isIntOrReal();}
     bool isRealParam(std::shared_ptr<DAGNode> param){return param->getSort()->isReal() || param->getSort()->isIntOrReal();}
@@ -172,7 +172,7 @@ namespace SMTLIBParser{
             return node_list[complex_node_map[newnode]];
         }
         else{
-            complex_node_map.insert(std::pair<std::shared_ptr<SMTLIBParser::DAGNode>, size_t>(newnode, node_list.size()));
+            complex_node_map.insert(std::pair<std::shared_ptr<SMTParser::DAGNode>, size_t>(newnode, node_list.size()));
             node_list.emplace_back(newnode);
             return newnode;
         }
@@ -445,7 +445,7 @@ namespace SMTLIBParser{
     }
     // CONST
     std::shared_ptr<DAGNode> Parser::mkConstInt(const Integer &v){
-        std::string v_str = SMTLIBParser::toString(v);
+        std::string v_str = SMTParser::toString(v);
         if(constants_int.find(v_str) != constants_int.end()){
             return node_list[constants_int[v_str]];
         }
@@ -480,7 +480,7 @@ namespace SMTLIBParser{
         }
     }
     std::shared_ptr<DAGNode> Parser::mkConstReal(const Real &v){
-        std::string v_str = SMTLIBParser::toString(v);
+        std::string v_str = SMTParser::toString(v);
         if(constants_real.find(v_str) != constants_real.end()){
             return node_list[constants_real[v_str]];
         }
@@ -504,7 +504,7 @@ namespace SMTLIBParser{
         }
     }
     std::shared_ptr<DAGNode> Parser::mkConstReal(const Integer &v){
-        std::string v_str = SMTLIBParser::toString(v);
+        std::string v_str = SMTParser::toString(v);
         if(constants_real.find(v_str) != constants_real.end()){
             return node_list[constants_real[v_str]];
         }

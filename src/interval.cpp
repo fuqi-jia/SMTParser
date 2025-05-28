@@ -28,7 +28,7 @@
 #include "interval.h"
 #include "common.h"
 
-namespace SMTLIBParser{
+namespace SMTParser{
 
     Interval::Interval(Number lower, Number upper, bool leftClosed, bool rightClosed)
         : lower(lower), upper(upper), leftClosed(leftClosed), rightClosed(rightClosed){

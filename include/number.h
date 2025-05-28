@@ -34,7 +34,7 @@
 #include <mpfr.h>
 #include <string>
 
-namespace SMTLIBParser {
+namespace SMTParser {
     class HighPrecisionInteger {
         public:
             // constants

@@ -30,7 +30,7 @@
 
 #include <string>
 
-namespace SMTLIBParser{
+namespace SMTParser{
     // common types
     enum class State {UNKNOWN=-1, UNSAT, SAT};
 

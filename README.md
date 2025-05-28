@@ -1,4 +1,4 @@
-# SMTLIBParser
+# SMTParser
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -103,8 +103,8 @@ vcpkg install boost:x64-windows gmp:x64-windows mpfr:x64-windows
 
 ```bash
 # Clone the repository
-git clone https://github.com/fuqi-jia/SMTLIBParser.git
-cd SMTLIBParser
+git clone https://github.com/fuqi-jia/SMTParser.git
+cd SMTParser
 
 # Create and enter build directory
 mkdir build && cd build
@@ -121,11 +121,11 @@ sudo make install
 
 ### Integration as Git Submodule
 
-For projects using Git, SMTLIBParser can be included as a submodule:
+For projects using Git, SMTParser can be included as a submodule:
 
 ```bash
 # Add the repository as a submodule
-git submodule add https://github.com/fuqi-jia/SMTLIBParser.git SMTLIBParser
+git submodule add https://github.com/fuqi-jia/SMTParser.git SMTParser
 
 # Initialize the submodule
 git submodule update --init --recursive
@@ -157,7 +157,7 @@ cmake -DBUILD_SHARED_LIBS=ON -DBUILD_BOTH_LIBS=OFF ..
 
 int main() {
     // Initialize the parser
-    SMTLIBParser::Parser parser;
+    SMTParser::Parser parser;
 
     // Parse an SMT-LIB2 file
     if (!parser.parse("formula.smt2")) {
@@ -185,13 +185,13 @@ int main() {
 
 int main() {
     // Create a parser using factory method
-    auto parser = SMTLIBParser::newParser();
+    auto parser = SMTParser::newParser();
     
     // Alternative: create a parser with file in one step
-    auto fileParser = SMTLIBParser::newParser("formula.smt2");
+    auto fileParser = SMTParser::newParser("formula.smt2");
     
     // Create a model
-    auto model = SMTLIBParser::newModel();
+    auto model = SMTParser::newModel();
     
     // Create and manipulate variables
     auto x = parser->mkVarInt("x");
@@ -219,7 +219,7 @@ int main() {
 
 int main() {
     // Initialize the parser engine
-    SMTLIBParser::Parser parser;
+    SMTParser::Parser parser;
 
     // Create integer variables
     auto x = parser.mkVar(INT_SORT, "x");
@@ -240,7 +240,7 @@ int main() {
 
 ### Compiling Client Applications
 
-When building applications that use SMTLIBParser, link against the library and its dependencies:
+When building applications that use SMTParser, link against the library and its dependencies:
 
 ```bash
 g++ -std=c++17 -o application main.cpp -lsmtlibparser -lgmp
@@ -248,13 +248,13 @@ g++ -std=c++17 -o application main.cpp -lsmtlibparser -lgmp
 
 ### Complete Project Example
 
-For a complete project example, check out [SMTLIBParser-Test](https://github.com/fuqi-jia/SMTLIBParser-Test) which demonstrates how to integrate and use the library as a Git submodule.
+For a complete project example, check out [SMTParser-Test](https://github.com/fuqi-jia/SMTParser-Test) which demonstrates how to integrate and use the library as a Git submodule.
 
 #### Project Structure:
 ```
-SMTLIBParser-Test/
+SMTParser-Test/
 ├── CMakeLists.txt          # Build configuration
-├── SMTLIBParser/           # Submodule
+├── SMTParser/           # Submodule
 ├── src/                    # Application source code
 │   └── main.cpp
 └── test/                   # Test SMT-LIB2 files
@@ -265,8 +265,8 @@ SMTLIBParser-Test/
 
 1. Clone the repository and initialize the submodule:
 ```bash
-git clone https://github.com/fuqi-jia/SMTLIBParser-Test.git
-cd SMTLIBParser-Test
+git clone https://github.com/fuqi-jia/SMTParser-Test.git
+cd SMTParser-Test
 git submodule update --init --recursive
 ```
 
@@ -279,7 +279,7 @@ make -j$(nproc)
 
 3. Run the test application:
 ```bash
-./SMTLIBParser_Test ../test/1.smt2
+./SMTParser_Test ../test/1.smt2
 ```
 
 This simple example demonstrates how to parse and process an SMT-LIB2 file. You can use this project as a template for your own applications.
@@ -348,7 +348,7 @@ brew install doxygen
 To generate the documentation, run:
 
 ```bash
-cd path/to/SMTLIBParser
+cd path/to/SMTParser
 doxygen Doxyfile
 ```
 
@@ -367,7 +367,7 @@ open docs/html/index.html
 start docs/html/index.html
 ```
 
-Or simply navigate to `SMTLIBParser/docs/html/index.html` in your file browser and open it with any web browser.
+Or simply navigate to `SMTParser/docs/html/index.html` in your file browser and open it with any web browser.
 
 ## License
 

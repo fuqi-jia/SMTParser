@@ -32,7 +32,7 @@
 #include <iomanip>
 #include <algorithm>
 #include <string>
-namespace SMTLIBParser{
+namespace SMTParser{
 
     // SHA-256 hash function
     std::string sha256(const std::string& input) {
@@ -184,7 +184,7 @@ namespace SMTLIBParser{
             Real exponent_val = Real(exponent_no_spaces);
             
             // calculate the result
-            Real result = mantissa_val * SMTLIBParser::pow(Real(10.0), exponent_val);
+            Real result = mantissa_val * SMTParser::pow(Real(10.0), exponent_val);
             
             // convert to string
             std::ostringstream oss;
@@ -272,7 +272,7 @@ namespace SMTLIBParser{
     }
 
     Integer lcm(const Integer& a, const Integer& b){
-        return a * b / SMTLIBParser::gcd(a, b);
+        return a * b / SMTParser::gcd(a, b);
     }
 
 
@@ -537,7 +537,7 @@ namespace SMTLIBParser{
         }
         std::string res = partials[0];
         for(size_t i = 1; i < partials.size(); i++){
-            res = SMTLIBParser::bvAdd(res, partials[i]);
+            res = SMTParser::bvAdd(res, partials[i]);
         }
         return res;
     }
@@ -633,7 +633,7 @@ namespace SMTLIBParser{
                     quotient_bits.push_back('1');
                     
                     // subtract divisor from remainder
-                    std::string diff = SMTLIBParser::bvSub(remainder_bv, divisor_bv);
+                    std::string diff = SMTParser::bvSub(remainder_bv, divisor_bv);
                     remainder = diff.substr(2); // remove #b prefix
                 }
                 else{
@@ -662,14 +662,14 @@ namespace SMTLIBParser{
         }
         std::string dividend = bv1;
         std::string divisor = bv2;
-        std::string quotient = SMTLIBParser::bvUdiv(bv1, bv2);
-        std::string res = SMTLIBParser::bvSub(dividend, SMTLIBParser::bvMul(quotient, bv2));
+        std::string quotient = SMTParser::bvUdiv(bv1, bv2);
+        std::string res = SMTParser::bvSub(dividend, SMTParser::bvMul(quotient, bv2));
         return res;
     }
     std::string bvUmod(const std::string& bv1, const std::string& bv2){
         cassert(bv1[0] == '#' && bv1[1] == 'b', "bvUmod: invalid bitvector");
         cassert(bv2[0] == '#' && bv2[1] == 'b', "bvUmod: invalid bitvector");
-        std::string res = SMTLIBParser::bvUrem(bv1, bv2);
+        std::string res = SMTParser::bvUrem(bv1, bv2);
         return res;
     }
     std::string bvSdiv(const std::string& bv1, const std::string& bv2){
@@ -693,10 +693,10 @@ namespace SMTLIBParser{
                 return "#b" + std::string(bv1.size() - 2, '0') + "1";
             }
         }
-        std::string res = SMTLIBParser::bvUdiv(bv1, bv2);
+        std::string res = SMTParser::bvUdiv(bv1, bv2);
         if(isNeg1 ^ isNeg2){
-            res = SMTLIBParser::bvNot(res);
-            res = SMTLIBParser::bvAdd(res, "#b01");
+            res = SMTParser::bvNot(res);
+            res = SMTParser::bvAdd(res, "#b01");
         }
         return res;
     }
@@ -715,10 +715,10 @@ namespace SMTLIBParser{
             return bv1;
         }
         bool isNeg1 = bv1[2] == '1';
-        std::string res = SMTLIBParser::bvUrem(bv1, bv2);
+        std::string res = SMTParser::bvUrem(bv1, bv2);
         if(isNeg1){
-            res = SMTLIBParser::bvNot(res);
-            res = SMTLIBParser::bvAdd(res, "#b01");
+            res = SMTParser::bvNot(res);
+            res = SMTParser::bvAdd(res, "#b01");
         }
         return res;
     }
@@ -726,10 +726,10 @@ namespace SMTLIBParser{
         cassert(bv1[0] == '#' && bv1[1] == 'b', "bvSmod: invalid bitvector");
         cassert(bv2[0] == '#' && bv2[1] == 'b', "bvSmod: invalid bitvector");
         bool isNeg1 = bv1[2] == '1';
-        std::string res = SMTLIBParser::bvSrem(bv1, bv2);
+        std::string res = SMTParser::bvSrem(bv1, bv2);
         if(isNeg1){
-            res = SMTLIBParser::bvNot(res);
-            res = SMTLIBParser::bvAdd(res, "#b01");
+            res = SMTParser::bvNot(res);
+            res = SMTParser::bvAdd(res, "#b01");
         }
         return res;
     }
@@ -820,21 +820,21 @@ namespace SMTLIBParser{
             case NODE_KIND::NT_DISTINCT_OTHER:
                 return bv1 != bv2;
             case NODE_KIND::NT_BV_ULT:
-                return SMTLIBParser::bvToNat(bv1) < SMTLIBParser::bvToNat(bv2);
+                return SMTParser::bvToNat(bv1) < SMTParser::bvToNat(bv2);
             case NODE_KIND::NT_BV_ULE:
-                return SMTLIBParser::bvToNat(bv1) <= SMTLIBParser::bvToNat(bv2);
+                return SMTParser::bvToNat(bv1) <= SMTParser::bvToNat(bv2);
             case NODE_KIND::NT_BV_UGT:
-                return SMTLIBParser::bvToNat(bv1) > SMTLIBParser::bvToNat(bv2);
+                return SMTParser::bvToNat(bv1) > SMTParser::bvToNat(bv2);
             case NODE_KIND::NT_BV_UGE:
-                return SMTLIBParser::bvToNat(bv1) >= SMTLIBParser::bvToNat(bv2);
+                return SMTParser::bvToNat(bv1) >= SMTParser::bvToNat(bv2);
             case NODE_KIND::NT_BV_SLT:
-                return SMTLIBParser::bvToInt(bv1) < SMTLIBParser::bvToInt(bv2);
+                return SMTParser::bvToInt(bv1) < SMTParser::bvToInt(bv2);
             case NODE_KIND::NT_BV_SLE:
-                return SMTLIBParser::bvToInt(bv1) <= SMTLIBParser::bvToInt(bv2);
+                return SMTParser::bvToInt(bv1) <= SMTParser::bvToInt(bv2);
             case NODE_KIND::NT_BV_SGT:
-                return SMTLIBParser::bvToInt(bv1) > SMTLIBParser::bvToInt(bv2);
+                return SMTParser::bvToInt(bv1) > SMTParser::bvToInt(bv2);
             case NODE_KIND::NT_BV_SGE:
-                return SMTLIBParser::bvToInt(bv1) >= SMTLIBParser::bvToInt(bv2);
+                return SMTParser::bvToInt(bv1) >= SMTParser::bvToInt(bv2);
             default:
                 return false;
         }

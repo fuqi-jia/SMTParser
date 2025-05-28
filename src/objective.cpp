@@ -27,7 +27,7 @@
 
 #include "objective.h"
 
-namespace SMTLIBParser{
+namespace SMTParser{
 
     COMP_KIND getDefaultCompareOperator(const std::string& logic, OPT_KIND opt_type){
         cassert(opt_type == OPT_KIND::OPT_MINIMIZE || opt_type == OPT_KIND::OPT_MAXIMIZE, "getDefaultCompareOperator: opt_type is not minimize or maximize");

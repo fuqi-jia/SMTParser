@@ -27,7 +27,7 @@
 
 #include "parser.h"
 
-namespace SMTLIBParser{
+namespace SMTParser{
     
     KEYWORD Parser::attemptParseKeywords(){
         if(*bufptr == ':'){

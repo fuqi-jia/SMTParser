@@ -32,7 +32,7 @@
 #include "kind.h"
 #include <vector>
 
-namespace SMTLIBParser {
+namespace SMTParser {
 
 class Interval {
     private:
@@ -175,6 +175,6 @@ class Interval {
 
 inline Interval EmptyInterval = Interval(1, -1, false, false);
 
-} // namespace SMTLIBParser
+} // namespace SMTParser
 
 #endif

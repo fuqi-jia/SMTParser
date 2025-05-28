@@ -30,7 +30,7 @@
 #include "interval.h"
 #include <memory>
 
-namespace SMTLIBParser{
+namespace SMTParser{
     // This class is used to store the value of a variable
     // It can be any kind of value, including a number, an interval, a string, a boolean, etc.
     enum ValueType{
