@@ -645,7 +645,12 @@ namespace SMTLIBParser{
             break;
         // UF
         case NODE_KIND::NT_APPLY_UF:
-            ofs << "APPLY_UF";
+            ofs << "(" << node->getName();
+            for (auto& child : node->getChildren()) {
+                ofs << " ";
+                dumpSMTLIB2(child, visited, ofs);
+            }
+            ofs << ")";
             break;
         // ARITHMATIC COMMON OPERATORS
         case NODE_KIND::NT_ADD:
