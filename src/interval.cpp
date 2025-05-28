@@ -32,16 +32,10 @@ namespace SMTLIBParser{
 
     Interval::Interval(Number lower, Number upper, bool leftClosed, bool rightClosed)
         : lower(lower), upper(upper), leftClosed(leftClosed), rightClosed(rightClosed){
-        if(lower > upper) {
-            throw std::invalid_argument("Lower bound is greater than upper bound");
-        }
     }
 
     Interval::Interval(const Interval& other)
         : lower(other.lower), upper(other.upper), leftClosed(other.leftClosed), rightClosed(other.rightClosed) {
-        if(lower > upper) {
-            throw std::invalid_argument("Lower bound is greater than upper bound");
-        }
     }
 
     Interval::~Interval() {}
