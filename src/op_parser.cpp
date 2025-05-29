@@ -263,8 +263,7 @@ namespace SMTParser{
                 std::cerr << "Type mismatch in eq, but now exempt for int/real"<<std::endl;
             }
             else{
-                err_all(l, "Type mismatch in equality", line_number);
-                err_all(r, "Type mismatch in equality", line_number);
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in equality", line_number);
                 return mkUnknown();
             }
         }
@@ -2713,7 +2712,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(NAT_SORT, NODE_KIND::NT_BV_TO_NAT, param);
+        return mkOper(INT_SORT, NODE_KIND::NT_BV_TO_NAT, param);
     }
     /*
     (nat2bv Nat Int), return Bv
@@ -3276,7 +3275,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(NAT_SORT, NODE_KIND::NT_STR_LEN, param);
+        return mkOper(INT_SORT, NODE_KIND::NT_STR_LEN, param);
     }
     /*
     (str.++ Str Str+), return Str
@@ -3446,13 +3445,25 @@ namespace SMTParser{
     (str.split Str Str), return (_ Array Int Str)
     */
     std::shared_ptr<DAGNode> Parser::mkStrSplit(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        
         if(!isStrParam(l) || !isStrParam(r)) {
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_split", line_number);
             return mkUnknown();
         }
-
         return mkOper(mkArraySort(INT_SORT, STR_SORT), NODE_KIND::NT_STR_SPLIT, l, r);
+    }
+    std::shared_ptr<DAGNode> Parser::mkStrSplitAt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> s){
+        if(!isStrParam(l) || !isStrParam(r) || !isIntParam(s)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_split_at", line_number);
+            return mkUnknown();
+        }
+        return mkOper(STR_SORT, NODE_KIND::NT_STR_SPLIT_AT, l, r, s);
+    }
+    std::shared_ptr<DAGNode> Parser::mkStrNumSplits(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
+        if(!isStrParam(l) || !isStrParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_num_splits", line_number);
+            return mkUnknown();
+        }
+        return mkOper(INT_SORT, NODE_KIND::NT_STR_NUM_SPLITS, l, r);
     }
     // STRINGS COMP
     /*

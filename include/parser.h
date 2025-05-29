@@ -2485,6 +2485,10 @@ namespace SMTParser{
          */
         std::shared_ptr<DAGNode> mkStrSplit(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // str.split(l, r)
         
+        std::shared_ptr<DAGNode> mkStrSplitAt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> s); // str.split_at(l, r, s)
+        
+        std::shared_ptr<DAGNode> mkStrNumSplits(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // str.num_splits(l, r)
+        
         // STRINGS COMP
         /**
          * @brief Create a string less-than node
@@ -3608,6 +3612,8 @@ namespace SMTParser{
         bool		evaluateLet(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
         bool        evaluateMax(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
         bool        evaluateMin(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
+        bool		evaluateStrSplitAt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
+        bool		evaluateStrNumSplits(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
     };
 
 
