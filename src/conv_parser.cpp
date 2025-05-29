@@ -1406,6 +1406,7 @@ namespace SMTParser {
                 }
                 else{
                     // nothing to do
+                    is_changed = false;
                 }
             }
             else if(expr->isDistinct()){
@@ -1423,6 +1424,7 @@ namespace SMTParser {
                 }
                 else{
                     // nothing to do
+                    is_changed = false;
                 }
             }
             else if(expr->isGe()){
@@ -1438,6 +1440,7 @@ namespace SMTParser {
                 }
                 else{
                     // nothing to do
+                    is_changed = false;
                 }
             }
             else if(expr->isLe()){
@@ -1453,6 +1456,7 @@ namespace SMTParser {
                 }
                 else{
                     // nothing to do
+                    is_changed = false;
                 }
             }
             else if(expr->isGt()){
@@ -1468,6 +1472,7 @@ namespace SMTParser {
                 }
                 else{
                     // nothing to do
+                    is_changed = false;
                 }
             }
             else if(expr->isLt()){
@@ -1483,6 +1488,7 @@ namespace SMTParser {
                 }
                 else{
                     // nothing to do
+                    is_changed = false;
                 }
             }
             else{
