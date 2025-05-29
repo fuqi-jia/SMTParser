@@ -582,6 +582,17 @@ namespace SMTParser{
         std::string getName()       const { return name; };
 
         /**
+         * @brief Get the re-named name of the node
+         * 
+         * @return The re-named name of the node
+         */
+        std::string rename(const std::string& new_name) {
+            std::cerr << "Warning: rename " << name << " to " << new_name << std::endl;
+            name = new_name;
+            return new_name;
+        }
+
+        /**
          * @brief Get the kind of the node
          * 
          * @return The kind of the node
