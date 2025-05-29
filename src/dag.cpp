@@ -513,7 +513,7 @@ namespace SMTParser{
             else res += " (" + node->getChild(i)->getName() +" " + node->getChild(i)->getSort()->toString() +")";
         }
         res += ") " + node->getChild(0)->getSort()->toString() + " ";
-        res += dumpSMTLIB2(node->getChild(0)) +  ")\n";
+        res += dumpSMTLIB2(node->getChild(0)) +  ")";
         return res;
     }
     std::string dumpFuncDec(const std::shared_ptr<DAGNode>& node){
