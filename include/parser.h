@@ -2485,9 +2485,9 @@ namespace SMTParser{
          */
         std::shared_ptr<DAGNode> mkStrSplit(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // str.split(l, r)
         
-        std::shared_ptr<DAGNode> mkStrSplitAt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> s);
+        std::shared_ptr<DAGNode> mkStrSplitAt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> s); // str.split_at(l, r, s)
         
-        std::shared_ptr<DAGNode> mkStrNumSplits(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r);
+        std::shared_ptr<DAGNode> mkStrNumSplits(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // str.num_splits(l, r)
         
         // STRINGS COMP
         /**
