@@ -307,6 +307,7 @@ namespace SMTParser{
                 case NODE_KIND::NT_STR_CONTAINS:
                 case NODE_KIND::NT_REG_RANGE:
                 case NODE_KIND::NT_REG_REPEAT:
+                case NODE_KIND::NT_STR_NUM_SPLITS:
                     res = "(" + kindToString(kind) + " " + results[current->getChild(0)] + " " + results[current->getChild(1)] + ")";
                     break;
                     
@@ -322,6 +323,7 @@ namespace SMTParser{
                 case NODE_KIND::NT_REPLACE_REG:
                 case NODE_KIND::NT_REPLACE_REG_ALL:
                 case NODE_KIND::NT_INDEXOF_REG:
+                case NODE_KIND::NT_STR_SPLIT_AT:
                     res = "(" + kindToString(kind) + " " + results[current->getChild(0)] + " " + results[current->getChild(1)] + " " + results[current->getChild(2)] + ")";
                     break;
                 case NODE_KIND::NT_REG_LOOP:
@@ -962,6 +964,7 @@ namespace SMTParser{
         case NODE_KIND::NT_STR_UPDATE:
         case NODE_KIND::NT_STR_REPLACE:
         case NODE_KIND::NT_STR_REPLACE_ALL:
+        case NODE_KIND::NT_STR_SPLIT_AT:
             dumpTripleOp(kind, node->getChild(0), node->getChild(1), node->getChild(2), visited, ofs);
             break;
         case NODE_KIND::NT_STR_TO_LOWER:
@@ -970,6 +973,7 @@ namespace SMTParser{
             dumpSingleOp(kind, node->getChild(0), visited, ofs);
             break;
         case NODE_KIND::NT_STR_SPLIT:
+        case NODE_KIND::NT_STR_NUM_SPLITS:
             dumpDoubleOp(kind, node->getChild(0), node->getChild(1), visited, ofs);
             break;
         // STRINGS COMP
