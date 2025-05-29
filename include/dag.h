@@ -227,7 +227,7 @@ namespace SMTParser{
         bool isConst() 				const { return  kind == NODE_KIND::NT_CONST || 
                                                     kind == NODE_KIND::NT_CONST_TRUE || kind == NODE_KIND::NT_CONST_FALSE ||
                                                     kind == NODE_KIND::NT_CONST_PI || kind == NODE_KIND::NT_CONST_E; };
-        bool isNumeral() 			const { return isConst() && (sort->isInt() || sort->isReal()); };
+        bool isNumeral() 			const { return isCInt() || isCReal(); };
         bool isCInt()       		const { return isConst() && (sort->isInt() || sort->isIntOrReal()); };
         bool isCReal()      		const { return isConst() && (sort->isReal() || sort->isIntOrReal()); };
         bool isCBV()        		const { return isConst() && sort->isBv(); };

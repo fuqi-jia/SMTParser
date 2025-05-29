@@ -26,6 +26,7 @@
  */
 
 #include "parser.h"
+#include <stack>
 
 namespace SMTParser {
 
@@ -521,6 +522,31 @@ namespace SMTParser {
         cnf_atom_map.clear();
         cnf_bool_var_map.clear();
         cnf_map.clear();
+
+        // eliminate continuous and on the top level
+        std::vector<std::shared_ptr<DAGNode>> eli_exprs;
+        for(auto& expr : exprs){
+            if(expr->isAnd()){
+                std::stack<std::shared_ptr<DAGNode>> stack;
+                stack.push(expr);
+                while(!stack.empty()){
+                    auto current = stack.top();
+                    stack.pop();
+                    if(current->isAnd()){
+                        for(size_t i=0;i<current->getChildrenSize();i++){
+                            stack.push(current->getChild(i));
+                        }
+                    } else {
+                        // not and, add to eli_exprs
+                        eli_exprs.push_back(current);
+                    }
+                }
+            }
+            else{
+                eli_exprs.emplace_back(expr);
+            }
+        }
+        exprs = eli_exprs;
 
         // create a new variable for each top atom
         boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> atom_map;
@@ -1249,8 +1275,6 @@ namespace SMTParser {
         nnf_map[expr] = result;
         return result;
     }
-
-
 
     std::shared_ptr<DAGNode> Parser::splitOp(std::shared_ptr<DAGNode> expr, const boost::unordered_set<NODE_KIND>& op_set){
         bool is_changed = false;
