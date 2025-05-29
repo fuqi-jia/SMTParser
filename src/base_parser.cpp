@@ -2584,7 +2584,7 @@ namespace SMTParser{
 		}
 		// constraints
 		for(auto& constraint : assertions){
-			ss << "(assert " << constraint << ")" << std::endl;
+			ss << "(assert " << dumpSMTLIB2(constraint) << ")" << std::endl;
 		}
 		ss << "(check-sat)" << std::endl;
 		ss << "(exit)" << std::endl;
