@@ -1376,5 +1376,145 @@ namespace SMTParser {
         visited[expr] = expr;
         return expr;
     }
-    
+
+    std::shared_ptr<DAGNode> Parser::binarizeOp(std::shared_ptr<DAGNode> expr, const boost::unordered_set<NODE_KIND>& op_set){
+        bool is_changed = false;
+        boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> visited;
+        return binarizeOp(expr, op_set, is_changed, visited);
+    }
+
+    std::shared_ptr<DAGNode> Parser::binarizeOp(std::vector<std::shared_ptr<DAGNode>> exprs, const boost::unordered_set<NODE_KIND>& op_set){
+        return binarizeOp(mkAnd(exprs), op_set);
+    }
+
+    std::shared_ptr<DAGNode> Parser::binarizeOp(std::shared_ptr<DAGNode> expr, const boost::unordered_set<NODE_KIND>& op_set, bool& is_changed, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited){
+        if(visited.find(expr) != visited.end()){
+            return visited[expr];
+        }
+        if(op_set.find(expr->getKind()) != op_set.end()){
+
+            if(expr->isEq()){
+                if(expr->getChildrenSize() > 2){
+                    // (= a b c) -> (and (= a b) (= a c))
+                    std::vector<std::shared_ptr<DAGNode>> children;
+                    for(size_t i = 0; i < expr->getChildrenSize() - 1; i++){
+                        children.emplace_back(mkEq({expr->getChild(i), expr->getChild(i+1)}));
+                    }
+                    std::shared_ptr<DAGNode> result = mkAnd(children);
+                    visited[expr] = result;
+                    return result;
+                }
+                else{
+                    // nothing to do
+                }
+            }
+            else if(expr->isDistinct()){
+                if(expr->getChildrenSize() > 2){
+                    // (distinct a b c) -> (and (distinct a b) (distinct a c))
+                    std::vector<std::shared_ptr<DAGNode>> children;
+                    for(size_t i = 0; i < expr->getChildrenSize() - 1; i++){
+                        for(size_t j = i + 1; j < expr->getChildrenSize(); j++){
+                            children.emplace_back(mkDistinct({expr->getChild(i), expr->getChild(j)}));
+                        }
+                    }
+                    std::shared_ptr<DAGNode> result = mkAnd(children);
+                    visited[expr] = result;
+                    return result;
+                }
+                else{
+                    // nothing to do
+                }
+            }
+            else if(expr->isGe()){
+                if(expr->getChildrenSize() > 2){
+                    // (>= a b c) -> (and (>= a b) (>= a c))
+                    std::vector<std::shared_ptr<DAGNode>> children;
+                    for(size_t i = 0; i < expr->getChildrenSize() - 1; i++){
+                        children.emplace_back(mkGe({expr->getChild(i), expr->getChild(i+1)}));
+                    }
+                    std::shared_ptr<DAGNode> result = mkAnd(children);
+                    visited[expr] = result;
+                    return result;
+                }
+                else{
+                    // nothing to do
+                }
+            }
+            else if(expr->isLe()){
+                if(expr->getChildrenSize() > 2){
+                    // (<= a b c) -> (and (<= a b) (<= a c))
+                    std::vector<std::shared_ptr<DAGNode>> children;
+                    for(size_t i = 0; i < expr->getChildrenSize() - 1; i++){
+                        children.emplace_back(mkLe({expr->getChild(i), expr->getChild(i+1)}));
+                    }
+                    std::shared_ptr<DAGNode> result = mkAnd(children);
+                    visited[expr] = result;
+                    return result;
+                }
+                else{
+                    // nothing to do
+                }
+            }
+            else if(expr->isGt()){
+                if(expr->getChildrenSize() > 2){
+                    // (> a b c) -> (and (> a b) (> a c))
+                    std::vector<std::shared_ptr<DAGNode>> children;
+                    for(size_t i = 0; i < expr->getChildrenSize() - 1; i++){
+                        children.emplace_back(mkGt({expr->getChild(i), expr->getChild(i+1)}));
+                    }
+                    std::shared_ptr<DAGNode> result = mkAnd(children);
+                    visited[expr] = result;
+                    return result;
+                }
+                else{
+                    // nothing to do
+                }
+            }
+            else if(expr->isLt()){
+                if(expr->getChildrenSize() > 2){
+                    // (< a b c) -> (and (< a b) (< a c))
+                    std::vector<std::shared_ptr<DAGNode>> children;
+                    for(size_t i = 0; i < expr->getChildrenSize() - 1; i++){
+                        children.emplace_back(mkLt({expr->getChild(i), expr->getChild(i+1)}));
+                    }
+                    std::shared_ptr<DAGNode> result = mkAnd(children);
+                    visited[expr] = result;
+                    return result;
+                }
+                else{
+                    // nothing to do
+                }
+            }
+            else{
+                // not supported now
+                std::vector<std::shared_ptr<DAGNode>> children;
+                for(size_t i = 0; i < expr->getChildrenSize(); i++){
+                    bool child_changed = false;
+                    std::shared_ptr<DAGNode> child = expr->getChild(i);
+                    std::shared_ptr<DAGNode> binarized_child = binarizeOp(child, op_set, child_changed, visited);
+                    is_changed = is_changed || child_changed;
+                    children.emplace_back(binarized_child);
+                }
+                if(is_changed){
+                    std::shared_ptr<DAGNode> result = mkOper(expr->getSort(), expr->getKind(), children);
+                    visited[expr] = result;
+                    return result;
+                }
+            }
+        }
+        visited[expr] = expr;
+        return expr;
+    }
+
+    std::shared_ptr<DAGNode> Parser::binarizeOp(std::shared_ptr<DAGNode> expr){
+        return binarizeOp(expr, {NODE_KIND::NT_EQ, NODE_KIND::NT_EQ_BOOL, NODE_KIND::NT_EQ_OTHER, 
+                                NODE_KIND::NT_DISTINCT, NODE_KIND::NT_DISTINCT_BOOL, NODE_KIND::NT_DISTINCT_OTHER, 
+                                NODE_KIND::NT_GE, NODE_KIND::NT_LE, NODE_KIND::NT_GT, NODE_KIND::NT_LT});
+    }
+
+    std::shared_ptr<DAGNode> Parser::binarizeOp(std::vector<std::shared_ptr<DAGNode>> exprs){
+        return binarizeOp(mkAnd(exprs), {NODE_KIND::NT_EQ, NODE_KIND::NT_EQ_BOOL, NODE_KIND::NT_EQ_OTHER, 
+                                        NODE_KIND::NT_DISTINCT, NODE_KIND::NT_DISTINCT_BOOL, NODE_KIND::NT_DISTINCT_OTHER, 
+                                        NODE_KIND::NT_GE, NODE_KIND::NT_LE, NODE_KIND::NT_GT, NODE_KIND::NT_LT});
+    }
 }
