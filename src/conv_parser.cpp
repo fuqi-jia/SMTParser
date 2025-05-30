@@ -155,10 +155,48 @@ namespace SMTParser {
         }
         if (is_changed) {
             std::shared_ptr<DAGNode> new_expr = mkOper(expr->getSort(), expr->getKind(), children);
-            visited[expr] = new_expr; // no need to visit again
+            visited[expr] = new_expr;
             return new_expr;
         }
         cassert(!is_changed, "replaceAtoms: is_changed is true");
+        visited[expr] = expr;
+        return expr;
+    }
+
+    std::shared_ptr<DAGNode> Parser::replaceNodes(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& node_map) {
+        boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> visited;
+        bool is_changed = false;
+        std::shared_ptr<DAGNode> new_expr = replaceNodes(expr, node_map, visited, is_changed);
+        if (is_changed) {
+            return new_expr;
+        }
+        return expr;
+    }
+
+    std::shared_ptr<DAGNode> Parser::replaceNodes(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& node_map, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited, bool& is_changed) {
+        if (visited.find(expr) != visited.end()) {
+            return visited[expr];
+        }
+        if (node_map.find(expr) != node_map.end()) {
+            is_changed = true;
+            visited[expr] = node_map[expr];
+            return node_map[expr];
+        }
+        std::vector<std::shared_ptr<DAGNode>> children;
+        for (size_t i = 0; i < expr->getChildrenSize(); i++) {
+            bool child_is_changed = false;
+            std::shared_ptr<DAGNode> child_expr = replaceNodes(expr->getChild(i), node_map, visited, child_is_changed);
+            if (child_is_changed) {
+                is_changed = true;
+            }
+            children.emplace_back(child_expr);
+        }
+        if (is_changed) {
+            std::shared_ptr<DAGNode> new_expr = mkOper(expr->getSort(), expr->getKind(), children);
+            visited[expr] = new_expr;
+            return new_expr;
+        }
+        cassert(!is_changed, "replaceNodes: is_changed is true");
         visited[expr] = expr;
         return expr;
     }
