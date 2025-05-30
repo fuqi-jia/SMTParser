@@ -1140,50 +1140,6 @@ namespace SMTParser{
             result = mkDistinct(children);
         }
         cassert(!const_vals.empty(), "evaluateDistinct: const_vals is empty");
-        for(size_t i = 0; i < const_vals.size(); ++i){
-            for(size_t j = 0; j < children.size(); ++j){
-                if(i == j) continue;
-                if(children[i]->isCInt() && children[j]->isCInt()){
-                    if(toInt(children[i]) == toInt(children[j])){
-                        result = mkFalse();
-                        return true;
-                    }
-                }
-                else if(children[i]->isCReal() && children[j]->isCReal()){
-                    if(toReal(children[i]) == toReal(children[j])){
-                        result = mkFalse();
-                        return true;
-                    }
-                }
-                else if(children[i]->isCBool() && children[j]->isCBool()){
-                    if(children[i]->isTrue() == children[j]->isTrue()){
-                        result = mkFalse();
-                        return true;
-                    }
-                }
-                else if(children[i]->isCStr() && children[j]->isCStr()){
-                    if(children[i]->toString() == children[j]->toString()){
-                        result = mkFalse();
-                        return true;
-                    }
-                }
-                else if(children[i]->isCBV() && children[j]->isCBV()){
-                    if(children[i]->toString() == children[j]->toString()){
-                        result = mkFalse();
-                        return true;
-                    }
-                }
-                else if(children[i]->isCFP() && children[j]->isCFP()){
-                    if(children[i]->toString() == children[j]->toString()){
-                        result = mkFalse();
-                        return true;
-                    }
-                }
-                else{
-                    cassert(false, "evaluateDistinct: children[i] is not a constant");
-                }
-            }
-        }
         if(children.empty()){
             result = mkTrue();
         }
