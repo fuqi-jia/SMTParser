@@ -2566,6 +2566,22 @@ namespace SMTParser{
 		exit(0);
 	}
 
+	std::shared_ptr<DAGNode> Parser::rename(std::shared_ptr<DAGNode> expr, const std::string& new_name){
+		cassert(expr->isVar(), "Only variable can be renamed");
+		std::string old_name = expr->getName();
+		if(expr->isTempVar()){
+			size_t old_index = temp_var_names[old_name];
+			temp_var_names[new_name] = old_index;
+		}
+		else{
+			size_t old_index = var_names[old_name];
+			var_names[new_name] = old_index;
+		}
+		expr->rename(new_name);
+
+		return expr;
+	}	
+
 	std::string Parser::toString(std::shared_ptr<DAGNode> expr){
 		return dumpSMTLIB2(expr);
 	}

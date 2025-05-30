@@ -3267,6 +3267,16 @@ namespace SMTParser{
          */
         std::shared_ptr<DAGNode>                remove(std::shared_ptr<DAGNode> expr, const boost::unordered_set<std::shared_ptr<DAGNode>>& nodes);
 
+
+        /**
+         * @brief Rename a node
+         * 
+         * @param expr Expression to rename
+         * @param new_name New name
+         * @return Expression with renamed node
+         */
+        std::shared_ptr<DAGNode>                rename(std::shared_ptr<DAGNode> expr, const std::string& new_name);
+
         // print
         /**
          * @brief Print an expression
