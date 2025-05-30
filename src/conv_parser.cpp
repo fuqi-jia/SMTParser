@@ -79,7 +79,22 @@ namespace SMTParser {
     }
     std::vector<std::shared_ptr<DAGNode>> Parser::getCNFAtoms() {
         std::vector<std::shared_ptr<DAGNode>> atoms;
-        for(auto& [bool_var, atom] : cnf_atom_map){
+        boost::unordered_set<std::shared_ptr<DAGNode>> visited;
+        for(auto& [atom, bool_var] : cnf_bool_var_map){
+            // skip the atom if it has been visited
+            if(visited.find(bool_var) != visited.end()){
+                continue;
+            }
+            // skip the atom if its negation has been visited
+            else if(visited.find(mkNot(bool_var)) != visited.end()){
+                continue;
+            }
+            // insert the atom into the vector
+            visited.insert(bool_var);
+            // skip the not bool_var, only insert the positive bool_var
+            if(bool_var->isNot()){
+                continue;
+            }
             atoms.emplace_back(atom);
         }
         return atoms;
@@ -92,7 +107,22 @@ namespace SMTParser {
     }
     std::vector<std::shared_ptr<DAGNode>> Parser::getCNFBoolVars() {
         std::vector<std::shared_ptr<DAGNode>> bool_vars;
-        for(auto& [atom, bool_var] : cnf_bool_var_map){
+        boost::unordered_set<std::shared_ptr<DAGNode>> visited;
+        for(auto& [bool_var, atom] : cnf_atom_map){
+            // skip the bool_var if it has been visited
+            if(visited.find(bool_var) != visited.end()){
+                continue;
+            }
+            // skip the bool_var if its negation has been visited
+            else if(visited.find(mkNot(bool_var)) != visited.end()){
+                continue;
+            }
+            // insert the bool_var into the vector
+            visited.insert(bool_var);
+            // skip the not bool_var, only insert the positive bool_var
+            if(bool_var->isNot()){
+                continue;
+            }
             bool_vars.emplace_back(bool_var);
         }
         return bool_vars;
@@ -557,8 +587,6 @@ namespace SMTParser {
             if(expr->isAtom()){
                 std::shared_ptr<DAGNode> new_var = mkTempVar(BOOL_SORT);
                 new_children.emplace_back(new_var);
-                cnf_atom_map[new_var] = expr;
-                cnf_bool_var_map[expr] = new_var;
                 // add to cnf_map
                 std::shared_ptr<DAGNode> not_atom = mkNot(expr);
                 std::shared_ptr<DAGNode> not_new_var = mkNot(new_var);
@@ -566,6 +594,11 @@ namespace SMTParser {
                 cnf_map[not_atom] = not_new_var;
                 atom_map[expr] = new_var;
                 atom_map[not_atom] = not_new_var;
+                
+                cnf_atom_map[new_var] = expr;
+                cnf_bool_var_map[expr] = new_var;
+                cnf_atom_map[not_new_var] = not_atom;
+                cnf_bool_var_map[not_atom] = not_new_var;
             }
             else{
                 new_exprs.emplace_back(expr);
@@ -628,8 +661,6 @@ namespace SMTParser {
         boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> atom_map;
         for (auto& atom : atoms) {
             std::shared_ptr<DAGNode> new_var = mkTempVar(BOOL_SORT);
-            cnf_atom_map[new_var] = atom;
-            cnf_bool_var_map[atom] = new_var;
             // add to cnf_map
             std::shared_ptr<DAGNode> not_atom = mkNot(atom);
             std::shared_ptr<DAGNode> not_new_var = mkNot(new_var);
@@ -637,6 +668,11 @@ namespace SMTParser {
             cnf_map[not_atom] = not_new_var;
             atom_map[atom] = new_var;
             atom_map[not_atom] = not_new_var;
+
+            cnf_atom_map[new_var] = atom;
+            cnf_bool_var_map[atom] = new_var;
+            cnf_atom_map[not_new_var] = not_atom;
+            cnf_bool_var_map[not_atom] = not_new_var;
         }
 
         // create a new formula with Tseitin variables
