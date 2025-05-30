@@ -1045,6 +1045,7 @@ namespace SMTParser{
         cassert(changed, "evaluateEq: changed is false");
         if(const_vals.empty()){
             result = mkEq(children);
+            return true;
         }
         cassert(!const_vals.empty(), "evaluateEq: const_vals is empty");
         auto const_val = const_vals[0];
@@ -1138,6 +1139,7 @@ namespace SMTParser{
         cassert(changed, "evaluateDistinct: changed is false");
         if(const_vals.empty()){
             result = mkDistinct(children);
+            return true;
         }
         cassert(!const_vals.empty(), "evaluateDistinct: const_vals is empty");
         if(children.empty()){
