@@ -664,10 +664,10 @@ namespace SMTParser{
             case NODE_KIND::NT_STR_SUFFIXOF:
             case NODE_KIND::NT_STR_CONTAINS:
             case NODE_KIND::NT_STR_CHARAT:
-            case NODE_KIND::NT_STR_LT:
-            case NODE_KIND::NT_STR_LE:
-            case NODE_KIND::NT_STR_GT:
-            case NODE_KIND::NT_STR_GE:
+            case NODE_KIND::NT_STR_LT: // TODO: lt/le/gt/ge now is binary operation, but it should be n-ary operation
+            case NODE_KIND::NT_STR_LE: // TODO: lt/le/gt/ge now is binary operation, but it should be n-ary operation
+            case NODE_KIND::NT_STR_GT: // TODO: lt/le/gt/ge now is binary operation, but it should be n-ary operation
+            case NODE_KIND::NT_STR_GE: // TODO: lt/le/gt/ge now is binary operation, but it should be n-ary operation
             case NODE_KIND::NT_STR_IN_REG:
             {
                 std::shared_ptr<DAGNode> l = NULL_NODE;
@@ -1027,15 +1027,12 @@ namespace SMTParser{
     bool Parser::evaluateEq(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode>& result) {
         bool changed = false;
         std::vector<std::shared_ptr<DAGNode>> children;
-        std::shared_ptr<DAGNode> const_val = NULL_NODE;
+        std::vector<std::shared_ptr<DAGNode>> const_vals;
         for(auto child : expr->getChildren()){
             std::shared_ptr<DAGNode> eval = NULL_NODE;
             changed |= evaluate(child, model, eval);
             if(eval->isConst()){
-                if(const_val->toString() != eval->toString()){
-                    result = mkFalse();
-                    return true;
-                }
+                const_vals.emplace_back(eval);
             }
             else{
                 children.emplace_back(eval);
@@ -1046,12 +1043,59 @@ namespace SMTParser{
             return false;
         }
         cassert(changed, "evaluateEq: changed is false");
-        if(children.empty()){
-            result = const_val->isTrue() ? mkTrue() : mkFalse();
+        if(const_vals.empty()){
+            result = mkEq(children);
+        }
+        cassert(!const_vals.empty(), "evaluateEq: const_vals is empty");
+        auto const_val = const_vals[0];
+        for(size_t i = 1; i < const_vals.size(); ++i){
+            if(const_val->isCInt() && const_vals[i]->isCInt()){
+                if(toInt(const_val) != toInt(const_vals[i])){
+                    result = mkFalse();
+                    return true;
+                }
+            }
+            else if(const_val->isCReal() && const_vals[i]->isCReal()){
+                if(toReal(const_val) != toReal(const_vals[i])){
+                    result = mkFalse();
+                    return true;
+                }
+            }
+            else if(const_val->isCBool() && const_vals[i]->isCBool()){
+                if(const_val->isTrue() != const_vals[i]->isTrue()){
+                    result = mkFalse();
+                    return true;
+                }
+            }
+            else if(const_val->isCStr() && const_vals[i]->isCStr()){
+                if(const_val->toString() != const_vals[i]->toString()){
+                    result = mkFalse();
+                    return true;
+                }
+            }
+            else if(const_val->isCBV() && const_vals[i]->isCBV()){
+                if(const_val->toString() != const_vals[i]->toString()){
+                    result = mkFalse();
+                    return true;
+                }
+            }
+            else if(const_val->isCFP() && const_vals[i]->isCFP()){
+                if(const_val->toString() != const_vals[i]->toString()){
+                    result = mkFalse();
+                    return true;
+                }
+            }
+            else{
+                cassert(false, "evaluateEq: const_val is not a constant");
+            }
+        }
+        if(children.size() == 0){
+            result = mkTrue();
+            return true;
         }
         else if(children.size() == 1){
-            cassert(!const_val->isNull(), "evaluateEq: const_val is null");
-            result = mkEq(children[0], const_val);
+            children.emplace_back(const_val);
+            result = mkEq(children);
         }
         else{
             if(const_val->isNull()){
@@ -1092,8 +1136,55 @@ namespace SMTParser{
             return false;
         }
         cassert(changed, "evaluateDistinct: changed is false");
+        if(const_vals.empty()){
+            result = mkDistinct(children);
+        }
+        cassert(!const_vals.empty(), "evaluateDistinct: const_vals is empty");
+        for(size_t i = 0; i < const_vals.size(); ++i){
+            for(size_t j = 0; j < children.size(); ++j){
+                if(i == j) continue;
+                if(children[i]->isCInt() && children[j]->isCInt()){
+                    if(toInt(children[i]) == toInt(children[j])){
+                        result = mkFalse();
+                        return true;
+                    }
+                }
+                else if(children[i]->isCReal() && children[j]->isCReal()){
+                    if(toReal(children[i]) == toReal(children[j])){
+                        result = mkFalse();
+                        return true;
+                    }
+                }
+                else if(children[i]->isCBool() && children[j]->isCBool()){
+                    if(children[i]->isTrue() == children[j]->isTrue()){
+                        result = mkFalse();
+                        return true;
+                    }
+                }
+                else if(children[i]->isCStr() && children[j]->isCStr()){
+                    if(children[i]->toString() == children[j]->toString()){
+                        result = mkFalse();
+                        return true;
+                    }
+                }
+                else if(children[i]->isCBV() && children[j]->isCBV()){
+                    if(children[i]->toString() == children[j]->toString()){
+                        result = mkFalse();
+                        return true;
+                    }
+                }
+                else if(children[i]->isCFP() && children[j]->isCFP()){
+                    if(children[i]->toString() == children[j]->toString()){
+                        result = mkFalse();
+                        return true;
+                    }
+                }
+                else{
+                    cassert(false, "evaluateDistinct: children[i] is not a constant");
+                }
+            }
+        }
         if(children.empty()){
-            cassert(const_vals.size() == expr->getChildrenSize(), "evaluateDistinct: const_vals.size() != expr->getChildrenSize()");
             result = mkTrue();
         }
         else{
