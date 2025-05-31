@@ -583,11 +583,13 @@ std::string HighPrecisionReal::toString() const {
 }
 
 double HighPrecisionReal::toDouble() const {
-    return mpfr_get_d(value, MPFR_RNDN);
+    std::string str = toString();
+    return std::stod(str);
 }
 
 float HighPrecisionReal::toFloat() const {
-    return mpfr_get_flt(value, MPFR_RNDN);
+    std::string str = toString();
+    return std::stof(str);
 }
 
 int HighPrecisionReal::toInt() const {
