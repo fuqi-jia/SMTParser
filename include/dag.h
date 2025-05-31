@@ -86,7 +86,7 @@ namespace SMTParser{
                     value = newValue(Number(name, true));
                 } else if(isRealUtil(name)){
                     value = newValue(Number(name, false));
-                } 
+                }
                 // TODO for value
             }
         }
