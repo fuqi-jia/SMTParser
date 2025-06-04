@@ -3085,6 +3085,15 @@ namespace SMTParser{
          */
         std::shared_ptr<DAGNode>                replaceAtoms(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& atom_map);
 
+                /**
+         * @brief Replace nodes in an expression (general node replacement)
+         *  
+         * @param expr Expression to replace nodes in
+         * @param node_map Node map (stored in a map)
+         * @return Expression with replaced nodes
+         */
+        std::shared_ptr<DAGNode>                replaceNodes(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& node_map);
+
         /**
          * @brief Convert an expression to Tseitin CNF
          * 
@@ -3392,6 +3401,10 @@ namespace SMTParser{
         
         std::shared_ptr<DAGNode>                replaceAtoms(std::shared_ptr<DAGNode> expr, 
                                                             boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& atom_map, 
+                                                            boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited, 
+                                                            bool& is_changed);
+        std::shared_ptr<DAGNode>                replaceNodes(std::shared_ptr<DAGNode> expr, 
+                                                            boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& node_map, 
                                                             boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited, 
                                                             bool& is_changed);
         std::shared_ptr<DAGNode>                toCNF(std::shared_ptr<DAGNode> expr);
