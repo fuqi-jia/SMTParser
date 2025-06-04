@@ -500,6 +500,11 @@ namespace SMTParser{
 		free(buffer);
 		return true;
 	}
+
+	bool Parser::assert(std::shared_ptr<DAGNode> node) {
+		assertions.emplace_back(node);
+		return true;
+	}
 	
 
 	KEYWORD Parser::parseKeyword(){

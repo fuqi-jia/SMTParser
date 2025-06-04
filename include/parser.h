@@ -235,6 +235,16 @@ namespace SMTParser{
          */
         bool assert(const std::string& constraint);
 
+        /**
+         * @brief Assert a constraint
+         * 
+         * Asserts the specified constraint and builds internal data structures.
+         * 
+         * @param node Constraint to assert
+         * @return True if assertion was successful, false otherwise
+         */
+        bool assert(std::shared_ptr<DAGNode> node);
+
         // to solver
         /**
          * @brief Get all assertions
