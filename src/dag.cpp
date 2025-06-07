@@ -27,6 +27,9 @@
 
 #include "dag.h"
 #include <stack>
+#include <unordered_map>
+#include <unordered_set>
+#include <sstream>
 
 namespace SMTParser{
 
@@ -78,435 +81,325 @@ namespace SMTParser{
         return name;
     }
 
+    // Optimized streaming version of dumpSMTLIB2 function for maximum performance
+    void dumpSMTLIB2_streaming(const std::shared_ptr<DAGNode>& root, std::ostream& out) {
+        if (!root) return;
 
-    // Iterative version of dumpSMTLIB2 function, avoid stack overflow
-    std::string dumpSMTLIB2(const std::shared_ptr<DAGNode>& root) {
-        if (!root) return "";
-        
-        // Cache results, avoid duplicate processing
-        boost::unordered_map<std::shared_ptr<DAGNode>, std::string> results;
-        
-        // Stack for post-order traversal
-        std::stack<std::shared_ptr<DAGNode>> todo;
-        
-        // Cache visited nodes, avoid duplicate addition to stack
-        boost::unordered_set<std::shared_ptr<DAGNode>> visited;
-        
-        // Record processing status of each node (used to determine if all children are processed)
-        boost::unordered_map<std::shared_ptr<DAGNode>, bool> processed;
-        
-        // Initialize stack, start from root node
-        todo.push(root);
-
-        bool is_let = root->isLet();
-        std::shared_ptr<DAGNode> let_body = nullptr;
-        if(is_let){
-            let_body = root->getLetBody();
-            return dumpSMTLIB2(let_body);
+        std::shared_ptr<DAGNode> actualRoot = root;
+        while (actualRoot->isLet()) {
+            actualRoot = actualRoot->getLetBody();
         }
 
-        cassert(!root->isLet(), "dumpSMTLIB2: root cannot be a let");
-        
-        while (!todo.empty()) {
+        // Static kind string cache for performance
+        static std::unordered_map<NODE_KIND, const char*> kind_cache;
+        static bool cache_initialized = false;
 
-            std::shared_ptr<DAGNode> current = todo.top();
-            
-            // If current node has been processed, pop it
-            if (results.find(current) != results.end()) {
-                todo.pop();
-                continue;
-            }
-            
-            // If current node is visited for the first time, mark it as visited
-            if (visited.find(current) == visited.end()) {
-                visited.insert(current);
-                processed[current] = false;
-            }
-            
-            // If all children are processed, process current node
-            if (processed[current]) {
-                std::string res = "";
-                auto kind = current->getKind();
-                
-                switch (kind) {
-                // Basic type and constant processing
-                case NODE_KIND::NT_UNKNOWN:
-                    std::cerr << "Unknown kind: " << kindToString(kind) << std::endl;
-                    cassert(false, "Encountered unknown kind node");
-                    break;
-                case NODE_KIND::NT_ERROR:
-                    std::cerr << "Encountered error kind node" << std::endl;
-                    cassert(false, "Encountered error kind node");
-                    break;
-                case NODE_KIND::NT_NULL:
-                    std::cerr << "Encountered null kind node" << std::endl;
-                    cassert(false, "Encountered null kind node");
-                    res = "NULL";
-                    break;
-                case NODE_KIND::NT_CONST_TRUE:
-                    res = "true";
-                    break;
-                case NODE_KIND::NT_CONST_FALSE:
-                    res = "false";
-                    break;
-                
-                // Constant and variable
-                case NODE_KIND::NT_CONST:
-                    res = dumpConst(current->getName(), current->getSort());
-                    break;
-                case NODE_KIND::NT_VAR:
-                    res = current->getName();
-                    break;
-                case NODE_KIND::NT_TEMP_VAR:
-                    res = current->getName();
-                    break;
-                    
-                // Unary operation - accepts one parameter
-                case NODE_KIND::NT_NOT:
-                case NODE_KIND::NT_NEG:
-                case NODE_KIND::NT_ABS:
-                case NODE_KIND::NT_SQRT:
-                case NODE_KIND::NT_SAFESQRT:
-                case NODE_KIND::NT_CEIL:
-                case NODE_KIND::NT_FLOOR:
-                case NODE_KIND::NT_ROUND:
-                case NODE_KIND::NT_EXP:
-                case NODE_KIND::NT_LN:
-                case NODE_KIND::NT_LG:
-                case NODE_KIND::NT_LB:
-                case NODE_KIND::NT_SIN:
-                case NODE_KIND::NT_COS:
-                case NODE_KIND::NT_SEC:
-                case NODE_KIND::NT_CSC:
-                case NODE_KIND::NT_TAN:
-                case NODE_KIND::NT_COT:
-                case NODE_KIND::NT_ASIN:
-                case NODE_KIND::NT_ACOS:
-                case NODE_KIND::NT_ASEC:
-                case NODE_KIND::NT_ACSC:
-                case NODE_KIND::NT_ATAN:
-                case NODE_KIND::NT_ACOT:
-                case NODE_KIND::NT_SINH:
-                case NODE_KIND::NT_COSH:
-                case NODE_KIND::NT_TANH:
-                case NODE_KIND::NT_SECH:
-                case NODE_KIND::NT_CSCH:
-                case NODE_KIND::NT_COTH:
-                case NODE_KIND::NT_ASINH:
-                case NODE_KIND::NT_ACOSH:
-                case NODE_KIND::NT_ATANH:
-                case NODE_KIND::NT_ASECH:
-                case NODE_KIND::NT_ACSCH:
-                case NODE_KIND::NT_ACOTH:
-                case NODE_KIND::NT_TO_INT:
-                case NODE_KIND::NT_TO_REAL:
-                case NODE_KIND::NT_IS_INT:
-                case NODE_KIND::NT_IS_PRIME:
-                case NODE_KIND::NT_IS_EVEN:
-                case NODE_KIND::NT_IS_ODD:
-                case NODE_KIND::NT_FACT:
-                case NODE_KIND::NT_BV_NOT:
-                case NODE_KIND::NT_BV_NEG:
-                case NODE_KIND::NT_BV_NEGO:
-                case NODE_KIND::NT_FP_ABS:
-                case NODE_KIND::NT_FP_NEG:
-                case NODE_KIND::NT_FP_SQRT:
-                case NODE_KIND::NT_FP_ROUND_TO_INTEGRAL:
-                case NODE_KIND::NT_FP_IS_NORMAL:
-                case NODE_KIND::NT_FP_IS_SUBNORMAL:
-                case NODE_KIND::NT_FP_IS_ZERO:
-                case NODE_KIND::NT_FP_IS_INF:
-                case NODE_KIND::NT_FP_IS_NAN:
-                case NODE_KIND::NT_FP_IS_NEG:
-                case NODE_KIND::NT_FP_IS_POS:
-                case NODE_KIND::NT_FP_TO_UBV:
-                case NODE_KIND::NT_FP_TO_SBV:
-                case NODE_KIND::NT_FP_TO_REAL:
-                case NODE_KIND::NT_FP_TO_FP:
-                case NODE_KIND::NT_STR_LEN:
-                case NODE_KIND::NT_STR_TO_LOWER:
-                case NODE_KIND::NT_STR_TO_UPPER:
-                case NODE_KIND::NT_STR_REV:
-                case NODE_KIND::NT_STR_IS_DIGIT:
-                case NODE_KIND::NT_STR_FROM_INT:
-                case NODE_KIND::NT_STR_TO_INT:
-                case NODE_KIND::NT_STR_TO_REG:
-                case NODE_KIND::NT_STR_TO_CODE:
-                case NODE_KIND::NT_STR_FROM_CODE:
-                case NODE_KIND::NT_REG_STAR:
-                case NODE_KIND::NT_REG_PLUS:
-                case NODE_KIND::NT_REG_OPT:
-                case NODE_KIND::NT_REG_COMPLEMENT:
-                case NODE_KIND::NT_BV_TO_NAT:
-                case NODE_KIND::NT_BV_TO_INT:
-                case NODE_KIND::NT_POW2:
-                    res = "(" + kindToString(kind) + " " + results[current->getChild(0)] + ")";
-                    break;
-                    
-                // Binary operation - accepts two parameters
-                case NODE_KIND::NT_EQ:
-                case NODE_KIND::NT_EQ_BOOL:
-                case NODE_KIND::NT_EQ_OTHER:
-                case NODE_KIND::NT_POW:
-                case NODE_KIND::NT_DIV_INT:
-                case NODE_KIND::NT_DIV_REAL:
-                case NODE_KIND::NT_MOD:
-                case NODE_KIND::NT_LOG:
-                case NODE_KIND::NT_ATAN2:
-                case NODE_KIND::NT_LE:
-                case NODE_KIND::NT_LT:
-                case NODE_KIND::NT_GE:
-                case NODE_KIND::NT_GT:
-                case NODE_KIND::NT_IS_DIVISIBLE:
-                case NODE_KIND::NT_GCD:
-                case NODE_KIND::NT_LCM:
-                case NODE_KIND::NT_BV_UDIV:
-                case NODE_KIND::NT_BV_SDIV:
-                case NODE_KIND::NT_BV_UREM:
-                case NODE_KIND::NT_BV_SREM:
-                case NODE_KIND::NT_BV_UMOD:
-                case NODE_KIND::NT_BV_SMOD:
-                case NODE_KIND::NT_BV_SDIVO:
-                case NODE_KIND::NT_BV_UDIVO:
-                case NODE_KIND::NT_BV_SREMO:
-                case NODE_KIND::NT_BV_UREMO:
-                case NODE_KIND::NT_BV_SMODO:
-                case NODE_KIND::NT_BV_UMODO:
-                case NODE_KIND::NT_BV_SHL:
-                case NODE_KIND::NT_BV_LSHR:
-                case NODE_KIND::NT_BV_ASHR:
-                case NODE_KIND::NT_BV_COMP:
-                case NODE_KIND::NT_BV_ULT:
-                case NODE_KIND::NT_BV_ULE:
-                case NODE_KIND::NT_BV_UGT:
-                case NODE_KIND::NT_BV_UGE:
-                case NODE_KIND::NT_BV_SLT:
-                case NODE_KIND::NT_BV_SLE:
-                case NODE_KIND::NT_BV_SGT:
-                case NODE_KIND::NT_BV_SGE:
-                case NODE_KIND::NT_NAT_TO_BV:
-                case NODE_KIND::NT_INT_TO_BV:
-                case NODE_KIND::NT_FP_DIV:
-                case NODE_KIND::NT_FP_REM:
-                case NODE_KIND::NT_FP_LE:
-                case NODE_KIND::NT_FP_LT:
-                case NODE_KIND::NT_FP_GE:
-                case NODE_KIND::NT_FP_GT:
-                case NODE_KIND::NT_FP_EQ:
-                case NODE_KIND::NT_FP_NE:
-                case NODE_KIND::NT_SELECT:
-                case NODE_KIND::NT_STR_PREFIXOF:
-                case NODE_KIND::NT_STR_SUFFIXOF:
-                case NODE_KIND::NT_STR_CHARAT:
-                case NODE_KIND::NT_STR_SPLIT:
-                case NODE_KIND::NT_STR_LT:
-                case NODE_KIND::NT_STR_LE:
-                case NODE_KIND::NT_STR_GT:
-                case NODE_KIND::NT_STR_GE:
-                case NODE_KIND::NT_STR_IN_REG:
-                case NODE_KIND::NT_STR_CONTAINS:
-                case NODE_KIND::NT_REG_RANGE:
-                case NODE_KIND::NT_REG_REPEAT:
-                case NODE_KIND::NT_STR_NUM_SPLITS:
-                    res = "(" + kindToString(kind) + " " + results[current->getChild(0)] + " " + results[current->getChild(1)] + ")";
-                    break;
-                    
-                // Ternary operation - accepts three parameters
-                case NODE_KIND::NT_ITE:
-                case NODE_KIND::NT_FP_FMA:
-                case NODE_KIND::NT_STORE:
-                case NODE_KIND::NT_STR_SUBSTR:
-                case NODE_KIND::NT_STR_INDEXOF:
-                case NODE_KIND::NT_STR_UPDATE:
-                case NODE_KIND::NT_STR_REPLACE:
-                case NODE_KIND::NT_STR_REPLACE_ALL:
-                case NODE_KIND::NT_REPLACE_REG:
-                case NODE_KIND::NT_REPLACE_REG_ALL:
-                case NODE_KIND::NT_INDEXOF_REG:
-                case NODE_KIND::NT_STR_SPLIT_AT:
-                    res = "(" + kindToString(kind) + " " + results[current->getChild(0)] + " " + results[current->getChild(1)] + " " + results[current->getChild(2)] + ")";
-                    break;
-                case NODE_KIND::NT_REG_LOOP:
-                    res = "((_ re.loop " + results[current->getChild(1)] + " " + results[current->getChild(2)] + ") " + results[current->getChild(0)] + ")";
-                    break;
-                    
-                // Multi-parameter operation - accepts arbitrary number of parameters
-                case NODE_KIND::NT_DISTINCT:
-                case NODE_KIND::NT_DISTINCT_BOOL:
-                case NODE_KIND::NT_DISTINCT_OTHER:
-                case NODE_KIND::NT_AND:
-                case NODE_KIND::NT_OR:
-                case NODE_KIND::NT_IMPLIES:
-                case NODE_KIND::NT_XOR:
-                case NODE_KIND::NT_ADD:
-                case NODE_KIND::NT_MUL:
-                case NODE_KIND::NT_IAND:
-                case NODE_KIND::NT_SUB:
-                case NODE_KIND::NT_BV_AND:
-                case NODE_KIND::NT_BV_OR:
-                case NODE_KIND::NT_BV_XOR:
-                case NODE_KIND::NT_BV_NAND:
-                case NODE_KIND::NT_BV_NOR:
-                case NODE_KIND::NT_BV_XNOR:
-                case NODE_KIND::NT_BV_ADD:
-                case NODE_KIND::NT_BV_SUB:
-                case NODE_KIND::NT_BV_MUL:
-                case NODE_KIND::NT_BV_SADDO:
-                case NODE_KIND::NT_BV_UADDO:
-                case NODE_KIND::NT_BV_SMULO:
-                case NODE_KIND::NT_BV_UMULO:
-                case NODE_KIND::NT_BV_CONCAT:
-                case NODE_KIND::NT_FP_ADD:
-                case NODE_KIND::NT_FP_SUB:
-                case NODE_KIND::NT_FP_MUL:
-                case NODE_KIND::NT_FP_MIN:
-                case NODE_KIND::NT_FP_MAX:
-                case NODE_KIND::NT_STR_CONCAT:
-                case NODE_KIND::NT_REG_CONCAT:
-                case NODE_KIND::NT_REG_UNION:
-                case NODE_KIND::NT_REG_INTER:
-                case NODE_KIND::NT_REG_DIFF:
-                case NODE_KIND::NT_MAX:
-                case NODE_KIND::NT_MIN: {
-                    res = "(" + kindToString(kind);
-                    for (auto& child : current->getChildren()) {
-                        res += " " + results[child];
-                    }
-                    res += ")";
-                    break;
-                }
-                    
-                // Special processing operation
-                case NODE_KIND::NT_BV_EXTRACT:
-                    res = "((_ extract " + results[current->getChild(1)] + " " + results[current->getChild(2)] + ") " + results[current->getChild(0)] + ")";
-                    break;
-                    
-                case NODE_KIND::NT_BV_REPEAT:
-                case NODE_KIND::NT_BV_ZERO_EXT:
-                case NODE_KIND::NT_BV_SIGN_EXT:
-                case NODE_KIND::NT_BV_ROTATE_LEFT:
-                case NODE_KIND::NT_BV_ROTATE_RIGHT:
-                    res = "((_ " + kindToString(kind) + " " + results[current->getChild(1)] + ") " + results[current->getChild(0)] + ")";
-                    break;
-                    
-                // Constant
-                case NODE_KIND::NT_CONST_PI:
-                    res = "pi";
-                    break;
-                case NODE_KIND::NT_CONST_E:
-                    res = "e";
-                    break;
-                case NODE_KIND::NT_INFINITY:
-                    res = "inf";
-                    break;
-                case NODE_KIND::NT_POS_INFINITY:
-                    res = "+inf";
-                    break;
-                case NODE_KIND::NT_NEG_INFINITY:
-                    res = "-inf";
-                    break;
-                case NODE_KIND::NT_NAN:
-                    res = "NaN";
-                    break;
-                case NODE_KIND::NT_EPSILON:
-                    res = "epsilon";
-                    break;
-                case NODE_KIND::NT_POS_EPSILON:
-                    res = "+epsilon";
-                    break;
-                case NODE_KIND::NT_NEG_EPSILON:
-                    res = "-epsilon";
-                    break;
-                case NODE_KIND::NT_REG_NONE:
-                    res = "re.none";
-                    break;
-                case NODE_KIND::NT_REG_ALL:
-                    res = "re.all";
-                    break;
-                case NODE_KIND::NT_REG_ALLCHAR:
-                    res = "re.allchar";
-                    break;
-                    
-                // Quantifier
-                case NODE_KIND::NT_FORALL:
-                case NODE_KIND::NT_EXISTS: {
-                    res = "(" + kindToString(kind) + " (";
-                    for (size_t i = 1; i < current->getChildrenSize(); i++) {
-                        if (i == 1) 
-                            res += "(" + results[current->getChild(i)] + " " + current->getChild(i)->getSort()->toString() + ")";
-                        else 
-                            res += " (" + results[current->getChild(i)] + " " + current->getChild(i)->getSort()->toString() + ")";
-                    }
-                    res += ") ";
-                    res += results[current->getChild(0)];
-                    res += ")";
-                    break;
-                }
-                
-                case NODE_KIND::NT_QUANT_VAR:
-                    res = current->getName();
-                    break;
-                    
-                // Function related
-                case NODE_KIND::NT_FUNC_DEC:
-                case NODE_KIND::NT_FUNC_DEF:
-                case NODE_KIND::NT_FUNC_PARAM:
-                    res = current->getName();
-                    break;
-                    
-                case NODE_KIND::NT_FUNC_APPLY: {
-                    res = "(" + current->getName();
-                    for (size_t i = 1; i < current->getChildrenSize(); i++) {
-                        res += " " + results[current->getChild(i)];
-                    }
-                    res += ")";
-                    break;
-                }
-                
-                case NODE_KIND::NT_LET:
-                    res = results[current->getChild(0)];
-                    break;
-                    
-                case NODE_KIND::NT_APPLY_UF:
-                    res = "(" + current->getName();
-                    for (auto& child : current->getChildren()) {
-                        res += " " + results[child];
-                    }
-                    res += ")";
-                    break;
-                    
-                default:
-                    std::cerr << "Unknown kind: " << kindToString(kind) << std::endl;
-                    res = "UNKNOWN_KIND";
-                }
-                
-                results[current] = res;
-                todo.pop();
-                continue;
-            }
-            
-            // Determine if child nodes need to be added
-            bool allChildrenProcessed = true;
-            for (auto& child : current->getChildren()) {
-                if (results.find(child) == results.end()) {
-                    allChildrenProcessed = false;
-                    todo.push(child);
-                }
-            }
-            
-            if (!allChildrenProcessed) {
-                // If there are unprocessed child nodes, wait for all child nodes to be processed
-                processed[current] = false;
-            } else {
-                // If all child nodes have been processed, mark the current node as processed
-                processed[current] = true;
-            }
+        if (!cache_initialized) {
+            kind_cache[NODE_KIND::NT_NOT] = "not";
+            kind_cache[NODE_KIND::NT_AND] = "and";
+            kind_cache[NODE_KIND::NT_OR] = "or";
+            kind_cache[NODE_KIND::NT_ADD] = "+";
+            kind_cache[NODE_KIND::NT_MUL] = "*";
+            kind_cache[NODE_KIND::NT_SUB] = "-";
+            kind_cache[NODE_KIND::NT_EQ] = "=";
+            kind_cache[NODE_KIND::NT_LE] = "<=";
+            kind_cache[NODE_KIND::NT_LT] = "<";
+            kind_cache[NODE_KIND::NT_GE] = ">=";
+            kind_cache[NODE_KIND::NT_GT] = ">";
+            kind_cache[NODE_KIND::NT_ITE] = "ite";
+            kind_cache[NODE_KIND::NT_IMPLIES] = "=>";
+            kind_cache[NODE_KIND::NT_XOR] = "xor";
+            kind_cache[NODE_KIND::NT_DIV_REAL] = "/";
+            kind_cache[NODE_KIND::NT_NEG] = "-";
+            kind_cache[NODE_KIND::NT_DISTINCT] = "distinct";
+            cache_initialized = true;
         }
-        if(is_let){
-            return results[let_body];
-        }
-        return results[root];
+
+        // Lambda function to write node recursively
+        std::function<void(DAGNode*)> write_node = [&](DAGNode* node) {
+            auto kind = node->getKind();
+
+            switch (kind) {
+            case NODE_KIND::NT_CONST_TRUE:
+                out << "true";
+                break;
+            case NODE_KIND::NT_CONST_FALSE:
+                out << "false";
+                break;
+            case NODE_KIND::NT_CONST:
+                out << dumpConst(node->getName(), node->getSort());
+                break;
+            case NODE_KIND::NT_VAR:
+            case NODE_KIND::NT_TEMP_VAR:
+                out << node->getName();
+                break;
+
+            // Binary operations
+            case NODE_KIND::NT_EQ:
+            case NODE_KIND::NT_LE:
+            case NODE_KIND::NT_LT:
+            case NODE_KIND::NT_GE:
+            case NODE_KIND::NT_GT:
+            case NODE_KIND::NT_ADD:
+            case NODE_KIND::NT_MUL:
+            case NODE_KIND::NT_SUB:
+            case NODE_KIND::NT_DIV_REAL: {
+                if (node->getChildrenSize() == 2) {
+                    auto child0 = node->getChild(0).get();
+                    while(child0->isLet()) child0 = child0->getLetBody().get();
+                    auto child1 = node->getChild(1).get();
+                    while(child1->isLet()) child1 = child1->getLetBody().get();
+
+                    const char* op = kind_cache[kind];
+                    out << "(" << op << " ";
+                    write_node(child0);
+                    out << " ";
+                    write_node(child1);
+                    out << ")";
+                    break;
+                }
+                // Fall through to n-ary case
+                [[fallthrough]];
+            }
+            case NODE_KIND::NT_REG_LOOP: {
+                auto child0 = node->getChild(0).get();
+                while(child0->isLet()) child0 = child0->getLetBody().get();
+                auto child1 = node->getChild(1).get();
+                while(child1->isLet()) child1 = child1->getLetBody().get();
+                auto child2 = node->getChild(2).get();
+                while(child2->isLet()) child2 = child2->getLetBody().get();
+
+                out << "((_ re.loop ";
+                write_node(child1);
+                out << " ";
+                write_node(child2);
+                out << ") ";
+                write_node(child0);
+                out << ")";
+                break;
+            }
+
+            // N-ary operations
+            case NODE_KIND::NT_AND:
+            case NODE_KIND::NT_OR:
+            case NODE_KIND::NT_DISTINCT: {
+                const char* op = kind_cache[kind];
+                if (!op) op = kindToString(kind).c_str();
+
+                out << "(" << op;
+                const auto& children = node->getChildren();
+                for (const auto& child_ptr : children) {
+                    auto child = child_ptr.get();
+                    while(child->isLet()) child = child->getLetBody().get();
+                    out << " ";
+                    write_node(child);
+                }
+                out << ")";
+                break;
+            }
+            // Special processing operation
+            case NODE_KIND::NT_BV_EXTRACT: {
+                auto child0 = node->getChild(0).get();
+                while(child0->isLet()) child0 = child0->getLetBody().get();
+                auto child1 = node->getChild(1).get();
+                while(child1->isLet()) child1 = child1->getLetBody().get();
+                auto child2 = node->getChild(2).get();
+                while(child2->isLet()) child2 = child2->getLetBody().get();
+
+                out << "((_ extract ";
+                write_node(child1);
+                out << " ";
+                write_node(child2);
+                out << ") ";
+                write_node(child0);
+                out << ")";
+                break;
+            }
+            case NODE_KIND::NT_BV_REPEAT:
+            case NODE_KIND::NT_BV_ZERO_EXT:
+            case NODE_KIND::NT_BV_SIGN_EXT:
+            case NODE_KIND::NT_BV_ROTATE_LEFT:
+            case NODE_KIND::NT_BV_ROTATE_RIGHT: {
+                auto child0 = node->getChild(0).get();
+                while(child0->isLet()) child0 = child0->getLetBody().get();
+                auto child1 = node->getChild(1).get();
+                while(child1->isLet()) child1 = child1->getLetBody().get();
+
+                out << "((_ " << kindToString(kind) << " ";
+                write_node(child1);
+                out << ") ";
+                write_node(child0);
+                out << ")";
+                break;
+            }
+
+            // Unary operations
+            case NODE_KIND::NT_NOT:
+            case NODE_KIND::NT_NEG: {
+                auto child = node->getChild(0).get();
+                while(child->isLet()) child = child->getLetBody().get();
+                const char* op = kind_cache[kind];
+
+                out << "(" << op << " ";
+                write_node(child);
+                out << ")";
+                break;
+            }
+
+            // Ternary operations
+            case NODE_KIND::NT_ITE: {
+                auto child0 = node->getChild(0).get();
+                while(child0->isLet()) child0 = child0->getLetBody().get();
+                auto child1 = node->getChild(1).get();
+                while(child1->isLet()) child1 = child1->getLetBody().get();
+                auto child2 = node->getChild(2).get();
+                while(child2->isLet()) child2 = child2->getLetBody().get();
+
+                out << "(ite ";
+                write_node(child0);
+                out << " ";
+                write_node(child1);
+                out << " ";
+                write_node(child2);
+                out << ")";
+                break;
+            }
+
+            // Constants
+            case NODE_KIND::NT_CONST_PI:
+                out << "pi";
+                break;
+            case NODE_KIND::NT_CONST_E:
+                out << "e";
+                break;
+            case NODE_KIND::NT_INFINITY:
+                out << "inf";
+                break;
+            case NODE_KIND::NT_POS_INFINITY:
+                out << "+inf";
+                break;
+            case NODE_KIND::NT_NEG_INFINITY:
+                out << "-inf";
+                break;
+            case NODE_KIND::NT_NAN:
+                out << "NaN";
+                break;
+            case NODE_KIND::NT_EPSILON:
+                out << "epsilon";
+                break;
+            case NODE_KIND::NT_POS_EPSILON:
+                out << "+epsilon";
+                break;
+            case NODE_KIND::NT_NEG_EPSILON:
+                out << "-epsilon";
+                break;
+            case NODE_KIND::NT_REG_NONE:
+                out << "re.none";
+                break;
+            case NODE_KIND::NT_REG_ALL:
+                out << "re.all";
+                break;
+            case NODE_KIND::NT_REG_ALLCHAR:
+                out << "re.allchar";
+                break;
+
+            // Quantifier
+            case NODE_KIND::NT_FORALL:
+            case NODE_KIND::NT_EXISTS: {
+                out << "(" << kindToString(kind) << " (";
+                for (size_t i = 1; i < node->getChildrenSize(); i++) {
+                    auto current_child = node->getChild(i).get();
+                    while(current_child->isLet()) current_child = current_child->getLetBody().get();
+                    if (i == 1){
+                        out << "("; write_node(current_child); out << " " << current_child->getSort()->toString() << ")";
+                    }
+                    else{
+                        out << " "; write_node(current_child); out << " " << current_child->getSort()->toString() << ")";
+                    }   
+                }
+                out << ") ";
+                write_node(node->getChild(0).get());
+                out << ")";
+                break;
+            }
+
+            case NODE_KIND::NT_QUANT_VAR:
+                out << node->getName();
+                break;
+
+            // Function related
+            case NODE_KIND::NT_FUNC_DEC:
+            case NODE_KIND::NT_FUNC_DEF:
+            case NODE_KIND::NT_FUNC_PARAM:
+                out << node->getName();
+                break;
+
+            case NODE_KIND::NT_FUNC_APPLY: {
+                out << "(" << node->getName();
+                for (size_t i = 1; i < node->getChildrenSize(); i++) {
+                    auto current_child = node->getChild(i).get();
+                    while(current_child->isLet()) current_child = current_child->getLetBody().get();
+                    out << " ";
+                    write_node(current_child);
+                }
+                out << ")";
+                break;
+            }
+            
+            case NODE_KIND::NT_LET: {
+                write_node(node->getChild(0).get());
+                break;
+            }
+            case NODE_KIND::NT_APPLY_UF:
+                out << "(" << node->getName();
+                for (auto& child : node->getChildren()) {
+                    auto current_child = child.get();
+                    while(current_child->isLet()) current_child = current_child->getLetBody().get();
+                    out << " ";
+                    write_node(current_child);
+                }
+                out << ")";
+                break;
+
+            default: {
+                // Fallback for other cases - use original logic but optimized
+                std::string kind_str = kindToString(kind);
+                const auto& children = node->getChildren();
+
+                if (children.empty()) {
+                    out << kind_str;
+                } else if (children.size() == 1) {
+                    auto child = children[0].get();
+                    while(child->isLet()) child = child->getLetBody().get();
+                    out << "(" << kind_str << " ";
+                    write_node(child);
+                    out << ")";
+                } else {
+                    out << "(" << kind_str;
+                    for (const auto& child_ptr : children) {
+                        auto child = child_ptr.get();
+                        while(child->isLet()) child = child->getLetBody().get();
+                        out << " ";
+                        write_node(child);
+                    }
+                    out << ")";
+                }
+                break;
+            }
+            }
+        };
+
+        // Write the result directly to stream
+        write_node(actualRoot.get());
     }
+
+    // Wrapper function that returns string for compatibility
+    std::string dumpSMTLIB2(const std::shared_ptr<DAGNode>& root) {
+        std::ostringstream oss;
+        dumpSMTLIB2_streaming(root, oss);
+        return oss.str();
+    }
+
     
     std::string dumpFuncDef(const std::shared_ptr<DAGNode>& node){
         std::string res = "(define-fun " + node->getName() + " (";
