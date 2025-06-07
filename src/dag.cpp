@@ -81,7 +81,7 @@ namespace SMTParser{
         return name;
     }
 
-    // Optimized streaming version of dumpSMTLIB2 function for maximum performance
+    // High-performance iterative streaming version to avoid stack overflow
     void dumpSMTLIB2_streaming(const std::shared_ptr<DAGNode>& root, std::ostream& out) {
         if (!root) return;
 
@@ -115,10 +115,41 @@ namespace SMTParser{
             cache_initialized = true;
         }
 
-        // Lambda function to write node recursively
-        std::function<void(DAGNode*)> write_node = [&](DAGNode* node) {
-            auto kind = node->getKind();
+        // Optimized iterative implementation using minimal WorkItem structure
+        struct WorkItem {
+            DAGNode* node;
+            uint8_t action; // 0=process, 1=space, 2=close_paren
 
+            WorkItem(DAGNode* n, uint8_t a = 0) : node(n), action(a) {}
+        };
+
+        // Pre-allocate stack with reasonable capacity to avoid frequent reallocations
+        std::vector<WorkItem> work_stack;
+        work_stack.reserve(10000); // Reserve space for deep expressions
+        work_stack.emplace_back(actualRoot.get(), 0);
+
+        while (!work_stack.empty()) {
+            WorkItem item = work_stack.back();
+            work_stack.pop_back();
+
+            if (item.action == 1) { // Write space
+                out << " ";
+                continue;
+            }
+            if (item.action == 2) { // Write closing paren
+                out << ")";
+                continue;
+            }
+            if (item.action == 3) { // Write ") " for special cases
+                out << ") ";
+                continue;
+            }
+
+            // Process node (action == 0)
+            DAGNode* node = item.node;
+            if (!node) continue;
+
+            auto kind = node->getKind();
             switch (kind) {
             case NODE_KIND::NT_CONST_TRUE:
                 out << "true";
@@ -134,7 +165,7 @@ namespace SMTParser{
                 out << node->getName();
                 break;
 
-            // Binary operations
+            // Binary operations - optimized for common case
             case NODE_KIND::NT_EQ:
             case NODE_KIND::NT_LE:
             case NODE_KIND::NT_LT:
@@ -152,15 +183,40 @@ namespace SMTParser{
 
                     const char* op = kind_cache[kind];
                     out << "(" << op << " ";
-                    write_node(child0);
-                    out << " ";
-                    write_node(child1);
-                    out << ")";
+
+                    // Push in reverse order: close_paren, child1, space, child0
+                    work_stack.emplace_back(nullptr, 2);  // )
+                    work_stack.emplace_back(child1, 0);   // child1
+                    work_stack.emplace_back(nullptr, 1);  // space
+                    work_stack.emplace_back(child0, 0);   // child0
                     break;
                 }
                 // Fall through to n-ary case
                 [[fallthrough]];
             }
+            // N-ary operations - most common case, highly optimized
+            case NODE_KIND::NT_AND:
+            case NODE_KIND::NT_OR:
+            case NODE_KIND::NT_DISTINCT: {
+                const char* op = kind_cache[kind];
+                if (!op) op = kindToString(kind).c_str();
+
+                out << "(" << op;
+                const auto& children = node->getChildren();
+
+                // Push closing paren first
+                work_stack.emplace_back(nullptr, 2);
+
+                // Push children in reverse order, each preceded by a space
+                for (int i = children.size() - 1; i >= 0; i--) {
+                    auto child = children[i].get();
+                    while(child->isLet()) child = child->getLetBody().get();
+                    work_stack.emplace_back(child, 0);
+                    work_stack.emplace_back(nullptr, 1); // space before child
+                }
+                break;
+            }
+
             case NODE_KIND::NT_REG_LOOP: {
                 auto child0 = node->getChild(0).get();
                 while(child0->isLet()) child0 = child0->getLetBody().get();
@@ -170,69 +226,16 @@ namespace SMTParser{
                 while(child2->isLet()) child2 = child2->getLetBody().get();
 
                 out << "((_ re.loop ";
-                write_node(child1);
-                out << " ";
-                write_node(child2);
-                out << ") ";
-                write_node(child0);
-                out << ")";
+
+                // Push: ), child0, ") ", child2, " ", child1
+                work_stack.emplace_back(nullptr, 2);     // )
+                work_stack.emplace_back(child0, 0);      // child0
+                work_stack.emplace_back(nullptr, 3);     // ") " - special case
+                work_stack.emplace_back(child2, 0);      // child2
+                work_stack.emplace_back(nullptr, 1);     // space
+                work_stack.emplace_back(child1, 0);      // child1
                 break;
             }
-
-            // N-ary operations
-            case NODE_KIND::NT_AND:
-            case NODE_KIND::NT_OR:
-            case NODE_KIND::NT_DISTINCT: {
-                const char* op = kind_cache[kind];
-                if (!op) op = kindToString(kind).c_str();
-
-                out << "(" << op;
-                const auto& children = node->getChildren();
-                for (const auto& child_ptr : children) {
-                    auto child = child_ptr.get();
-                    while(child->isLet()) child = child->getLetBody().get();
-                    out << " ";
-                    write_node(child);
-                }
-                out << ")";
-                break;
-            }
-            // Special processing operation
-            case NODE_KIND::NT_BV_EXTRACT: {
-                auto child0 = node->getChild(0).get();
-                while(child0->isLet()) child0 = child0->getLetBody().get();
-                auto child1 = node->getChild(1).get();
-                while(child1->isLet()) child1 = child1->getLetBody().get();
-                auto child2 = node->getChild(2).get();
-                while(child2->isLet()) child2 = child2->getLetBody().get();
-
-                out << "((_ extract ";
-                write_node(child1);
-                out << " ";
-                write_node(child2);
-                out << ") ";
-                write_node(child0);
-                out << ")";
-                break;
-            }
-            case NODE_KIND::NT_BV_REPEAT:
-            case NODE_KIND::NT_BV_ZERO_EXT:
-            case NODE_KIND::NT_BV_SIGN_EXT:
-            case NODE_KIND::NT_BV_ROTATE_LEFT:
-            case NODE_KIND::NT_BV_ROTATE_RIGHT: {
-                auto child0 = node->getChild(0).get();
-                while(child0->isLet()) child0 = child0->getLetBody().get();
-                auto child1 = node->getChild(1).get();
-                while(child1->isLet()) child1 = child1->getLetBody().get();
-
-                out << "((_ " << kindToString(kind) << " ";
-                write_node(child1);
-                out << ") ";
-                write_node(child0);
-                out << ")";
-                break;
-            }
-
             // Unary operations
             case NODE_KIND::NT_NOT:
             case NODE_KIND::NT_NEG: {
@@ -241,8 +244,8 @@ namespace SMTParser{
                 const char* op = kind_cache[kind];
 
                 out << "(" << op << " ";
-                write_node(child);
-                out << ")";
+                work_stack.emplace_back(nullptr, 2);  // )
+                work_stack.emplace_back(child, 0);    // child
                 break;
             }
 
@@ -256,12 +259,48 @@ namespace SMTParser{
                 while(child2->isLet()) child2 = child2->getLetBody().get();
 
                 out << "(ite ";
-                write_node(child0);
-                out << " ";
-                write_node(child1);
-                out << " ";
-                write_node(child2);
-                out << ")";
+                work_stack.emplace_back(nullptr, 2);  // )
+                work_stack.emplace_back(child2, 0);   // child2
+                work_stack.emplace_back(nullptr, 1);  // space
+                work_stack.emplace_back(child1, 0);   // child1
+                work_stack.emplace_back(nullptr, 1);  // space
+                work_stack.emplace_back(child0, 0);   // child0
+                break;
+            }
+
+            // Special processing operations
+            case NODE_KIND::NT_BV_EXTRACT: {
+                auto child0 = node->getChild(0).get();
+                while(child0->isLet()) child0 = child0->getLetBody().get();
+                auto child1 = node->getChild(1).get();
+                while(child1->isLet()) child1 = child1->getLetBody().get();
+                auto child2 = node->getChild(2).get();
+                while(child2->isLet()) child2 = child2->getLetBody().get();
+
+                out << "((_ extract ";
+                work_stack.emplace_back(nullptr, 2);  // )
+                work_stack.emplace_back(child0, 0);   // child0
+                work_stack.emplace_back(nullptr, 3);  // ") "
+                work_stack.emplace_back(child2, 0);   // child2
+                work_stack.emplace_back(nullptr, 1);  // space
+                work_stack.emplace_back(child1, 0);   // child1
+                break;
+            }
+            case NODE_KIND::NT_BV_REPEAT:
+            case NODE_KIND::NT_BV_ZERO_EXT:
+            case NODE_KIND::NT_BV_SIGN_EXT:
+            case NODE_KIND::NT_BV_ROTATE_LEFT:
+            case NODE_KIND::NT_BV_ROTATE_RIGHT: {
+                auto child0 = node->getChild(0).get();
+                while(child0->isLet()) child0 = child0->getLetBody().get();
+                auto child1 = node->getChild(1).get();
+                while(child1->isLet()) child1 = child1->getLetBody().get();
+
+                out << "((_ " << kindToString(kind) << " ";
+                work_stack.emplace_back(nullptr, 2);  // )
+                work_stack.emplace_back(child0, 0);   // child0
+                work_stack.emplace_back(nullptr, 3);  // ") "
+                work_stack.emplace_back(child1, 0);   // child1
                 break;
             }
 
@@ -303,7 +342,7 @@ namespace SMTParser{
                 out << "re.allchar";
                 break;
 
-            // Quantifier
+            // Quantifiers - handle inline for performance
             case NODE_KIND::NT_FORALL:
             case NODE_KIND::NT_EXISTS: {
                 out << "(" << kindToString(kind) << " (";
@@ -311,15 +350,15 @@ namespace SMTParser{
                     auto current_child = node->getChild(i).get();
                     while(current_child->isLet()) current_child = current_child->getLetBody().get();
                     if (i == 1){
-                        out << "("; write_node(current_child); out << " " << current_child->getSort()->toString() << ")";
+                        out << "(" << current_child->getName() << " " << current_child->getSort()->toString() << ")";
                     }
                     else{
-                        out << " "; write_node(current_child); out << " " << current_child->getSort()->toString() << ")";
-                    }   
+                        out << " (" << current_child->getName() << " " << current_child->getSort()->toString() << ")";
+                    }
                 }
                 out << ") ";
-                write_node(node->getChild(0).get());
-                out << ")";
+                work_stack.emplace_back(nullptr, 2);  // )
+                work_stack.emplace_back(node->getChild(0).get(), 0);  // body
                 break;
             }
 
@@ -334,35 +373,39 @@ namespace SMTParser{
                 out << node->getName();
                 break;
 
+            // Function applications
             case NODE_KIND::NT_FUNC_APPLY: {
                 out << "(" << node->getName();
-                for (size_t i = 1; i < node->getChildrenSize(); i++) {
+                work_stack.emplace_back(nullptr, 2);  // )
+                for (int i = node->getChildrenSize() - 1; i >= 1; i--) {
                     auto current_child = node->getChild(i).get();
                     while(current_child->isLet()) current_child = current_child->getLetBody().get();
-                    out << " ";
-                    write_node(current_child);
+                    work_stack.emplace_back(current_child, 0);
+                    work_stack.emplace_back(nullptr, 1);  // space
                 }
-                out << ")";
                 break;
             }
-            
+
             case NODE_KIND::NT_LET: {
-                write_node(node->getChild(0).get());
+                work_stack.emplace_back(node->getChild(0).get(), 0);
                 break;
             }
-            case NODE_KIND::NT_APPLY_UF:
+
+            case NODE_KIND::NT_APPLY_UF: {
                 out << "(" << node->getName();
-                for (auto& child : node->getChildren()) {
-                    auto current_child = child.get();
+                work_stack.emplace_back(nullptr, 2);  // )
+                const auto& children = node->getChildren();
+                for (int i = children.size() - 1; i >= 0; i--) {
+                    auto current_child = children[i].get();
                     while(current_child->isLet()) current_child = current_child->getLetBody().get();
-                    out << " ";
-                    write_node(current_child);
+                    work_stack.emplace_back(current_child, 0);
+                    work_stack.emplace_back(nullptr, 1);  // space
                 }
-                out << ")";
                 break;
+            }
 
             default: {
-                // Fallback for other cases - use original logic but optimized
+                // Fallback for other cases - iterative version
                 std::string kind_str = kindToString(kind);
                 const auto& children = node->getChildren();
 
@@ -372,25 +415,22 @@ namespace SMTParser{
                     auto child = children[0].get();
                     while(child->isLet()) child = child->getLetBody().get();
                     out << "(" << kind_str << " ";
-                    write_node(child);
-                    out << ")";
+                    work_stack.emplace_back(nullptr, 2);  // )
+                    work_stack.emplace_back(child, 0);    // child
                 } else {
                     out << "(" << kind_str;
-                    for (const auto& child_ptr : children) {
-                        auto child = child_ptr.get();
+                    work_stack.emplace_back(nullptr, 2);  // )
+                    for (int i = children.size() - 1; i >= 0; i--) {
+                        auto child = children[i].get();
                         while(child->isLet()) child = child->getLetBody().get();
-                        out << " ";
-                        write_node(child);
+                        work_stack.emplace_back(child, 0);
+                        work_stack.emplace_back(nullptr, 1);  // space
                     }
-                    out << ")";
                 }
                 break;
             }
             }
-        };
-
-        // Write the result directly to stream
-        write_node(actualRoot.get());
+        }
     }
 
     // Wrapper function that returns string for compatibility
