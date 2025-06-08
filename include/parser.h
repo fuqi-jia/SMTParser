@@ -245,6 +245,16 @@ namespace SMTParser{
          */
         bool assert(std::shared_ptr<DAGNode> node);
 
+        /**
+         * @brief Create a DAG node from a string expression
+         * 
+         * Parses the specified string expression and returns the corresponding DAG node.
+         * 
+         * @param expression String expression to parse
+         * @return Parsed DAG node
+         */
+        std::shared_ptr<DAGNode> mkExpr(const std::string& expression);
+
         // to solver
         /**
          * @brief Get all assertions
@@ -666,7 +676,7 @@ namespace SMTParser{
          *
          * @param sort Sort
          * @param name Variable name
-         * @return Variable node
+         * @return Variable node 
          */
         std::shared_ptr<DAGNode> mkVar(const std::shared_ptr<Sort>& sort, const std::string &name); // VAR
         
