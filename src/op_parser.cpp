@@ -443,6 +443,13 @@ namespace SMTParser{
         }
     }
     // CONST
+    std::shared_ptr<DAGNode> Parser::declareVar(const std::string &name, const std::string &sort){
+        return mkVar(sort_key_map[sort], name);
+    }
+    std::shared_ptr<DAGNode> Parser::declareVar(const std::string &name, const std::shared_ptr<Sort> &sort){
+        return mkVar(sort, name);
+    }
+
     std::shared_ptr<DAGNode> Parser::mkConstInt(const Integer &v){
         std::string v_str = SMTParser::toString(v);
         if(constants_int.find(v_str) != constants_int.end()){

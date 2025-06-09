@@ -90,6 +90,13 @@ namespace SMTParser{
         ERR_NEG_PARAM
     };
 
+    enum class RESULT_TYPE {
+        RT_SAT,
+        RT_UNSAT,
+        RT_UNKNOWN,
+        RT_ERROR
+    };
+
 
     /*
     Parser
@@ -108,7 +115,7 @@ namespace SMTParser{
         size_t 	                                line_number;
         SCAN_MODE 		                        scan_mode;
 
-        bool                                    parsing_file = true;
+        bool                                    parsing_file;
 
         boost::unordered_map<std::string, std::shared_ptr<DAGNode>> 
                                                 let_key_map; // local variables, no need to hash store
@@ -167,6 +174,11 @@ namespace SMTParser{
                                                         dnf_map;
         boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>
                                                         nnf_map;
+
+        // result
+        RESULT_TYPE                                   result_type;
+        std::shared_ptr<DAGNode>                      result_node;
+        std::shared_ptr<Model>                        result_model;
 
     public:
         std::vector<std::shared_ptr<DAGNode>>               assertions;
@@ -388,6 +400,39 @@ namespace SMTParser{
          */
         std::shared_ptr<Sort> getSort(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> m);
 
+        // get result type
+        /**
+         * @brief Get result type
+         * 
+         * @return Result type
+         */
+        RESULT_TYPE getResultType();
+
+        // get result
+        /**
+         * @brief Get result
+         * 
+         * @return Result
+         */
+        std::shared_ptr<DAGNode> getResult();
+
+        // check sat
+        /**
+         * @brief Check satisfiability
+         * 
+         * @return True if satisfiable, false otherwise
+         */
+        RESULT_TYPE checkSat();
+
+        // get model
+        /**
+         * @brief Get model
+         * 
+         * @return Model
+         */
+        std::shared_ptr<Model> getModel();
+
+
         // mk oper 
         /**
          * @brief Create an operation
@@ -508,6 +553,25 @@ namespace SMTParser{
          * @return Sort declaration node
          */
         std::shared_ptr<Sort> mkSortDec(const std::string &name, const size_t &arity);
+
+        
+        // declare var
+        /**
+         * @brief Declare a variable
+         * 
+         * @param name Variable name
+         * @param sort Sort
+         */
+        std::shared_ptr<DAGNode> declareVar(const std::string &name, const std::string &sort);
+
+        /**
+         * @brief Declare a variable
+         * 
+         * @param name Variable name
+         * @param sort Sort
+         */
+        std::shared_ptr<DAGNode> declareVar(const std::string &name, const std::shared_ptr<Sort> &sort);
+
         // mk true/false
         /**
          * @brief Create a true node
