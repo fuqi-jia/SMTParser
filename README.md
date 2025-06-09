@@ -273,7 +273,7 @@ int main() {
 When building applications that use SMTParser, link against the library and its dependencies:
 
 ```bash
-g++ -std=c++17 -o application main.cpp -lsmtlibparser -lgmp
+g++ -std=c++17 -o application main.cpp -lsmtparser -lgmp
 ```
 
 ### Complete Project Example

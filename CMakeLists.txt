@@ -14,6 +14,14 @@ endif()
 option(BUILD_SHARED_LIBS "Build shared libraries (.so/.dll)" OFF)
 option(BUILD_BOTH_LIBS "Build both static and shared libraries" ON)
 option(BUILD_TESTS "Build the tests" OFF)
+option(ENABLE_DEBUG_SYMBOLS "Enable debug symbols for GDB support" OFF)
+
+# 如果启用了调试符号支持
+if(ENABLE_DEBUG_SYMBOLS)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O0")
+    message(STATUS "Debug symbols enabled for GDB support")
+endif()
 
 # find dependencies
 find_package(Boost REQUIRED COMPONENTS system)
@@ -55,14 +63,19 @@ file(GLOB_RECURSE HEADERS "include/*.h")
 # create library
 if(BUILD_BOTH_LIBS)
     # create static library
-    add_library(smtlib_parser_static STATIC ${SOURCES} ${HEADERS})
-    set_target_properties(smtlib_parser_static PROPERTIES 
-        OUTPUT_NAME smtlib_parser
+    add_library(smtparser_static STATIC ${SOURCES} ${HEADERS})
+    set_target_properties(smtparser_static PROPERTIES 
+        OUTPUT_NAME smtparser
         POSITION_INDEPENDENT_CODE ON
     )
     
+    # 如果启用了调试符号支持，为静态库添加调试标志
+    if(ENABLE_DEBUG_SYMBOLS)
+        target_compile_options(smtparser_static PRIVATE -g -O0)
+    endif()
+    
     # set static library include directories
-    target_include_directories(smtlib_parser_static PUBLIC 
+    target_include_directories(smtparser_static PUBLIC 
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${Boost_INCLUDE_DIRS}
         ${GMP_INCLUDE_DIRS}
@@ -70,22 +83,27 @@ if(BUILD_BOTH_LIBS)
     )
     
     # link static library dependencies
-    target_link_libraries(smtlib_parser_static PUBLIC
+    target_link_libraries(smtparser_static PUBLIC
         Boost::system
         ${GMP_LIBRARIES}
         ${MPFR_LIBRARIES}
     )
     
     # create shared library
-    add_library(smtlib_parser_shared SHARED ${SOURCES} ${HEADERS})
-    set_target_properties(smtlib_parser_shared PROPERTIES 
-        OUTPUT_NAME smtlib_parser
+    add_library(smtparser_shared SHARED ${SOURCES} ${HEADERS})
+    set_target_properties(smtparser_shared PROPERTIES 
+        OUTPUT_NAME smtparser
         VERSION ${PROJECT_VERSION}
         SOVERSION ${PROJECT_VERSION_MAJOR}
     )
     
+    # 如果启用了调试符号支持，为共享库添加调试标志
+    if(ENABLE_DEBUG_SYMBOLS)
+        target_compile_options(smtparser_shared PRIVATE -g -O0)
+    endif()
+    
     # set shared library include directories
-    target_include_directories(smtlib_parser_shared PUBLIC 
+    target_include_directories(smtparser_shared PUBLIC 
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${Boost_INCLUDE_DIRS}
         ${GMP_INCLUDE_DIRS}
@@ -93,27 +111,32 @@ if(BUILD_BOTH_LIBS)
     )
     
     # link shared library dependencies
-    target_link_libraries(smtlib_parser_shared PUBLIC
+    target_link_libraries(smtparser_shared PUBLIC
         Boost::system
         ${GMP_LIBRARIES}
         ${MPFR_LIBRARIES}
     )
     
     # create alias target for compatibility
-    add_library(smtlib_parser ALIAS smtlib_parser_static)
+    add_library(smtparser ALIAS smtparser_static)
     
     # install configuration
-    install(TARGETS smtlib_parser_static smtlib_parser_shared
+    install(TARGETS smtparser_static smtparser_shared
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
         RUNTIME DESTINATION bin
     )
 else()
     # create single library (static or shared, depending on BUILD_SHARED_LIBS)
-    add_library(smtlib_parser ${SOURCES} ${HEADERS})
+    add_library(smtparser ${SOURCES} ${HEADERS})
+    
+    # 如果启用了调试符号支持，为库添加调试标志
+    if(ENABLE_DEBUG_SYMBOLS)
+        target_compile_options(smtparser PRIVATE -g -O0)
+    endif()
     
     # set library include directories
-    target_include_directories(smtlib_parser PUBLIC 
+    target_include_directories(smtparser PUBLIC 
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${Boost_INCLUDE_DIRS}
         ${GMP_INCLUDE_DIRS}
@@ -121,14 +144,14 @@ else()
     )
     
     # link library dependencies
-    target_link_libraries(smtlib_parser PUBLIC
+    target_link_libraries(smtparser PUBLIC
         Boost::system
         ${GMP_LIBRARIES}
         ${MPFR_LIBRARIES}
     )
     
     # install configuration
-    install(TARGETS smtlib_parser
+    install(TARGETS smtparser
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
         RUNTIME DESTINATION bin
@@ -136,7 +159,7 @@ else()
 endif()
 
 # install header files
-install(DIRECTORY include/ DESTINATION include/smtlib_parser)
+install(DIRECTORY include/ DESTINATION include/smtparser)
 
 # if needed, add test subdirectory
 if(BUILD_TESTS)

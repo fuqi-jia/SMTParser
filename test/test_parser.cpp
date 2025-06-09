@@ -3,7 +3,7 @@
 #include "../include/parser.h"
 
 int main() {
-    std::cout << "======= SMTLIBParser Test Program =======" << std::endl;
+    std::cout << "======= SMTParser Test Program =======" << std::endl;
     
     // Test boolean value parsing
     std::cout << "\n--- Testing Boolean Value Parsing ---" << std::endl;

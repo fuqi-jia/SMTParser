@@ -141,19 +141,25 @@ HighPrecisionReal::HighPrecisionReal(const float& f, mpfr_prec_t precision) {
 }
 
 HighPrecisionReal::HighPrecisionReal(const std::string& s, mpfr_prec_t precision) {
-    mpfr_init2(value, precision);
-    if (mpfr_set_str(value, s.c_str(), 10, MPFR_RNDN) != 0) {
-        mpfr_clear(value);
+    mpfr_t temp;
+    mpfr_init2(temp, precision);
+    if (mpfr_set_str(temp, s.c_str(), 10, MPFR_RNDN) != 0) {
+        mpfr_clear(temp);
         throw std::invalid_argument("Cannot convert string to high precision real number");
     }
+    mpfr_set(value, temp, MPFR_RNDN);
+    mpfr_clear(temp);
 }
 
 HighPrecisionReal::HighPrecisionReal(const char* s, mpfr_prec_t precision) {
-    mpfr_init2(value, precision);
-    if (mpfr_set_str(value, s, 10, MPFR_RNDN) != 0) {
-        mpfr_clear(value);
+    mpfr_t temp;
+    mpfr_init2(temp, precision);
+    if (mpfr_set_str(temp, s, 10, MPFR_RNDN) != 0) {
+        mpfr_clear(temp);
         throw std::invalid_argument("Cannot convert string to high precision real number");
     }
+    mpfr_set(value, temp, MPFR_RNDN);
+    mpfr_clear(temp);
 }
 
 HighPrecisionReal::HighPrecisionReal(const mpfr_t& t, mpfr_prec_t precision) {
