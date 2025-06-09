@@ -321,7 +321,7 @@ namespace SMTParser{
 
 		err_unexp_eof();
 
-		return NULL;
+		return "";
 	}
 
 	void Parser::scanToNextSymbol() {
