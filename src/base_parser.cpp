@@ -505,6 +505,18 @@ namespace SMTParser{
 		assertions.emplace_back(node);
 		return true;
 	}
+
+	std::shared_ptr<DAGNode> Parser::mkExpr(const std::string& expression) {
+		buffer = strdup(expression.c_str());
+		buflen = expression.length();
+		bufptr = buffer;
+		if (buflen > 0) line_number = 1;
+		scanToNextSymbol();
+		std::shared_ptr<DAGNode> expr = parseExpr();
+		bufptr = nullptr;
+		free(buffer);
+		return expr;
+	}
 	
 
 	KEYWORD Parser::parseKeyword(){
