@@ -134,12 +134,42 @@ git submodule update --init --recursive
 git submodule update --remote --merge
 ```
 
+### Build TEST
+
+To build and run the tests:
+
+```bash
+# Create and enter build directory
+mkdir -p build && cd build
+
+# Configure with tests enabled
+cmake .. -DBUILD_TESTS=ON
+
+# Build the project and tests
+make -j$(nproc)
+
+# Run all tests
+cd test
+for test in test_*; do ./$test; done
+
+# Alternatively, run individual tests
+./test_parser
+./test_string_handling
+```
+
+You can also use the provided test script from the project root:
+
+```bash
+./test/run_tests.sh
+```
+
 ### Build Configuration Options
 
 | Option | Description | Default |
 |--------|-------------|---------|
 | `BUILD_SHARED_LIBS` | Build shared libraries (.so/.dll) | OFF |
 | `BUILD_BOTH_LIBS` | Build both static (.a/.lib) and shared libraries | ON |
+| `BUILD_TESTS` | Build test executables | ON |
 
 To customize the build configuration:
 

@@ -5,190 +5,140 @@ project(SMTParser VERSION 1.0.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# add option: BUILD_SHARED_LIBS
-option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
-# add option: BUILD_BOTH_LIBS
+# set build type
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+
+# add options
+option(BUILD_SHARED_LIBS "Build shared libraries (.so/.dll)" OFF)
 option(BUILD_BOTH_LIBS "Build both static and shared libraries" ON)
+option(BUILD_TESTS "Build the tests" ON)
 
 # find dependencies
 find_package(Boost REQUIRED COMPONENTS system)
 
-# find GMP library
+# use pkg-config to find GMP and MPFR
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GMP REQUIRED gmp)
-
-if(NOT GMP_FOUND)
-    # if pkg-config not found, try using environment variable
-    if(DEFINED ENV{GMP_DIR})
-        set(GMP_INCLUDE_DIRS $ENV{GMP_DIR}/include)
-        set(GMP_LIBRARY_DIRS $ENV{GMP_DIR}/lib)
-        set(GMP_LIBRARIES gmp)
-        set(GMP_FOUND TRUE)
-    else()
-        message(FATAL_ERROR "GMP library not found. Please install GMP and either:\n"
-                          "1. Install pkg-config and ensure GMP is properly installed\n"
-                          "2. Set GMP_DIR environment variable to point to GMP installation directory")
-    endif()
-endif()
-
-# find MPFR library
 pkg_check_modules(MPFR REQUIRED mpfr)
 
-if(NOT MPFR_FOUND)
-    # if pkg-config not found, try using environment variable
-    if(DEFINED ENV{MPFR_DIR})
-        set(MPFR_INCLUDE_DIRS $ENV{MPFR_DIR}/include)
-        set(MPFR_LIBRARY_DIRS $ENV{MPFR_DIR}/lib)
-        set(MPFR_LIBRARIES mpfr)
-        set(MPFR_FOUND TRUE)
+# if pkg-config doesn't find the libraries, try manually finding them
+if(NOT GMP_FOUND)
+    # try searching for library files directly
+    find_library(GMP_LIBRARIES NAMES gmp libgmp)
+    find_path(GMP_INCLUDE_DIRS NAMES gmp.h)
+    if(GMP_LIBRARIES AND GMP_INCLUDE_DIRS)
+        set(GMP_FOUND TRUE)
     else()
-        message(FATAL_ERROR "MPFR library not found. Please install MPFR and either:\n"
-                          "1. Install pkg-config and ensure MPFR is properly installed\n"
-                          "2. Set MPFR_DIR environment variable to point to MPFR installation directory")
+        message(FATAL_ERROR "GMP library not found. Please install GMP development package.")
     endif()
 endif()
 
-# set library name
-set(LIB_NAME "smtparser")
+if(NOT MPFR_FOUND)
+    # try searching for library files directly
+    find_library(MPFR_LIBRARIES NAMES mpfr libmpfr)
+    find_path(MPFR_INCLUDE_DIRS NAMES mpfr.h)
+    if(MPFR_LIBRARIES AND MPFR_INCLUDE_DIRS)
+        set(MPFR_FOUND TRUE)
+    else()
+        message(FATAL_ERROR "MPFR library not found. Please install MPFR development package.")
+    endif()
+endif()
 
-# add source files
-set(SOURCES
-    src/base_parser.cpp
-    src/eval_parser.cpp
-    src/op_parser.cpp
-    src/opt_parser.cpp
-    src/simp_parser.cpp
-    src/conv_parser.cpp
-    src/dag.cpp
-    src/util.cpp
-    src/objective.cpp
-    src/kind.cpp
-    src/sort.cpp
-    src/model.cpp
-    src/number.cpp
-    src/interval.cpp
-    src/value.cpp
-)
+# collect all source files, excluding test directory
+file(GLOB_RECURSE SOURCES "src/*.cpp")
 
-# define public headers
-set(PUBLIC_HEADERS
-    include/parser.h
-    include/dag.h
-    include/util.h
-    include/objective.h
-    include/kind.h
-    include/sort.h
-    include/options.h
-    include/model.h
-    include/number.h
-    include/interval.h
-    include/value.h
-)
-
-# create include directory
-file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include)
-
-# copy headers to build directory
-foreach(header ${PUBLIC_HEADERS})
-    file(COPY ${header} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/include)
-endforeach()
-
-# add header file directories
-set(INCLUDE_DIRS
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_BINARY_DIR}/include
-    ${Boost_INCLUDE_DIRS}
-    ${GMP_INCLUDE_DIRS}
-    ${MPFR_INCLUDE_DIRS}
-)
+# collect all header files
+file(GLOB_RECURSE HEADERS "include/*.h")
 
 # create library
 if(BUILD_BOTH_LIBS)
     # create static library
-    add_library(${LIB_NAME}_static STATIC ${SOURCES})
-    set_target_properties(${LIB_NAME}_static PROPERTIES 
-        OUTPUT_NAME ${LIB_NAME}
-        VERSION ${PROJECT_VERSION}
-        PUBLIC_HEADER "${PUBLIC_HEADERS}"
-        CXX_VISIBILITY_PRESET hidden
-        VISIBILITY_INLINES_HIDDEN YES
+    add_library(smtlib_parser_static STATIC ${SOURCES} ${HEADERS})
+    set_target_properties(smtlib_parser_static PROPERTIES 
+        OUTPUT_NAME smtlib_parser
+        POSITION_INDEPENDENT_CODE ON
     )
-    target_include_directories(${LIB_NAME}_static PUBLIC ${INCLUDE_DIRS})
-    target_link_libraries(${LIB_NAME}_static PUBLIC ${Boost_LIBRARIES} ${GMP_LIBRARIES} ${MPFR_LIBRARIES})
-
-    # create dynamic library
-    add_library(${LIB_NAME}_shared SHARED ${SOURCES})
-    set_target_properties(${LIB_NAME}_shared PROPERTIES 
-        OUTPUT_NAME ${LIB_NAME}
+    
+    # set static library include directories
+    target_include_directories(smtlib_parser_static PUBLIC 
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${Boost_INCLUDE_DIRS}
+        ${GMP_INCLUDE_DIRS}
+        ${MPFR_INCLUDE_DIRS}
+    )
+    
+    # link static library dependencies
+    target_link_libraries(smtlib_parser_static PUBLIC
+        Boost::system
+        ${GMP_LIBRARIES}
+        ${MPFR_LIBRARIES}
+    )
+    
+    # create shared library
+    add_library(smtlib_parser_shared SHARED ${SOURCES} ${HEADERS})
+    set_target_properties(smtlib_parser_shared PROPERTIES 
+        OUTPUT_NAME smtlib_parser
         VERSION ${PROJECT_VERSION}
         SOVERSION ${PROJECT_VERSION_MAJOR}
-        PUBLIC_HEADER "${PUBLIC_HEADERS}"
-        CXX_VISIBILITY_PRESET hidden
-        VISIBILITY_INLINES_HIDDEN YES
     )
-    target_include_directories(${LIB_NAME}_shared PUBLIC ${INCLUDE_DIRS})
-    target_link_libraries(${LIB_NAME}_shared PUBLIC ${Boost_LIBRARIES} ${GMP_LIBRARIES} ${MPFR_LIBRARIES})
-
-    # add compile options
-    if(MSVC)
-        target_compile_options(${LIB_NAME}_static PRIVATE /W4)
-        target_compile_options(${LIB_NAME}_shared PRIVATE /W4)
-    else()
-        target_compile_options(${LIB_NAME}_static PRIVATE -Wall -Wextra -Wpedantic)
-        target_compile_options(${LIB_NAME}_shared PRIVATE -Wall -Wextra -Wpedantic)
-    endif()
-
-    # install rules
-    install(TARGETS ${LIB_NAME}_static ${LIB_NAME}_shared
-        LIBRARY DESTINATION lib
+    
+    # set shared library include directories
+    target_include_directories(smtlib_parser_shared PUBLIC 
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${Boost_INCLUDE_DIRS}
+        ${GMP_INCLUDE_DIRS}
+        ${MPFR_INCLUDE_DIRS}
+    )
+    
+    # link shared library dependencies
+    target_link_libraries(smtlib_parser_shared PUBLIC
+        Boost::system
+        ${GMP_LIBRARIES}
+        ${MPFR_LIBRARIES}
+    )
+    
+    # create alias target for compatibility
+    add_library(smtlib_parser ALIAS smtlib_parser_static)
+    
+    # install configuration
+    install(TARGETS smtlib_parser_static smtlib_parser_shared
         ARCHIVE DESTINATION lib
+        LIBRARY DESTINATION lib
         RUNTIME DESTINATION bin
-        PUBLIC_HEADER DESTINATION include
     )
 else()
-    # create single library (static or dynamic depending on BUILD_SHARED_LIBS option)
-    add_library(${LIB_NAME} ${SOURCES})
-
-    # set library properties
-    set_target_properties(${LIB_NAME} PROPERTIES
-        VERSION ${PROJECT_VERSION}
-        SOVERSION ${PROJECT_VERSION_MAJOR}
-        PUBLIC_HEADER "${PUBLIC_HEADERS}"
-        CXX_VISIBILITY_PRESET hidden
-        VISIBILITY_INLINES_HIDDEN YES
+    # create single library (static or shared, depending on BUILD_SHARED_LIBS)
+    add_library(smtlib_parser ${SOURCES} ${HEADERS})
+    
+    # set library include directories
+    target_include_directories(smtlib_parser PUBLIC 
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${Boost_INCLUDE_DIRS}
+        ${GMP_INCLUDE_DIRS}
+        ${MPFR_INCLUDE_DIRS}
     )
-
-    # set include directories
-    target_include_directories(${LIB_NAME}
-        PUBLIC
-            ${INCLUDE_DIRS}
+    
+    # link library dependencies
+    target_link_libraries(smtlib_parser PUBLIC
+        Boost::system
+        ${GMP_LIBRARIES}
+        ${MPFR_LIBRARIES}
     )
-
-    # link dependencies
-    target_link_libraries(${LIB_NAME}
-        PUBLIC
-            ${Boost_LIBRARIES}
-            ${GMP_LIBRARIES}
-            ${MPFR_LIBRARIES}
-    )
-
-    # install rules
-    install(TARGETS ${LIB_NAME}
-        LIBRARY DESTINATION lib
+    
+    # install configuration
+    install(TARGETS smtlib_parser
         ARCHIVE DESTINATION lib
+        LIBRARY DESTINATION lib
         RUNTIME DESTINATION bin
-        PUBLIC_HEADER DESTINATION include
     )
-
-    # add compile options
-    if(MSVC)
-        target_compile_options(${LIB_NAME} PRIVATE /W4)
-    else()
-        target_compile_options(${LIB_NAME} PRIVATE -Wall -Wextra -Wpedantic)
-    endif()
 endif()
 
-# set output directories
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib) 
+# install header files
+install(DIRECTORY include/ DESTINATION include/smtlib_parser)
+
+# if needed, add test subdirectory
+if(BUILD_TESTS)
+    add_subdirectory(test)
+endif() 
