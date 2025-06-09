@@ -813,8 +813,6 @@ namespace SMTParser{
         cassert(bv1[0] == '#' && bv1[1] == 'b', "bvComp: invalid bitvector");
         cassert(bv2[0] == '#' && bv2[1] == 'b', "bvComp: invalid bitvector");
         switch(kind){
-            case NODE_KIND::NT_BV_COMP:
-                return bv1 == bv2;
             case NODE_KIND::NT_EQ_OTHER:
                 return bv1 == bv2;
             case NODE_KIND::NT_DISTINCT_OTHER:
@@ -840,13 +838,13 @@ namespace SMTParser{
         }
     }
 
-    std::string bvToNat(const std::string& bv){
+    Integer bvToNat(const std::string& bv){
         cassert(bv[0] == '#' && bv[1] == 'b', "bvToNat: invalid bitvector");
         Integer res = 0;
         for(size_t i = 2; i < bv.size(); i++){
             res = res * 2 + (bv[i] == '1' ? 1 : 0);
         }
-        return res.toString();
+        return res;
     }
     std::string natToBv(const Integer& i, const Integer& n){
         std::string res = "#b";
@@ -967,21 +965,21 @@ namespace SMTParser{
             return natToBv(Integer(i), n);
         }
     }
-    std::string bvToInt(const std::string& bv){
+    Integer bvToInt(const std::string& bv){
         cassert(bv[0] == '#' && bv[1] == 'b', "bvToInt: invalid bitvector");
         if(bv[2] == '0'){
             Integer res = 0;
             for(size_t i = 3; i < bv.size(); i++){
                 res = res * 2 + (bv[i] == '1' ? 1 : 0);
             }
-            return res.toString();
+            return res;
         }
         else{
             Integer res = -1;
             for(size_t i = 3; i < bv.size(); i++){
                 res = res * 2 + (bv[i] == '0' ? 1 : 0);
             }
-            return res.toString();
+            return res;
         }
     }
     std::string intToBv(const Integer& i, const Integer& n){

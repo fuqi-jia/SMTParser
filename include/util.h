@@ -65,10 +65,10 @@ namespace SMTParser{
 
     Integer factorial(const Integer& n);
 
-    std::string bvToNat(const std::string& bv);
+    Integer bvToNat(const std::string& bv);
     std::string natToBv(const Integer& i, const Integer& n);
     std::string natToBv(const std::string& i, const Integer& n);
-    std::string bvToInt(const std::string& bv);
+    Integer bvToInt(const std::string& bv);
     std::string intToBv(const Integer& i, const Integer& n);
 
     std::string bvNot(const std::string& bv);
