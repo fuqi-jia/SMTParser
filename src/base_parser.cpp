@@ -2088,7 +2088,7 @@ namespace SMTParser{
 								let_key_map.erase(key);
 							}
 						}
-						return mkErr(ERROR_TYPE::ERR_MUL_DECL);
+						err_sym_mis("Duplicate variable binding: " + name, name_ln);
 					}
 					
 					// Parse the expression value (this won't trigger recursive let parsing)

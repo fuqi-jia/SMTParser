@@ -8,8 +8,8 @@ void test_bitvector_constants(SMTParser::ParserPtr& parser) {
     std::vector<std::string> expressions = {
         "#b1010",                     // 4-bit binary
         "#x1A",                       // hexadecimal (26 in decimal)
-        "((_ bv42 8))",              // 42 as an 8-bit bitvector
-        "((_ bv255 8))"              // 255 as an 8-bit bitvector
+        "(_ bv42 8)",              // 42 as an 8-bit bitvector
+        "(_ bv255 8)"              // 255 as an 8-bit bitvector
     };
     
     std::cout << "=== Testing Bitvector Constants ===" << std::endl;
