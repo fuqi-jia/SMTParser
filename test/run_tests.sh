@@ -74,25 +74,25 @@ fi
 FAILED_TESTS=0
 for test in $TEST_EXES; do
     echo -e "${YELLOW}Running $test...${NC}"
-    # 将输出保存到临时文件
+    # save the output to a temporary file
     OUTPUT=$(mktemp)
     $test > $OUTPUT 2>&1
     EXIT_CODE=$?
     
-    # 检查退出状态和输出中是否包含error:
+    # check the exit status and if the output contains "error:"
     if [ $EXIT_CODE -eq 0 ] && ! grep -q "error:" $OUTPUT; then
         echo -e "${GREEN}$test passed!${NC}"
     else
         echo -e "${RED}$test failed!${NC}"
-        # 如果包含error:，输出错误信息
+        # if the output contains "error:", output the error information
         if grep -q "error:" $OUTPUT; then
-            echo -e "${RED}发现错误信息:${NC}"
+            echo -e "${RED}Found error information:${NC}"
             grep "error:" $OUTPUT
         fi
         FAILED_TESTS=$((FAILED_TESTS+1))
     fi
     
-    # 清理临时文件
+    # clean up the temporary file
     rm $OUTPUT
     echo ""
 done
