@@ -38,6 +38,7 @@ namespace SMTParser{
 		line_number = 0;
 		scan_mode = SCAN_MODE::SM_COMMON;
 		temp_var_counter = 0;
+		parsing_file = false;
 
 		node_list.emplace_back(FALSE_NODE);
 		node_list.emplace_back(TRUE_NODE);
@@ -72,6 +73,7 @@ namespace SMTParser{
 		line_number = 0;
 		scan_mode = SCAN_MODE::SM_COMMON;
 		temp_var_counter = 0;
+		parsing_file = true;
 
 		node_list.emplace_back(FALSE_NODE);
 		node_list.emplace_back(TRUE_NODE);
@@ -319,7 +321,15 @@ namespace SMTParser{
 			bufptr++;
 		}
 
-		err_unexp_eof();
+		if(parsing_file){
+			err_unexp_eof();
+		}
+		else{
+			std::string tmp_s(beg, bufptr - beg);
+			// skip space
+			scanToNextSymbol();
+			return tmp_s;
+		}
 
 		return "";
 	}
@@ -455,6 +465,7 @@ namespace SMTParser{
 		/*
 		parse command
 		*/
+		parsing_file = true;
 		bufptr = buffer;
 		if (buflen > 0) line_number = 1;
 
@@ -500,6 +511,7 @@ namespace SMTParser{
 	}
 
 	bool Parser::assert(const std::string& constraint) {
+		parsing_file = false;
 		std::shared_ptr<DAGNode> expr = mkExpr(constraint);
 		assertions.emplace_back(expr);
 		return true;
@@ -511,6 +523,7 @@ namespace SMTParser{
 	}
 
 	std::shared_ptr<DAGNode> Parser::mkExpr(const std::string& expression) {
+		parsing_file = false;
 		if (expression.empty()) {
 			return mkErr(ERROR_TYPE::ERR_UNEXP_EOF);
 		}

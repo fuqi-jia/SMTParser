@@ -108,6 +108,8 @@ namespace SMTParser{
         size_t 	                                line_number;
         SCAN_MODE 		                        scan_mode;
 
+        bool                                    parsing_file = true;
+
         boost::unordered_map<std::string, std::shared_ptr<DAGNode>> 
                                                 let_key_map; // local variables, no need to hash store
         boost::unordered_map<std::string, std::shared_ptr<DAGNode>> 
