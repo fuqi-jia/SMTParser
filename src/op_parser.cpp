@@ -3632,13 +3632,13 @@ namespace SMTParser{
     }
     // STRINGS RE CONSTANTS
     std::shared_ptr<DAGNode> Parser::mkRegNone(){
-        return mkConstReg("^$");
+        return mkConstReg("re.none");
     }
     std::shared_ptr<DAGNode> Parser::mkRegAll(){
-        return mkConstReg("[\\s\\S]*");
+        return mkConstReg("re.all");
     }
     std::shared_ptr<DAGNode> Parser::mkRegAllChar(){
-        return mkConstReg("[\\s]*");
+        return mkConstReg("re.allchar");
     }
     // STRINGS RE COMMON OPERATORS
     /*
