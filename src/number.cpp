@@ -141,7 +141,7 @@ HighPrecisionReal::HighPrecisionReal(const float& f, mpfr_prec_t precision) {
 }
 
 HighPrecisionReal::HighPrecisionReal(const std::string& s, mpfr_prec_t precision) {
-    mpfr_init2(value, precision);  // 初始化value
+    mpfr_init2(value, precision);  // Initialize value
     
     if (mpfr_set_str(value, s.c_str(), 10, MPFR_RNDN) != 0) {
         mpfr_clear(value);
@@ -150,7 +150,7 @@ HighPrecisionReal::HighPrecisionReal(const std::string& s, mpfr_prec_t precision
 }
 
 HighPrecisionReal::HighPrecisionReal(const char* s, mpfr_prec_t precision) {
-    mpfr_init2(value, precision);  // 初始化value
+    mpfr_init2(value, precision);  // Initialize value
     
     if (mpfr_set_str(value, s, 10, MPFR_RNDN) != 0) {
         mpfr_clear(value);
@@ -544,44 +544,12 @@ HighPrecisionReal HighPrecisionReal::acsch() const {
 
 // Conversion functions
 std::string HighPrecisionReal::toString() const {
-    mp_exp_t exponent;
-    char* str = mpfr_get_str(nullptr, &exponent, 10, 0, value, MPFR_RNDN);
-    std::string result;
-    
-    // Handle sign
-    if (str[0] == '-') {
-        result = "-";
-        memmove(str, str + 1, strlen(str));
-    }
-    
-    // Format number representation
-    if (exponent <= 0) {
-        result += "0.";
-        for (int i = 0; i < -exponent; i++) {
-            result += "0";
-        }
-        result += str;
-    } else if (exponent < static_cast<mp_exp_t>(strlen(str))) {
-        result.append(str, exponent);
-        result += ".";
-        result.append(str + exponent);
-    } else {
-        result += str;
-        for (mp_exp_t i = strlen(str); i < exponent; i++) {
-            result += "0";
-        }
-    }
-    
-    mpfr_free_str(str);
-
-    // 1.20000000000000000000000000000000000000 -> 1.2
-    size_t pos = result.find_last_not_of('0');
-    if(pos != std::string::npos){
-        if(result[pos] == '.'){
-            result = result.substr(0, pos);
-        }
-    }
-    return result;
+    char *buf = nullptr;
+    // Shortest decimal, no extra 0, no rounding error
+    mpfr_asprintf(&buf, "%RNg", value);
+    std::string s(buf);
+    mpfr_free_str(buf);          // Symmetric release
+    return s;
 }
 
 double HighPrecisionReal::toDouble() const {

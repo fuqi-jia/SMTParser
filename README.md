@@ -170,7 +170,7 @@ You can also use the provided test script from the project root:
 | `BUILD_SHARED_LIBS` | Build shared libraries (.so/.dll) | OFF |
 | `BUILD_BOTH_LIBS` | Build both static (.a/.lib) and shared libraries | ON |
 | `BUILD_TESTS` | Build test executables | OFF |
-| `ENABLE_DEBUG_SYMBOLS` | 
+| `ENABLE_DEBUG_SYMBOLS` | Enable debug symbols in the build for debugging purposes | OFF |
 
 To customize the build configuration:
 
