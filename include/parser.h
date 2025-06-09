@@ -3474,7 +3474,7 @@ namespace SMTParser{
         std::shared_ptr<DAGNode>		        parseLet();
         std::string                             parseGroup();
         std::string                             parseWeight();
-        void                                    parseQuant(const std::string& type);
+        std::shared_ptr<DAGNode>                parseQuant(const std::string& type);
         
         // parse optimization
         // single_opt = (maximize <expr> [:comp <symbol>] [:epsilon <symbol>] [:M <symbol>] [:id <symbol>]) 

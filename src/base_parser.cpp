@@ -1120,9 +1120,15 @@ namespace SMTParser{
 		else{
 			// (<identifier> <expr>+)
 			std::string s = getSymbol();
-
+			std::cout << "s: " << s << std::endl;
+			if(s == "exists"){
+				expr = parseQuant("exists");
+			}
+			else if(s == "forall"){
+				expr = parseQuant("forall");
+			}
 			//parse identifier and get params
-			if(s == "_"){
+			else if(s == "_"){
 				// ( _ <identifier> <expr>+)
 				//     ^
 				std::string s = getSymbol();
@@ -2310,7 +2316,7 @@ namespace SMTParser{
 			return var;
 		}
 	}
-	void Parser::parseQuant(const std::string& type){
+	std::shared_ptr<DAGNode> Parser::parseQuant(const std::string& type){
 		// (quantifier ((<identifier> <sort>)+） <expr>)
 		//             ^
 		parseLpar();
@@ -2331,14 +2337,15 @@ namespace SMTParser{
 		std::shared_ptr<DAGNode> body = parseExpr();
 		params.insert(params.begin(), body);
 		if (type == "forall") {
-			mkForall(params);
+			return mkForall(params);
 		}
 		else if (type == "exists") {
-			mkExists(params);
+			return mkExists(params);
 		}
 		else{
 			cassert(false, "Invalid quantifier");
 		}
+		return mkErr(ERROR_TYPE::ERR_UNKWN_SYM);
 	}
 
 	std::shared_ptr<DAGNode> Parser::mkForall(const std::vector<std::shared_ptr<DAGNode>> &params){

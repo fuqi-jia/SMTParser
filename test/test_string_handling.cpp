@@ -10,13 +10,14 @@ void test_string_lengths(SMTParser::ParserPtr& parser) {
         "true",
         "false",
         "a_very_long_identifier_name_to_test_buffer_handling",
+        "(and (or true false) (not true))",
         std::string(1000, 'a') // String of 1000 'a' characters
     };
     
     for (const auto& str : test_strings) {
         std::cout << "Testing string length: " << str.length() << std::endl;
         try {
-            std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(str);
+            std::shared_ptr<SMTParser::DAGNode> result = parser->mkConstStr(str);
             std::cout << "  Result: " << (result->isErr() ? "Error" : parser->toString(result)) << std::endl;
         } catch (const std::exception& e) {
             std::cout << "  Exception: " << e.what() << std::endl;
