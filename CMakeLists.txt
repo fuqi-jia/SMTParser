@@ -13,7 +13,7 @@ endif()
 # add options
 option(BUILD_SHARED_LIBS "Build shared libraries (.so/.dll)" OFF)
 option(BUILD_BOTH_LIBS "Build both static and shared libraries" ON)
-option(BUILD_TESTS "Build the tests" ON)
+option(BUILD_TESTS "Build the tests" OFF)
 
 # find dependencies
 find_package(Boost REQUIRED COMPONENTS system)
