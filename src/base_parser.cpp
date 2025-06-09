@@ -472,8 +472,18 @@ namespace SMTParser{
 		return true;
 	}
 
+	char* safe_strdup(const std::string& str) {
+		if (str.empty()) return nullptr;
+		
+		char* new_str = new (std::nothrow) char[str.length() + 1];
+		if (!new_str) return nullptr;
+		
+		std::memcpy(new_str, str.c_str(), str.length() + 1);
+		return new_str;
+	}
+
 	bool Parser::parseStr(const std::string& constraint) {
-		buffer = strdup(constraint.c_str());
+		buffer = safe_strdup(constraint);
 		buflen = constraint.length();
 		bufptr = buffer;
 		if (buflen > 0) line_number = 1;
@@ -484,7 +494,7 @@ namespace SMTParser{
 			parseRpar();
 		}
 		bufptr = nullptr;
-		free(buffer);
+		delete[] buffer;
 		buffer = nullptr;
 		return true;
 	}
@@ -505,7 +515,7 @@ namespace SMTParser{
 			return mkErr(ERROR_TYPE::ERR_UNEXP_EOF);
 		}
 		
-		buffer = strdup(expression.c_str());
+		buffer = safe_strdup(expression);  // 直接传入std::string
 		if (!buffer) {
 			return mkErr(ERROR_TYPE::ERR_UNEXP_EOF);
 		}
@@ -515,8 +525,9 @@ namespace SMTParser{
 		if (buflen > 0) line_number = 1;
 		scanToNextSymbol();
 		std::shared_ptr<DAGNode> expr = parseExpr();
+		
 		bufptr = nullptr;
-		free(buffer);
+		delete[] buffer;
 		buffer = nullptr;
 		return expr;
 	}
