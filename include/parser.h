@@ -3187,6 +3187,23 @@ namespace SMTParser{
          */
         std::shared_ptr<DAGNode>                toCNF(std::vector<std::shared_ptr<DAGNode>> exprs);
 
+
+        /**
+         * @brief Check if an expression is in CNF
+         * 
+         * @param expr Expression to check
+         * @return true if the expression is in CNF, false otherwise
+         */
+        bool                                    isCNF(std::shared_ptr<DAGNode> expr);
+
+        /**
+         * @brief Check if a vector of expressions is in CNF
+         * 
+         * @param exprs Expressions to check
+         * @return true if the expressions are in CNF, false otherwise
+         */
+        bool                                    isCNF(std::vector<std::shared_ptr<DAGNode>> exprs);
+
         /**
          * @brief Get the original atom from the CNF atom
          * 
@@ -3272,6 +3289,31 @@ namespace SMTParser{
          * @return Expressions in NNF
          */
         std::shared_ptr<DAGNode>                toNNF(std::vector<std::shared_ptr<DAGNode>> exprs);
+
+
+        /**
+         * @brief Eliminate top level and
+         * 
+         * @param exprs Expressions to eliminate top level and
+         * @return Expressions without top level and
+         */
+        bool                                    eliminateTopContinuousAnd(std::vector<std::shared_ptr<DAGNode>> exprs, std::vector<std::shared_ptr<DAGNode>>& new_exprs);
+
+        /**
+         * @brief Eliminate top level or
+         * 
+         * @param exprs Expressions to eliminate top level or
+         * @return Expressions without top level or
+         */
+        bool                                    eliminateContinuousOr(std::vector<std::shared_ptr<DAGNode>> exprs, std::vector<std::shared_ptr<DAGNode>>& new_exprs);
+
+        /**
+         * @brief Eliminate top level redandancy
+         * 
+         * @param exprs Expressions to eliminate top level redandancy (continuous and, continuous or)
+         * @return Expressions without top level redandancy
+         */
+        bool                                    eliminateTopRedandancy(std::vector<std::shared_ptr<DAGNode>> exprs, std::vector<std::shared_ptr<DAGNode>>& new_exprs);
 
         /**
          * @brief Normalize an expression

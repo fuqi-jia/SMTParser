@@ -579,22 +579,59 @@ namespace SMTParser {
         return expr;
     }
     
-    
+    bool Parser::isCNF(std::shared_ptr<DAGNode> expr){
+        if(expr->isAnd()){
+            return isCNF(expr->getChildren());
+        }
+        else if(expr->isOr()){
+            for(size_t i=0;i<expr->getChildrenSize();i++){
+                if(!expr->getChild(i)->isLiteral()){
+                    return false;
+                }
+            }
+            return true;
+        }
+        else if(expr->isLiteral()){
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
 
-    // convert a list of expressions to CNF (a large AND node, whose children are all OR clauses)
-    std::shared_ptr<DAGNode> Parser::toCNF(std::vector<std::shared_ptr<DAGNode>> exprs) {
-        // make a large AND node -> the same atom will use the same variable 
-        // assume exprs is a vector of assertions, so we can first collect all top atoms
+    bool Parser::isCNF(std::vector<std::shared_ptr<DAGNode>> exprs){
 
-        // rebuild the maps
-        cnf_atom_map.clear();
-        cnf_bool_var_map.clear();
-        cnf_map.clear();
+        // check whether it is already a CNF
+        bool is_cnf = true;
+        for(auto& expr : exprs){
+            if(expr->isOr()){
+                // a or b or not c or ...
+                for(size_t i=0;i<expr->getChildrenSize();i++){
+                    if(!expr->getChild(i)->isLiteral()){
+                        is_cnf = false;
+                        break;
+                    }
+                }
+            }
+            else if(expr->isLiteral()){
+                // a
+                continue;
+            }
+            else{
+                is_cnf = false;
+                break;
+            }
+        }
+        return is_cnf;
+    }
 
+    bool Parser::eliminateTopContinuousAnd(std::vector<std::shared_ptr<DAGNode>> exprs, std::vector<std::shared_ptr<DAGNode>>& new_exprs){
         // eliminate continuous and on the top level
+        bool is_changed = false;
         std::vector<std::shared_ptr<DAGNode>> eli_exprs;
         for(auto& expr : exprs){
             if(expr->isAnd()){
+                // if it is an and, eliminate the continuous and on the top level
                 std::stack<std::shared_ptr<DAGNode>> stack;
                 stack.push(expr);
                 while(!stack.empty()){
@@ -609,20 +646,132 @@ namespace SMTParser {
                         eli_exprs.push_back(current);
                     }
                 }
+                is_changed = true;
             }
-            else{
+            else{   
                 eli_exprs.emplace_back(expr);
             }
         }
-        exprs = eli_exprs;
+        new_exprs = eli_exprs;
+        return is_changed;
+    }
+
+    bool Parser::eliminateContinuousOr(std::vector<std::shared_ptr<DAGNode>> exprs, std::vector<std::shared_ptr<DAGNode>>& new_exprs){
+        // eliminate continuous or on the top level
+        bool is_changed = false;
+        std::vector<std::shared_ptr<DAGNode>> eli_exprs;
+        
+        for(auto& expr : exprs){
+            if(expr->isOr()){
+                // if it is an or, eliminate the continuous or on the top level
+                std::vector<std::shared_ptr<DAGNode>> or_children;
+                std::stack<std::shared_ptr<DAGNode>> stack;
+                
+                // push all children of the or to the stack
+                for(size_t i = 0; i < expr->getChildrenSize(); i++){
+                    stack.push(expr->getChild(i));
+                }
+                
+                // expand all nested ors
+                while(!stack.empty()){
+                    auto current = stack.top();
+                    stack.pop();
+                    
+                    if(current->isOr()){
+                        // if the child is also an or, continue expanding
+                        for(size_t i = 0; i < current->getChildrenSize(); i++){
+                            stack.push(current->getChild(i));
+                        }
+                        is_changed = true;
+                    } else {
+                        // not or, add to children list
+                        or_children.push_back(current);
+                    }
+                }
+                
+                // create a new or expression
+                if(is_changed){
+                    eli_exprs.emplace_back(mkOr(or_children));
+                }
+                else{
+                    eli_exprs.emplace_back(expr);
+                }
+            } else {
+                // not or, add to children list
+                eli_exprs.emplace_back(expr);
+            }
+        }
+        
+        new_exprs = eli_exprs;
+        return is_changed;
+    }
+
+    bool Parser::eliminateTopRedandancy(std::vector<std::shared_ptr<DAGNode>> exprs, std::vector<std::shared_ptr<DAGNode>>& new_exprs){
+        // eliminate continuous and and continuous or on the top level
+        bool is_changed = false;
+        while(true){
+            bool cur_is_changed = false;
+            std::vector<std::shared_ptr<DAGNode>> eli_exprs;
+            cur_is_changed = eliminateTopContinuousAnd(exprs, eli_exprs) || cur_is_changed;
+            exprs = eli_exprs;
+
+            eli_exprs.clear();
+            cur_is_changed = eliminateContinuousOr(exprs, eli_exprs) || cur_is_changed;
+            exprs = eli_exprs;
+
+            if(!cur_is_changed){
+                break;
+            }
+            cassert(cur_is_changed, "eliminateTopRedandancy: cur_is_changed is false");
+            is_changed = true;
+        }
+        new_exprs = exprs;
+        return is_changed;
+    }
+
+    // convert a list of expressions to CNF (a large AND node, whose children are all OR clauses)
+    std::shared_ptr<DAGNode> Parser::toCNF(std::vector<std::shared_ptr<DAGNode>> exprs) {
+        // make a large AND node -> the same atom will use the same variable 
+        // assume exprs is a vector of assertions, so we can first collect all top atoms
+
+        // rebuild the maps
+        cnf_atom_map.clear();
+        cnf_bool_var_map.clear();
+        cnf_map.clear();
+
+        std::vector<std::shared_ptr<DAGNode>> first_exprs;
+        // simply conversions first
+        for(auto& expr : exprs){
+            // expand let
+            if(expr->isLet()){
+                expr = expandLet(expr);
+            }
+            // convert to NNF first
+            expr = toNNF(expr);
+            first_exprs.emplace_back(expr);
+        }
+        exprs = first_exprs;
+
+        // eliminate top level redandancy
+        std::vector<std::shared_ptr<DAGNode>> new_exprs;
+        bool is_changed = eliminateTopRedandancy(exprs, new_exprs);
+        if(is_changed){
+            exprs = new_exprs;
+        }
+
+        // if it is already a CNF, return it directly
+        if(isCNF(exprs)){
+            return mkAnd(exprs);
+        }
 
         // create a new variable for each top atom
         boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> atom_map;
         // a new vector to store the new assertions
-        std::vector<std::shared_ptr<DAGNode>> new_exprs;
+        new_exprs.clear();
         std::vector<std::shared_ptr<DAGNode>> new_children;
         for(auto& expr : exprs){
-            if(expr->isAtom()){
+            if(expr->isAtom() && !expr->isVBool()){
+                // it is an atom, but not a boolean variable
                 std::shared_ptr<DAGNode> new_var = mkTempVar(BOOL_SORT);
                 new_children.emplace_back(new_var);
                 // add to cnf_map
@@ -639,6 +788,7 @@ namespace SMTParser {
                 cnf_bool_var_map[not_atom] = not_new_var;
             }
             else{
+                // it is not an atom, or it is a boolean variable
                 new_exprs.emplace_back(expr);
             }
         }
@@ -684,12 +834,6 @@ namespace SMTParser {
         if(cnf_map.find(expr) != cnf_map.end()){
             return cnf_map[expr];
         }
-        // expand let
-        if(expr->isLet()){
-            expr = expandLet(expr);
-        }
-        // convert to NNF first
-        expr = toNNF(expr);
         std::vector<std::shared_ptr<DAGNode>> clauses;
         // collect all atoms
         boost::unordered_set<std::shared_ptr<DAGNode>> atoms;
@@ -1493,6 +1637,7 @@ namespace SMTParser {
 
             if(expr->isEq()){
                 if(expr->getChildrenSize() > 2){
+                    is_changed = true;
                     // (= a b c) -> (and (= a b) (= a c))
                     std::vector<std::shared_ptr<DAGNode>> children;
                     for(size_t i = 0; i < expr->getChildrenSize() - 1; i++){
@@ -1509,6 +1654,7 @@ namespace SMTParser {
             }
             else if(expr->isDistinct()){
                 if(expr->getChildrenSize() > 2){
+                    is_changed = true;
                     // (distinct a b c) -> (and (distinct a b) (distinct a c))
                     std::vector<std::shared_ptr<DAGNode>> children;
                     for(size_t i = 0; i < expr->getChildrenSize() - 1; i++){
@@ -1527,6 +1673,7 @@ namespace SMTParser {
             }
             else if(expr->isGe()){
                 if(expr->getChildrenSize() > 2){
+                    is_changed = true;
                     // (>= a b c) -> (and (>= a b) (>= a c))
                     std::vector<std::shared_ptr<DAGNode>> children;
                     for(size_t i = 0; i < expr->getChildrenSize() - 1; i++){
@@ -1543,6 +1690,7 @@ namespace SMTParser {
             }
             else if(expr->isLe()){
                 if(expr->getChildrenSize() > 2){
+                    is_changed = true;
                     // (<= a b c) -> (and (<= a b) (<= a c))
                     std::vector<std::shared_ptr<DAGNode>> children;
                     for(size_t i = 0; i < expr->getChildrenSize() - 1; i++){
@@ -1559,6 +1707,7 @@ namespace SMTParser {
             }
             else if(expr->isGt()){
                 if(expr->getChildrenSize() > 2){
+                    is_changed = true;
                     // (> a b c) -> (and (> a b) (> a c))
                     std::vector<std::shared_ptr<DAGNode>> children;
                     for(size_t i = 0; i < expr->getChildrenSize() - 1; i++){
@@ -1575,6 +1724,7 @@ namespace SMTParser {
             }
             else if(expr->isLt()){
                 if(expr->getChildrenSize() > 2){
+                    is_changed = true;
                     // (< a b c) -> (and (< a b) (< a c))
                     std::vector<std::shared_ptr<DAGNode>> children;
                     for(size_t i = 0; i < expr->getChildrenSize() - 1; i++){
@@ -1604,6 +1754,22 @@ namespace SMTParser {
                     visited[expr] = result;
                     return result;
                 }
+            }
+        }
+        else{
+            // not in op_set, just go on recursion
+            std::vector<std::shared_ptr<DAGNode>> children;
+            for(size_t i = 0; i < expr->getChildrenSize(); i++){
+                bool child_changed = false;
+                std::shared_ptr<DAGNode> child = expr->getChild(i);
+                std::shared_ptr<DAGNode> binarized_child = binarizeOp(child, op_set, child_changed, visited);
+                is_changed = is_changed || child_changed;
+                children.emplace_back(binarized_child);
+            }
+            if(is_changed){
+                std::shared_ptr<DAGNode> result = mkOper(expr->getSort(), expr->getKind(), children);
+                visited[expr] = result;
+                return result;
             }
         }
         visited[expr] = expr;
