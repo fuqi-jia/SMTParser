@@ -468,6 +468,7 @@ namespace SMTParser{
 		}
 		bufptr = nullptr;
 		delete[] buffer;
+		buffer = nullptr;
 		return true;
 	}
 
@@ -484,6 +485,7 @@ namespace SMTParser{
 		}
 		bufptr = nullptr;
 		free(buffer);
+		buffer = nullptr;
 		return true;
 	}
 
@@ -507,6 +509,7 @@ namespace SMTParser{
 		std::shared_ptr<DAGNode> expr = parseExpr();
 		bufptr = nullptr;
 		free(buffer);
+		buffer = nullptr;
 		return expr;
 	}
 	
