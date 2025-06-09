@@ -28,6 +28,7 @@
 #include "parser.h"
 #include <queue>
 #include <stack>
+#include "util.h"
 
 namespace SMTParser{
 
@@ -525,12 +526,20 @@ namespace SMTParser{
         return mkConstReal(v.toReal());
     }
     std::shared_ptr<DAGNode> Parser::mkConstStr(const std::string &v){
-        if(constants_str.find(v) != constants_str.end()){
-            return node_list[constants_str[v]];
+        // process the escape characters in the string
+        std::string processed_v = v;
+        // if the string is quoted, remove the quotes
+        if (v.length() >= 2 && v[0] == '"' && v[v.length()-1] == '"') {
+            processed_v = unescapeString(v.substr(1, v.length()-2));
+            processed_v = "\"" + escapeString(processed_v) + "\"";
+        }
+        
+        if(constants_str.find(processed_v) != constants_str.end()){
+            return node_list[constants_str[processed_v]];
         }
         else{
-            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(STR_SORT, NODE_KIND::NT_CONST, v);
-            constants_str.insert(std::pair<std::string, size_t>(v, node_list.size()));
+            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(STR_SORT, NODE_KIND::NT_CONST, processed_v);
+            constants_str.insert(std::pair<std::string, size_t>(processed_v, node_list.size()));
             node_list.emplace_back(newconst);
             return newconst;
         }

@@ -1059,8 +1059,27 @@ namespace SMTParser{
     }
 
     std::string strSubstr(const std::string& s, const Integer& i, const Integer& j){
+        // remove the quotes
         std::string s_clean = (s[0] == '"' && s[s.length()-1] == '"') ? s.substr(1, s.length()-2) : s;
-        return s_clean.substr(i.toULong(), j.toULong() - i.toULong());
+        // parse the escape sequence
+        s_clean = unescapeString(s_clean);
+        
+        // extract the substring
+        size_t start = i.toULong();
+        size_t length = j.toULong();
+        
+        // ensure not out of range
+        if (start >= s_clean.length()) {
+            return "\"\"";
+        }
+        if (start + length > s_clean.length()) {
+            length = s_clean.length() - start;
+        }
+        
+        std::string result = s_clean.substr(start, length);
+        // escape the special characters in the result
+        result = escapeString(result);
+        return "\"" + result + "\"";
     }
     bool strPrefixof(const std::string& s, const std::string& t){
         std::string s_clean = (s[0] == '"' && s[s.length()-1] == '"') ? s.substr(1, s.length()-2) : s;
@@ -1098,12 +1117,12 @@ namespace SMTParser{
     }
     std::string strCharAt(const std::string& s, const Integer& i){
         std::string s_clean = (s[0] == '"' && s[s.length()-1] == '"') ? s.substr(1, s.length()-2) : s;
-        return s_clean.substr(i.toULong(), 1);
+        return "\"" + s_clean.substr(i.toULong(), 1) + "\"";
     }
     std::string strUpdate(const std::string& s, const Integer& i, const std::string& t){
         std::string s_clean = (s[0] == '"' && s[s.length()-1] == '"') ? s.substr(1, s.length()-2) : s;
         std::string t_clean = (t[0] == '"' && t[t.length()-1] == '"') ? t.substr(1, t.length()-2) : t;
-        return s_clean.substr(0, i.toULong()) + t_clean + s_clean.substr(i.toULong() + t_clean.size(), s_clean.size() - i.toULong() - t_clean.size());
+        return "\"" + s_clean.substr(0, i.toULong()) + t_clean + s_clean.substr(i.toULong() + t_clean.size(), s_clean.size() - i.toULong() - t_clean.size()) + "\"";
     }
     std::string strReplace(const std::string& s, const std::string& t, const std::string& u){
         // remove the quotes from the string
@@ -1111,9 +1130,17 @@ namespace SMTParser{
         std::string t_clean = (t[0] == '"' && t[t.length()-1] == '"') ? t.substr(1, t.length()-2) : t;
         std::string u_clean = (u[0] == '"' && u[u.length()-1] == '"') ? u.substr(1, u.length()-2) : u;
         
+        // parse the escape sequence
+        s_clean = unescapeString(s_clean);
+        t_clean = unescapeString(t_clean);
+        u_clean = unescapeString(u_clean);
+        
         size_t pos = s_clean.find(t_clean);
         if(pos == std::string::npos) return s;
         std::string result = s_clean.substr(0, pos) + u_clean + s_clean.substr(pos + t_clean.length());
+        
+        // escape the special characters in the result
+        result = escapeString(result);
         // add the quotes and return
         return "\"" + result + "\"";
     }
@@ -1123,12 +1150,20 @@ namespace SMTParser{
         std::string t_clean = (t[0] == '"' && t[t.length()-1] == '"') ? t.substr(1, t.length()-2) : t;
         std::string u_clean = (u[0] == '"' && u[u.length()-1] == '"') ? u.substr(1, u.length()-2) : u;
         
+        // parse the escape sequence
+        s_clean = unescapeString(s_clean);
+        t_clean = unescapeString(t_clean);
+        u_clean = unescapeString(u_clean);
+        
         std::string res = s_clean;
         size_t pos = res.find(t_clean);
         while(pos != std::string::npos){
             res = res.substr(0, pos) + u_clean + res.substr(pos + t_clean.length());
             pos = res.find(t_clean, pos + u_clean.size());
         }
+        
+        // escape the special characters in the result
+        res = escapeString(res);
         // add the quotes and return
         return "\"" + res + "\"";
     }
@@ -1137,14 +1172,14 @@ namespace SMTParser{
         for(char& c : res){
             c = tolower(c);
         }
-        return res;
+        return "\"" + res + "\"";
     }
     std::string strToUpper(const std::string& s){
         std::string res = (s[0] == '"' && s[s.length()-1] == '"') ? s.substr(1, s.length()-2) : s;
         for(char& c : res){
             c = toupper(c);
         }
-        return res;
+        return "\"" + res + "\"";
     }
     std::string strRev(const std::string& s){
         std::string res = (s[0] == '"' && s[s.length()-1] == '"') ? s.substr(1, s.length()-2) : s;
@@ -1179,5 +1214,43 @@ namespace SMTParser{
     }
     std::string toString(const bool& b){
         return b ? "true" : "false";
+    }
+
+    // escape the string
+    std::string escapeString(const std::string& s) {
+        std::string result;
+        for (size_t i = 0; i < s.length(); i++) {
+            char c = s[i];
+            switch (c) {
+                case '\n': result += "\\n"; break;
+                case '\r': result += "\\r"; break;
+                case '\t': result += "\\t"; break;
+                case '\\': result += "\\\\"; break;
+                case '"': result += "\\\""; break;
+                default: result += c;
+            }
+        }
+        return result;
+    }
+
+    // convert the escape sequence like \n to the actual character
+    std::string unescapeString(const std::string& s) {
+        std::string result;
+        for (size_t i = 0; i < s.length(); i++) {
+            if (s[i] == '\\' && i + 1 < s.length()) {
+                switch (s[i+1]) {
+                    case 'n': result += '\n'; break;
+                    case 'r': result += '\r'; break;
+                    case 't': result += '\t'; break;
+                    case '\\': result += '\\'; break;
+                    case '"': result += '"'; break;
+                    default: result += s[i+1];
+                }
+                i++;
+            } else {
+                result += s[i];
+            }
+        }
+        return result;
     }
 }

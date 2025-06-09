@@ -347,12 +347,18 @@ namespace SMTParser{
 					line_number++;
 				}
 				else if (*bufptr == '"') {
-					// out of std::string mode
-					bufptr++;
-					std::string tmp_s(beg, bufptr - beg);
-					// skip space
-					scanToNextSymbol();
-					return tmp_s;
+					// process the nested quotes - check if it is an escape quote
+					if (bufptr + 1 < buffer + buflen && *(bufptr + 1) == '"') {
+						// two consecutive quotes are escape quotes, skip the second quote
+						bufptr++;
+					} else {
+						// end of string
+						bufptr++;
+						std::string tmp_s(beg, bufptr - beg);
+						// skip space
+						scanToNextSymbol();
+						return tmp_s;
+					}
 				}
 				break;
 

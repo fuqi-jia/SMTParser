@@ -1441,7 +1441,7 @@ namespace SMTParser{
             }
             case NODE_KIND::NT_STR_SUBSTR:{
                 if(l->isCStr() && m->isCInt() && r->isCInt()){
-                    return mkConstStr(l->toString().substr(toInt(m).toULong(), toInt(r).toULong()));
+                    return mkConstStr(strSubstr(l->toString(), toInt(m), toInt(r)));
                 }
                 return mkUnknown();
             }

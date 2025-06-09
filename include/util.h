@@ -132,6 +132,9 @@ namespace SMTParser{
     std::string toString(const char& c);
     std::string toString(const bool& b);
 
+    std::string escapeString(const std::string& s);
+    std::string unescapeString(const std::string& s); 
+
     
     class SHA256 {
     public:
