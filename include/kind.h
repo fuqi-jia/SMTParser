@@ -114,7 +114,7 @@ namespace SMTParser{
         NT_MAX, NT_MIN, 
 
         // LET 
-        NT_LET, 
+        NT_LET, NT_LET_BIND_VAR,
         // ITE
         NT_ITE,
         // QUANTIFIERS

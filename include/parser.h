@@ -127,6 +127,8 @@ namespace SMTParser{
                                                 sort_key_map;
         boost::unordered_map<std::string, std::shared_ptr<DAGNode>>
                                                 quant_var_map;
+        boost::unordered_map<std::string, std::shared_ptr<DAGNode>>
+                                                let_var_map;
         std::vector<std::shared_ptr<DAGNode>>   static_functions; // static functions without substitution
 
         // FOL binding

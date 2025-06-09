@@ -571,7 +571,7 @@ namespace SMTParser{
 			return mkErr(ERROR_TYPE::ERR_UNEXP_EOF);
 		}
 		
-		buffer = safe_strdup(expression);  // 直接传入std::string
+		buffer = safe_strdup(expression);
 		if (!buffer) {
 			return mkErr(ERROR_TYPE::ERR_UNEXP_EOF);
 		}
@@ -581,6 +581,7 @@ namespace SMTParser{
 		if (buflen > 0) line_number = 1;
 		scanToNextSymbol();
 		std::shared_ptr<DAGNode> expr = parseExpr();
+		std::cout << "expr: " << toString(expr) << std::endl;
 		
 		bufptr = nullptr;
 		delete[] buffer;
@@ -1120,7 +1121,6 @@ namespace SMTParser{
 		else{
 			// (<identifier> <expr>+)
 			std::string s = getSymbol();
-			std::cout << "s: " << s << std::endl;
 			if(s == "exists"){
 				expr = parseQuant("exists");
 			}
@@ -1160,7 +1160,7 @@ namespace SMTParser{
 
 	
 	std::shared_ptr<DAGNode> Parser::parseConstFunc(const std::string& s){
-		// 优先处理布尔常量
+		// first handle the special symbols
 		if (s == "true") {
 			return mkTrue();
 		}
@@ -1183,6 +1183,14 @@ namespace SMTParser{
 		else if(var_names.find(s) != var_names.end()){
 			// variable name
 			return node_list[var_names[s]];
+		}
+		else if(quant_var_map.find(s) != quant_var_map.end()){
+			// quantifier variable name
+			return quant_var_map[s];
+		}
+		else if(let_var_map.find(s) != let_var_map.end()){
+			// let variable name
+			return let_var_map[s];
 		}
 		// following Common Lisp's conventions, enclosing
 		// a simple symbol in vertical bars does not produce a new symbol.
@@ -1231,7 +1239,7 @@ namespace SMTParser{
 			return mkConstReal(s);
 		}
 		else if(isScientificNotationUtil(s)){
-			// 解析科学计数法并转换为普通实数
+			// parse scientific notation and convert to real
 			std::string parsed = parseScientificNotation(s);
 			return mkConstReal(parsed);
 		}
@@ -2336,16 +2344,19 @@ namespace SMTParser{
 		parseRpar();
 		std::shared_ptr<DAGNode> body = parseExpr();
 		params.insert(params.begin(), body);
+		std::shared_ptr<DAGNode> res = NULL_NODE;
 		if (type == "forall") {
-			return mkForall(params);
+			res = mkForall(params);
+			quant_var_map.clear(); // local variable map
 		}
 		else if (type == "exists") {
-			return mkExists(params);
+			res = mkExists(params);
+			quant_var_map.clear(); // local variable map
 		}
 		else{
 			cassert(false, "Invalid quantifier");
 		}
-		return mkErr(ERROR_TYPE::ERR_UNKWN_SYM);
+		return res;
 	}
 
 	std::shared_ptr<DAGNode> Parser::mkForall(const std::vector<std::shared_ptr<DAGNode>> &params){
