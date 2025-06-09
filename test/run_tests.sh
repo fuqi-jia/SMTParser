@@ -54,6 +54,7 @@ if [ -z "$TEST_EXES" ]; then
         "./test_functions"
         "./test_expressions"
         "./test_theory_combination"
+        "./test_floating_point"
     )
     
     # Check each potential test
@@ -73,13 +74,26 @@ fi
 FAILED_TESTS=0
 for test in $TEST_EXES; do
     echo -e "${YELLOW}Running $test...${NC}"
-    $test
-    if [ $? -eq 0 ]; then
+    # 将输出保存到临时文件
+    OUTPUT=$(mktemp)
+    $test > $OUTPUT 2>&1
+    EXIT_CODE=$?
+    
+    # 检查退出状态和输出中是否包含error:
+    if [ $EXIT_CODE -eq 0 ] && ! grep -q "error:" $OUTPUT; then
         echo -e "${GREEN}$test passed!${NC}"
     else
         echo -e "${RED}$test failed!${NC}"
+        # 如果包含error:，输出错误信息
+        if grep -q "error:" $OUTPUT; then
+            echo -e "${RED}发现错误信息:${NC}"
+            grep "error:" $OUTPUT
+        fi
         FAILED_TESTS=$((FAILED_TESTS+1))
     fi
+    
+    # 清理临时文件
+    rm $OUTPUT
     echo ""
 done
 
