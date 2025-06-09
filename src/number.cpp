@@ -544,6 +544,7 @@ HighPrecisionReal HighPrecisionReal::acsch() const {
 
 // Conversion functions
 std::string HighPrecisionReal::toString() const {
+    // it is not recommended to use mpfr_asprintf, because it may cause rounding error
     char *buf = nullptr;
     // Shortest decimal, no extra 0, no rounding error
     mpfr_asprintf(&buf, "%RNg", value);
