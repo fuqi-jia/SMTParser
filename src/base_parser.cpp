@@ -488,16 +488,8 @@ namespace SMTParser{
 	}
 
 	bool Parser::assert(const std::string& constraint) {
-		// reset buffer
-		buffer = strdup(constraint.c_str());
-		buflen = constraint.length();
-		bufptr = buffer;
-		if (buflen > 0) line_number = 1;
-		scanToNextSymbol();
-		std::shared_ptr<DAGNode> expr = parseExpr();
+		std::shared_ptr<DAGNode> expr = mkExpr(constraint);
 		assertions.emplace_back(expr);
-		bufptr = nullptr;
-		free(buffer);
 		return true;
 	}
 
