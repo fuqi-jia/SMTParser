@@ -1059,57 +1059,96 @@ namespace SMTParser{
     }
 
     std::string strSubstr(const std::string& s, const Integer& i, const Integer& j){
-        return s.substr(i.toULong(), j.toULong() - i.toULong());
+        std::string s_clean = (s[0] == '"' && s[s.length()-1] == '"') ? s.substr(1, s.length()-2) : s;
+        return s_clean.substr(i.toULong(), j.toULong() - i.toULong());
     }
     bool strPrefixof(const std::string& s, const std::string& t){
-        return s.substr(0, t.size()) == t;
+        std::string s_clean = (s[0] == '"' && s[s.length()-1] == '"') ? s.substr(1, s.length()-2) : s;
+        std::string t_clean = (t[0] == '"' && t[t.length()-1] == '"') ? t.substr(1, t.length()-2) : t;
+        
+        // check if s is a prefix of t
+        if (s_clean.size() > t_clean.size()) return false;
+        return t_clean.substr(0, s_clean.size()) == s_clean;
     }
     bool strSuffixof(const std::string& s, const std::string& t){
-        return s.substr(s.size() - t.size(), t.size()) == t;
+        std::string s_clean = (s[0] == '"' && s[s.length()-1] == '"') ? s.substr(1, s.length()-2) : s;
+        std::string t_clean = (t[0] == '"' && t[t.length()-1] == '"') ? t.substr(1, t.length()-2) : t;
+        
+        // check if s is a suffix of t
+        if (s_clean.size() > t_clean.size()) return false;
+        return t_clean.substr(t_clean.size() - s_clean.size(), s_clean.size()) == s_clean;
     }
     bool strContains(const std::string& s, const std::string& t){
-        return s.find(t) != std::string::npos;
+        std::string s_clean = (s[0] == '"' && s[s.length()-1] == '"') ? s.substr(1, s.length()-2) : s;
+        std::string t_clean = (t[0] == '"' && t[t.length()-1] == '"') ? t.substr(1, t.length()-2) : t;
+        return s_clean.find(t_clean) != std::string::npos;
     }
     Integer strIndexof(const std::string& s, const std::string& t, const Integer& i){
-        size_t pos = s.find(t, i.toULong());
-        return pos == std::string::npos ? -1 : pos;
+        // remove the quotes from the string
+        std::string s_clean = (s[0] == '"' && s[s.length()-1] == '"') ? s.substr(1, s.length()-2) : s;
+        std::string t_clean = (t[0] == '"' && t[t.length()-1] == '"') ? t.substr(1, t.length()-2) : t;
+        
+        // if i is out of range, return -1
+        if (i.toULong() > s_clean.length()) {
+            return -1;
+        }
+        
+        size_t pos = s_clean.find(t_clean, i.toULong());
+        return (pos == std::string::npos) ? Integer(-1) : Integer(pos);
     }
     std::string strCharAt(const std::string& s, const Integer& i){
-        return s.substr(i.toULong(), 1);
+        std::string s_clean = (s[0] == '"' && s[s.length()-1] == '"') ? s.substr(1, s.length()-2) : s;
+        return s_clean.substr(i.toULong(), 1);
     }
     std::string strUpdate(const std::string& s, const Integer& i, const std::string& t){
-        return s.substr(0, i.toULong()) + t + s.substr(i.toULong() + t.size(), s.size() - i.toULong() - t.size());
+        std::string s_clean = (s[0] == '"' && s[s.length()-1] == '"') ? s.substr(1, s.length()-2) : s;
+        std::string t_clean = (t[0] == '"' && t[t.length()-1] == '"') ? t.substr(1, t.length()-2) : t;
+        return s_clean.substr(0, i.toULong()) + t_clean + s_clean.substr(i.toULong() + t_clean.size(), s_clean.size() - i.toULong() - t_clean.size());
     }
     std::string strReplace(const std::string& s, const std::string& t, const std::string& u){
-        size_t pos = s.find(t);
+        // remove the quotes from the string
+        std::string s_clean = (s[0] == '"' && s[s.length()-1] == '"') ? s.substr(1, s.length()-2) : s;
+        std::string t_clean = (t[0] == '"' && t[t.length()-1] == '"') ? t.substr(1, t.length()-2) : t;
+        std::string u_clean = (u[0] == '"' && u[u.length()-1] == '"') ? u.substr(1, u.length()-2) : u;
+        
+        size_t pos = s_clean.find(t_clean);
         if(pos == std::string::npos) return s;
-        return s.substr(0, pos) + u + s.substr(pos + t.size(), s.size() - pos - t.size());
+        std::string result = s_clean.substr(0, pos) + u_clean + s_clean.substr(pos + t_clean.length());
+        // add the quotes and return
+        return "\"" + result + "\"";
     }
     std::string strReplaceAll(const std::string& s, const std::string& t, const std::string& u){
-        std::string res = s;
-        size_t pos = res.find(t);
+        // remove the quotes from the string
+        std::string s_clean = (s[0] == '"' && s[s.length()-1] == '"') ? s.substr(1, s.length()-2) : s;
+        std::string t_clean = (t[0] == '"' && t[t.length()-1] == '"') ? t.substr(1, t.length()-2) : t;
+        std::string u_clean = (u[0] == '"' && u[u.length()-1] == '"') ? u.substr(1, u.length()-2) : u;
+        
+        std::string res = s_clean;
+        size_t pos = res.find(t_clean);
         while(pos != std::string::npos){
-            res = res.substr(0, pos) + u + res.substr(pos + t.size(), res.size() - pos - t.size());
-            pos = res.find(t, pos + u.size());
+            res = res.substr(0, pos) + u_clean + res.substr(pos + t_clean.length());
+            pos = res.find(t_clean, pos + u_clean.size());
         }
-        return res;
+        // add the quotes and return
+        return "\"" + res + "\"";
     }
     std::string strToLower(const std::string& s){
-        std::string res = s;
+        std::string res = (s[0] == '"' && s[s.length()-1] == '"') ? s.substr(1, s.length()-2) : s;
         for(char& c : res){
             c = tolower(c);
         }
         return res;
     }
     std::string strToUpper(const std::string& s){
-        std::string res = s;
+        std::string res = (s[0] == '"' && s[s.length()-1] == '"') ? s.substr(1, s.length()-2) : s;
         for(char& c : res){
             c = toupper(c);
         }
         return res;
     }
     std::string strRev(const std::string& s){
-        return std::string(s.rbegin(), s.rend());
+        std::string res = (s[0] == '"' && s[s.length()-1] == '"') ? s.substr(1, s.length()-2) : s;
+        return "\"" + std::string(res.rbegin(), res.rend()) + "\"";
     }
 
 

@@ -80,11 +80,11 @@ void test_string_comparisons(SMTParser::ParserPtr& parser) {
 // Test regular expression operations
 void test_regex_operations(SMTParser::ParserPtr& parser) {
     std::vector<std::string> expressions = {
-        "(str.in.re \"abc\" (re.* (re.range \"a\" \"z\")))",
-        "(str.in.re \"123\" (re.+ (re.range \"0\" \"9\")))",
-        "(str.in.re \"abc\" (re.union (re.* (re.range \"a\" \"z\")) (re.* (re.range \"0\" \"9\"))))",
-        "(str.in.re \"\" re.allchar)",
-        "(str.in.re \"abc\" (re.++ (re.range \"a\" \"a\") (re.range \"b\" \"b\") (re.range \"c\" \"c\")))"
+        "(str.in_re \"abc\" (re.* (re.range \"a\" \"z\")))",
+        "(str.in_re \"123\" (re.+ (re.range \"0\" \"9\")))",
+        "(str.in_re \"abc\" (re.union (re.* (re.range \"a\" \"z\")) (re.* (re.range \"0\" \"9\"))))",
+        "(str.in_re \"\" re.allchar)",
+        "(str.in_re \"abc\" (re.++ (re.range \"a\" \"a\") (re.range \"b\" \"b\") (re.range \"c\" \"c\")))"
     };
     
     std::cout << "=== Testing Regular Expression Operations ===" << std::endl;

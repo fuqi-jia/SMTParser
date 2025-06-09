@@ -1374,7 +1374,14 @@ namespace SMTParser{
             }
             case NODE_KIND::NT_STR_CONCAT:{
                 if(l->isCStr() && r->isCStr()){
-                    return mkConstStr(l->toString() + r->toString());
+                    std::string l_str = l->toString();
+                    std::string r_str = r->toString();
+                    if(l_str.back() == '\"' && r_str.front() == '\"'){
+                        return mkConstStr(l_str.substr(0, l_str.size() - 1) + r_str.substr(1));
+                    }
+                    else{
+                        return mkConstStr(l->toString() + r->toString());
+                    }
                 }
                 return mkUnknown();
             }
@@ -1440,7 +1447,7 @@ namespace SMTParser{
             }
             case NODE_KIND::NT_STR_INDEXOF:{
                 if(l->isCStr() && m->isCStr() && r->isCInt()){
-                    return mkConstInt(l->toString().find(m->toString()));
+                    return mkConstInt(strIndexof(l->toString(), m->toString(), toInt(r)));
                 }
                 return mkUnknown();
             }
