@@ -81,4 +81,22 @@ if(TEST_TARGETS)
     endforeach()
 else()
     message(STATUS "No test files found in test directory")
+endif()
+
+# Add a custom target to run all tests sequentially
+add_custom_target(run_tests
+    COMMENT "Running all tests sequentially..."
+)
+
+# Add dependencies for the run_tests target
+if(TEST_TARGETS)
+    add_dependencies(run_tests ${TEST_TARGETS})
+    # Add custom commands to run each test in sequence
+    foreach(test_name ${TEST_TARGETS})
+        add_custom_command(TARGET run_tests POST_BUILD
+            COMMAND ${test_name}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+            COMMENT "Running test ${test_name}"
+        )
+    endforeach()
 endif() 

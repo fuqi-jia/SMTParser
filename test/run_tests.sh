@@ -41,14 +41,27 @@ TEST_EXES=$(find . -type f -executable -name "test_*" 2>/dev/null)
 if [ -z "$TEST_EXES" ]; then
     echo -e "${YELLOW}No test executables found automatically, trying explicit filenames...${NC}"
     
-    # Check for specific test executables
-    if [ -f "./test_parser" ]; then
-        TEST_EXES="$TEST_EXES ./test_parser"
-    fi
+    # List all potential test executables
+    POTENTIAL_TESTS=(
+        "./test_parser"
+        "./test_string_handling"
+        "./test_arithmetic"
+        "./test_boolean_logic"
+        "./test_bitvector"
+        "./test_string_operations"
+        "./test_array_theory"
+        "./test_quantifiers"
+        "./test_functions"
+        "./test_expressions"
+        "./test_theory_combination"
+    )
     
-    if [ -f "./test_string_handling" ]; then
-        TEST_EXES="$TEST_EXES ./test_string_handling"
-    fi
+    # Check each potential test
+    for test in "${POTENTIAL_TESTS[@]}"; do
+        if [ -f "$test" ]; then
+            TEST_EXES="$TEST_EXES $test"
+        fi
+    done
     
     if [ -z "$TEST_EXES" ]; then
         echo -e "${RED}No test executables found!${NC}"

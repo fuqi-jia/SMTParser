@@ -59,16 +59,6 @@ namespace SMTParser{
 		node_list.emplace_back(POS_EPSILON_NODE);
 		node_list.emplace_back(NEG_EPSILON_NODE);
 		options = std::make_shared<GlobalOptions>();
-
-		// add default sorts
-		sort_key_map["Bool"] = BOOL_SORT;
-		sort_key_map["Int"] = INT_SORT;
-		sort_key_map["Real"] = REAL_SORT;
-		sort_key_map["String"] = STR_SORT;
-
-		result_type = RESULT_TYPE::RT_UNKNOWN;
-		result_node = NULL_NODE;
-		result_model = nullptr;
 	}
 
 	
@@ -104,16 +94,6 @@ namespace SMTParser{
 		node_list.emplace_back(NEG_EPSILON_NODE);
 
 		options = std::make_shared<GlobalOptions>();
-
-		// add default sorts
-		sort_key_map["Bool"] = BOOL_SORT;
-		sort_key_map["Int"] = INT_SORT;
-		sort_key_map["Real"] = REAL_SORT;
-		sort_key_map["String"] = STR_SORT;
-
-		result_type = RESULT_TYPE::RT_UNKNOWN;
-		result_node = NULL_NODE;
-		result_model = nullptr;
 
 		parseSmtlib2File(filename);
 	}
@@ -162,7 +142,7 @@ namespace SMTParser{
 	std::shared_ptr<Model> Parser::getModel(){
 		return result_model;
 	}
-
+	
 	// to solver
 	std::vector<std::shared_ptr<DAGNode>> Parser::getAssertions() const{
 		return assertions;
