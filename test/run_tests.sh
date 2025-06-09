@@ -35,7 +35,7 @@ echo -e "${YELLOW}Running tests...${NC}"
 cd test
 
 # Find all test executables
-TEST_EXES=$(find . -type f -executable -name "test_*" 2>/dev/null)
+TEST_EXES=$(find . -type f -executable -name "test_*" 2>/dev/null | grep -v "\.o$" | grep -v "\.d$")
 
 # If no executables found, try explicit names
 if [ -z "$TEST_EXES" ]; then

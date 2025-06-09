@@ -80,6 +80,33 @@ void test_comparisons(SMTParser::ParserPtr& parser) {
     }
 }
 
+void test_precision(SMTParser::ParserPtr& parser) {
+    std::cout << "=== Testing Precision ===" << std::endl;
+    
+    // Default precision (128 bits)
+    std::cout << "=== Default Precision (128 bits) ===" << std::endl;
+    std::cout << "Expression: (+ 3.5 2.7)" << std::endl;
+    std::cout << "  Result: " << parser->toString(parser->mkExpr("(+ 3.5 2.7)")) << std::endl;
+    std::cout << "Expression: (- 10.5 4.2)" << std::endl;
+    std::cout << "  Result: " << parser->toString(parser->mkExpr("(- 10.5 4.2)")) << std::endl;
+    
+    // Set higher precision (256 bits)
+    parser->setEvaluatePrecision(256);
+    std::cout << "\n=== Higher Precision (256 bits) ===" << std::endl;
+    std::cout << "Expression: (+ 3.5 2.7)" << std::endl;
+    std::cout << "  Result: " << parser->toString(parser->mkExpr("(+ 3.5 2.7)")) << std::endl;
+    std::cout << "Expression: (- 10.5 4.2)" << std::endl;
+    std::cout << "  Result: " << parser->toString(parser->mkExpr("(- 10.5 4.2)")) << std::endl;
+    
+    // Disable floating point mode
+    parser->setEvaluateUseFloating(false);
+    std::cout << "\n=== Disable Floating Point Mode ===" << std::endl;
+    std::cout << "Expression: (+ 3.5 2.7)" << std::endl;
+    std::cout << "  Result: " << parser->toString(parser->mkExpr("(+ 3.5 2.7)")) << std::endl;
+    std::cout << "Expression: (- 10.5 4.2)" << std::endl;
+    std::cout << "  Result: " << parser->toString(parser->mkExpr("(- 10.5 4.2)")) << std::endl;
+}
+
 int main() {
     std::cout << "======= Arithmetic Operations Test =======" << std::endl;
     
@@ -88,6 +115,7 @@ int main() {
     test_integer_arithmetic(parser);
     test_real_arithmetic(parser);
     test_comparisons(parser);
+    test_precision(parser);
     
     return 0;
 } 

@@ -169,7 +169,7 @@ You can also use the provided test script from the project root:
 |--------|-------------|---------|
 | `BUILD_SHARED_LIBS` | Build shared libraries (.so/.dll) | OFF |
 | `BUILD_BOTH_LIBS` | Build both static (.a/.lib) and shared libraries | ON |
-| `BUILD_TESTS` | Build test executables | ON |
+| `BUILD_TESTS` | Build test executables | OFF |
 
 To customize the build configuration:
 
