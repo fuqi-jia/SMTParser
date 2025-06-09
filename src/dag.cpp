@@ -27,8 +27,6 @@
 
 #include "dag.h"
 #include <stack>
-#include <unordered_map>
-#include <unordered_set>
 #include <sstream>
 
 namespace SMTParser{
@@ -91,7 +89,7 @@ namespace SMTParser{
         }
 
         // Static kind string cache for performance
-        static std::unordered_map<NODE_KIND, const char*> kind_cache;
+        static boost::unordered_map<NODE_KIND, const char*> kind_cache;
         static bool cache_initialized = false;
 
         if (!cache_initialized) {
