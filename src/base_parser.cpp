@@ -501,7 +501,15 @@ namespace SMTParser{
 	}
 
 	std::shared_ptr<DAGNode> Parser::mkExpr(const std::string& expression) {
+		if (expression.empty()) {
+			return mkErr(ERROR_TYPE::ERR_UNEXP_EOF);
+		}
+		
 		buffer = strdup(expression.c_str());
+		if (!buffer) {
+			return mkErr(ERROR_TYPE::ERR_UNEXP_EOF);
+		}
+		
 		buflen = expression.length();
 		bufptr = buffer;
 		if (buflen > 0) line_number = 1;
@@ -1079,6 +1087,14 @@ namespace SMTParser{
 
 	
 	std::shared_ptr<DAGNode> Parser::parseConstFunc(const std::string& s){
+		// 优先处理布尔常量
+		if (s == "true") {
+			return mkTrue();
+		}
+		else if (s == "false") {
+			return mkFalse();
+		}
+		
 		// these have the highest priority
 		if(let_key_map.find(s) != let_key_map.end()){
 			return let_key_map[s];
@@ -1154,12 +1170,6 @@ namespace SMTParser{
 		// }
 		else if(isStrUtil(s)){
 			return mkConstStr(s);
-		}
-		else if (s == "true") {
-			return mkTrue();
-		}
-		else if (s == "false") {
-			return mkFalse();
 		}
 		// no parameters
 		else if (s == "re.none"){
