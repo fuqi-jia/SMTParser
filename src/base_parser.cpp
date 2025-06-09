@@ -129,6 +129,33 @@ namespace SMTParser{
 	}
 	
 	RESULT_TYPE Parser::checkSat(){
+		if(result_type != RESULT_TYPE::RT_UNKNOWN){
+			return result_type;
+		}
+
+		// simple check
+		bool all_true = true;
+		for(auto& assertion : assertions){
+			if(assertion->isErr()){
+				result_type = RESULT_TYPE::RT_ERROR;
+				return result_type;
+			}
+			else if(assertion->isFalse()){
+				all_true = false;
+				return RESULT_TYPE::RT_UNSAT;
+			}
+			else if(assertion->isTrue()){
+				continue;
+			}
+			else{
+				// unknown assertion
+				result_type = RESULT_TYPE::RT_UNKNOWN;
+				return result_type;
+			}
+		}
+		if(all_true){
+			result_type = RESULT_TYPE::RT_SAT;
+		}
 		return result_type;
 	}
 	
