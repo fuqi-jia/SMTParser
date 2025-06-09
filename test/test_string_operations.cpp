@@ -8,10 +8,34 @@ void test_string_constants(SMTParser::ParserPtr& parser) {
     std::vector<std::string> expressions = {
         "\"\"",                       // Empty string
         "\"Hello, World!\"",          // Simple string
-        "\"String with \\\"quotes\\\"\"", // String with escaped quotes
+        "\"String with \"\"quotes\"\"\"", // String with escaped quotes
         "\"String with \\\\backslash\"",  // String with escaped backslash
         "\"Multi-line\nstring\""      // Multi-line string
     };
+    
+/*
+z3:
+(
+  (define-fun x2 () String
+    "String with ""quotes""")
+  (define-fun x3 () String
+    "String with \\backslash")
+  (define-fun x () String
+    "")
+  (define-fun x4 () String
+    "Multi-line\nstring")
+  (define-fun x1 () String
+    "Hello, World!")
+)
+cvc5:
+(
+(define-fun x () String "")
+(define-fun x1 () String "Hello, World!")
+(define-fun x2 () String "String with ""quotes""")
+(define-fun x3 () String "String with \u{5c}\u{5c}backslash")
+(define-fun x4 () String "Multi-line\u{5c}nstring")
+)
+*/
     
     std::cout << "=== Testing String Constants ===" << std::endl;
     for (const auto& expr : expressions) {
