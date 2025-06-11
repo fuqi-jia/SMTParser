@@ -564,7 +564,7 @@ namespace SMTParser {
             case NUMBER:
                 return Value(number_value.safeSqrt());
             case INTERVAL:
-                return Value(interval_value.safesqrt());
+                return Value(interval_value.safeSqrt());
             default:
                 throw std::runtime_error("Cannot compute safe square root of this type");
         }

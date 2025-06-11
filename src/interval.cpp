@@ -636,7 +636,7 @@ namespace SMTParser{
         return Interval(newLower, newUpper, newLeftClosed, newRightClosed);
     }
 
-    Interval Interval::safesqrt() const {
+    Interval Interval::safeSqrt() const {
         if(isEmpty()) {
             return EmptyInterval;
         }
@@ -657,7 +657,7 @@ namespace SMTParser{
             newLeftClosed = false;
         }
         else{
-            newLower = lower.safesqrt();
+            newLower = lower.safeSqrt();
             newLower = newLower.nextBelow();
             newLeftClosed = false;
         }
@@ -671,7 +671,7 @@ namespace SMTParser{
             newRightClosed = false;
         }
         else{
-            newUpper = upper.safesqrt();
+            newUpper = upper.safeSqrt();
             newUpper = newUpper.nextAbove();
             newRightClosed = false;
         }
@@ -2032,7 +2032,7 @@ namespace SMTParser{
             case NODE_KIND::NT_SQRT:
                 return this->sqrt();
             case NODE_KIND::NT_SAFESQRT:
-                return this->safesqrt();
+                return this->safeSqrt();
             case NODE_KIND::NT_SIN:
                 return this->sin();
             case NODE_KIND::NT_COS:

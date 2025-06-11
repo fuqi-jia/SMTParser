@@ -1160,14 +1160,14 @@ namespace SMTParser{
         std::shared_ptr<DAGNode> mkSqrt(std::shared_ptr<DAGNode> param); // sqrt(param)
         
         /**
-         * @brief Create an safesqrt node
+         * @brief Create an safeSqrt node
          * 
          * @note if param < 0, return 0
          * 
          * @param param Parameter
-         * @return Safesqrt node (safesqrt(param))
+         * @return Safesqrt node (safeSqrt(param))
          */
-        std::shared_ptr<DAGNode> mkSafeSqrt(std::shared_ptr<DAGNode> param); // safesqrt(param)
+        std::shared_ptr<DAGNode> mkSafeSqrt(std::shared_ptr<DAGNode> param); // safeSqrt(param)
         
         /**
          * @brief Create an ceil node

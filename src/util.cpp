@@ -291,14 +291,14 @@ namespace SMTParser{
         return r.sqrt();
     }
 
-    Real safesqrt(const Integer& i){
+    Real safeSqrt(const Integer& i){
         if(i < 0){
             return Real(0);
         }
         return HighPrecisionReal(i).sqrt();
     }
     
-    Real safesqrt(const Real& r){
+    Real safeSqrt(const Real& r){
         if(r < 0){
             return Real(0);
         }

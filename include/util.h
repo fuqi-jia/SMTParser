@@ -53,8 +53,8 @@ namespace SMTParser{
     Integer     lcm(const Integer& a, const Integer& b);
     Real        sqrt(const Integer& i);
     Real        sqrt(const Real& r);
-    Real        safesqrt(const Integer& i);
-    Real        safesqrt(const Real& r);
+    Real        safeSqrt(const Integer& i);
+    Real        safeSqrt(const Real& r);
     Integer     ceil(const Real& r);
     Integer     floor(const Real& r);
     Integer     round(const Real& r);

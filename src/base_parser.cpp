@@ -1382,8 +1382,8 @@ namespace SMTParser{
 			cassert(params.size() == 1, "Invalid number of parameters for sqrt");
 			return mkSqrt(params[0]);
 		}
-		else if (s == "safesqrt") {
-			cassert(params.size() == 1, "Invalid number of parameters for safesqrt");
+		else if (s == "safeSqrt") {
+			cassert(params.size() == 1, "Invalid number of parameters for safeSqrt");
 			return mkSafeSqrt(params[0]);
 		}
 		else if (s == "ceil") {

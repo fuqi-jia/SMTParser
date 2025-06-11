@@ -95,7 +95,7 @@ class Interval {
         Interval pow2() const;
         Interval exp() const;
         Interval sqrt() const;
-        Interval safesqrt() const;
+        Interval safeSqrt() const;
         Interval sin() const;
         Interval cos() const;
         Interval tan() const;
