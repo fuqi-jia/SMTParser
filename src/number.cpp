@@ -542,6 +542,10 @@ HighPrecisionReal HighPrecisionReal::acsch() const {
     return reciprocal.asinh();
 }
 
+bool HighPrecisionReal::isNaN() const {
+    return mpfr_nan_p(value) != 0;
+}
+
 // Conversion functions
 std::string HighPrecisionReal::toString() const {
     // it is not recommended to use mpfr_asprintf, because it may cause rounding error
@@ -1648,6 +1652,13 @@ Number Number::nextAbove() const {
     } else {
         return Number(realValue.nextAbove());
     }
+}
+
+bool Number::isNaN() const {
+    if (type == INT_TYPE) {
+        return false;
+    }
+    return realValue.isNaN();
 }
 
 } // namespace SMTParser

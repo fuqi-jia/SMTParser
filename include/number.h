@@ -246,6 +246,9 @@ namespace SMTParser {
             bool isInfinity() const;
             bool isNegativeInfinity() const;
             bool isPositiveInfinity() const;
+
+            // NaN
+            bool isNaN() const;
             
         private:
             mpfr_t value;
@@ -407,6 +410,10 @@ namespace SMTParser {
             // next functions
             Number nextBelow() const;
             Number nextAbove() const;
+
+            // NaN
+            bool isNaN() const;
+
         private:
             Type type;                      // Identify type
             HighPrecisionInteger intValue;  // Integer value

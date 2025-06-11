@@ -945,8 +945,14 @@ namespace SMTParser{
         // asin function is monotonically increasing
         Number asinLow = lower.asin();
         Number asinHigh = upper.asin();
+
+        // add a small value
+        asinLow = asinLow.nextBelow();
+        asinHigh = asinHigh.nextAbove();
+        bool newLeftClosed = false;
+        bool newRightClosed = false;
         
-        return Interval(asinLow, asinHigh, leftClosed, rightClosed);
+        return Interval(asinLow, asinHigh, newLeftClosed, newRightClosed);
     }
 
     Interval Interval::acos() const {
@@ -974,8 +980,14 @@ namespace SMTParser{
         // atan function is monotonically increasing, domain is the whole real number set
         Number atanLow = lower.atan();
         Number atanHigh = upper.atan();
+
+        // add a small value
+        atanLow = atanLow.nextBelow();
+        atanHigh = atanHigh.nextAbove();
+        bool newLeftClosed = false;
+        bool newRightClosed = false;
         
-        return Interval(atanLow, atanHigh, leftClosed, rightClosed);
+        return Interval(atanLow, atanHigh, newLeftClosed, newRightClosed);
     }
 
     Interval Interval::acot() const {
@@ -988,7 +1000,8 @@ namespace SMTParser{
         Number acotLow = Number::pi() / Number(2) - upper.atan();
         Number acotHigh = Number::pi() / Number(2) - lower.atan();
         
-        return Interval(acotLow, acotHigh, rightClosed, leftClosed);
+        // added a small value in atan, so no need to add a small value here
+        return Interval(acotLow, acotHigh, false, false);
     }
 
     Interval Interval::asec() const {
@@ -1007,22 +1020,11 @@ namespace SMTParser{
             return Interval(Number(0), Number::pi(), true, true);
         }
         
-        Number asecLow, asecHigh;
-        bool newLeftClosed = leftClosed;
-        bool newRightClosed = rightClosed;
-        
-        if(upper <= Number(-1)) {
-            // interval on the negative half axis
-            asecLow = upper.asec();
-            asecHigh = lower.asec();
-            std::swap(newLeftClosed, newRightClosed);
-        } else {
-            // interval on the positive half axis
-            asecLow = lower.asec();
-            asecHigh = upper.asec();
-        }
-        
-        return Interval(asecLow, asecHigh, newLeftClosed, newRightClosed);
+        // asec function is monotonically increasing
+        // asec(x) = acos(1/x)
+        Interval one = Interval(Number(1), Number(1), true, true);
+        Interval oneOver = one / *this;
+        return oneOver.acos();
     }
 
     Interval Interval::acsc() const {
@@ -1041,22 +1043,11 @@ namespace SMTParser{
             return Interval(-Number::pi() / Number(2), Number::pi() / Number(2), true, true);
         }
         
-        Number acscLow, acscHigh;
-        bool newLeftClosed = leftClosed;
-        bool newRightClosed = rightClosed;
-        
-        if(upper <= Number(-1)) {
-            // interval on the negative half axis
-            acscLow = upper.acsc();
-            acscHigh = lower.acsc();
-            std::swap(newLeftClosed, newRightClosed);
-        } else {
-            // interval on the positive half axis
-            acscLow = lower.acsc();
-            acscHigh = upper.acsc();
-        }
-        
-        return Interval(acscLow, acscHigh, newLeftClosed, newRightClosed);
+        // acsc function is monotonically decreasing
+        // acsc(x) = asin(1/x)
+        Interval one = Interval(Number(1), Number(1), true, true);
+        Interval oneOver = one / *this;
+        return oneOver.asin();
     }
     
     Interval Interval::sinh() const {
@@ -1067,8 +1058,14 @@ namespace SMTParser{
         // sinh function is monotonically increasing
         Number sinhLow = lower.sinh();
         Number sinhHigh = upper.sinh();
+
+        // add a small value
+        sinhLow = sinhLow.nextBelow();
+        sinhHigh = sinhHigh.nextAbove();
+        bool newLeftClosed = false;
+        bool newRightClosed = false;
         
-        return Interval(sinhLow, sinhHigh, leftClosed, rightClosed);
+        return Interval(sinhLow, sinhHigh, newLeftClosed, newRightClosed);
     }
     
     Interval Interval::cosh() const {
@@ -1076,20 +1073,54 @@ namespace SMTParser{
             return EmptyInterval;
         }
         
-        // cosh function is monotonically increasing, value range is [1, ∞)
-        if(lower <= Number(0) && upper >= Number(0)) {
-            // interval contains 0 point
-            Number absLower = lower.abs();
-            Number absUpper = upper.abs();
-            Number maxAbs = std::max(absLower, absUpper);
-            bool newRightClosed = absLower > absUpper ? leftClosed : rightClosed;
-            return Interval(Number(1), maxAbs.cosh(), true, newRightClosed);
-        } else if(upper < Number(0)) {
-            // interval on the negative half axis
-            return Interval(upper.cosh(), lower.cosh(), rightClosed, leftClosed);
+        // cosh function is a even function, the minimum value is 1 at x=0
+        if(lower >= Number(0)) {
+            // all the parameters are positive
+            Number coshLow = lower.cosh();
+            Number coshHigh = upper.cosh();
+            bool newLeftClosed = false;
+            bool newRightClosed = false;
+            
+            // add a small value
+            coshLow = coshLow.nextBelow();
+            coshHigh = coshHigh.nextAbove();
+            
+            // ensure the value is not less than 1 (the minimum value of cosh)
+            if(coshLow < Number(1)) {
+                coshLow = Number(1);
+                newLeftClosed = true;
+            }
+            
+            return Interval(coshLow, coshHigh, newLeftClosed, newRightClosed);
+        } else if(upper <= Number(0)) {
+            // all the parameters are negative
+            Number coshLow = upper.cosh();  // note: since cosh is an even function, we swap the order here
+            Number coshHigh = lower.cosh();
+            bool newLeftClosed = false;
+            bool newRightClosed = false;
+            
+            // add a small value
+            coshLow = coshLow.nextBelow();
+            coshHigh = coshHigh.nextAbove();
+            
+            // ensure the value is not less than 1 (the minimum value of cosh)
+            if(coshLow < Number(1)) {
+                coshLow = Number(1);
+                newLeftClosed = true;
+            }
+            
+            return Interval(coshLow, coshHigh, newLeftClosed, newRightClosed);
         } else {
-            // interval on the positive half axis
-            return Interval(lower.cosh(), upper.cosh(), leftClosed, rightClosed);
+            // the interval crosses zero, the minimum value is cosh(0) = 1
+            Number coshLow = Number(1);
+            Number coshHigh = std::max(lower.cosh(), upper.cosh());
+            bool newLeftClosed = true;
+            bool newRightClosed = false;
+            
+            // add a small value
+            coshHigh = coshHigh.nextAbove();
+            
+            return Interval(coshLow, coshHigh, newLeftClosed, newRightClosed);
         }
     }
     
@@ -1101,8 +1132,14 @@ namespace SMTParser{
         // tanh function is monotonically increasing, value range is (-1, 1)
         Number tanhLow = lower.tanh();
         Number tanhHigh = upper.tanh();
+
+        // add a small value
+        tanhLow = tanhLow.nextBelow();
+        tanhHigh = tanhHigh.nextAbove();
+        bool newLeftClosed = false;
+        bool newRightClosed = false;
         
-        return Interval(tanhLow, tanhHigh, leftClosed, rightClosed);
+        return Interval(tanhLow, tanhHigh, newLeftClosed, newRightClosed);
     }
     
     Interval Interval::coth() const {
@@ -1119,7 +1156,8 @@ namespace SMTParser{
         Number cothLow = Number(1) / upper.tanh();
         Number cothHigh = Number(1) / lower.tanh();
         
-        return Interval(cothLow, cothHigh, rightClosed, leftClosed);
+        // added a small value in tanh, so no need to add a small value here
+        return Interval(cothLow, cothHigh, false, false);
     }
     
     Interval Interval::sech() const {
@@ -1128,13 +1166,25 @@ namespace SMTParser{
         }
         
         // sech function sech(x) = 1/cosh(x)
-        Interval coshInterval = this->cosh();
+        Interval one = Interval(Number(1), Number(1), true, true);
+        Interval coshInterval = one / this->cosh();
         
         // sech function value range is (0, 1], maximum value is 1 at 0
-        Number sechLow = Number(1) / coshInterval.getUpper();
-        Number sechHigh = Number(1) / coshInterval.getLower();
+        Number sechLow = coshInterval.getLower();
+        Number sechHigh = coshInterval.getUpper();
+        bool newLeftClosed = false;
+        bool newRightClosed = false;
+
+        if(coshInterval.getUpper() >= Number(1)){
+            sechHigh = Number(1);
+            newRightClosed = true;
+        }
+
+        if(coshInterval.getLower() <= Number(0)){
+            sechLow = Number(0);
+        }
         
-        return Interval(sechLow, sechHigh, coshInterval.isRightClosed(), coshInterval.isLeftClosed());
+        return Interval(sechLow, sechHigh, newLeftClosed, newRightClosed);
     }
     
     Interval Interval::csch() const {
@@ -1148,10 +1198,16 @@ namespace SMTParser{
         }
         
         // csch function csch(x) = 1/sinh(x)
-        Number cschLow = Number(1) / upper.sinh();
-        Number cschHigh = Number(1) / lower.sinh();
+        Interval one = Interval(Number(1), Number(1), true, true);
+        Interval sinhInterval = one / this->sinh();
         
-        return Interval(cschLow, cschHigh, rightClosed, leftClosed);
+        // csch function value range is (-∞, 0) ∪ (0, ∞)
+        Number cschLow = sinhInterval.getLower();
+        Number cschHigh = sinhInterval.getUpper();
+        bool newLeftClosed = false;
+        bool newRightClosed = false;
+        
+        return Interval(cschLow, cschHigh, newLeftClosed, newRightClosed);
     }
     
     Interval Interval::asinh() const {
@@ -1162,8 +1218,14 @@ namespace SMTParser{
         // asinh function is monotonically increasing, domain is the whole real number set
         Number asinhLow = lower.asinh();
         Number asinhHigh = upper.asinh();
+
+        // add a small value
+        asinhLow = asinhLow.nextBelow();
+        asinhHigh = asinhHigh.nextAbove();
+        bool newLeftClosed = false;
+        bool newRightClosed = false;
         
-        return Interval(asinhLow, asinhHigh, leftClosed, rightClosed);
+        return Interval(asinhLow, asinhHigh, newLeftClosed, newRightClosed);
     }
     
     Interval Interval::acosh() const {
@@ -1179,8 +1241,14 @@ namespace SMTParser{
         // acosh function is monotonically increasing
         Number acoshLow = lower.acosh();
         Number acoshHigh = upper.acosh();
+
+        // add a small value
+        acoshLow = acoshLow.nextBelow();
+        acoshHigh = acoshHigh.nextAbove();
+        bool newLeftClosed = false;
+        bool newRightClosed = false;
         
-        return Interval(acoshLow, acoshHigh, leftClosed, rightClosed);
+        return Interval(acoshLow, acoshHigh, newLeftClosed, newRightClosed);
     }
     
     Interval Interval::atanh() const {
@@ -1196,8 +1264,14 @@ namespace SMTParser{
         // atanh function is monotonically increasing
         Number atanhLow = lower.atanh();
         Number atanhHigh = upper.atanh();
+
+        // add a small value
+        atanhLow = atanhLow.nextBelow();
+        atanhHigh = atanhHigh.nextAbove();
+        bool newLeftClosed = false;
+        bool newRightClosed = false;
         
-        return Interval(atanhLow, atanhHigh, leftClosed, rightClosed);
+        return Interval(atanhLow, atanhHigh, newLeftClosed, newRightClosed);
     }
     
     Interval Interval::acoth() const {
@@ -1211,25 +1285,9 @@ namespace SMTParser{
         }
         
         // acoth function acoth(x) = atanh(1/x)
-        Number acothLow, acothHigh;
-        bool newLeftClosed = leftClosed;
-        bool newRightClosed = rightClosed;
-        
-        if(upper < Number(-1)) {
-            // interval on the negative half axis
-            acothLow = upper.acoth();
-            acothHigh = lower.acoth();
-            std::swap(newLeftClosed, newRightClosed);
-        } else if(lower > Number(1)) {
-            // interval on the positive half axis
-            acothLow = lower.acoth();
-            acothHigh = upper.acoth();
-        } else {
-            // interval crosses zero, result cannot be represented by a single interval
-            throw std::domain_error("Interval crosses zero, acoth not defined");
-        }
-        
-        return Interval(acothLow, acothHigh, newLeftClosed, newRightClosed);
+        Interval one = Interval(Number(1), Number(1), true, true);
+        Interval oneOver = one / *this;
+        return oneOver.atanh();
     }
     
     Interval Interval::asech() const {
@@ -1243,10 +1301,10 @@ namespace SMTParser{
         }
         
         // asech function is monotonically decreasing
-        Number asechLow = upper.asech();
-        Number asechHigh = lower.asech();
-        
-        return Interval(asechLow, asechHigh, rightClosed, leftClosed);
+        // asech(x) = acosh(1/x)
+        Interval one = Interval(Number(1), Number(1), true, true);
+        Interval oneOver = one / *this;
+        return oneOver.acosh();
     }
     
     Interval Interval::acsch() const {
@@ -1260,23 +1318,10 @@ namespace SMTParser{
         }
         
         // acsch function is monotonically decreasing
-        Number acschLow, acschHigh;
-        bool newLeftClosed = leftClosed;
-        bool newRightClosed = rightClosed;
-        
-        if(upper < Number(0)) {
-            // interval on the negative half axis
-            acschLow = upper.acsch();
-            acschHigh = lower.acsch();
-            std::swap(newLeftClosed, newRightClosed);
-        } else {
-            // interval on the positive half axis
-            acschLow = upper.acsch();
-            acschHigh = lower.acsch();
-            std::swap(newLeftClosed, newRightClosed);
-        }
-        
-        return Interval(acschLow, acschHigh, newLeftClosed, newRightClosed);
+        // acsch(x) = asinh(1/x)
+        Interval one = Interval(Number(1), Number(1), true, true);
+        Interval oneOver = one / *this;
+        return oneOver.asinh();
     }
 
 
@@ -1662,7 +1707,14 @@ namespace SMTParser{
             newLeftClosed = false;
         }
         else{
-            newLower = Number(2).pow(lower);
+            if(lower.isInteger()){
+                newLower = Number(2).pow(lower.toInteger());
+            }
+            else{
+                newLower = Number(2).pow(lower);
+                newLower = newLower.nextBelow();
+                newLeftClosed = false;
+            }
         }
 
         if(upper.isPositiveInfinity()) {
@@ -1674,7 +1726,14 @@ namespace SMTParser{
             newRightClosed = false;
         }
         else{
-            newUpper = Number(2).pow(upper);
+            if(upper.isInteger()){
+                newUpper = Number(2).pow(upper.toInteger());
+            }
+            else{
+                newUpper = Number(2).pow(upper);
+                newUpper = newUpper.nextAbove();
+                newRightClosed = false;
+            }
         }
 
         cassert(newLower >= Number(0), "2^x is always positive");
@@ -1685,6 +1744,38 @@ namespace SMTParser{
     Interval Interval::pow(const Number& exp) const {
         if(isEmpty()) {
             return EmptyInterval;
+        }
+
+        if(exp.isInfinity()) {
+            if(exp.isPositiveInfinity()) {
+                // x^inf
+                if(lower > Number(1)) {
+                    return Interval(Number::positiveInfinity(), Number::positiveInfinity(), false, false);
+                } else if(lower >= Number(0) && upper <= Number(1)) {
+                    if(lower == Number(0) && upper == Number(1)) {
+                        return Interval(Number(0), Number(1), true, true);
+                    } else {
+                        return Interval(Number(0), Number(0).nextAbove(), false, false);
+                    }
+                } else if(lower < Number(0)) {
+                    throw std::domain_error("Cannot compute infinite power with negative base");
+                }
+            } else {
+                // x^-inf
+                if(lower > Number(1)) {
+                    return Interval(Number(0), Number(0).nextAbove(), false, false);
+                } else if(lower >= Number(0) && upper <= Number(1)) {
+                    if(upper == Number(1)) {
+                        return Interval(Number(1), Number::positiveInfinity(), true, false);
+                    } else {
+                        return Interval(Number::positiveInfinity(), Number::positiveInfinity(), false, false);
+                    }
+                } else if(lower <= Number(0) && upper >= Number(0)) {
+                    throw std::domain_error("Cannot compute infinite power of interval containing zero");
+                } else {
+                    throw std::domain_error("Cannot compute infinite power with complex results");
+                }
+            }
         }
         
         // If exp is an integer
@@ -1717,7 +1808,7 @@ namespace SMTParser{
             } else { // n < 0
                 // negative power - need to handle the case of division by zero
                 if(lower <= Number(0) && upper >= Number(0)) {
-                    // the interval crosses zero - division by zero
+                    // the interval contains zero, the result is undefined
                     throw std::domain_error("Cannot compute negative power of interval containing zero");
                 } else {
                     // apply x^(-n) = 1/(x^n)
@@ -1749,7 +1840,16 @@ namespace SMTParser{
         // non-integer power
         // only when the base is positive has meaning
         if(lower > Number(0)) {
-            return Interval(lower.pow(exp), upper.pow(exp), leftClosed, rightClosed);
+            if(lower.isInfinity() || upper.isInfinity()) {
+                if(exp > Number(0)) {
+                    return Interval(Number::positiveInfinity(), Number::positiveInfinity(), false, false);
+                } else {
+                    return Interval(Number(0), Number(0).nextAbove(), false, false);
+                }
+            }
+            
+            // non-integer power produces a floating error, so we need to use the nextBelow and nextAbove to get the result
+            return Interval(lower.pow(exp).nextBelow(), upper.pow(exp).nextAbove(), leftClosed, rightClosed);
         } else if(lower <= Number(0) && exp >= Number(0)) {
             // if the base contains 0 or negative number, and the exponent is non-negative, then special processing is needed
             if(upper <= Number(0)) {
@@ -1757,7 +1857,7 @@ namespace SMTParser{
                 throw std::domain_error("Cannot compute non-integer power of negative interval");
             }
             // the interval crosses zero, the result starts from 0
-            return Interval(Number(0), upper.pow(exp), true, rightClosed);
+            return Interval(Number(0), upper.pow(exp).nextAbove(), true, false);
         } else {
             // for negative number, the non-integer power is undefined
             throw std::domain_error("Cannot compute non-integer power with negative base");
@@ -1768,48 +1868,126 @@ namespace SMTParser{
         if(isEmpty() || exp.isEmpty()) {
             return EmptyInterval;
         }
+
+        if(exp.isPoint()){
+            return pow(exp.getLower());
+        }
+
+        if(isPoint()){
+            auto val = getLower();
+            if(val == Number(0) || val == Number(1)){
+                return Interval(val, val, true, true);
+            }
+            else if(val == Number(2)){
+                return exp.pow2();
+            }
+            else{
+                
+                // power of val: val^x
+                Number newLower = Number(0);
+                Number newUpper = Number::positiveInfinity();
+                bool newLeftClosed = true;
+                bool newRightClosed = true;
+                if(exp.getLower().isPositiveInfinity()) {
+                    newLower = Number::positiveInfinity();
+                    newLeftClosed = false;
+                }
+                else if(exp.getLower().isNegativeInfinity()) {
+                    // val^(-inf) = 0
+                    newLower = Number(0);
+                    newLeftClosed = false;
+                }
+                else{
+                    if(exp.getLower().isInteger() && val.isInteger()){
+                        newLower = val.pow(exp.getLower().toInteger());
+                    }
+                    else{
+                        newLower = val.pow(exp.getLower());
+                        newLower = newLower.nextBelow();
+                        newLeftClosed = false;
+                    }
+                }
+
+                if(exp.getUpper().isPositiveInfinity()) {
+                    newUpper = Number::positiveInfinity();
+                    newRightClosed = false;
+                }
+                else if(exp.getUpper().isNegativeInfinity()) {
+                    newUpper = Number(0);
+                    newRightClosed = false;
+                }
+                else{
+                    if(exp.getUpper().isInteger() && val.isInteger()){
+                        newUpper = val.pow(exp.getUpper().toInteger());
+                    }
+                    else{
+                        newUpper = val.pow(exp.getUpper());
+                        newUpper = newUpper.nextAbove();
+                        newRightClosed = false;
+                    }
+                }
+
+                return Interval(newLower, newUpper, newLeftClosed, newRightClosed);
+            }
+        }
         
         // if the base interval is completely positive
         if(lower > Number(0)) {
             // calculate the four corner points
-            Number vals[4] = {
-                lower.pow(exp.getLower()),
-                lower.pow(exp.getUpper()),
-                upper.pow(exp.getLower()),
-                upper.pow(exp.getUpper())
-            };
+            std::vector<Number> vals;
+            vals.push_back(lower.pow(exp.getLower()));
+            vals.push_back(lower.pow(exp.getUpper()));
+            vals.push_back(upper.pow(exp.getLower()));
+            vals.push_back(upper.pow(exp.getUpper()));
+            vals.erase(std::remove_if(vals.begin(), vals.end(), 
+                                       [](Number x) { return x.isNaN(); }), 
+                        vals.end());
+            // if all the values are NaN, then the result is undefined
+            if(vals.empty()){
+                return FullInterval;
+            }
             
             // find the minimum and maximum values
-            Number minVal = std::min({vals[0], vals[1], vals[2], vals[3]});
-            Number maxVal = std::max({vals[0], vals[1], vals[2], vals[3]});
+            Number minVal = vals[0];
+            Number maxVal = vals[0];
+            for(auto val : vals){
+                if(val < minVal){
+                    minVal = val;
+                }
+                if(val > maxVal){
+                    maxVal = val;
+                }
+            }
             
             // the closedness depends on the relation between the corner points and the boundary values
             bool newLeftClosed = false, newRightClosed = false;
             
-            if(minVal == vals[0])
+            if(minVal == vals[0]){
                 newLeftClosed = leftClosed && exp.isLeftClosed();
-            else if(minVal == vals[1])
+            }
+            else if(minVal == vals[1]){
                 newLeftClosed = leftClosed && exp.isRightClosed();
-            else if(minVal == vals[2])
+            }
+            else if(minVal == vals[2]){
                 newLeftClosed = rightClosed && exp.isLeftClosed();
-            else if(minVal == vals[3])
+            }
+            else if(minVal == vals[3]){
                 newLeftClosed = rightClosed && exp.isRightClosed();
-            
-            if(maxVal == vals[0])
+            }
+
+            if(maxVal == vals[0]){
                 newRightClosed = leftClosed && exp.isLeftClosed();
-            else if(maxVal == vals[1])
+            }
+            else if(maxVal == vals[1]){
                 newRightClosed = leftClosed && exp.isRightClosed();
-            else if(maxVal == vals[2])
+            }
+            else if(maxVal == vals[2]){
                 newRightClosed = rightClosed && exp.isLeftClosed();
-            else if(maxVal == vals[3])
+            }
+            else if(maxVal == vals[3]){
                 newRightClosed = rightClosed && exp.isRightClosed();
-            
+            }
             return Interval(minVal, maxVal, newLeftClosed, newRightClosed);
-        }
-        
-        // if the exponent interval is a fixed integer
-        if(exp.isPoint() && exp.getLower().isInteger()) {
-            return pow(exp.getLower()); // call Interval::pow(const Number&)
         }
         
         // if the base contains 0 or negative number, and the exponent is not a fixed integer, then special processing is needed
