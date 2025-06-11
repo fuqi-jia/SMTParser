@@ -1996,7 +1996,7 @@ namespace SMTParser{
     }
 
     Interval Interval::atan2(const Number& x) const {
-        if(isEmpty()) {
+        if(isEmpty() || x.isNaN()) {
             return EmptyInterval;
         }
         
@@ -2019,7 +2019,25 @@ namespace SMTParser{
             std::swap(low, high);
             std::swap(newLeftClosed, newRightClosed);
         }
-        
+
+        // add a small value
+        if(low < -Number::pi()){
+            low = -Number::pi();
+            newLeftClosed = true;
+        }
+        else {
+            low = low.nextBelow();
+            newLeftClosed = false;
+        }
+
+        if(high > Number::pi()){
+            high = Number::pi();
+            newRightClosed = true;
+        }
+        else{
+            high = high.nextAbove();
+            newRightClosed = false;
+        }
         return Interval(low, high, newLeftClosed, newRightClosed);
     }
 
@@ -2098,6 +2116,25 @@ namespace SMTParser{
             newRightClosed = rightClosed && x.isLeftClosed();
         else if(maxVal == vals[3])
             newRightClosed = rightClosed && x.isRightClosed();
+
+        // add a small value
+        if(minVal < -Number::pi()){
+            minVal = -Number::pi();
+            newLeftClosed = true;
+        }
+        else{
+            minVal = minVal.nextBelow();
+            newLeftClosed = false;
+        }
+
+        if(maxVal > Number::pi()){
+            maxVal = Number::pi();
+            newRightClosed = true;
+        }
+        else{
+            maxVal = maxVal.nextAbove();
+            newRightClosed = false;
+        }
         
         return Interval(minVal, maxVal, newLeftClosed, newRightClosed);
     }
