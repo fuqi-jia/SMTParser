@@ -431,6 +431,12 @@ namespace SMTParser{
         if(isEmpty()) {
             return EmptyInterval;
         }
+
+        // lb(x) is defined for x > 0
+        if(upper <= 0) {
+            return EmptyInterval;
+        }
+
         Number new_lower = 0;
         Number new_upper = 0;
         bool new_leftClosed = true;
@@ -440,7 +446,7 @@ namespace SMTParser{
         }
         
         // for lower bound
-        if(lower < 0){
+        if(lower <= 0){
             new_lower = Number::negativeInfinity();
             new_leftClosed = false;
         }
@@ -471,13 +477,19 @@ namespace SMTParser{
         if(isEmpty()) {
             return EmptyInterval;
         }
+
+        // ln(x) is defined for x > 0
+        if(upper <= 0) {
+            return EmptyInterval;
+        }
+
         Number new_lower = 0;
         Number new_upper = 0;
         bool new_leftClosed = true;
         bool new_rightClosed = true;
 
         // for lower bound
-        if(lower < 0){
+        if(lower <= 0){
             new_lower = Number::negativeInfinity();
             new_leftClosed = false;
         }
@@ -508,13 +520,19 @@ namespace SMTParser{
         if(isEmpty()) {
             return EmptyInterval;
         }
+
+        // lg(x) is defined for x > 0
+        if(upper <= 0) {
+            return EmptyInterval;
+        }
+
         Number new_lower = 0;
         Number new_upper = 0;
         bool new_leftClosed = true;
         bool new_rightClosed = true;
         
         // for lower bound
-        if(lower < 0){
+        if(lower <= 0){
             new_lower = Number::negativeInfinity();
             new_leftClosed = false;
         }
@@ -545,25 +563,120 @@ namespace SMTParser{
         if(isEmpty()) {
             return EmptyInterval;
         }
-        return Interval(lower.exp(), upper.exp(), leftClosed, rightClosed);
+
+        Number newLower = lower;
+        Number newUpper = upper;
+        bool newLeftClosed = false;
+        bool newRightClosed = false;
+        if(lower.isNegativeInfinity()) {
+            // exp(-inf) = 0
+            newLower = Number(0);
+        }
+        else if(lower.isPositiveInfinity()) {
+            newLower = Number::positiveInfinity();
+        }
+        else{
+            newLower = lower.exp();
+            newLower = newLower.nextBelow();
+        }
+
+        if(upper.isNegativeInfinity()) {
+            newUpper = Number(0);
+        }
+        else if(upper.isPositiveInfinity()) {
+            newUpper = Number::positiveInfinity();
+        }
+        else{
+            newUpper = upper.exp();
+            newUpper = newUpper.nextAbove();
+        }
+
+        return Interval(newLower, newUpper, newLeftClosed, newRightClosed);
     }
 
     Interval Interval::sqrt() const {
         if(isEmpty()) {
             return EmptyInterval;
         }
-        if(lower < 0) {
-            throw std::domain_error("Cannot compute square root of interval containing negative numbers");
+        if(upper <= 0) {
+            return EmptyInterval;
         }
-        return Interval(lower.sqrt(), upper.sqrt(), leftClosed, rightClosed);
+        Number newLower = lower;
+        Number newUpper = upper;
+        bool newLeftClosed = leftClosed;
+        bool newRightClosed = rightClosed;
+        if(lower <= 0) {
+            newLower = Number(0);
+            newLeftClosed = true;
+        }
+        else if(lower.isPositiveInfinity()) {
+            newLower = Number::positiveInfinity();
+            newLeftClosed = false;
+        }
+        else{
+            newLower = lower.sqrt();
+            newLower = newLower.nextBelow();
+            newLeftClosed = false;
+        }
+
+        if(upper <= 0) {
+            newUpper = Number(0);
+            newRightClosed = true;
+        }
+        else if(upper.isPositiveInfinity()) {
+            newUpper = Number::positiveInfinity();
+            newRightClosed = false;
+        }
+        else{
+            newUpper = upper.sqrt();
+            newUpper = newUpper.nextAbove();
+            newRightClosed = false;
+        }
+
+        return Interval(newLower, newUpper, newLeftClosed, newRightClosed);
     }
 
     Interval Interval::safesqrt() const {
         if(isEmpty()) {
             return EmptyInterval;
         }
-        Number newLower = (lower < 0) ? Number(0) : lower;
-        return Interval(newLower.sqrt(), upper.sqrt(), (lower < 0) ? true : leftClosed, rightClosed);
+
+        if(upper <= 0) {
+            return EmptyInterval;
+        }
+        Number newLower = lower;
+        Number newUpper = upper;
+        bool newLeftClosed = leftClosed;
+        bool newRightClosed = rightClosed;
+        if(lower <= 0) {
+            newLower = Number(0);
+            newLeftClosed = true;
+        }
+        else if(lower.isPositiveInfinity()) {
+            newLower = Number::positiveInfinity();
+            newLeftClosed = false;
+        }
+        else{
+            newLower = lower.safesqrt();
+            newLower = newLower.nextBelow();
+            newLeftClosed = false;
+        }
+
+        if(upper <= 0) {
+            newUpper = Number(0);
+            newRightClosed = true;
+        }
+        else if(upper.isPositiveInfinity()) {
+            newUpper = Number::positiveInfinity();
+            newRightClosed = false;
+        }
+        else{
+            newUpper = upper.safesqrt();
+            newUpper = newUpper.nextAbove();
+            newRightClosed = false;
+        }
+
+        return Interval(newLower, newUpper, newLeftClosed, newRightClosed);
     }
 
     Interval Interval::sin() const {
@@ -573,6 +686,11 @@ namespace SMTParser{
         
         // define the period
         const Number TWO_PI = Number(2) * Number::pi();
+
+        // if the interval contains infinity, the result is undefined
+        if(lower.isInfinity() || upper.isInfinity()) {
+            return Interval(Number(-1), Number(1), true, true);
+        }
         
         // check if the interval covers the whole period
         if((upper - lower) >= TWO_PI) {
@@ -620,9 +738,16 @@ namespace SMTParser{
             newRightClosed = true;
         }
         
-        // ensure that the interval does not exceed the range of the sine function [-1, 1]
-        minVal = std::max(minVal, Number(-1));
-        maxVal = std::min(maxVal, Number(1));
+        if(minVal > Number(-1)) {
+            // extend a small value
+            minVal = minVal.nextBelow();
+            newLeftClosed = false;
+        }
+        if(maxVal < Number(1)) {
+            // extend a small value
+            maxVal = maxVal.nextAbove();
+            newRightClosed = false;
+        }
         
         return Interval(minVal, maxVal, newLeftClosed, newRightClosed);
     }
@@ -634,6 +759,11 @@ namespace SMTParser{
         
         // define the period
         const Number TWO_PI = Number(2) * Number::pi();
+        
+        // if the interval contains infinity, the result is undefined
+        if(lower.isInfinity() || upper.isInfinity()) {
+            return Interval(Number(-1), Number(1), true, true);
+        }
         
         // check if the interval covers the whole period
         if((upper - lower) >= TWO_PI) {
@@ -682,9 +812,16 @@ namespace SMTParser{
             newRightClosed = true;
         }
         
-        // ensure that the interval does not exceed the range of the cosine function [-1, 1]
-        minVal = std::max(minVal, Number(-1));
-        maxVal = std::min(maxVal, Number(1));
+        if(minVal > Number(-1)) {
+            // extend a small value
+            minVal = minVal.nextBelow();
+            newLeftClosed = false;
+        }
+        if(maxVal < Number(1)) {
+            // extend a small value
+            maxVal = maxVal.nextAbove();
+            newRightClosed = false;
+        }
         
         return Interval(minVal, maxVal, newLeftClosed, newRightClosed);
     }
@@ -697,6 +834,11 @@ namespace SMTParser{
         // define the constants
         const Number PI_HALF = Number::pi() / Number(2);
         const Number PI = Number::pi();
+        
+        // if the interval contains infinity, the result is undefined
+        if(lower.isInfinity() || upper.isInfinity()) {
+            return FullInterval;
+        }
         
         // normalize to [-π/2, π/2)
         Number factor = (lower / PI).floor();
@@ -727,6 +869,12 @@ namespace SMTParser{
             std::swap(tanLow, tanHigh);
             std::swap(newLeftClosed, newRightClosed);
         }
+        // extend a small value
+        tanLow = tanLow.nextBelow();
+        tanHigh = tanHigh.nextAbove();
+        newLeftClosed = false;
+        newRightClosed = false;
+
         return Interval(tanLow, tanHigh, newLeftClosed, newRightClosed);
     }
 
@@ -744,16 +892,8 @@ namespace SMTParser{
         }
         
         // cotangent function cot(x) = 1/tan(x)
-        Number cotLow = Number(1) / tanInterval.getUpper();
-        Number cotHigh = Number(1) / tanInterval.getLower();
-        bool newLeftClosed = leftClosed;
-        bool newRightClosed = rightClosed;
-        if(cotLow > cotHigh) {
-            std::swap(cotLow, cotHigh);
-            std::swap(newLeftClosed, newRightClosed);
-        }
-        
-        return Interval(cotLow, cotHigh, newLeftClosed, newRightClosed);
+        Interval one = Interval(Number(1), Number(1), true, true);
+        return one / tanInterval;
     }
 
     Interval Interval::sec() const {
@@ -770,16 +910,8 @@ namespace SMTParser{
         }
         
         // secant function sec(x) = 1/cos(x)
-        Number secLow = Number(1) / cosInterval.getUpper();
-        Number secHigh = Number(1) / cosInterval.getLower();
-        bool newLeftClosed = leftClosed;
-        bool newRightClosed = rightClosed;
-        if(secLow > secHigh) {
-            std::swap(secLow, secHigh);
-            std::swap(newLeftClosed, newRightClosed);
-        }
-        
-        return Interval(secLow, secHigh, newLeftClosed, newRightClosed);
+        Interval one = Interval(Number(1), Number(1), true, true);
+        return one / cosInterval;
     }
 
     Interval Interval::csc() const {
@@ -796,16 +928,8 @@ namespace SMTParser{
         }
         
         // cosecant function csc(x) = 1/sin(x)
-        Number cscLow = Number(1) / sinInterval.getUpper();
-        Number cscHigh = Number(1) / sinInterval.getLower();
-        bool newLeftClosed = leftClosed;
-        bool newRightClosed = rightClosed;
-        if(cscLow > cscHigh) {
-            std::swap(cscLow, cscHigh);
-            std::swap(newLeftClosed, newRightClosed);
-        }
-        
-        return Interval(cscLow, cscHigh, newLeftClosed, newRightClosed);
+        Interval one = Interval(Number(1), Number(1), true, true);
+        return one / sinInterval;
     }
 
     Interval Interval::asin() const {
@@ -1165,13 +1289,28 @@ namespace SMTParser{
     }
 
     Interval Interval::operator*(const Number& value) const {
-        if(value >= 0) {
+        if(isEmpty()) {
+            return EmptyInterval;
+        }
+        if(value > 0) {
             return Interval(lower * value, upper * value, leftClosed, rightClosed);
-        } else {
+        } 
+        else if(value < 0) {
             return Interval(upper * value, lower * value, rightClosed, leftClosed);
+        }
+        else {
+            if(leftClosed && rightClosed) {
+                return Interval(0, 0, true, true);
+            }
+            else {
+                return EmptyInterval;
+            }
         }
     }
     Interval Interval::operator/(const Number& value) const {
+        if(isEmpty()) {
+            return EmptyInterval;
+        }
         if(value == 0) {
             throw std::domain_error("Division by zero");
         }
@@ -1183,14 +1322,23 @@ namespace SMTParser{
     }
 
     Interval Interval::operator+(const Interval& other) const {
+        if(isEmpty() || other.isEmpty()) {
+            return EmptyInterval;
+        }
         return Interval(lower + other.lower, upper + other.upper, leftClosed && other.leftClosed, rightClosed && other.rightClosed);
     }
 
     Interval Interval::operator-(const Interval& other) const {
+        if(isEmpty() || other.isEmpty()) {
+            return EmptyInterval;
+        }
         return Interval(lower - other.upper, upper - other.lower, leftClosed && other.rightClosed, rightClosed && other.leftClosed);
     }
 
     Interval Interval::operator*(const Interval& other) const {
+        if(isEmpty() || other.isEmpty()) {
+            return EmptyInterval;
+        }
         Number p1 = lower * other.lower;
         Number p2 = lower * other.upper;
         Number p3 = upper * other.lower;
@@ -1274,6 +1422,9 @@ namespace SMTParser{
     }
 
     Interval Interval::divReal(const Number& value) const {
+        if(isEmpty()) {
+            return EmptyInterval;
+        }
         if(value == 0) {
             throw std::domain_error("Division by zero");
         }
@@ -1285,12 +1436,22 @@ namespace SMTParser{
     }
 
     Interval Interval::divReal(const Interval& other) const {
+        if(isEmpty() || other.isEmpty()) {
+            return EmptyInterval;
+        }
         // if the divisor interval contains 0, the result is undefined
         if((other.lower < 0 && other.upper > 0) ||
            (other.lower == 0 && other.leftClosed) ||
            (other.upper == 0 && other.rightClosed)) {
-            throw std::domain_error("Division by interval containing zero");
+            return FullInterval;
         }
+
+        // if the dividend interval is zero, the result is zero
+        if(lower == 0 && upper == 0 && leftClosed && rightClosed) {
+            return Interval(0, 0, true, true);
+        }
+
+        cassert(!other.contains(0), "Division by interval containing zero");
         
         Number p1 = lower / other.lower;
         Number p2 = lower / other.upper;
@@ -1330,6 +1491,9 @@ namespace SMTParser{
     }
 
     Interval Interval::divInt(const Number& value) const {
+        if(isEmpty()) {
+            return EmptyInterval;
+        }
         if(value == 0) {
             throw std::domain_error("Division by zero");
         }
@@ -1342,11 +1506,19 @@ namespace SMTParser{
     }
 
     Interval Interval::divInt(const Interval& other) const {
+        if(isEmpty() || other.isEmpty()) {
+            return EmptyInterval;
+        }
         // if the divisor interval contains 0, the result is undefined
         if((other.lower < 0 && other.upper > 0) ||
            (other.lower == 0 && other.leftClosed) ||
            (other.upper == 0 && other.rightClosed)) {
-            throw std::domain_error("Division by interval containing zero");
+            return FullInterval;
+        }
+
+        // if the dividend interval is zero, the result is zero
+        if(lower == 0 && upper == 0 && leftClosed && rightClosed) {
+            return Interval(0, 0, true, true);
         }
         
         Number p1 = (lower / other.lower).floor();
@@ -1469,6 +1641,45 @@ namespace SMTParser{
 
     Interval Interval::operator^(const Number& value) const {
         return this->pow(value);
+    }
+
+    Interval Interval::pow2() const {
+        if(isEmpty()) {
+            return EmptyInterval;
+        }
+        // power of 2: 2^x
+        Number newLower = Number(0);
+        Number newUpper = Number::positiveInfinity();
+        bool newLeftClosed = this->isLeftClosed();
+        bool newRightClosed = this->isRightClosed();
+        if(lower.isPositiveInfinity()) {
+            newLower = Number::positiveInfinity();
+            newLeftClosed = false;
+        }
+        else if(lower.isNegativeInfinity()) {
+            // 2^(-inf) = 0
+            newLower = Number(0);
+            newLeftClosed = false;
+        }
+        else{
+            newLower = Number(2).pow(lower);
+        }
+
+        if(upper.isPositiveInfinity()) {
+            newUpper = Number::positiveInfinity();
+            newRightClosed = false;
+        }
+        else if(upper.isNegativeInfinity()) {
+            newUpper = Number(0);
+            newRightClosed = false;
+        }
+        else{
+            newUpper = Number(2).pow(upper);
+        }
+
+        cassert(newLower >= Number(0), "2^x is always positive");
+
+        return Interval(newLower, newUpper, newLeftClosed, newRightClosed);
     }
 
     Interval Interval::pow(const Number& exp) const {

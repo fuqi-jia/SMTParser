@@ -92,6 +92,7 @@ class Interval {
         Interval lb() const;
         Interval ln() const;
         Interval lg() const;
+        Interval pow2() const;
         Interval exp() const;
         Interval sqrt() const;
         Interval safesqrt() const;
@@ -149,6 +150,8 @@ class Interval {
         Interval pow(const Interval& exp) const;
         Interval atan2(const Number& x) const;
         Interval atan2(const Interval& x) const;
+        Interval log(const Number& base) const;
+        Interval log(const Interval& base) const;
 
         // advanced functions
         Interval operate(const NODE_KIND& kind) const;
@@ -174,6 +177,7 @@ class Interval {
 };
 
 inline Interval EmptyInterval = Interval(1, -1, false, false);
+inline Interval FullInterval = Interval(Number::negativeInfinity(), Number::positiveInfinity(), false, false);
 
 } // namespace SMTParser
 
