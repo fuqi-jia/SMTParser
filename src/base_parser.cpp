@@ -587,7 +587,6 @@ namespace SMTParser{
 		if (buflen > 0) line_number = 1;
 		scanToNextSymbol();
 		std::shared_ptr<DAGNode> expr = parseExpr();
-		std::cout << "expr: " << toString(expr) << std::endl;
 		
 		bufptr = nullptr;
 		delete[] buffer;
