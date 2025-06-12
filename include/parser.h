@@ -93,6 +93,7 @@ namespace SMTParser{
     enum class RESULT_TYPE {
         RT_SAT,
         RT_UNSAT,
+        RT_DELTA_SAT,
         RT_UNKNOWN,
         RT_ERROR
     };
