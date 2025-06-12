@@ -1112,7 +1112,7 @@ namespace SMTParser{
     bool Parser::evaluateDistinct(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode>& result) {
         bool changed = false;
         std::vector<std::shared_ptr<DAGNode>> children;
-        boost::unordered_set<std::shared_ptr<DAGNode>> const_vals;
+        std::unordered_set<std::shared_ptr<DAGNode>> const_vals;
         for(auto child : expr->getChildren()){
             std::shared_ptr<DAGNode> eval = NULL_NODE;
             changed |= evaluate(child, model, eval);

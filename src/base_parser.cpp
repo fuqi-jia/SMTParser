@@ -147,7 +147,7 @@ namespace SMTParser{
 	std::vector<std::shared_ptr<DAGNode>> Parser::getAssertions() const{
 		return assertions;
 	}
-	boost::unordered_map<std::string, boost::unordered_set<size_t>> Parser::getGroupedAssertions() const{
+	std::unordered_map<std::string, std::unordered_set<size_t>> Parser::getGroupedAssertions() const{
 		return assertion_groups;
 	}
 	std::vector<std::vector<std::shared_ptr<DAGNode>>> Parser::getAssumptions() const{
@@ -159,7 +159,7 @@ namespace SMTParser{
 	std::vector<std::shared_ptr<DAGNode>> Parser::getSoftWeights() const{
 		return soft_weights;
 	}
-	boost::unordered_map<std::string, boost::unordered_set<size_t>> Parser::getGroupedSoftAssertions() const{
+	std::unordered_map<std::string, std::unordered_set<size_t>> Parser::getGroupedSoftAssertions() const{
 		return soft_assertion_groups;
 	}
 	std::vector<std::shared_ptr<Objective>> Parser::getObjectives() const{
@@ -647,7 +647,7 @@ namespace SMTParser{
 			// if grp_id is not empty, insert to assertion_groups
 			if(grp_id != ""){
 				if(assertion_groups.find(grp_id) == assertion_groups.end()){
-					assertion_groups.insert(std::pair<std::string, boost::unordered_set<size_t>>(grp_id, {index}));
+					assertion_groups.insert(std::pair<std::string, std::unordered_set<size_t>>(grp_id, {index}));
 				}
 				else{
 					assertion_groups[grp_id].insert(index);
@@ -2220,7 +2220,7 @@ namespace SMTParser{
 		}
 		
 		// variable map for local variables
-		boost::unordered_map<std::string, std::shared_ptr<DAGNode>> new_params_map;
+		std::unordered_map<std::string, std::shared_ptr<DAGNode>> new_params_map;
 		std::vector<std::shared_ptr<DAGNode>> func_params = fun->getFuncParams();
 		for (size_t i = 0; i < func_params.size(); i++) {
 			if(params[i]->isErr()){
@@ -2237,14 +2237,14 @@ namespace SMTParser{
 	}
 
 	// Iterative version of post-order traversal function application
-	std::shared_ptr<DAGNode> Parser::applyFunPostOrder(std::shared_ptr<DAGNode> node, boost::unordered_map<std::string, std::shared_ptr<DAGNode>> & params){
+	std::shared_ptr<DAGNode> Parser::applyFunPostOrder(std::shared_ptr<DAGNode> node, std::unordered_map<std::string, std::shared_ptr<DAGNode>> & params){
 		if (!node) return nullptr;
 		
 		// Stack to track nodes to process
 		std::stack<std::pair<std::shared_ptr<DAGNode>, bool>> todo;
 		
 		// Map to store processed results for each node
-		boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> results;
+		std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> results;
 		
 		// Push initial node to stack
 		todo.push(std::make_pair(node, false));
@@ -2372,12 +2372,12 @@ namespace SMTParser{
 	}
 
 	
-	std::shared_ptr<DAGNode> Parser::substitute(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::string, std::shared_ptr<DAGNode>> &params){
-		boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> visited;
+	std::shared_ptr<DAGNode> Parser::substitute(std::shared_ptr<DAGNode> expr, std::unordered_map<std::string, std::shared_ptr<DAGNode>> &params){
+		std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> visited;
 		return substitute(expr, params, visited);
 	}
 	// visited is used to avoid infinite loop
-	std::shared_ptr<DAGNode> Parser::substitute(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::string, std::shared_ptr<DAGNode>> &params, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> & visited){
+	std::shared_ptr<DAGNode> Parser::substitute(std::shared_ptr<DAGNode> expr, std::unordered_map<std::string, std::shared_ptr<DAGNode>> &params, std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> & visited){
 		if( visited.find(expr) != visited.end()){
 			return visited[expr];
 		}

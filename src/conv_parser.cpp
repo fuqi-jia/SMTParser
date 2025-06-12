@@ -30,19 +30,19 @@
 
 namespace SMTParser {
 
-    void Parser::collectAtoms(std::shared_ptr<DAGNode> expr, boost::unordered_set<std::shared_ptr<DAGNode>>& atoms) {
-        boost::unordered_set<std::shared_ptr<DAGNode>> visited;
+    void Parser::collectAtoms(std::shared_ptr<DAGNode> expr, std::unordered_set<std::shared_ptr<DAGNode>>& atoms) {
+        std::unordered_set<std::shared_ptr<DAGNode>> visited;
         collectAtoms(expr, atoms, visited);
     }
 
-    void Parser::collectAtoms(std::vector<std::shared_ptr<DAGNode>> exprs, boost::unordered_set<std::shared_ptr<DAGNode>>& atoms) {
-        boost::unordered_set<std::shared_ptr<DAGNode>> visited;
+    void Parser::collectAtoms(std::vector<std::shared_ptr<DAGNode>> exprs, std::unordered_set<std::shared_ptr<DAGNode>>& atoms) {
+        std::unordered_set<std::shared_ptr<DAGNode>> visited;
         for(auto& expr : exprs) {
             collectAtoms(expr, atoms, visited);
         }
     }
 
-    void Parser::collectAtoms(std::shared_ptr<DAGNode> expr, boost::unordered_set<std::shared_ptr<DAGNode>>& atoms, boost::unordered_set<std::shared_ptr<DAGNode>>& visited) {
+    void Parser::collectAtoms(std::shared_ptr<DAGNode> expr, std::unordered_set<std::shared_ptr<DAGNode>>& atoms, std::unordered_set<std::shared_ptr<DAGNode>>& visited) {
         if (visited.find(expr) != visited.end()) {
             return;
         }
@@ -79,7 +79,7 @@ namespace SMTParser {
     }
     std::vector<std::shared_ptr<DAGNode>> Parser::getCNFAtoms() {
         std::vector<std::shared_ptr<DAGNode>> atoms;
-        boost::unordered_set<std::shared_ptr<DAGNode>> visited;
+        std::unordered_set<std::shared_ptr<DAGNode>> visited;
         for(auto& [atom, bool_var] : cnf_bool_var_map){
             // skip the atom if it has been visited
             if(visited.find(bool_var) != visited.end()){
@@ -107,7 +107,7 @@ namespace SMTParser {
     }
     std::vector<std::shared_ptr<DAGNode>> Parser::getCNFBoolVars() {
         std::vector<std::shared_ptr<DAGNode>> bool_vars;
-        boost::unordered_set<std::shared_ptr<DAGNode>> visited;
+        std::unordered_set<std::shared_ptr<DAGNode>> visited;
         for(auto& [bool_var, atom] : cnf_atom_map){
             // skip the bool_var if it has been visited
             if(visited.find(bool_var) != visited.end()){
@@ -128,19 +128,19 @@ namespace SMTParser {
         return bool_vars;
     }
 
-    void Parser::collectVars(std::vector<std::shared_ptr<DAGNode>> exprs, boost::unordered_set<std::shared_ptr<DAGNode>>& vars) {
-        boost::unordered_set<std::shared_ptr<DAGNode>> visited;
+    void Parser::collectVars(std::vector<std::shared_ptr<DAGNode>> exprs, std::unordered_set<std::shared_ptr<DAGNode>>& vars) {
+        std::unordered_set<std::shared_ptr<DAGNode>> visited;
         for(auto& expr : exprs) {
             collectVars(expr, vars, visited);
         }
     }
 
-    void Parser::collectVars(std::shared_ptr<DAGNode> expr, boost::unordered_set<std::shared_ptr<DAGNode>>& vars) {
-        boost::unordered_set<std::shared_ptr<DAGNode>> visited;
+    void Parser::collectVars(std::shared_ptr<DAGNode> expr, std::unordered_set<std::shared_ptr<DAGNode>>& vars) {
+        std::unordered_set<std::shared_ptr<DAGNode>> visited;
         collectVars(expr, vars, visited);
     }
 
-    void Parser::collectVars(std::shared_ptr<DAGNode> expr, boost::unordered_set<std::shared_ptr<DAGNode>>& vars, boost::unordered_set<std::shared_ptr<DAGNode>>& visited) {
+    void Parser::collectVars(std::shared_ptr<DAGNode> expr, std::unordered_set<std::shared_ptr<DAGNode>>& vars, std::unordered_set<std::shared_ptr<DAGNode>>& visited) {
         if (visited.find(expr) != visited.end()) {
             return;
         }
@@ -155,8 +155,8 @@ namespace SMTParser {
         }
     }
 
-    std::shared_ptr<DAGNode> Parser::replaceAtoms(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& atom_map) {
-        boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> visited;
+    std::shared_ptr<DAGNode> Parser::replaceAtoms(std::shared_ptr<DAGNode> expr, std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& atom_map) {
+        std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> visited;
         bool is_changed = false;
         std::shared_ptr<DAGNode> new_expr = replaceAtoms(expr, atom_map, visited, is_changed);
         if (is_changed) {
@@ -165,7 +165,7 @@ namespace SMTParser {
         return expr;
     }
 
-    std::shared_ptr<DAGNode> Parser::replaceAtoms(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& atom_map, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited, bool& is_changed) {
+    std::shared_ptr<DAGNode> Parser::replaceAtoms(std::shared_ptr<DAGNode> expr, std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& atom_map, std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited, bool& is_changed) {
         if (visited.find(expr) != visited.end()) {
             return visited[expr];
         }
@@ -193,8 +193,8 @@ namespace SMTParser {
         return expr;
     }
 
-    std::shared_ptr<DAGNode> Parser::replaceNodes(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& node_map) {
-        boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> visited;
+    std::shared_ptr<DAGNode> Parser::replaceNodes(std::shared_ptr<DAGNode> expr, std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& node_map) {
+        std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> visited;
         bool is_changed = false;
         std::shared_ptr<DAGNode> new_expr = replaceNodes(expr, node_map, visited, is_changed);
         if (is_changed) {
@@ -203,7 +203,7 @@ namespace SMTParser {
         return expr;
     }
 
-    std::shared_ptr<DAGNode> Parser::replaceNodes(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& node_map, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited, bool& is_changed) {
+    std::shared_ptr<DAGNode> Parser::replaceNodes(std::shared_ptr<DAGNode> expr, std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& node_map, std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited, bool& is_changed) {
         if (visited.find(expr) != visited.end()) {
             return visited[expr];
         }
@@ -232,7 +232,7 @@ namespace SMTParser {
     }
 
     std::shared_ptr<DAGNode> Parser::toTseitinCNF(std::shared_ptr<DAGNode> expr, std::vector<std::shared_ptr<DAGNode>>& clauses) {
-        boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> visited;
+        std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> visited;
         std::shared_ptr<DAGNode> result = toTseitinCNF(expr, visited, clauses);
         return result;
     }
@@ -313,7 +313,7 @@ namespace SMTParser {
         
         return c;
     }
-    std::shared_ptr<DAGNode> Parser::toTseitinCNF(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited, std::vector<std::shared_ptr<DAGNode>>& clauses) {
+    std::shared_ptr<DAGNode> Parser::toTseitinCNF(std::shared_ptr<DAGNode> expr, std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited, std::vector<std::shared_ptr<DAGNode>>& clauses) {
         // Tseitin CNF is ¬applied to atoms: all atoms are already in CNF form
         if(expr->isAtom()){
             // directly return the original expression
@@ -765,7 +765,7 @@ namespace SMTParser {
         }
 
         // create a new variable for each top atom
-        boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> atom_map;
+        std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> atom_map;
         // a new vector to store the new assertions
         new_exprs.clear();
         std::vector<std::shared_ptr<DAGNode>> new_children;
@@ -836,11 +836,11 @@ namespace SMTParser {
         }
         std::vector<std::shared_ptr<DAGNode>> clauses;
         // collect all atoms
-        boost::unordered_set<std::shared_ptr<DAGNode>> atoms;
+        std::unordered_set<std::shared_ptr<DAGNode>> atoms;
         collectAtoms(expr, atoms);
 
         // create a new variable for each atom
-        boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> atom_map;
+        std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> atom_map;
         for (auto& atom : atoms) {
             std::shared_ptr<DAGNode> new_var = mkTempVar(BOOL_SORT);
             // add to cnf_map
@@ -895,7 +895,7 @@ namespace SMTParser {
 
     // eliminate xor, implies, ite, eq, distinct
     std::shared_ptr<DAGNode> Parser::toDNFEliminateAll(std::shared_ptr<DAGNode> expr){
-        boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> visited;
+        std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> visited;
         bool is_changed = true;
         while(is_changed){
             is_changed = false;
@@ -905,7 +905,7 @@ namespace SMTParser {
     }
 
     std::shared_ptr<DAGNode> Parser::toDNFEliminateAll(std::shared_ptr<DAGNode> expr,
-                                                        boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited,
+                                                        std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited,
                                                         bool& is_changed){
         if(expr->isLiteral() || expr->isAtom() || expr->isTempVar()){ return expr; }
         if(visited.find(expr) != visited.end()){
@@ -1076,7 +1076,7 @@ namespace SMTParser {
 
     // apply DNF distributive law
     std::shared_ptr<DAGNode> Parser::applyDNFDistributiveLaw(std::shared_ptr<DAGNode> expr) {
-        boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> visited;
+        std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> visited;
         std::shared_ptr<DAGNode> result = applyDNFDistributiveLawRec(expr, visited);
         return flattenDNF(result);
     }
@@ -1104,7 +1104,7 @@ namespace SMTParser {
             }
             
             // remove duplicates
-            boost::unordered_set<std::shared_ptr<DAGNode>> unique_terms;
+            std::unordered_set<std::shared_ptr<DAGNode>> unique_terms;
             std::vector<std::shared_ptr<DAGNode>> result;
             for (auto& term : flattened) {
                 if (unique_terms.find(term) == unique_terms.end()) {
@@ -1133,7 +1133,7 @@ namespace SMTParser {
             }
             
             // remove duplicates
-            boost::unordered_set<std::shared_ptr<DAGNode>> unique_literals;
+            std::unordered_set<std::shared_ptr<DAGNode>> unique_literals;
             std::vector<std::shared_ptr<DAGNode>> result;
             for (auto& literal : flattened) {
                 if (unique_literals.find(literal) == unique_literals.end()) {
@@ -1152,7 +1152,7 @@ namespace SMTParser {
     // recursive implementation of DNF distributive law
     std::shared_ptr<DAGNode> Parser::applyDNFDistributiveLawRec(
             std::shared_ptr<DAGNode> expr,
-            boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited) {
+            std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited) {
         
         // base case: literal or visited node
         if(expr->isLiteral() || expr->isAtom() || expr->isTempVar()) { 
@@ -1494,14 +1494,14 @@ namespace SMTParser {
         return result;
     }
 
-    std::shared_ptr<DAGNode> Parser::splitOp(std::shared_ptr<DAGNode> expr, const boost::unordered_set<NODE_KIND>& op_set){
+    std::shared_ptr<DAGNode> Parser::splitOp(std::shared_ptr<DAGNode> expr, const std::unordered_set<NODE_KIND>& op_set){
         bool is_changed = false;
-        boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> visited;
+        std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> visited;
         split_lemmas.clear();
         return splitOp(expr, op_set, is_changed, visited);
     }
 
-    std::shared_ptr<DAGNode> Parser::splitOp(std::shared_ptr<DAGNode> expr, const boost::unordered_set<NODE_KIND>& op_set, bool& is_changed, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited){
+    std::shared_ptr<DAGNode> Parser::splitOp(std::shared_ptr<DAGNode> expr, const std::unordered_set<NODE_KIND>& op_set, bool& is_changed, std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited){
         if(visited.find(expr) != visited.end()){
             return visited[expr];
         }
@@ -1586,12 +1586,12 @@ namespace SMTParser {
     }
 
     // remove all the nodes in the expression
-    std::shared_ptr<DAGNode> Parser::remove(std::shared_ptr<DAGNode> expr, const boost::unordered_set<std::shared_ptr<DAGNode>>& nodes){
-        boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> visited;
+    std::shared_ptr<DAGNode> Parser::remove(std::shared_ptr<DAGNode> expr, const std::unordered_set<std::shared_ptr<DAGNode>>& nodes){
+        std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> visited;
         return remove(expr, nodes, visited);
     }
 
-    std::shared_ptr<DAGNode> Parser::remove(std::shared_ptr<DAGNode> expr, const boost::unordered_set<std::shared_ptr<DAGNode>>& nodes, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited){
+    std::shared_ptr<DAGNode> Parser::remove(std::shared_ptr<DAGNode> expr, const std::unordered_set<std::shared_ptr<DAGNode>>& nodes, std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited){
         if(visited.find(expr) != visited.end()){
             return visited[expr];
         }
@@ -1619,17 +1619,17 @@ namespace SMTParser {
         return expr;
     }
 
-    std::shared_ptr<DAGNode> Parser::binarizeOp(std::shared_ptr<DAGNode> expr, const boost::unordered_set<NODE_KIND>& op_set){
+    std::shared_ptr<DAGNode> Parser::binarizeOp(std::shared_ptr<DAGNode> expr, const std::unordered_set<NODE_KIND>& op_set){
         bool is_changed = false;
-        boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> visited;
+        std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> visited;
         return binarizeOp(expr, op_set, is_changed, visited);
     }
 
-    std::shared_ptr<DAGNode> Parser::binarizeOp(std::vector<std::shared_ptr<DAGNode>> exprs, const boost::unordered_set<NODE_KIND>& op_set){
+    std::shared_ptr<DAGNode> Parser::binarizeOp(std::vector<std::shared_ptr<DAGNode>> exprs, const std::unordered_set<NODE_KIND>& op_set){
         return binarizeOp(mkAnd(exprs), op_set);
     }
 
-    std::shared_ptr<DAGNode> Parser::binarizeOp(std::shared_ptr<DAGNode> expr, const boost::unordered_set<NODE_KIND>& op_set, bool& is_changed, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited){
+    std::shared_ptr<DAGNode> Parser::binarizeOp(std::shared_ptr<DAGNode> expr, const std::unordered_set<NODE_KIND>& op_set, bool& is_changed, std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited){
         if(visited.find(expr) != visited.end()){
             return visited[expr];
         }

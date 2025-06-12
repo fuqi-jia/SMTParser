@@ -89,7 +89,7 @@ namespace SMTParser{
         }
 
         // Static kind string cache for performance
-        static boost::unordered_map<NODE_KIND, const char*> kind_cache;
+        static std::unordered_map<NODE_KIND, const char*> kind_cache;
         static bool cache_initialized = false;
 
         if (!cache_initialized) {
@@ -467,13 +467,13 @@ namespace SMTParser{
     }
 
     // dump the node to the ofstream
-    void dumpSingleOp(const NODE_KIND& kind, const std::shared_ptr<DAGNode>& p, boost::unordered_set<std::shared_ptr<DAGNode>>& visited, std::ofstream& ofs){
+    void dumpSingleOp(const NODE_KIND& kind, const std::shared_ptr<DAGNode>& p, std::unordered_set<std::shared_ptr<DAGNode>>& visited, std::ofstream& ofs){
         ofs << "(" + kindToString(kind) + " ";
         dumpSMTLIB2(p, visited, ofs);
         ofs << ")";
     }
 
-    void dumpDoubleOp(const NODE_KIND& kind, const std::shared_ptr<DAGNode>& l, const std::shared_ptr<DAGNode>& r, boost::unordered_set<std::shared_ptr<DAGNode>>& visited, std::ofstream& ofs){
+    void dumpDoubleOp(const NODE_KIND& kind, const std::shared_ptr<DAGNode>& l, const std::shared_ptr<DAGNode>& r, std::unordered_set<std::shared_ptr<DAGNode>>& visited, std::ofstream& ofs){
         ofs << "(" + kindToString(kind) + " ";
         dumpSMTLIB2(l, visited, ofs);
         ofs << " ";
@@ -481,7 +481,7 @@ namespace SMTParser{
         ofs << ")";
     }
 
-    void dumpTripleOp(const NODE_KIND& kind, const std::shared_ptr<DAGNode>& l, const std::shared_ptr<DAGNode>& m, const std::shared_ptr<DAGNode>& r, boost::unordered_set<std::shared_ptr<DAGNode>>& visited, std::ofstream& ofs){
+    void dumpTripleOp(const NODE_KIND& kind, const std::shared_ptr<DAGNode>& l, const std::shared_ptr<DAGNode>& m, const std::shared_ptr<DAGNode>& r, std::unordered_set<std::shared_ptr<DAGNode>>& visited, std::ofstream& ofs){
         ofs << "(" + kindToString(kind) + " ";
         dumpSMTLIB2(l, visited, ofs);
         ofs << " ";
@@ -491,7 +491,7 @@ namespace SMTParser{
         ofs << ")";
     }
 
-    void dumpChainOp(const NODE_KIND& kind, const std::vector<std::shared_ptr<DAGNode>>& p, boost::unordered_set<std::shared_ptr<DAGNode>>& visited, std::ofstream& ofs){
+    void dumpChainOp(const NODE_KIND& kind, const std::vector<std::shared_ptr<DAGNode>>& p, std::unordered_set<std::shared_ptr<DAGNode>>& visited, std::ofstream& ofs){
         ofs << "(" + kindToString(kind);
         for (auto& node : p){
             ofs << " ";
@@ -500,7 +500,7 @@ namespace SMTParser{
         ofs << ")";
     }
 
-    void dumpQuantOp(const NODE_KIND& kind, const std::vector<std::shared_ptr<DAGNode>>& p, boost::unordered_set<std::shared_ptr<DAGNode>>& visited, std::ofstream& ofs){
+    void dumpQuantOp(const NODE_KIND& kind, const std::vector<std::shared_ptr<DAGNode>>& p, std::unordered_set<std::shared_ptr<DAGNode>>& visited, std::ofstream& ofs){
         ofs << "(" + kindToString(kind) + " (";
         for(size_t i=1;i<p.size();i++){
             if(i==1){
@@ -519,7 +519,7 @@ namespace SMTParser{
         ofs << ")";
     }
 
-    void dumpSMTLIB2(const std::shared_ptr<DAGNode>& node, boost::unordered_set<std::shared_ptr<DAGNode>>& visited, std::ofstream& ofs){
+    void dumpSMTLIB2(const std::shared_ptr<DAGNode>& node, std::unordered_set<std::shared_ptr<DAGNode>>& visited, std::ofstream& ofs){
         if(visited.find(node) != visited.end()){
             ofs << dumpSMTLIB2(node);
             return;
@@ -1020,7 +1020,7 @@ namespace SMTParser{
     }
     
     void dumpSMTLIB2(const std::shared_ptr<DAGNode>& root, std::ofstream& ofs) {
-        boost::unordered_set<std::shared_ptr<DAGNode>> visited;
+        std::unordered_set<std::shared_ptr<DAGNode>> visited;
         dumpSMTLIB2(root, visited, ofs);
     }
 

@@ -23,7 +23,6 @@ A C++ library for parsing, manipulating, and processing SMT-LIB (Satisfiability 
 
 - C++17 compatible compiler
 - CMake 3.10+
-- Boost library (system components)
 - GMP (GNU Multiple Precision Arithmetic Library)
 - MPFR (GNU Multiple Precision Floating-Point Reliable Library)
 
@@ -36,8 +35,6 @@ sudo apt install -y \
   build-essential \
   g++ \
   cmake \
-  libboost-system-dev \
-  libboost-filesystem-dev \
   libgmp-dev \
   libmpfr-dev
 ```
@@ -48,7 +45,6 @@ sudo apt install -y \
 sudo dnf install -y \
   gcc-c++ \
   cmake \
-  boost-devel \
   gmp-devel \
   mpfr-devel
 
@@ -56,7 +52,6 @@ sudo dnf install -y \
 sudo yum install -y \
   gcc-c++ \
   cmake \
-  boost-devel \
   gmp-devel \
   mpfr-devel
 ```
@@ -66,7 +61,6 @@ Using [Homebrew](https://brew.sh/):
 ```bash
 brew install \
   cmake \
-  boost \
   gmp \
   mpfr
 ```
@@ -81,7 +75,6 @@ pacman -Syu
 pacman -S \
   mingw-w64-x86_64-gcc \
   mingw-w64-x86_64-cmake \
-  mingw-w64-x86_64-boost \
   mingw-w64-x86_64-gmp \
   mingw-w64-x86_64-mpfr
 ```
@@ -90,7 +83,7 @@ pacman -S \
 1. Install [vcpkg](https://github.com/microsoft/vcpkg)
 2. Install dependencies:
 ```bash
-vcpkg install boost:x64-windows gmp:x64-windows mpfr:x64-windows
+vcpkg install gmp:x64-windows mpfr:x64-windows
 ```
 
 ##### Using WSL (Windows Subsystem for Linux)

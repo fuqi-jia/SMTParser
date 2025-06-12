@@ -28,7 +28,7 @@
 #define _OPTIONS_H
 
 #include "common.h"
-#include <boost/unordered_map.hpp>
+#include <unordered_map>
 
 namespace SMTParser{
     class GlobalOptions {
@@ -39,19 +39,19 @@ namespace SMTParser{
         bool get_assertions = false;
         bool get_assignment = false;
         // set-info
-        boost::unordered_map<std::string, std::string> info;
+        std::unordered_map<std::string, std::string> info;
         // get-info
-        boost::unordered_map<std::string, std::string> get_info;
+        std::unordered_map<std::string, std::string> get_info;
         bool get_model = false;
         // set-option
-        boost::unordered_map<std::string, std::string> options;
+        std::unordered_map<std::string, std::string> options;
         // get-option
-        boost::unordered_map<std::string, std::string> get_options;
+        std::unordered_map<std::string, std::string> get_options;
         bool get_proof = false;
         bool get_unsat_assumptions = false;
         bool get_unsat_core = false;
         // get-value
-        boost::unordered_map<std::string, std::string> values;
+        std::unordered_map<std::string, std::string> values;
 
         // get-objectives
         bool get_objectives = false;

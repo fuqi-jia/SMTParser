@@ -16,15 +16,13 @@ option(BUILD_BOTH_LIBS "Build both static and shared libraries" ON)
 option(BUILD_TESTS "Build the tests" OFF)
 option(ENABLE_DEBUG_SYMBOLS "Enable debug symbols for GDB support" OFF)
 
-# 如果启用了调试符号支持
+# if enabled Debug mode
 if(ENABLE_DEBUG_SYMBOLS)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O0")
     message(STATUS "Debug symbols enabled for GDB support")
 endif()
 
-# find dependencies
-find_package(Boost REQUIRED COMPONENTS system)
 
 # use pkg-config to find GMP and MPFR
 find_package(PkgConfig REQUIRED)
@@ -77,14 +75,12 @@ if(BUILD_BOTH_LIBS)
     # set static library include directories
     target_include_directories(smtparser_static PUBLIC 
         ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${Boost_INCLUDE_DIRS}
         ${GMP_INCLUDE_DIRS}
         ${MPFR_INCLUDE_DIRS}
     )
     
     # link static library dependencies
     target_link_libraries(smtparser_static PUBLIC
-        Boost::system
         ${GMP_LIBRARIES}
         ${MPFR_LIBRARIES}
     )
@@ -105,14 +101,12 @@ if(BUILD_BOTH_LIBS)
     # set shared library include directories
     target_include_directories(smtparser_shared PUBLIC 
         ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${Boost_INCLUDE_DIRS}
         ${GMP_INCLUDE_DIRS}
         ${MPFR_INCLUDE_DIRS}
     )
     
     # link shared library dependencies
     target_link_libraries(smtparser_shared PUBLIC
-        Boost::system
         ${GMP_LIBRARIES}
         ${MPFR_LIBRARIES}
     )
@@ -138,14 +132,12 @@ else()
     # set library include directories
     target_include_directories(smtparser PUBLIC 
         ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${Boost_INCLUDE_DIRS}
         ${GMP_INCLUDE_DIRS}
         ${MPFR_INCLUDE_DIRS}
     )
     
     # link library dependencies
     target_link_libraries(smtparser PUBLIC
-        Boost::system
         ${GMP_LIBRARIES}
         ${MPFR_LIBRARIES}
     )

@@ -101,7 +101,7 @@ namespace SMTParser{
         // add the group id
         if(grp_id != ""){
             if(soft_assertion_groups.find(grp_id) == soft_assertion_groups.end()){
-                soft_assertion_groups.insert(std::pair<std::string, boost::unordered_set<size_t>>(grp_id, {index}));
+                soft_assertion_groups.insert(std::pair<std::string, std::unordered_set<size_t>>(grp_id, {index}));
             }
         }
         else{

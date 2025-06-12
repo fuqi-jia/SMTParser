@@ -34,8 +34,6 @@
 #include "objective.h"
 #include "model.h"
 
-#include <boost/unordered_set.hpp>
-
 namespace SMTParser{
     #undef assert
     enum class SCAN_MODE {
@@ -118,17 +116,17 @@ namespace SMTParser{
 
         bool                                    parsing_file;
 
-        boost::unordered_map<std::string, std::shared_ptr<DAGNode>> 
+        std::unordered_map<std::string, std::shared_ptr<DAGNode>> 
                                                 let_key_map; // local variables, no need to hash store
-        boost::unordered_map<std::string, std::shared_ptr<DAGNode>> 
+        std::unordered_map<std::string, std::shared_ptr<DAGNode>> 
                                                 fun_key_map; 
-        boost::unordered_map<std::string, std::shared_ptr<DAGNode>> 
+        std::unordered_map<std::string, std::shared_ptr<DAGNode>> 
                                                 fun_var_map; // variables are not the same, no need to hash store
-        boost::unordered_map<std::string, std::shared_ptr<Sort>>
+        std::unordered_map<std::string, std::shared_ptr<Sort>>
                                                 sort_key_map;
-        boost::unordered_map<std::string, std::shared_ptr<DAGNode>>
+        std::unordered_map<std::string, std::shared_ptr<DAGNode>>
                                                 quant_var_map;
-        boost::unordered_map<std::string, std::shared_ptr<DAGNode>>
+        std::unordered_map<std::string, std::shared_ptr<DAGNode>>
                                                 let_var_map;
         std::vector<std::shared_ptr<DAGNode>>   static_functions; // static functions without substitution
 
@@ -137,45 +135,45 @@ namespace SMTParser{
         // node list
         std::vector<std::shared_ptr<DAGNode>>           node_list;
         // variable name list
-        boost::unordered_map<std::string, size_t>       var_names;
+        std::unordered_map<std::string, size_t>       var_names;
         // const node
-        boost::unordered_map<std::string, size_t>       constants_real;
-        boost::unordered_map<std::string, size_t>       constants_int;
-        boost::unordered_map<std::string, size_t>       constants_str;
-        boost::unordered_map<std::string, size_t>       constants_bv;
-        boost::unordered_map<std::string, size_t>       constants_fp;
-        boost::unordered_map<std::string, size_t>       constants_reg;
-        boost::unordered_map<std::string, size_t>       constants_array;
-        boost::unordered_map<std::string, size_t>       constants_map;
-        boost::unordered_map<std::string, size_t>       constants_seq;
-        boost::unordered_map<std::string, size_t>       constants_tuple;
-        boost::unordered_map<std::string, size_t>       constants_record;
-        boost::unordered_map<std::string, size_t>       constants_union;
+        std::unordered_map<std::string, size_t>       constants_real;
+        std::unordered_map<std::string, size_t>       constants_int;
+        std::unordered_map<std::string, size_t>       constants_str;
+        std::unordered_map<std::string, size_t>       constants_bv;
+        std::unordered_map<std::string, size_t>       constants_fp;
+        std::unordered_map<std::string, size_t>       constants_reg;
+        std::unordered_map<std::string, size_t>       constants_array;
+        std::unordered_map<std::string, size_t>       constants_map;
+        std::unordered_map<std::string, size_t>       constants_seq;
+        std::unordered_map<std::string, size_t>       constants_tuple;
+        std::unordered_map<std::string, size_t>       constants_record;
+        std::unordered_map<std::string, size_t>       constants_union;
         
 
         // temp var name list
         size_t temp_var_counter;
-        boost::unordered_map<std::string, size_t>       temp_var_names;
+        std::unordered_map<std::string, size_t>       temp_var_names;
         // function name list
         std::vector<std::string>                        function_names;
         // global options
         std::shared_ptr<GlobalOptions>                  options;
         // hash value list
-        boost::unordered_map<std::shared_ptr<DAGNode>, size_t, NodeHash, NodeEqual>
+        std::unordered_map<std::shared_ptr<DAGNode>, size_t, NodeHash, NodeEqual>
                                                         complex_node_map;
         // (define-objective name single_opt)
-        boost::unordered_map<std::string, std::shared_ptr<Objective>> 
+        std::unordered_map<std::string, std::shared_ptr<Objective>> 
                                                         objective_map;
         // conversion map
-        boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>
+        std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>
                                                         cnf_map;
-        boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>
+        std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>
                                                         cnf_atom_map; // bool_var -> atom
-        boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>
+        std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>
                                                         cnf_bool_var_map; // atom -> bool_var
-        boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>
+        std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>
                                                         dnf_map;
-        boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>
+        std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>
                                                         nnf_map;
 
         // result
@@ -185,12 +183,12 @@ namespace SMTParser{
 
     public:
         std::vector<std::shared_ptr<DAGNode>>               assertions;
-        boost::unordered_map<std::string, boost::unordered_set<size_t>> 
+        std::unordered_map<std::string, std::unordered_set<size_t>> 
                                                             assertion_groups;
         std::vector<std::vector<std::shared_ptr<DAGNode>>>  assumptions;
         std::vector<std::shared_ptr<DAGNode>>               soft_assertions;
         std::vector<std::shared_ptr<DAGNode>>               soft_weights;
-        boost::unordered_map<std::string, boost::unordered_set<size_t>> 
+        std::unordered_map<std::string, std::unordered_set<size_t>> 
                                                             soft_assertion_groups;
         std::vector<std::shared_ptr<Objective>>             objectives;
         std::vector<std::shared_ptr<DAGNode>>               split_lemmas;
@@ -288,7 +286,7 @@ namespace SMTParser{
          *
          * @return Map from group names to sets of assertion indices
          */
-        boost::unordered_map<std::string, boost::unordered_set<size_t>> getGroupedAssertions() const;
+        std::unordered_map<std::string, std::unordered_set<size_t>> getGroupedAssertions() const;
 
         /**
          * @brief Get assumptions
@@ -323,7 +321,7 @@ namespace SMTParser{
          * 
          * @return Map from group names to sets of soft assertion indices
          */
-        boost::unordered_map<std::string, boost::unordered_set<size_t>> getGroupedSoftAssertions() const;
+        std::unordered_map<std::string, std::unordered_set<size_t>> getGroupedSoftAssertions() const;
 
         /**
          * @brief Get objectives
@@ -2987,7 +2985,7 @@ namespace SMTParser{
          * @param params Map of variable names to their corresponding values
          * @return Substituted expression
          */
-        std::shared_ptr<DAGNode>                substitute(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::string, std::shared_ptr<DAGNode>> &params);
+        std::shared_ptr<DAGNode>                substitute(std::shared_ptr<DAGNode> expr, std::unordered_map<std::string, std::shared_ptr<DAGNode>> &params);
         
         // apply function
         /**
@@ -3129,7 +3127,7 @@ namespace SMTParser{
          * @param expr Expression to collect atoms from
          * @param atoms Atoms (stored in a set)
          */
-        void                                    collectAtoms(std::shared_ptr<DAGNode> expr, boost::unordered_set<std::shared_ptr<DAGNode>>& atoms);
+        void                                    collectAtoms(std::shared_ptr<DAGNode> expr, std::unordered_set<std::shared_ptr<DAGNode>>& atoms);
 
         /**
          * @brief Collect atoms from a vector of expressions
@@ -3137,7 +3135,7 @@ namespace SMTParser{
          * @param exprs Expressions to collect atoms from
          * @param atoms Atoms (stored in a set)
          */
-        void                                    collectAtoms(std::vector<std::shared_ptr<DAGNode>> exprs, boost::unordered_set<std::shared_ptr<DAGNode>>& atoms);   
+        void                                    collectAtoms(std::vector<std::shared_ptr<DAGNode>> exprs, std::unordered_set<std::shared_ptr<DAGNode>>& atoms);   
 
         /**
          * @brief Collect variables from a vector of expressions
@@ -3145,7 +3143,7 @@ namespace SMTParser{
          * @param exprs Expressions to collect variables from
          * @param vars Variables (stored in a set)
          */
-        void                                    collectVars(std::vector<std::shared_ptr<DAGNode>> exprs, boost::unordered_set<std::shared_ptr<DAGNode>>& vars);
+        void                                    collectVars(std::vector<std::shared_ptr<DAGNode>> exprs, std::unordered_set<std::shared_ptr<DAGNode>>& vars);
 
         /**
          * @brief Collect variables from an expression
@@ -3153,7 +3151,7 @@ namespace SMTParser{
          * @param expr Expression to collect variables from
          * @param vars Variables (stored in a set)
          */
-        void                                    collectVars(std::shared_ptr<DAGNode> expr, boost::unordered_set<std::shared_ptr<DAGNode>>& vars);
+        void                                    collectVars(std::shared_ptr<DAGNode> expr, std::unordered_set<std::shared_ptr<DAGNode>>& vars);
 
         /**
          * @brief Replace atoms in an expression
@@ -3162,7 +3160,7 @@ namespace SMTParser{
          * @param atom_map Atom map (stored in a map)
          * @return Expression with replaced atoms
          */
-        std::shared_ptr<DAGNode>                replaceAtoms(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& atom_map);
+        std::shared_ptr<DAGNode>                replaceAtoms(std::shared_ptr<DAGNode> expr, std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& atom_map);
 
                 /**
          * @brief Replace nodes in an expression (general node replacement)
@@ -3171,7 +3169,7 @@ namespace SMTParser{
          * @param node_map Node map (stored in a map)
          * @return Expression with replaced nodes
          */
-        std::shared_ptr<DAGNode>                replaceNodes(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& node_map);
+        std::shared_ptr<DAGNode>                replaceNodes(std::shared_ptr<DAGNode> expr, std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& node_map);
 
         /**
          * @brief Convert an expression to Tseitin CNF
@@ -3346,7 +3344,7 @@ namespace SMTParser{
          * @param op_set Set of node kinds to split
          * @return Vector of expressions
          */
-        std::shared_ptr<DAGNode>                splitOp(std::shared_ptr<DAGNode> expr, const boost::unordered_set<NODE_KIND>& op_set);
+        std::shared_ptr<DAGNode>                splitOp(std::shared_ptr<DAGNode> expr, const std::unordered_set<NODE_KIND>& op_set);
 
         /**
          * @brief Binarize an expression
@@ -3357,7 +3355,7 @@ namespace SMTParser{
          * @param op_set Set of node kinds to binarize
          * @return Binarized expression
          */
-        std::shared_ptr<DAGNode>                binarizeOp(std::shared_ptr<DAGNode> expr, const boost::unordered_set<NODE_KIND>& op_set);
+        std::shared_ptr<DAGNode>                binarizeOp(std::shared_ptr<DAGNode> expr, const std::unordered_set<NODE_KIND>& op_set);
 
         /**
          * @brief Binarize a vector of expressions
@@ -3366,7 +3364,7 @@ namespace SMTParser{
          * @param op_set Set of node kinds to binarize
          * @return Binarized expressions
          */
-        std::shared_ptr<DAGNode>                binarizeOp(std::vector<std::shared_ptr<DAGNode>> exprs, const boost::unordered_set<NODE_KIND>& op_set);
+        std::shared_ptr<DAGNode>                binarizeOp(std::vector<std::shared_ptr<DAGNode>> exprs, const std::unordered_set<NODE_KIND>& op_set);
 
 
         /**
@@ -3405,7 +3403,7 @@ namespace SMTParser{
          * @param nodes Nodes to remove
          * @return Expression with removed nodes
          */
-        std::shared_ptr<DAGNode>                remove(std::shared_ptr<DAGNode> expr, const boost::unordered_set<std::shared_ptr<DAGNode>>& nodes);
+        std::shared_ptr<DAGNode>                remove(std::shared_ptr<DAGNode> expr, const std::unordered_set<std::shared_ptr<DAGNode>>& nodes);
 
 
         /**
@@ -3517,27 +3515,27 @@ namespace SMTParser{
         std::shared_ptr<DAGNode>	            bindLetVar(const std::string &key, std::shared_ptr<DAGNode> expr);
         std::shared_ptr<DAGNode>	            bindFunVar(const std::string &key, std::shared_ptr<DAGNode> expr);
         // conversion
-        std::shared_ptr<DAGNode>                substitute(std::shared_ptr<DAGNode> expr, boost::unordered_map<std::string, std::shared_ptr<DAGNode>> &params, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> & visited);
-        std::shared_ptr<DAGNode>	            applyFunPostOrder(std::shared_ptr<DAGNode> node, boost::unordered_map<std::string, std::shared_ptr<DAGNode>> &params);
+        std::shared_ptr<DAGNode>                substitute(std::shared_ptr<DAGNode> expr, std::unordered_map<std::string, std::shared_ptr<DAGNode>> &params, std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> & visited);
+        std::shared_ptr<DAGNode>	            applyFunPostOrder(std::shared_ptr<DAGNode> node, std::unordered_map<std::string, std::shared_ptr<DAGNode>> &params);
         
         std::shared_ptr<DAGNode>                replaceAtoms(std::shared_ptr<DAGNode> expr, 
-                                                            boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& atom_map, 
-                                                            boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited, 
+                                                            std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& atom_map, 
+                                                            std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited, 
                                                             bool& is_changed);
         std::shared_ptr<DAGNode>                replaceNodes(std::shared_ptr<DAGNode> expr, 
-                                                            boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& node_map, 
-                                                            boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited, 
+                                                            std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& node_map, 
+                                                            std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited, 
                                                             bool& is_changed);
         std::shared_ptr<DAGNode>                toCNF(std::shared_ptr<DAGNode> expr);
         std::shared_ptr<DAGNode>                toTseitinCNF(std::shared_ptr<DAGNode> expr, 
-                                                            boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited, 
+                                                            std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited, 
                                                             std::vector<std::shared_ptr<DAGNode>>& clauses);
         std::shared_ptr<DAGNode>                toTseitinXor(std::shared_ptr<DAGNode> a, std::shared_ptr<DAGNode> b, std::vector<std::shared_ptr<DAGNode>>& clauses);
         std::shared_ptr<DAGNode>                toTseitinEq(std::shared_ptr<DAGNode> a, std::shared_ptr<DAGNode> b, std::vector<std::shared_ptr<DAGNode>>& clauses);
         std::shared_ptr<DAGNode>                toTseitinDistinct(std::shared_ptr<DAGNode> a, std::shared_ptr<DAGNode> b, std::vector<std::shared_ptr<DAGNode>>& clauses);
         std::shared_ptr<DAGNode>                toDNFEliminateAll(std::shared_ptr<DAGNode> expr);
         std::shared_ptr<DAGNode>                toDNFEliminateAll(std::shared_ptr<DAGNode> expr,
-                                                                   boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited,
+                                                                   std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited,
                                                                    bool& is_changed);
         std::shared_ptr<DAGNode>                toDNFEliminateXOR(const std::vector<std::shared_ptr<DAGNode>>& children);
         std::shared_ptr<DAGNode>                toDNFEliminateEq(const std::vector<std::shared_ptr<DAGNode>>& children);
@@ -3545,22 +3543,22 @@ namespace SMTParser{
 
         std::shared_ptr<DAGNode>                applyDNFDistributiveLaw(std::shared_ptr<DAGNode> expr);
         std::shared_ptr<DAGNode>                applyDNFDistributiveLawRec(std::shared_ptr<DAGNode> expr,
-                                                                         boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited);
+                                                                         std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited);
         std::shared_ptr<DAGNode>                flattenDNF(std::shared_ptr<DAGNode> expr);
         
         std::shared_ptr<DAGNode>                toNNF(std::shared_ptr<DAGNode> expr, bool is_not);
 
         std::shared_ptr<DAGNode>                arithNormalize(std::shared_ptr<DAGNode> expr, bool& is_changed);
         std::shared_ptr<DAGNode>                splitOp(std::shared_ptr<DAGNode> expr, 
-                                                        const boost::unordered_set<NODE_KIND>& op_set, 
+                                                        const std::unordered_set<NODE_KIND>& op_set, 
                                                         bool& is_changed, 
-                                                        boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited);
+                                                        std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited);
         std::shared_ptr<DAGNode>                binarizeOp(std::shared_ptr<DAGNode> expr, 
-                                                        const boost::unordered_set<NODE_KIND>& op_set, 
+                                                        const std::unordered_set<NODE_KIND>& op_set, 
                                                         bool& is_changed, 
-                                                        boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited);
+                                                        std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited);
         
-        std::shared_ptr<DAGNode>                remove(std::shared_ptr<DAGNode> expr, const boost::unordered_set<std::shared_ptr<DAGNode>>& nodes, boost::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited);
+        std::shared_ptr<DAGNode>                remove(std::shared_ptr<DAGNode> expr, const std::unordered_set<std::shared_ptr<DAGNode>>& nodes, std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited);
         
         //errors & warnings
         // mk errror node
@@ -3591,8 +3589,8 @@ namespace SMTParser{
         void 		warn_cmd_nsup(const std::string nm, const size_t ln) const;
 
         // collect atoms
-        void        collectAtoms(std::shared_ptr<DAGNode> expr, boost::unordered_set<std::shared_ptr<DAGNode>>& atoms, boost::unordered_set<std::shared_ptr<DAGNode>>& visited);
-        void        collectVars(std::shared_ptr<DAGNode> expr, boost::unordered_set<std::shared_ptr<DAGNode>>& vars, boost::unordered_set<std::shared_ptr<DAGNode>>& visited);
+        void        collectAtoms(std::shared_ptr<DAGNode> expr, std::unordered_set<std::shared_ptr<DAGNode>>& atoms, std::unordered_set<std::shared_ptr<DAGNode>>& visited);
+        void        collectVars(std::shared_ptr<DAGNode> expr, std::unordered_set<std::shared_ptr<DAGNode>>& vars, std::unordered_set<std::shared_ptr<DAGNode>>& visited);
         // evaluate functions
         bool		evaluateSimpleOp(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result, NODE_KIND op);
         bool		evaluateAnd(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);

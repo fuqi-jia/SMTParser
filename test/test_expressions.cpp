@@ -242,7 +242,7 @@ void test_collect_atoms_variables(SMTParser::ParserPtr& parser) {
                 std::cout << "  Formula: " << parser->toString(formula) << std::endl;
                 
                 // Collect atoms
-                boost::unordered_set<std::shared_ptr<SMTParser::DAGNode>> atoms;
+                std::unordered_set<std::shared_ptr<SMTParser::DAGNode>> atoms;
                 parser->collectAtoms(formula, atoms);
                 
                 std::cout << "  Atoms:" << std::endl;
@@ -251,7 +251,7 @@ void test_collect_atoms_variables(SMTParser::ParserPtr& parser) {
                 }
                 
                 // Collect variables
-                boost::unordered_set<std::shared_ptr<SMTParser::DAGNode>> vars;
+                std::unordered_set<std::shared_ptr<SMTParser::DAGNode>> vars;
                 parser->collectVars(formula, vars);
                 
                 std::cout << "  Variables:" << std::endl;
@@ -284,7 +284,7 @@ void test_substitution(SMTParser::ParserPtr& parser) {
         std::cout << "Original formula: " << parser->toString(formula) << std::endl;
         
         // Create substitution map
-        boost::unordered_map<std::string, std::shared_ptr<SMTParser::DAGNode>> subst_map;
+        std::unordered_map<std::string, std::shared_ptr<SMTParser::DAGNode>> subst_map;
         subst_map["x"] = parser->mkConstInt(5);
         subst_map["y"] = parser->mkConstInt(10);
         
@@ -293,7 +293,7 @@ void test_substitution(SMTParser::ParserPtr& parser) {
         std::cout << "After substitution {x->5, y->10}: " << parser->toString(substituted) << std::endl;
         
         // Another substitution
-        boost::unordered_map<std::string, std::shared_ptr<SMTParser::DAGNode>> subst_map2;
+        std::unordered_map<std::string, std::shared_ptr<SMTParser::DAGNode>> subst_map2;
         subst_map2["z"] = parser->mkConstInt(0);
         
         // Apply another substitution

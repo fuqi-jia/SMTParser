@@ -45,8 +45,8 @@
 #include <memory>
 #include <functional> // for std::hash
 
-#include <boost/unordered_map.hpp>
-#include <boost/unordered_set.hpp>
+#include <unordered_map>
+#include <unordered_set>
 
 namespace SMTParser{
     class DAGNode {
@@ -817,7 +817,7 @@ namespace SMTParser{
     std::string dumpFuncDec(const std::shared_ptr<DAGNode>& node);
     std::string dumpSMTLIB2(const std::vector<std::shared_ptr<DAGNode>>& assertions);
     void dumpSMTLIB2(const std::shared_ptr<DAGNode>& node, std::ofstream& ofs);
-    void dumpSMTLIB2(const std::shared_ptr<DAGNode>& node, boost::unordered_set<std::shared_ptr<DAGNode>>& visited, std::ofstream& ofs);
+    void dumpSMTLIB2(const std::shared_ptr<DAGNode>& node, std::unordered_set<std::shared_ptr<DAGNode>>& visited, std::ofstream& ofs);
     void dumpSMTLIB2(const std::vector<std::shared_ptr<DAGNode>>& assertions, std::ofstream& ofs);
     void dumpFuncDef(const std::shared_ptr<DAGNode>& node, std::ofstream& ofs);
     void dumpFuncDec(const std::shared_ptr<DAGNode>& node, std::ofstream& ofs);

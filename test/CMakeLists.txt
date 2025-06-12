@@ -5,14 +5,11 @@ project(SMTParser_Tests)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# GDB调试支持选项在父CMakeLists.txt中已定义为ENABLE_DEBUG_SYMBOLS
-# 如果未定义，默认设为OFF
+# GDB Debug
 if(NOT DEFINED ENABLE_DEBUG_SYMBOLS)
     option(ENABLE_DEBUG_SYMBOLS "Enable debug symbols for GDB support" OFF)
 endif()
 
-# Find required dependencies
-find_package(Boost REQUIRED COMPONENTS system)
 
 # Use pkg-config to find GMP and MPFR
 find_package(PkgConfig REQUIRED)
@@ -55,7 +52,7 @@ foreach(test_file ${TEST_SOURCES})
     # Create executable
     add_executable(${test_name} ${test_file})
     
-    # 如果启用了调试符号支持，为测试可执行文件添加调试标志
+    # If enabled Debug Mode
     if(ENABLE_DEBUG_SYMBOLS)
         target_compile_options(${test_name} PRIVATE -g -O0)
     endif()
@@ -70,7 +67,6 @@ foreach(test_file ${TEST_SOURCES})
     # Link against SMTParser library
     target_link_libraries(${test_name} PRIVATE 
         smtparser
-        Boost::system
         ${GMP_LIBRARIES}
         ${MPFR_LIBRARIES}
     )
