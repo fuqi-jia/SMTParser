@@ -35,11 +35,11 @@
 namespace SMTParser{
 
     // SHA-256 hash function
-    std::string sha256(const std::string& input) {
+    std::string HashUtils::sha256(const std::string& input) {
         return SHA256::hash(input);
     }
 
-    bool isIntUtil(const std::string& str){
+    bool TypeChecker::isInt(const std::string& str){
         if (str.empty()) return false;
         for (size_t i = 0; i < str.size(); i++){
             if (i == 0 && (str[i] == '-' || str[i] == '+')) continue;
@@ -48,7 +48,7 @@ namespace SMTParser{
         return true;
 
     }
-    bool isRealUtil(const std::string& str){
+    bool TypeChecker::isReal(const std::string& str){
         if (str.empty()) return false;
         bool has_dot = false;
         for (size_t i = 0; i < str.size(); i++){
@@ -62,7 +62,7 @@ namespace SMTParser{
         return true;
     }
 
-    bool isScientificNotationUtil(const std::string& str){
+    bool TypeChecker::isScientificNotation(const std::string& str){
         if (str.empty()) return false;
         
         // find 'E' or 'e' character
@@ -72,7 +72,7 @@ namespace SMTParser{
             
         // check if the part before E is a valid real number
         std::string mantissa = str.substr(0, e_pos);
-        if (!isRealUtil(mantissa)) 
+        if (!TypeChecker::isReal(mantissa)) 
             return false;
         
         // extract the part after E
@@ -130,7 +130,7 @@ namespace SMTParser{
         return true;
     }
 
-    std::string parseScientificNotation(const std::string& str){
+    std::string ConversionUtils::parseScientificNotation(const std::string& str){
         // find 'E' or 'e' character
         size_t e_pos = str.find_first_of("Ee");
         if (e_pos == std::string::npos) 
@@ -141,7 +141,7 @@ namespace SMTParser{
             std::string mantissa = str.substr(0, e_pos);
             
             // check if the mantissa part is a valid real number
-            if (!isRealUtil(mantissa))
+            if (!TypeChecker::isReal(mantissa))
                 return str;
             
             // extract the exponent part
@@ -184,7 +184,7 @@ namespace SMTParser{
             Real exponent_val = Real(exponent_no_spaces);
             
             // calculate the result
-            Real result = mantissa_val * SMTParser::pow(Real(10.0), exponent_val);
+            Real result = mantissa_val * SMTParser::MathUtils::pow(Real(10.0), exponent_val);
             
             // convert to string
             std::ostringstream oss;
@@ -196,7 +196,7 @@ namespace SMTParser{
         }
     }
 
-    bool isBVUtil(const std::string& str){
+    bool TypeChecker::isBV(const std::string& str){
         if (str.empty()) return false;
         if (str.size() < 3) return false;
         if (str[0] != '#') return false;
@@ -238,7 +238,7 @@ namespace SMTParser{
         }
         return true;
     }
-    bool isFPUtil(const std::string& str){
+    bool TypeChecker::isFP(const std::string& str){
         if (str.empty()) return false;
         if (str.size() < 3) return false;
         if (str[0] != '#' || str[1] != 'x') return false;
@@ -247,14 +247,14 @@ namespace SMTParser{
         }
         return true;
     }
-    bool isStrUtil(const std::string& str){
+    bool TypeChecker::isString(const std::string& str){
         if (str.empty()) return false;
         if (str[0] != '"' || str[str.size()-1] != '"') return false;
         return true;
     }
 
 
-    Integer pow(const Integer& base, const Integer& exp){
+    Integer MathUtils::pow(const Integer& base, const Integer& exp){
         if(exp == 0) return 1;
         Integer result = base;
         for(Integer i = 1; i < exp; i++){
@@ -262,60 +262,60 @@ namespace SMTParser{
         }
         return result;
     }
-    Real pow(const Real& base, const Real& exp){
+    Real MathUtils::pow(const Real& base, const Real& exp){
         return base.pow(exp);
     }
 
-    Integer gcd(const Integer& a, const Integer& b){
+    Integer MathUtils::gcd(const Integer& a, const Integer& b){
         if(b == 0) return a;
-        return gcd(b, a % b);
+        return MathUtils::gcd(b, a % b);
     }
 
-    Integer lcm(const Integer& a, const Integer& b){
-        return a * b / SMTParser::gcd(a, b);
+    Integer MathUtils::lcm(const Integer& a, const Integer& b){
+        return a * b / SMTParser::MathUtils::gcd(a, b);
     }
 
 
-    Real sqrt(const Integer& i){
+    Real MathUtils::sqrt(const Integer& i){
         if(i < 0){
-            std::cerr << "Error: sqrt of negative number" << std::endl;
+            std::cerr << "Error: MathUtils::sqrt of negative number" << std::endl;
             exit(1);
         }
         return HighPrecisionReal(i).sqrt();
     }
-    Real sqrt(const Real& r){
+    Real MathUtils::sqrt(const Real& r){
         if(r < 0){
-            std::cerr << "Error: sqrt of negative number" << std::endl;
+            std::cerr << "Error: MathUtils::sqrt of negative number" << std::endl;
             exit(1);
         }
         return r.sqrt();
     }
 
-    Real safesqrt(const Integer& i){
+    Real MathUtils::safeSqrt(const Integer& i){
         if(i < 0){
             return Real(0);
         }
         return HighPrecisionReal(i).sqrt();
     }
     
-    Real safesqrt(const Real& r){
+    Real MathUtils::safeSqrt(const Real& r){
         if(r < 0){
             return Real(0);
         }
         return r.sqrt();
     }
 
-    Integer ceil(const Real& r){
+    Integer MathUtils::ceil(const Real& r){
         return r.ceil().toInteger();
     }
-    Integer floor(const Real& r){
+    Integer MathUtils::floor(const Real& r){
         return r.floor().toInteger();
     }
-    Integer round(const Real& r){
+    Integer MathUtils::round(const Real& r){
         return r.round().toInteger();
     }
 
-    bool isPrime(const Integer& n){
+    bool MathUtils::isPrime(const Integer& n){
         if(n <= 1) return false;
         if(n == 2) return true;
         if(n % 2 == 0) return false;
@@ -325,16 +325,16 @@ namespace SMTParser{
         return true;
     }
 
-    bool isEven(const Integer& n){
+    bool MathUtils::isEven(const Integer& n){
         return n % 2 == 0;
     }
 
-    bool isOdd(const Integer& n){
+    bool MathUtils::isOdd(const Integer& n){
         return n % 2 != 0;
     }
 
 
-    Integer factorial(const Integer& n){
+    Integer MathUtils::factorial(const Integer& n){
         Integer res = 1;
         for(Integer i = 1; i <= n; i++){
             res *= i;
@@ -342,62 +342,62 @@ namespace SMTParser{
         return res;
     }
 
-    std::string bvNot(const std::string& bv){
-        cassert(bv[0] == '#' && bv[1] == 'b', "bvNot: invalid bitvector");
+    std::string BitVectorUtils::bvNot(const std::string& bv){
+        cassert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvNot: invalid bitvector");
         std::string res = "#b";
         for(size_t i = 2; i < bv.size(); i++){
             res += bv[i] == '0' ? '1' : '0';
         }
         return res;
     }
-    std::string bvAnd(const std::string& bv1, const std::string& bv2){
-        cassert(bv1[0] == '#' && bv1[1] == 'b', "bvAnd: invalid bitvector");
-        cassert(bv2[0] == '#' && bv2[1] == 'b', "bvAnd: invalid bitvector");
+    std::string BitVectorUtils::bvAnd(const std::string& bv1, const std::string& bv2){
+        cassert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvAnd: invalid bitvector");
+        cassert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvAnd: invalid bitvector");
         std::string res = "#b";
         for(size_t i = 2; i < bv1.size(); i++){
             res += bv1[i] == '1' && bv2[i] == '1' ? '1' : '0';
         }
         return res;
     }
-    std::string bvOr(const std::string& bv1, const std::string& bv2){
-        cassert(bv1[0] == '#' && bv1[1] == 'b', "bvOr: invalid bitvector");
-        cassert(bv2[0] == '#' && bv2[1] == 'b', "bvOr: invalid bitvector");
+    std::string BitVectorUtils::bvOr(const std::string& bv1, const std::string& bv2){
+        cassert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvOr: invalid bitvector");
+        cassert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvOr: invalid bitvector");
         std::string res = "#b";
         for(size_t i = 2; i < bv1.size(); i++){
             res += bv1[i] == '1' || bv2[i] == '1' ? '1' : '0';
         }
         return res;
     }
-    std::string bvXor(const std::string& bv1, const std::string& bv2){
-        cassert(bv1[0] == '#' && bv1[1] == 'b', "bvXor: invalid bitvector");
-        cassert(bv2[0] == '#' && bv2[1] == 'b', "bvXor: invalid bitvector");
+    std::string BitVectorUtils::bvXor(const std::string& bv1, const std::string& bv2){
+        cassert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvXor: invalid bitvector");
+        cassert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvXor: invalid bitvector");
         std::string res = "#b";
         for(size_t i = 2; i < bv1.size(); i++){
             res += bv1[i] != bv2[i] ? '1' : '0';
         }
         return res;
     }
-    std::string bvNand(const std::string& bv1, const std::string& bv2){
-        cassert(bv1[0] == '#' && bv1[1] == 'b', "bvNand: invalid bitvector");
-        cassert(bv2[0] == '#' && bv2[1] == 'b', "bvNand: invalid bitvector");
+    std::string BitVectorUtils::bvNand(const std::string& bv1, const std::string& bv2){
+        cassert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvNand: invalid bitvector");
+        cassert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvNand: invalid bitvector");
         std::string res = "#b";
         for(size_t i = 2; i < bv1.size(); i++){
             res += bv1[i] == '1' && bv2[i] == '1' ? '0' : '1';
         }
         return res;
     }
-    std::string bvNor(const std::string& bv1, const std::string& bv2){
-        cassert(bv1[0] == '#' && bv1[1] == 'b', "bvNor: invalid bitvector");
-        cassert(bv2[0] == '#' && bv2[1] == 'b', "bvNor: invalid bitvector");
+    std::string BitVectorUtils::bvNor(const std::string& bv1, const std::string& bv2){
+        cassert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvNor: invalid bitvector");
+        cassert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvNor: invalid bitvector");
         std::string res = "#b";
         for(size_t i = 2; i < bv1.size(); i++){
             res += bv1[i] == '0' && bv2[i] == '0' ? '1' : '0';
         }
         return res;
     }
-    std::string bvXnor(const std::string& bv1, const std::string& bv2){
-        cassert(bv1[0] == '#' && bv1[1] == 'b', "bvXnor: invalid bitvector");
-        cassert(bv2[0] == '#' && bv2[1] == 'b', "bvXnor: invalid bitvector");
+    std::string BitVectorUtils::bvXnor(const std::string& bv1, const std::string& bv2){
+        cassert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvXnor: invalid bitvector");
+        cassert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvXnor: invalid bitvector");
         std::string res = "#b";
         for(size_t i = 2; i < bv1.size(); i++){
             res += bv1[i] == bv2[i] ? '1' : '0';
@@ -405,8 +405,8 @@ namespace SMTParser{
         return res;
     }
 
-    std::string bvNeg(const std::string& bv){
-        cassert(bv[0] == '#' && bv[1] == 'b', "bvNeg: invalid bitvector");
+    std::string BitVectorUtils::bvNeg(const std::string& bv){
+        cassert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvNeg: invalid bitvector");
         // 2's complement
         std::string res = "";
         bool carry = true;
@@ -424,9 +424,9 @@ namespace SMTParser{
         return res;
     }
 
-    std::string bvAdd(const std::string& bv1, const std::string& bv2){
-        cassert(bv1[0] == '#' && bv1[1] == 'b', "bvAdd: invalid bitvector");
-        cassert(bv2[0] == '#' && bv2[1] == 'b', "bvAdd: invalid bitvector");
+    std::string BitVectorUtils::bvAdd(const std::string& bv1, const std::string& bv2){
+        cassert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvAdd: invalid bitvector");
+        cassert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvAdd: invalid bitvector");
         std::string bv1_ = bv1.substr(2, bv1.size() - 2);
         std::string bv2_ = bv2.substr(2, bv2.size() - 2);
         if(bv1_.size() != bv2_.size()){
@@ -464,9 +464,9 @@ namespace SMTParser{
         res = "#b" + res;
         return res;
     }
-    std::string bvSub(const std::string& bv1, const std::string& bv2){
-        cassert(bv1[0] == '#' && bv1[1] == 'b', "bvSub: invalid bitvector");
-        cassert(bv2[0] == '#' && bv2[1] == 'b', "bvSub: invalid bitvector");
+    std::string BitVectorUtils::bvSub(const std::string& bv1, const std::string& bv2){
+        cassert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvSub: invalid bitvector");
+        cassert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvSub: invalid bitvector");
         std::string bv1_ = bv1.substr(2, bv1.size() - 2);
         std::string bv2_ = bv2.substr(2, bv2.size() - 2);
         if(bv1_.size() != bv2_.size()){
@@ -503,9 +503,9 @@ namespace SMTParser{
         res = "#b" + res;
         return res;
     }
-    std::string bvMul(const std::string& bv1, const std::string& bv2){
-        cassert(bv1[0] == '#' && bv1[1] == 'b', "bvMul: invalid bitvector");
-        cassert(bv2[0] == '#' && bv2[1] == 'b', "bvMul: invalid bitvector");
+    std::string BitVectorUtils::bvMul(const std::string& bv1, const std::string& bv2){
+        cassert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvMul: invalid bitvector");
+        cassert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvMul: invalid bitvector");
         std::string bv1_ = bv1.substr(2, bv1.size() - 2);
         std::string bv2_ = bv2.substr(2, bv2.size() - 2);
         if(bv1_.size() != bv2_.size()){
@@ -537,15 +537,15 @@ namespace SMTParser{
         }
         std::string res = partials[0];
         for(size_t i = 1; i < partials.size(); i++){
-            res = SMTParser::bvAdd(res, partials[i]);
+            res = SMTParser::BitVectorUtils::bvAdd(res, partials[i]);
         }
         return res;
     }
 
 
-    std::string bvUdiv(const std::string& bv1, const std::string& bv2){
-        cassert(bv1[0] == '#' && bv1[1] == 'b', "bvUdiv: invalid bitvector");
-        cassert(bv2[0] == '#' && bv2[1] == 'b', "bvUdiv: invalid bitvector");
+    std::string BitVectorUtils::bvUdiv(const std::string& bv1, const std::string& bv2){
+        cassert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvUdiv: invalid bitvector");
+        cassert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvUdiv: invalid bitvector");
 
         // div 0, return all ones
         bool isBv2Zero = true;
@@ -633,7 +633,7 @@ namespace SMTParser{
                     quotient_bits.push_back('1');
                     
                     // subtract divisor from remainder
-                    std::string diff = SMTParser::bvSub(remainder_bv, divisor_bv);
+                    std::string diff = SMTParser::BitVectorUtils::bvSub(remainder_bv, divisor_bv);
                     remainder = diff.substr(2); // remove #b prefix
                 }
                 else{
@@ -646,9 +646,9 @@ namespace SMTParser{
         // return result with prefix
         return "#b" + quotient_bits;
     }
-    std::string bvUrem(const std::string& bv1, const std::string& bv2){
-        cassert(bv1[0] == '#' && bv1[1] == 'b', "bvUrem: invalid bitvector");
-        cassert(bv2[0] == '#' && bv2[1] == 'b', "bvUrem: invalid bitvector");
+    std::string BitVectorUtils::bvUrem(const std::string& bv1, const std::string& bv2){
+        cassert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvUrem: invalid bitvector");
+        cassert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvUrem: invalid bitvector");
         // div 0, return first operand
         bool isZero = true;
         for(size_t i = 2; i < bv2.size(); i++){
@@ -662,19 +662,19 @@ namespace SMTParser{
         }
         std::string dividend = bv1;
         std::string divisor = bv2;
-        std::string quotient = SMTParser::bvUdiv(bv1, bv2);
-        std::string res = SMTParser::bvSub(dividend, SMTParser::bvMul(quotient, bv2));
+        std::string quotient = SMTParser::BitVectorUtils::bvUdiv(bv1, bv2);
+        std::string res = SMTParser::BitVectorUtils::bvSub(dividend, SMTParser::BitVectorUtils::bvMul(quotient, bv2));
         return res;
     }
-    std::string bvUmod(const std::string& bv1, const std::string& bv2){
-        cassert(bv1[0] == '#' && bv1[1] == 'b', "bvUmod: invalid bitvector");
-        cassert(bv2[0] == '#' && bv2[1] == 'b', "bvUmod: invalid bitvector");
-        std::string res = SMTParser::bvUrem(bv1, bv2);
+    std::string BitVectorUtils::bvUmod(const std::string& bv1, const std::string& bv2){
+        cassert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvUmod: invalid bitvector");
+        cassert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvUmod: invalid bitvector");
+        std::string res = SMTParser::BitVectorUtils::bvUrem(bv1, bv2);
         return res;
     }
-    std::string bvSdiv(const std::string& bv1, const std::string& bv2){
-        cassert(bv1[0] == '#' && bv1[1] == 'b', "bvSdiv: invalid bitvector");
-        cassert(bv2[0] == '#' && bv2[1] == 'b', "bvSdiv: invalid bitvector");
+    std::string BitVectorUtils::bvSdiv(const std::string& bv1, const std::string& bv2){
+        cassert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvSdiv: invalid bitvector");
+        cassert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvSdiv: invalid bitvector");
         bool isNeg1 = bv1[2] == '1';
         bool isNeg2 = bv2[2] == '1';
         // div 0, return all ones if positive, otherwise 1
@@ -693,16 +693,16 @@ namespace SMTParser{
                 return "#b" + std::string(bv1.size() - 2, '0') + "1";
             }
         }
-        std::string res = SMTParser::bvUdiv(bv1, bv2);
+        std::string res = SMTParser::BitVectorUtils::bvUdiv(bv1, bv2);
         if(isNeg1 ^ isNeg2){
-            res = SMTParser::bvNot(res);
-            res = SMTParser::bvAdd(res, "#b01");
+            res = SMTParser::BitVectorUtils::bvNot(res);
+            res = SMTParser::BitVectorUtils::bvAdd(res, "#b01");
         }
         return res;
     }
-    std::string bvSrem(const std::string& bv1, const std::string& bv2){
-        cassert(bv1[0] == '#' && bv1[1] == 'b', "bvSrem: invalid bitvector");
-        cassert(bv2[0] == '#' && bv2[1] == 'b', "bvSrem: invalid bitvector");
+    std::string BitVectorUtils::bvSrem(const std::string& bv1, const std::string& bv2){
+        cassert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvSrem: invalid bitvector");
+        cassert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvSrem: invalid bitvector");
         // rem 0, return first operand
         bool isZero = true;
         for(size_t i = 2; i < bv2.size(); i++){
@@ -715,29 +715,29 @@ namespace SMTParser{
             return bv1;
         }
         bool isNeg1 = bv1[2] == '1';
-        std::string res = SMTParser::bvUrem(bv1, bv2);
+        std::string res = SMTParser::BitVectorUtils::bvUrem(bv1, bv2);
         if(isNeg1){
-            res = SMTParser::bvNot(res);
-            res = SMTParser::bvAdd(res, "#b01");
+            res = SMTParser::BitVectorUtils::bvNot(res);
+            res = SMTParser::BitVectorUtils::bvAdd(res, "#b01");
         }
         return res;
     }
-    std::string bvSmod(const std::string& bv1, const std::string& bv2){
-        cassert(bv1[0] == '#' && bv1[1] == 'b', "bvSmod: invalid bitvector");
-        cassert(bv2[0] == '#' && bv2[1] == 'b', "bvSmod: invalid bitvector");
+    std::string BitVectorUtils::bvSmod(const std::string& bv1, const std::string& bv2){
+        cassert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvSmod: invalid bitvector");
+        cassert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvSmod: invalid bitvector");
         bool isNeg1 = bv1[2] == '1';
-        std::string res = SMTParser::bvSrem(bv1, bv2);
+        std::string res = SMTParser::BitVectorUtils::bvSrem(bv1, bv2);
         if(isNeg1){
-            res = SMTParser::bvNot(res);
-            res = SMTParser::bvAdd(res, "#b01");
+            res = SMTParser::BitVectorUtils::bvNot(res);
+            res = SMTParser::BitVectorUtils::bvAdd(res, "#b01");
         }
         return res;
     }
 
-    std::string bvShl(const std::string& bv, const std::string& n){
+    std::string BitVectorUtils::bvShl(const std::string& bv, const std::string& n){
         // left shift
-        cassert(bv[0] == '#' && bv[1] == 'b', "bvShl: invalid bitvector");
-        cassert(n[0] == '#' && n[1] == 'b', "bvShl: invalid bitvector");
+        cassert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvShl: invalid bitvector");
+        cassert(n[0] == '#' && n[1] == 'b', "BitVectorUtils::bvShl: invalid bitvector");
         size_t shift = Integer(n.substr(2, n.size() - 2)).toULong();
         if(shift >= bv.size() - 2){
             return "#b0" + std::string(shift - bv.size() + 2, '0');
@@ -746,10 +746,10 @@ namespace SMTParser{
             return "#b" + bv.substr(2, bv.size() - 2 - shift) + std::string(shift, '0');
         }
     }
-    std::string bvLshr(const std::string& bv, const std::string& n){
+    std::string BitVectorUtils::bvLshr(const std::string& bv, const std::string& n){
         // logical right shift
-        cassert(bv[0] == '#' && bv[1] == 'b', "bvLshr: invalid bitvector");
-        cassert(n[0] == '#' && n[1] == 'b', "bvLshr: invalid bitvector");
+        cassert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvLshr: invalid bitvector");
+        cassert(n[0] == '#' && n[1] == 'b', "BitVectorUtils::bvLshr: invalid bitvector");
         size_t shift = Integer(n.substr(2, n.size() - 2)).toULong();
         if(shift >= bv.size() - 2){
             return "#b0" + std::string(shift - bv.size() + 2, '0');
@@ -758,10 +758,10 @@ namespace SMTParser{
             return "#b" + std::string(shift, '0') + bv.substr(2, bv.size() - 2 - shift);
         }
     }
-    std::string bvAshr(const std::string& bv, const std::string& n){
+    std::string BitVectorUtils::bvAshr(const std::string& bv, const std::string& n){
         // arithmetic right shift
-        cassert(bv[0] == '#' && bv[1] == 'b', "bvAshr: invalid bitvector");
-        cassert(n[0] == '#' && n[1] == 'b', "bvAshr: invalid bitvector");
+        cassert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvAshr: invalid bitvector");
+        cassert(n[0] == '#' && n[1] == 'b', "BitVectorUtils::bvAshr: invalid bitvector");
         size_t shift = Integer(n.substr(2, n.size() - 2)).toULong();
         if(shift >= bv.size() - 2){
             return "#b" + std::string(bv.size() - 2, bv[2]);
@@ -771,82 +771,82 @@ namespace SMTParser{
         }
     }
 
-    std::string bvConcat(const std::string& bv1, const std::string& bv2){
-        cassert(bv1[0] == '#' && bv1[1] == 'b', "bvConcat: invalid bitvector");
-        cassert(bv2[0] == '#' && bv2[1] == 'b', "bvConcat: invalid bitvector");
+    std::string BitVectorUtils::bvConcat(const std::string& bv1, const std::string& bv2){
+        cassert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvConcat: invalid bitvector");
+        cassert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvConcat: invalid bitvector");
         return "#b" + bv1.substr(2, bv1.size() - 2) + bv2.substr(2, bv2.size() - 2);
     }
-    std::string bvExtract(const std::string& bv, const Integer& i, const Integer& j){
-        cassert(bv[0] == '#' && bv[1] == 'b', "bvExtract: invalid bitvector");
-        cassert(i >= j, "bvExtract: i must be greater than or equal to j");
+    std::string BitVectorUtils::bvExtract(const std::string& bv, const Integer& i, const Integer& j){
+        cassert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvExtract: invalid bitvector");
+        cassert(i >= j, "BitVectorUtils::bvExtract: i must be greater than or equal to j");
         return "#b" + bv.substr(2 + bv.size() - 2 - j.toULong(), i.toULong() - j.toULong() + 1);
     }
-    std::string bvRepeat(const std::string& bv, const Integer& n){
-        cassert(bv[0] == '#' && bv[1] == 'b', "bvRepeat: invalid bitvector");
+    std::string BitVectorUtils::bvRepeat(const std::string& bv, const Integer& n){
+        cassert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvRepeat: invalid bitvector");
         std::string res = "";
         for(size_t i = 0; i < n.toULong(); i++){
             res += bv.substr(2, bv.size() - 2);
         }
         return "#b" + res;
     }
-    std::string bvZeroExtend(const std::string& bv, const Integer& n){
-        cassert(bv[0] == '#' && bv[1] == 'b', "bvZeroExtend: invalid bitvector");
+    std::string BitVectorUtils::bvZeroExtend(const std::string& bv, const Integer& n){
+        cassert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvZeroExtend: invalid bitvector");
         return "#b" + std::string(n.toULong(), '0') + bv.substr(2, bv.size() - 2);
     }
-    std::string bvSignExtend(const std::string& bv, const Integer& n){
-        cassert(bv[0] == '#' && bv[1] == 'b', "bvSignExtend: invalid bitvector");
+    std::string BitVectorUtils::bvSignExtend(const std::string& bv, const Integer& n){
+        cassert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvSignExtend: invalid bitvector");
         return "#b" + std::string(n.toULong(), bv[2]) + bv.substr(2, bv.size() - 2);
     }
 
-    std::string bvRotateLeft(const std::string& bv, const Integer& n){
-        cassert(bv[0] == '#' && bv[1] == 'b', "bvRotateLeft: invalid bitvector");
+    std::string BitVectorUtils::bvRotateLeft(const std::string& bv, const Integer& n){
+        cassert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvRotateLeft: invalid bitvector");
         Integer real_n = n % (bv.size() - 2);
         return "#b" + bv.substr(2 + n.toULong(), bv.size() - 2 - n.toULong()) + bv.substr(2, n.toULong());
     }
-    std::string bvRotateRight(const std::string& bv, const Integer& n){
-        cassert(bv[0] == '#' && bv[1] == 'b', "bvRotateRight: invalid bitvector");
+    std::string BitVectorUtils::bvRotateRight(const std::string& bv, const Integer& n){
+        cassert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvRotateRight: invalid bitvector");
         Integer real_n = n % (bv.size() - 2);
         return "#b" + bv.substr(2 + bv.size() - 2 - n.toULong(), n.toULong()) + bv.substr(2, bv.size() - 2 - n.toULong());
     }
 
-    bool bvComp(const std::string& bv1, const std::string& bv2, const NODE_KIND& kind){
-        cassert(bv1[0] == '#' && bv1[1] == 'b', "bvComp: invalid bitvector");
-        cassert(bv2[0] == '#' && bv2[1] == 'b', "bvComp: invalid bitvector");
+    bool BitVectorUtils::bvComp(const std::string& bv1, const std::string& bv2, const NODE_KIND& kind){
+        cassert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvComp: invalid bitvector");
+        cassert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvComp: invalid bitvector");
         switch(kind){
             case NODE_KIND::NT_EQ_OTHER:
                 return bv1 == bv2;
             case NODE_KIND::NT_DISTINCT_OTHER:
                 return bv1 != bv2;
             case NODE_KIND::NT_BV_ULT:
-                return SMTParser::bvToNat(bv1) < SMTParser::bvToNat(bv2);
+                return SMTParser::BitVectorUtils::bvToNat(bv1) < SMTParser::BitVectorUtils::bvToNat(bv2);
             case NODE_KIND::NT_BV_ULE:
-                return SMTParser::bvToNat(bv1) <= SMTParser::bvToNat(bv2);
+                return SMTParser::BitVectorUtils::bvToNat(bv1) <= SMTParser::BitVectorUtils::bvToNat(bv2);
             case NODE_KIND::NT_BV_UGT:
-                return SMTParser::bvToNat(bv1) > SMTParser::bvToNat(bv2);
+                return SMTParser::BitVectorUtils::bvToNat(bv1) > SMTParser::BitVectorUtils::bvToNat(bv2);
             case NODE_KIND::NT_BV_UGE:
-                return SMTParser::bvToNat(bv1) >= SMTParser::bvToNat(bv2);
+                return SMTParser::BitVectorUtils::bvToNat(bv1) >= SMTParser::BitVectorUtils::bvToNat(bv2);
             case NODE_KIND::NT_BV_SLT:
-                return SMTParser::bvToInt(bv1) < SMTParser::bvToInt(bv2);
+                return SMTParser::BitVectorUtils::bvToInt(bv1) < SMTParser::BitVectorUtils::bvToInt(bv2);
             case NODE_KIND::NT_BV_SLE:
-                return SMTParser::bvToInt(bv1) <= SMTParser::bvToInt(bv2);
+                return SMTParser::BitVectorUtils::bvToInt(bv1) <= SMTParser::BitVectorUtils::bvToInt(bv2);
             case NODE_KIND::NT_BV_SGT:
-                return SMTParser::bvToInt(bv1) > SMTParser::bvToInt(bv2);
+                return SMTParser::BitVectorUtils::bvToInt(bv1) > SMTParser::BitVectorUtils::bvToInt(bv2);
             case NODE_KIND::NT_BV_SGE:
-                return SMTParser::bvToInt(bv1) >= SMTParser::bvToInt(bv2);
+                return SMTParser::BitVectorUtils::bvToInt(bv1) >= SMTParser::BitVectorUtils::bvToInt(bv2);
             default:
                 return false;
         }
     }
 
-    Integer bvToNat(const std::string& bv){
-        cassert(bv[0] == '#' && bv[1] == 'b', "bvToNat: invalid bitvector");
+    Integer BitVectorUtils::bvToNat(const std::string& bv){
+        cassert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvToNat: invalid bitvector");
         Integer res = 0;
         for(size_t i = 2; i < bv.size(); i++){
             res = res * 2 + (bv[i] == '1' ? 1 : 0);
         }
         return res;
     }
-    std::string natToBv(const Integer& i, const Integer& n){
+    std::string BitVectorUtils::natToBv(const Integer& i, const Integer& n){
         std::string res = "#b";
         std::string bin = i.toString(2);
         if(bin.size() < n.toULong()){
@@ -940,7 +940,7 @@ namespace SMTParser{
         return res + bin;
     }
     
-    std::string natToBv(const std::string& i, const Integer& n){
+    std::string BitVectorUtils::natToBv(const std::string& i, const Integer& n){
         if(i.size() > 2 && i[0] == '#' && i[1] == 'b'){
             // zero-extend
             std::string res = "#b";
@@ -962,11 +962,11 @@ namespace SMTParser{
             return decToBv(i.substr(2, i.size() - 2));
         }
         else{
-            return natToBv(Integer(i), n);
+            return BitVectorUtils::natToBv(Integer(i), n);
         }
     }
-    Integer bvToInt(const std::string& bv){
-        cassert(bv[0] == '#' && bv[1] == 'b', "bvToInt: invalid bitvector");
+    Integer BitVectorUtils::bvToInt(const std::string& bv){
+        cassert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvToInt: invalid bitvector");
         if(bv[2] == '0'){
             Integer res = 0;
             for(size_t i = 3; i < bv.size(); i++){
@@ -982,7 +982,7 @@ namespace SMTParser{
             return res;
         }
     }
-    std::string intToBv(const Integer& i, const Integer& n){
+    std::string BitVectorUtils::intToBv(const Integer& i, const Integer& n){
         if(i >= 0){
             std::string res = "#b0";
             std::string bin = i.toString(2);
@@ -1009,8 +1009,8 @@ namespace SMTParser{
     }
 
     // TODO??
-    std::string fpToUbv(const std::string& fp, const Integer& n){
-        cassert(fp[0] == '#' && fp[1] == 'x', "fpToUbv: invalid floating point");
+    std::string FloatingPointUtils::fpToUbv(const std::string& fp, const Integer& n){
+        cassert(fp[0] == '#' && fp[1] == 'x', "FloatingPointUtils::fpToUbv: invalid floating point");
         std::string res = "";
         bool isNeg = fp[2] == '1';
         if(!isNeg){
@@ -1033,8 +1033,8 @@ namespace SMTParser{
         }
         return res;
     }
-    std::string fpToSbv(const std::string& fp, const Integer& n){
-        cassert(fp[0] == '#' && fp[1] == 'x', "fpToSbv: invalid floating point");
+    std::string FloatingPointUtils::fpToSbv(const std::string& fp, const Integer& n){
+        cassert(fp[0] == '#' && fp[1] == 'x', "FloatingPointUtils::fpToSbv: invalid floating point");
         std::string res = "";
         bool isNeg = fp[2] == '1';
         if(!isNeg){
@@ -1058,7 +1058,7 @@ namespace SMTParser{
         return res;
     }
 
-    std::string strSubstr(const std::string& s, const Integer& i, const Integer& j){
+    std::string StringUtils::strSubstr(const std::string& s, const Integer& i, const Integer& j){
         // remove the quotes
         std::string s_clean = (s[0] == '"' && s[s.length()-1] == '"') ? s.substr(1, s.length()-2) : s;
         
@@ -1077,7 +1077,7 @@ namespace SMTParser{
         std::string result = s_clean.substr(start, length);
         return "\"" + result + "\"";
     }
-    bool strPrefixof(const std::string& s, const std::string& t){
+    bool StringUtils::strPrefixof(const std::string& s, const std::string& t){
         std::string s_clean = (s[0] == '"' && s[s.length()-1] == '"') ? s.substr(1, s.length()-2) : s;
         std::string t_clean = (t[0] == '"' && t[t.length()-1] == '"') ? t.substr(1, t.length()-2) : t;
         
@@ -1085,7 +1085,7 @@ namespace SMTParser{
         if (s_clean.size() > t_clean.size()) return false;
         return t_clean.substr(0, s_clean.size()) == s_clean;
     }
-    bool strSuffixof(const std::string& s, const std::string& t){
+    bool StringUtils::strSuffixof(const std::string& s, const std::string& t){
         std::string s_clean = (s[0] == '"' && s[s.length()-1] == '"') ? s.substr(1, s.length()-2) : s;
         std::string t_clean = (t[0] == '"' && t[t.length()-1] == '"') ? t.substr(1, t.length()-2) : t;
         
@@ -1093,12 +1093,12 @@ namespace SMTParser{
         if (s_clean.size() > t_clean.size()) return false;
         return t_clean.substr(t_clean.size() - s_clean.size(), s_clean.size()) == s_clean;
     }
-    bool strContains(const std::string& s, const std::string& t){
+    bool StringUtils::strContains(const std::string& s, const std::string& t){
         std::string s_clean = (s[0] == '"' && s[s.length()-1] == '"') ? s.substr(1, s.length()-2) : s;
         std::string t_clean = (t[0] == '"' && t[t.length()-1] == '"') ? t.substr(1, t.length()-2) : t;
         return s_clean.find(t_clean) != std::string::npos;
     }
-    Integer strIndexof(const std::string& s, const std::string& t, const Integer& i){
+    Integer StringUtils::strIndexof(const std::string& s, const std::string& t, const Integer& i){
         // remove the quotes from the string
         std::string s_clean = (s[0] == '"' && s[s.length()-1] == '"') ? s.substr(1, s.length()-2) : s;
         std::string t_clean = (t[0] == '"' && t[t.length()-1] == '"') ? t.substr(1, t.length()-2) : t;
@@ -1111,16 +1111,16 @@ namespace SMTParser{
         size_t pos = s_clean.find(t_clean, i.toULong());
         return (pos == std::string::npos) ? Integer(-1) : Integer(pos);
     }
-    std::string strCharAt(const std::string& s, const Integer& i){
+    std::string StringUtils::strCharAt(const std::string& s, const Integer& i){
         std::string s_clean = (s[0] == '"' && s[s.length()-1] == '"') ? s.substr(1, s.length()-2) : s;
         return "\"" + s_clean.substr(i.toULong(), 1) + "\"";
     }
-    std::string strUpdate(const std::string& s, const Integer& i, const std::string& t){
+    std::string StringUtils::strUpdate(const std::string& s, const Integer& i, const std::string& t){
         std::string s_clean = (s[0] == '"' && s[s.length()-1] == '"') ? s.substr(1, s.length()-2) : s;
         std::string t_clean = (t[0] == '"' && t[t.length()-1] == '"') ? t.substr(1, t.length()-2) : t;
         return "\"" + s_clean.substr(0, i.toULong()) + t_clean + s_clean.substr(i.toULong() + t_clean.size(), s_clean.size() - i.toULong() - t_clean.size()) + "\"";
     }
-    std::string strReplace(const std::string& s, const std::string& t, const std::string& u){
+    std::string StringUtils::strReplace(const std::string& s, const std::string& t, const std::string& u){
         // remove the quotes from the string
         std::string s_clean = (s[0] == '"' && s[s.length()-1] == '"') ? s.substr(1, s.length()-2) : s;
         std::string t_clean = (t[0] == '"' && t[t.length()-1] == '"') ? t.substr(1, t.length()-2) : t;
@@ -1132,7 +1132,7 @@ namespace SMTParser{
         // add the quotes and return
         return "\"" + result + "\"";
     }
-    std::string strReplaceAll(const std::string& s, const std::string& t, const std::string& u){
+    std::string StringUtils::strReplaceAll(const std::string& s, const std::string& t, const std::string& u){
         // remove the quotes from the string
         std::string s_clean = (s[0] == '"' && s[s.length()-1] == '"') ? s.substr(1, s.length()-2) : s;
         std::string t_clean = (t[0] == '"' && t[t.length()-1] == '"') ? t.substr(1, t.length()-2) : t;
@@ -1147,52 +1147,176 @@ namespace SMTParser{
         // add the quotes and return
         return "\"" + res + "\"";
     }
-    std::string strToLower(const std::string& s){
+    std::string StringUtils::strToLower(const std::string& s){
         std::string res = (s[0] == '"' && s[s.length()-1] == '"') ? s.substr(1, s.length()-2) : s;
         for(char& c : res){
             c = tolower(c);
         }
         return "\"" + res + "\"";
     }
-    std::string strToUpper(const std::string& s){
+    std::string StringUtils::strToUpper(const std::string& s){
         std::string res = (s[0] == '"' && s[s.length()-1] == '"') ? s.substr(1, s.length()-2) : s;
         for(char& c : res){
             c = toupper(c);
         }
         return "\"" + res + "\"";
     }
-    std::string strRev(const std::string& s){
+    std::string StringUtils::strRev(const std::string& s){
         std::string res = (s[0] == '"' && s[s.length()-1] == '"') ? s.substr(1, s.length()-2) : s;
         return "\"" + std::string(res.rbegin(), res.rend()) + "\"";
     }
 
 
     // toString
-    std::string toString(const Integer& i){
+    std::string ConversionUtils::toString(const Integer& i){
         return i.toString();
     }
-    std::string toString(const Real& r){
+    std::string ConversionUtils::toString(const Real& r){
         return r.toString();
     }
-    std::string toString(const int& i){
+    std::string ConversionUtils::toString(const int& i){
         return std::to_string(i);
     }
-    std::string toString(const double& d){
+    std::string ConversionUtils::toString(const double& d){
         return std::to_string(d);
     }
-    std::string toString(const float& f){
+    std::string ConversionUtils::toString(const float& f){
         return std::to_string(f);
     }
-    std::string toString(const long& l){
+    std::string ConversionUtils::toString(const long& l){
         return std::to_string(l);
     }
-    std::string toString(const short& s){
+    std::string ConversionUtils::toString(const short& s){
         return std::to_string(s);
     }
-    std::string toString(const char& c){
+    std::string ConversionUtils::toString(const char& c){
         return std::string(1, c);
     }
-    std::string toString(const bool& b){
+    std::string ConversionUtils::toString(const bool& b){
         return b ? "true" : "false";
+    }
+
+    std::string ConversionUtils::escapeString(const std::string& s){
+        std::string result = "";
+        for(char c : s){
+            switch(c) {
+                case '\n':   // newline
+                    result += "\\n";
+                    break;
+                case '\t':   // tab
+                    result += "\\t";
+                    break;
+                case '\r':   // carriage return
+                    result += "\\r";
+                    break;
+                case '\\':   // backslash
+                    result += "\\\\";
+                    break;
+                case '"':    // double quote
+                    result += "\\\"";
+                    break;
+                case '\'':   // single quote
+                    result += "\\'";
+                    break;
+                case '\0':   // null character
+                    result += "\\0";
+                    break;
+                case '\a':   // alert
+                    result += "\\a";
+                    break;
+                case '\b':   // backspace
+                    result += "\\b";
+                    break;
+                case '\f':   // form feed
+                    result += "\\f";
+                    break;
+                case '\v':   // vertical tab
+                    result += "\\v";
+                    break;
+                default:
+                    // for non-printable characters, use hexadecimal escape
+                    if(c < 32 || c > 126) {
+                        std::ostringstream oss;
+                        oss << "\\x" << std::hex << std::setfill('0') << std::setw(2) << (unsigned char)c;
+                        result += oss.str();
+                    } else {
+                        result += c;
+                    }
+                    break;
+            }
+        }
+        return result;
+    }
+
+    std::string ConversionUtils::unescapeString(const std::string& s){
+        std::string result = "";
+        size_t i = 0;
+        while(i < s.length()) {
+            if(s[i] == '\\' && i + 1 < s.length()) {
+                switch(s[i + 1]) {
+                    case 'n':    // newline
+                        result += '\n';
+                        break;
+                    case 't':    // tab
+                        result += '\t';
+                        break;
+                    case 'r':    // carriage return
+                        result += '\r';
+                        break;
+                    case '\\':   // backslash
+                        result += '\\';
+                        break;
+                    case '"':    // double quote
+                        result += '"';
+                        break;
+                    case '\'':   // single quote
+                        result += '\'';
+                        break;
+                    case '0':    // null character
+                        result += '\0';
+                        break;
+                    case 'a':    // alert
+                        result += '\a';
+                        break;
+                    case 'b':    // backspace
+                        result += '\b';
+                        break;
+                    case 'f':    // form feed
+                        result += '\f';
+                        break;
+                    case 'v':    // vertical tab
+                        result += '\v';
+                        break;
+                    case 'x':    // hexadecimal escape \xHH
+                        if(i + 3 < s.length()) {
+                            std::string hexStr = s.substr(i + 2, 2);
+                            try {
+                                unsigned char value = static_cast<unsigned char>(std::stoi(hexStr, nullptr, 16));
+                                result += value;
+                                i += 2; // skip two hexadecimal characters
+                            } catch(...) {
+                                // if hexadecimal parsing fails, keep the original character
+                                result += s[i];
+                                i--; // back one character, because i+=2 later
+                            }
+                        } else {
+                            // incomplete hexadecimal escape, keep the original character
+                            result += s[i];
+                            i--; // back one character, because i+=2 later
+                        }
+                        break;
+                    default:
+                        // if not a known escape character, keep the backslash and character
+                        result += s[i];
+                        result += s[i + 1];
+                        break;
+                }
+                i += 2; // skip the escape character and the next character
+            } else {
+                result += s[i]; // if the current character is not an escape character, add it directly
+                i++;
+            }
+        }
+        return result;
     }
 }

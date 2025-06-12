@@ -258,7 +258,7 @@ namespace SMTParser{
 					if (e_pos != std::string::npos && e_pos > 0 && e_pos == current.size() - 1) {
 						// check if the part before E is a valid real number
 						std::string mantissa = current.substr(0, e_pos);
-						if (isRealUtil(mantissa)) {
+						if (TypeChecker::isReal(mantissa)) {
 							// confirm the start of scientific notation
 							in_scientific_notation = true;
 						}
@@ -1235,26 +1235,26 @@ namespace SMTParser{
 			return mkNan();
 		}
 		// support -3 (before only - 3)
-		else if(isIntUtil(s)){
+		else if(TypeChecker::isInt(s)){
 			// additional process -> constant can be real or integer
 			// 0 -> Int or Real?
 			return mkConstInt(s);
 		}
-		else if(isRealUtil(s)){
+		else if(TypeChecker::isReal(s)){
 			return mkConstReal(s);
 		}
-		else if(isScientificNotationUtil(s)){
+		else if(TypeChecker::isScientificNotation(s)){
 			// parse scientific notation and convert to real
-			std::string parsed = parseScientificNotation(s);
+			std::string parsed = ConversionUtils::parseScientificNotation(s);
 			return mkConstReal(parsed);
 		}
-		else if(isBVUtil(s)){
+		else if(TypeChecker::isBV(s)){
 			return mkConstBv(s, s.size() - 2);
 		}
-		// else if(isFPUtil(s)){
+		// else if(TypeChecker::isFP(s)){
 		// 	return mkConstFP(s);
 		// }
-		else if(isStrUtil(s)){
+		else if(TypeChecker::isString(s)){
 			return mkConstStr(s);
 		}
 		// no parameters

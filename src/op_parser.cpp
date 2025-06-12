@@ -452,7 +452,7 @@ namespace SMTParser{
     }
 
     std::shared_ptr<DAGNode> Parser::mkConstInt(const Integer &v){
-        std::string v_str = SMTParser::toString(v);
+        std::string v_str = ConversionUtils::toString(v);
         if(constants_int.find(v_str) != constants_int.end()){
             return node_list[constants_int[v_str]];
         }
@@ -473,7 +473,7 @@ namespace SMTParser{
         return mkConstInt(v.toInteger());
     }
     std::shared_ptr<DAGNode> Parser::mkConstReal(const std::string &v){
-        cassert(isRealUtil(v) || v == "e" || v == "pi", "mkConstReal: invalid real constant");
+        cassert(TypeChecker::isReal(v) || v == "e" || v == "pi", "mkConstReal: invalid real constant");
         if(v == "e") return E_NODE;
         if(v == "pi") return PI_NODE;
         if(constants_real.find(v) != constants_real.end()){
@@ -487,7 +487,7 @@ namespace SMTParser{
         }
     }
     std::shared_ptr<DAGNode> Parser::mkConstReal(const Real &v){
-        std::string v_str = SMTParser::toString(v);
+        std::string v_str = ConversionUtils::toString(v);
         if(constants_real.find(v_str) != constants_real.end()){
             return node_list[constants_real[v_str]];
         }
@@ -511,7 +511,7 @@ namespace SMTParser{
         }
     }
     std::shared_ptr<DAGNode> Parser::mkConstReal(const Integer &v){
-        std::string v_str = SMTParser::toString(v);
+        std::string v_str = ConversionUtils::toString(v);
         if(constants_real.find(v_str) != constants_real.end()){
             return node_list[constants_real[v_str]];
         }
@@ -530,8 +530,8 @@ namespace SMTParser{
         std::string processed_v = v;
         // if the string is quoted, remove the quotes
         if (v.length() >= 2 && v[0] == '"' && v[v.length()-1] == '"') {
-            processed_v = unescapeString(v.substr(1, v.length()-2));
-            processed_v = "\"" + escapeString(processed_v) + "\"";
+            processed_v = ConversionUtils::unescapeString(v.substr(1, v.length()-2));
+            processed_v = "\"" + ConversionUtils::escapeString(processed_v) + "\"";
         }
         
         if(constants_str.find(processed_v) != constants_str.end()){
@@ -554,7 +554,7 @@ namespace SMTParser{
         else{
             sort = sort_key_map[sort_key_name];
         }
-        std::string bv_v = natToBv(v, width);
+        std::string bv_v = BitVectorUtils::natToBv(v, width);
 
         if(constants_bv.find(bv_v) != constants_bv.end()){
             return node_list[constants_bv[bv_v]];
@@ -2588,7 +2588,7 @@ namespace SMTParser{
         }
 
         if(l->isCBV() && r->isCBV()){
-            return bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_ULE) ? mkTrue() : mkFalse();
+            return BitVectorUtils::bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_ULE) ? mkTrue() : mkFalse();
         }
         else if(l == r){
             return mkTrue();
@@ -2608,7 +2608,7 @@ namespace SMTParser{
         }
 
         if(l->isCBV() && r->isCBV()){
-            return bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_UGT) ? mkTrue() : mkFalse();
+            return BitVectorUtils::bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_UGT) ? mkTrue() : mkFalse();
         }
         else if(l == r){
             return mkFalse();
@@ -2628,7 +2628,7 @@ namespace SMTParser{
         }
 
         if(l->isCBV() && r->isCBV()){
-            return bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_UGE) ? mkTrue() : mkFalse();
+            return BitVectorUtils::bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_UGE) ? mkTrue() : mkFalse();
         }
         else if(l == r){
             return mkTrue();
@@ -2648,7 +2648,7 @@ namespace SMTParser{
         }
 
         if(l->isCBV() && r->isCBV()){
-            return bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_SLT) ? mkTrue() : mkFalse();
+            return BitVectorUtils::bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_SLT) ? mkTrue() : mkFalse();
         }
         else if(l == r){
             return mkFalse();
@@ -2668,7 +2668,7 @@ namespace SMTParser{
         }
 
         if(l->isCBV() && r->isCBV()){
-            return bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_SLE) ? mkTrue() : mkFalse();
+            return BitVectorUtils::bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_SLE) ? mkTrue() : mkFalse();
         }
         else if(l == r){
             return mkTrue();
@@ -2688,7 +2688,7 @@ namespace SMTParser{
         }
 
         if(l->isCBV() && r->isCBV()){
-            return bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_SGT) ? mkTrue() : mkFalse();
+            return BitVectorUtils::bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_SGT) ? mkTrue() : mkFalse();
         }
         else if(l == r){
             return mkFalse();
@@ -2708,7 +2708,7 @@ namespace SMTParser{
         }
 
         if(l->isCBV() && r->isCBV()){
-            return bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_SGE) ? mkTrue() : mkFalse();
+            return BitVectorUtils::bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_SGE) ? mkTrue() : mkFalse();
         }
         else if(l == r){
             return mkTrue();
@@ -3129,7 +3129,7 @@ namespace SMTParser{
         }
 
         if(param->isCBV() && size->isCBV()){
-            return mkConstBv(fpToUbv(param->toString(), toInt(size)), toInt(size).toULong());
+            return mkConstBv(FloatingPointUtils::fpToUbv(param->toString(), toInt(size)), toInt(size).toULong());
         }
 
         std::shared_ptr<Sort> new_sort = mkBVSort(toInt(size).toULong());
@@ -3144,7 +3144,7 @@ namespace SMTParser{
         }
 
         if(param->isCBV() && size->isCBV()){
-            return mkConstBv(fpToSbv(param->toString(), toInt(size)), toInt(size).toULong());
+            return mkConstBv(FloatingPointUtils::fpToSbv(param->toString(), toInt(size)), toInt(size).toULong());
         }
 
         std::shared_ptr<Sort> new_sort = mkBVSort(toInt(size).toULong());

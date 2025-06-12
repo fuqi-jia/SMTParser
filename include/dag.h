@@ -67,12 +67,12 @@ namespace SMTParser{
             for(auto& child : children){
                 children_hash += child->hashString() + "__";
             }
-            children_hash = sha256(children_hash);
+            children_hash = HashUtils::sha256(children_hash);
 
             if(kind == NODE_KIND::NT_CONST){
-                if(isIntUtil(name)){
+                if(TypeChecker::isInt(name)){
                     value = newValue(Number(name, true));
-                } else if(isRealUtil(name)){
+                } else if(TypeChecker::isReal(name)){
                     value = newValue(Number(name, false));
                 } 
                 // TODO for value
@@ -82,9 +82,9 @@ namespace SMTParser{
             children_hash = "";
 
             if(kind == NODE_KIND::NT_CONST){
-                if(isIntUtil(name)){
+                if(TypeChecker::isInt(name)){
                     value = newValue(Number(name, true));
-                } else if(isRealUtil(name)){
+                } else if(TypeChecker::isReal(name)){
                     value = newValue(Number(name, false));
                 }
                 // TODO for value
@@ -114,9 +114,9 @@ namespace SMTParser{
             children_hash = "";
 
             if(kind == NODE_KIND::NT_CONST){
-                if(isIntUtil(name)){
+                if(TypeChecker::isInt(name)){
                     value = newValue(Number(name, true));
-                } else if(isRealUtil(name)){
+                } else if(TypeChecker::isReal(name)){
                     value = newValue(Number(name, false));
                 } 
             }
@@ -175,24 +175,24 @@ namespace SMTParser{
             } else if(n == "NULL") {
                 sort = NULL_SORT;
                 kind = NODE_KIND::NT_NULL;
-            } else if(isIntUtil(n)){
+            } else if(TypeChecker::isInt(n)){
                 sort = INT_SORT;
                 kind = NODE_KIND::NT_CONST;
                 value = newValue(Number(n, true));
-            } else if(isRealUtil(n)){
+            } else if(TypeChecker::isReal(n)){
                 sort = REAL_SORT;
                 kind = NODE_KIND::NT_CONST;
                 value = newValue(Number(n, false));
             } 
-            // else if(isBVUtil(n)){
+            // else if(TypeChecker::isBV(n)){
             //     sort = BV_SORT;
             //     kind = NODE_KIND::NT_CONST;
             // } 
-            // else if(isFPUtil(n)){
+            // else if(TypeChecker::isFP(n)){
             //     sort = FP_SORT;
             //     kind = NODE_KIND::NT_CONST;
             // } // not support
-            else if(isStrUtil(n)){
+            else if(TypeChecker::isString(n)){
                 sort = STR_SORT;
                 kind = NODE_KIND::NT_CONST;
             } else {
@@ -747,7 +747,7 @@ namespace SMTParser{
          * @return The hash string of the node
          */
         std::string hashString() const {
-            return sha256(sort->toString() + "__" + kindToString(kind) + "__" + name + "__" + std::to_string(children.size()) + "__" + children_hash);
+            return HashUtils::sha256(sort->toString() + "__" + kindToString(kind) + "__" + name + "__" + std::to_string(children.size()) + "__" + children_hash);
         }
 
         /**

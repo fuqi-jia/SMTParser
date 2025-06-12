@@ -39,103 +39,130 @@
 
 namespace SMTParser{
 
-    bool isIntUtil(const std::string& str);
-    bool isRealUtil(const std::string& str);
-    bool isBVUtil(const std::string& str);
-    bool isFPUtil(const std::string& str);
-    bool isStrUtil(const std::string& str);
-    bool isScientificNotationUtil(const std::string& str);
-    std::string parseScientificNotation(const std::string& str);
+    // Type checking utilities
+    class TypeChecker {
+    public:
+        static bool isInt(const std::string& str);
+        static bool isReal(const std::string& str);
+        static bool isBV(const std::string& str);
+        static bool isFP(const std::string& str);
+        static bool isString(const std::string& str);
+        static bool isScientificNotation(const std::string& str);
+    };
 
-    Integer     pow(const Integer& base, const Integer& exp);
-    Real        pow(const Real& base, const Real& exp);
-    Integer     gcd(const Integer& a, const Integer& b);
-    Integer     lcm(const Integer& a, const Integer& b);
-    Real        sqrt(const Integer& i);
-    Real        sqrt(const Real& r);
-    Real        safeSqrt(const Integer& i);
-    Real        safeSqrt(const Real& r);
-    Integer     ceil(const Real& r);
-    Integer     floor(const Real& r);
-    Integer     round(const Real& r);
+    // Mathematical utilities
+    class MathUtils {
+    public:
+        static Integer pow(const Integer& base, const Integer& exp);
+        static Real pow(const Real& base, const Real& exp);
+        static Integer gcd(const Integer& a, const Integer& b);
+        static Integer lcm(const Integer& a, const Integer& b);
+        static Real sqrt(const Integer& i);
+        static Real sqrt(const Real& r);
+        static Real safeSqrt(const Integer& i);
+        static Real safeSqrt(const Real& r);
+        static Integer ceil(const Real& r);
+        static Integer floor(const Real& r);
+        static Integer round(const Real& r);
+        static bool isPrime(const Integer& n);
+        static bool isEven(const Integer& n);
+        static bool isOdd(const Integer& n);
+        static Integer factorial(const Integer& n);
+    };
 
-    bool        isPrime(const Integer& n);
-    bool        isEven(const Integer& n);
-    bool        isOdd(const Integer& n);
+    // Bit vector utilities
+    class BitVectorUtils {
+    public:
+        static Integer bvToNat(const std::string& bv);
+        static std::string natToBv(const Integer& i, const Integer& n);
+        static std::string natToBv(const std::string& i, const Integer& n);
+        static Integer bvToInt(const std::string& bv);
+        static std::string intToBv(const Integer& i, const Integer& n);
 
-    Integer factorial(const Integer& n);
+        static std::string bvNot(const std::string& bv);
+        static std::string bvAnd(const std::string& bv1, const std::string& bv2);
+        static std::string bvOr(const std::string& bv1, const std::string& bv2);
+        static std::string bvXor(const std::string& bv1, const std::string& bv2);
+        static std::string bvNand(const std::string& bv1, const std::string& bv2);
+        static std::string bvNor(const std::string& bv1, const std::string& bv2);
+        static std::string bvXnor(const std::string& bv1, const std::string& bv2);
 
-    Integer bvToNat(const std::string& bv);
-    std::string natToBv(const Integer& i, const Integer& n);
-    std::string natToBv(const std::string& i, const Integer& n);
-    Integer bvToInt(const std::string& bv);
-    std::string intToBv(const Integer& i, const Integer& n);
+        static std::string bvNeg(const std::string& bv);
+        static std::string bvAdd(const std::string& bv1, const std::string& bv2);
+        static std::string bvSub(const std::string& bv1, const std::string& bv2);
+        static std::string bvMul(const std::string& bv1, const std::string& bv2);
 
-    std::string bvNot(const std::string& bv);
-    std::string bvAnd(const std::string& bv1, const std::string& bv2);
-    std::string bvOr(const std::string& bv1, const std::string& bv2);
-    std::string bvXor(const std::string& bv1, const std::string& bv2);
-    std::string bvNand(const std::string& bv1, const std::string& bv2);
-    std::string bvNor(const std::string& bv1, const std::string& bv2);
-    std::string bvXnor(const std::string& bv1, const std::string& bv2);
+        static std::string bvUdiv(const std::string& bv1, const std::string& bv2);
+        static std::string bvUrem(const std::string& bv1, const std::string& bv2);
+        static std::string bvUmod(const std::string& bv1, const std::string& bv2);
+        static std::string bvSdiv(const std::string& bv1, const std::string& bv2);
+        static std::string bvSrem(const std::string& bv1, const std::string& bv2);
+        static std::string bvSmod(const std::string& bv1, const std::string& bv2);
 
-    std::string bvNeg(const std::string& bv);
-    std::string bvAdd(const std::string& bv1, const std::string& bv2);
-    std::string bvSub(const std::string& bv1, const std::string& bv2);
-    std::string bvMul(const std::string& bv1, const std::string& bv2);
+        static std::string bvShl(const std::string& bv, const std::string& n);
+        static std::string bvLshr(const std::string& bv, const std::string& n);
+        static std::string bvAshr(const std::string& bv, const std::string& n);
 
-    std::string bvUdiv(const std::string& bv1, const std::string& bv2);
-    std::string bvUrem(const std::string& bv1, const std::string& bv2);
-    std::string bvUmod(const std::string& bv1, const std::string& bv2);
-    std::string bvSdiv(const std::string& bv1, const std::string& bv2);
-    std::string bvSrem(const std::string& bv1, const std::string& bv2);
-    std::string bvSmod(const std::string& bv1, const std::string& bv2);
+        static std::string bvConcat(const std::string& bv1, const std::string& bv2);
+        static std::string bvExtract(const std::string& bv, const Integer& i, const Integer& j);
+        static std::string bvRepeat(const std::string& bv, const Integer& n);
+        static std::string bvZeroExtend(const std::string& bv, const Integer& n);
+        static std::string bvSignExtend(const std::string& bv, const Integer& n);
 
-    std::string bvShl(const std::string& bv, const std::string& n);
-    std::string bvLshr(const std::string& bv, const std::string& n);
-    std::string bvAshr(const std::string& bv, const std::string& n);
+        static std::string bvRotateLeft(const std::string& bv, const Integer& n);
+        static std::string bvRotateRight(const std::string& bv, const Integer& n);
 
-    std::string bvConcat(const std::string& bv1, const std::string& bv2);
-    std::string bvExtract(const std::string& bv, const Integer& i, const Integer& j);
-    std::string bvRepeat(const std::string& bv, const Integer& n);
-    std::string bvZeroExtend(const std::string& bv, const Integer& n);
-    std::string bvSignExtend(const std::string& bv, const Integer& n);
+        static bool bvComp(const std::string& bv1, const std::string& bv2, const NODE_KIND& kind);
+    };
 
-    std::string bvRotateLeft(const std::string& bv, const Integer& n);
-    std::string bvRotateRight(const std::string& bv, const Integer& n);
+    // Floating point utilities
+    class FloatingPointUtils {
+    public:
+        static std::string fpToUbv(const std::string& fp, const Integer& n);
+        static std::string fpToSbv(const std::string& fp, const Integer& n);
+    };
 
-    bool bvComp(const std::string& bv1, const std::string& bv2, const NODE_KIND& kind);
+    // String utilities
+    class StringUtils {
+    public:
+        static std::string strSubstr(const std::string& s, const Integer& i, const Integer& j);
+        static bool strPrefixof(const std::string& s, const std::string& t);
+        static bool strSuffixof(const std::string& s, const std::string& t);
+        static bool strContains(const std::string& s, const std::string& t);
+        static Integer strIndexof(const std::string& s, const std::string& t, const Integer& i);
+        static std::string strCharAt(const std::string& s, const Integer& i);
+        static std::string strUpdate(const std::string& s, const Integer& i, const std::string& t);
+        static std::string strReplace(const std::string& s, const std::string& t, const std::string& u);
+        static std::string strReplaceAll(const std::string& s, const std::string& t, const std::string& u);
+        static std::string strToLower(const std::string& s);
+        static std::string strToUpper(const std::string& s);
+        static std::string strRev(const std::string& s);
+    };
 
-    std::string fpToUbv(const std::string& fp, const Integer& n);
-    std::string fpToSbv(const std::string& fp, const Integer& n);
+    // Conversion utilities
+    class ConversionUtils {
+    public:
+        static std::string toString(const Integer& i);
+        static std::string toString(const Real& r);
+        static std::string toString(const int& i);
+        static std::string toString(const double& d);
+        static std::string toString(const float& f);
+        static std::string toString(const long& l);
+        static std::string toString(const short& s);
+        static std::string toString(const char& c);
+        static std::string toString(const bool& b);
+        static std::string parseScientificNotation(const std::string& str);
+        static std::string escapeString(const std::string& s);
+        static std::string unescapeString(const std::string& s); 
+    };
 
-    std::string strSubstr(const std::string& s, const Integer& i, const Integer& j);
-    bool        strPrefixof(const std::string& s, const std::string& t);
-    bool        strSuffixof(const std::string& s, const std::string& t);
-    bool        strContains(const std::string& s, const std::string& t);
-    Integer     strIndexof(const std::string& s, const std::string& t, const Integer& i);
-    std::string strCharAt(const std::string& s, const Integer& i);
-    std::string strUpdate(const std::string& s, const Integer& i, const std::string& t);
-    std::string strReplace(const std::string& s, const std::string& t, const std::string& u);
-    std::string strReplaceAll(const std::string& s, const std::string& t, const std::string& u);
-    std::string strToLower(const std::string& s);
-    std::string strToUpper(const std::string& s);
-    std::string strRev(const std::string& s);
+    // Hash utilities
+    class HashUtils {
+    public:
+        static std::string sha256(const std::string& input);
+    };
 
-    std::string toString(const Integer& i);
-    std::string toString(const Real& r);
-    std::string toString(const int& i);
-    std::string toString(const double& d);
-    std::string toString(const float& f);
-    std::string toString(const long& l);
-    std::string toString(const short& s);
-    std::string toString(const char& c);
-    std::string toString(const bool& b);
-
-    std::string escapeString(const std::string& s);
-    std::string unescapeString(const std::string& s); 
-
-    
+    // SHA256 implementation class
     class SHA256 {
     public:
         // Static function to get the SHA256 hash of a string
@@ -299,8 +326,6 @@ namespace SMTParser{
             return (value >> count) | (value << (32 - count));
         }
     };
-
-    std::string sha256(const std::string& input);
 }
 
 #endif

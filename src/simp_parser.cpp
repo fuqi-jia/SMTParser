@@ -544,7 +544,7 @@ namespace SMTParser{
             case NODE_KIND::NT_IS_PRIME:{
                 if(p->isCInt()){
                     Integer i = toInt(p);
-                    if(isPrime(i)){
+                    if(MathUtils::isPrime(i)){
                         return mkTrue();
                     }
                     else{
@@ -559,7 +559,7 @@ namespace SMTParser{
             case NODE_KIND::NT_IS_EVEN:{
                 if(p->isCInt()){
                     Integer i = toInt(p);
-                    if(isEven(i)){
+                    if(MathUtils::isEven(i)){
                         return mkTrue();
                     }
                     else{
@@ -574,7 +574,7 @@ namespace SMTParser{
             case NODE_KIND::NT_IS_ODD:{
                 if(p->isCInt()){
                     Integer i = toInt(p);
-                    if(isOdd(i)){
+                    if(MathUtils::isOdd(i)){
                         return mkTrue();
                     }
                     else{
@@ -597,7 +597,7 @@ namespace SMTParser{
                         return mkConstInt(1);
                     }
                     else{
-                        return mkConstInt(factorial(i));
+                        return mkConstInt(MathUtils::factorial(i));
                     }
                 }
                 else{
@@ -607,13 +607,13 @@ namespace SMTParser{
             }
             case NODE_KIND::NT_BV_NOT:{
                 if(p->isCBV()){
-                    return mkConstBv(bvNot(p->toString()), p->getSort()->getBitWidth());
+                    return mkConstBv(BitVectorUtils::bvNot(p->toString()), p->getSort()->getBitWidth());
                 }
                 return mkUnknown();
             }
             case NODE_KIND::NT_BV_NEG:{
                 if(p->isCBV()){
-                    return mkConstBv(bvNeg(p->toString()), p->getSort()->getBitWidth());
+                    return mkConstBv(BitVectorUtils::bvNeg(p->toString()), p->getSort()->getBitWidth());
                 }
                 return mkUnknown();
             }
@@ -642,25 +642,25 @@ namespace SMTParser{
             }
             case NODE_KIND::NT_STR_TO_LOWER:{
                 if(p->isCStr()){
-                    return mkConstStr(strToLower(p->toString()));
+                    return mkConstStr(StringUtils::strToLower(p->toString()));
                 }
                 return mkUnknown();
             }
             case NODE_KIND::NT_STR_TO_UPPER:{
                 if(p->isCStr()){
-                    return mkConstStr(strToUpper(p->toString()));
+                    return mkConstStr(StringUtils::strToUpper(p->toString()));
                 }
                 return mkUnknown();
             }
             case NODE_KIND::NT_STR_REV:{
                 if(p->isCStr()){
-                    return mkConstStr(strRev(p->toString()));
+                    return mkConstStr(StringUtils::strRev(p->toString()));
                 }
                 return mkUnknown();
             }
             case NODE_KIND::NT_STR_IS_DIGIT:{
                 if(p->isCStr()){
-                    return isIntUtil(p->toString()) ? mkTrue() : mkFalse();
+                    return TypeChecker::isInt(p->toString()) ? mkTrue() : mkFalse();
                 }
                 return mkUnknown();
             }
@@ -672,7 +672,7 @@ namespace SMTParser{
             }
             case NODE_KIND::NT_STR_TO_INT:{
                 if(p->isCStr()){
-                    if(isIntUtil(p->toString())){
+                    if(TypeChecker::isInt(p->toString())){
                         return mkConstInt(stoi(p->toString()));
                     }
                     else{
@@ -715,19 +715,19 @@ namespace SMTParser{
             }
             case NODE_KIND::NT_BV_TO_NAT:{
                 if(p->isCBV()){
-                    return mkConstInt(bvToNat(p->toString()));
+                    return mkConstInt(BitVectorUtils::bvToNat(p->toString()));
                 }
                 return mkUnknown();
             }
             case NODE_KIND::NT_BV_TO_INT:{
                 if(p->isCBV()){
-                    return mkConstInt(bvToInt(p->toString()));
+                    return mkConstInt(BitVectorUtils::bvToInt(p->toString()));
                 }
                 return mkUnknown();
             }
             case NODE_KIND::NT_POW2:{
                 if(p->isCInt()){
-                    return mkConstInt(pow(2, toInt(p)));
+                    return mkConstInt(MathUtils::pow(2, toInt(p)));
                 }
                 else if(p->isCReal()){
                     return mkUnknown();
@@ -978,7 +978,7 @@ namespace SMTParser{
             }
             case NODE_KIND::NT_GCD:{
                 if(l->isCInt() && r->isCInt()){
-                    return mkConstInt(gcd(toInt(l), toInt(r)));
+                    return mkConstInt(MathUtils::gcd(toInt(l), toInt(r)));
                 }
                 else{
                     err_all(l, "GCD on non-integer", line_number);
@@ -988,7 +988,7 @@ namespace SMTParser{
             }
             case NODE_KIND::NT_LCM:{
                 if(l->isCInt() && r->isCInt()){
-                    return mkConstInt(lcm(toInt(l), toInt(r)));
+                    return mkConstInt(MathUtils::lcm(toInt(l), toInt(r)));
                 }
                 else{
                     err_all(l, "LCM on non-integer", line_number);
@@ -1002,14 +1002,14 @@ namespace SMTParser{
                     return mkConstBv("#b" + std::string(l->getSort()->getBitWidth(), '1'), l->getSort()->getBitWidth());
                 }
                 else if(l->isCBV() && r->isCBV()){
-                    return mkConstBv(bvUdiv(l->toString(), r->toString()), l->getSort()->getBitWidth());
+                    return mkConstBv(BitVectorUtils::bvUdiv(l->toString(), r->toString()), l->getSort()->getBitWidth());
                 }
                 return mkUnknown();
             }
             case NODE_KIND::NT_BV_SDIV:{            
                 // bvsdiv by zero evaluates to all ones if it's positive, otherwise 1.
                 if(r->isCBV() && isZero(r)){
-                    if(l->isCBV() && Integer(bvToInt(l->toString())) >= 0){
+                    if(l->isCBV() && Integer(BitVectorUtils::bvToInt(l->toString())) >= 0){
                         return mkConstBv("#b" + std::string(l->getSort()->getBitWidth(), '1'), l->getSort()->getBitWidth());
                     }
                     else{
@@ -1017,7 +1017,7 @@ namespace SMTParser{
                     }
                 }
                 else if(l->isCBV() && r->isCBV()){
-                    return mkConstBv(bvSdiv(l->toString(), r->toString()), l->getSort()->getBitWidth());
+                    return mkConstBv(BitVectorUtils::bvSdiv(l->toString(), r->toString()), l->getSort()->getBitWidth());
                 }
                 return mkUnknown();
             }
@@ -1027,7 +1027,7 @@ namespace SMTParser{
                     return l;
                 }
                 else if(l->isCBV() && r->isCBV()){
-                    return mkConstBv(bvUrem(l->toString(), r->toString()), l->getSort()->getBitWidth());
+                    return mkConstBv(BitVectorUtils::bvUrem(l->toString(), r->toString()), l->getSort()->getBitWidth());
                 }
                 return mkUnknown();
             }
@@ -1037,7 +1037,7 @@ namespace SMTParser{
                     return l;
                 }
                 else if(l->isCBV() && r->isCBV()){
-                    return mkConstBv(bvSrem(l->toString(), r->toString()), r->getSort()->getBitWidth());
+                    return mkConstBv(BitVectorUtils::bvSrem(l->toString(), r->toString()), r->getSort()->getBitWidth());
                 }
                 return mkUnknown();
             }
@@ -1046,7 +1046,7 @@ namespace SMTParser{
                     return l;
                 }
                 else if(l->isCBV() && r->isCBV()){
-                    return mkConstBv(bvUmod(l->toString(), r->toString()), l->getSort()->getBitWidth());
+                    return mkConstBv(BitVectorUtils::bvUmod(l->toString(), r->toString()), l->getSort()->getBitWidth());
                 }
                 return mkUnknown();
             }
@@ -1056,7 +1056,7 @@ namespace SMTParser{
                     return l;
                 }
                 else if(l->isCBV() && r->isCBV()){
-                    return mkConstBv(bvSmod(l->toString(), r->toString()), r->getSort()->getBitWidth());
+                    return mkConstBv(BitVectorUtils::bvSmod(l->toString(), r->toString()), r->getSort()->getBitWidth());
                 }
                 return mkUnknown();
             }
@@ -1074,7 +1074,7 @@ namespace SMTParser{
                     return l;
                 }
                 else if(l->isCBV() && r->isCBV()){
-                    return mkConstBv(bvShl(l->toString(), r->toString()), l->getSort()->getBitWidth());
+                    return mkConstBv(BitVectorUtils::bvShl(l->toString(), r->toString()), l->getSort()->getBitWidth());
                 }
                 return mkUnknown();
             }
@@ -1084,7 +1084,7 @@ namespace SMTParser{
                     return l;
                 }
                 else if(l->isCBV() && r->isCBV()){
-                    return mkConstBv(bvLshr(l->toString(), r->toString()), l->getSort()->getBitWidth());
+                    return mkConstBv(BitVectorUtils::bvLshr(l->toString(), r->toString()), l->getSort()->getBitWidth());
                 }
                 return mkUnknown();
             }
@@ -1094,7 +1094,7 @@ namespace SMTParser{
                     return l;
                 }
                 else if(l->isCBV() && r->isCBV()){
-                    return mkConstBv(bvAshr(l->toString(), r->toString()), l->getSort()->getBitWidth());
+                    return mkConstBv(BitVectorUtils::bvAshr(l->toString(), r->toString()), l->getSort()->getBitWidth());
                 }
                 return mkUnknown();
             }
@@ -1107,19 +1107,19 @@ namespace SMTParser{
             case NODE_KIND::NT_BV_SGT:
             case NODE_KIND::NT_BV_SGE:{
                 if(l->isCBV() && r->isCBV()){
-                    return bvComp(l->toString(), r->toString(), t) ? mkTrue() : mkFalse();
+                    return BitVectorUtils::bvComp(l->toString(), r->toString(), t) ? mkTrue() : mkFalse();
                 }
                 return mkUnknown();
             }
             case NODE_KIND::NT_NAT_TO_BV:{
                 if(l->isCInt() && r->isCInt()){
-                    return mkConstBv(natToBv(toInt(l), toInt(r)), toInt(r).toULong());
+                    return mkConstBv(BitVectorUtils::natToBv(toInt(l), toInt(r)), toInt(r).toULong());
                 }
                 return mkUnknown();
             }
             case NODE_KIND::NT_INT_TO_BV:{
                 if(l->isCInt() && r->isCInt()){
-                    return mkConstBv(intToBv(toInt(l), toInt(r)), toInt(r).toULong());
+                    return mkConstBv(BitVectorUtils::intToBv(toInt(l), toInt(r)), toInt(r).toULong());
                 }
                 return mkUnknown();
             }
@@ -1136,19 +1136,19 @@ namespace SMTParser{
             }
             case NODE_KIND::NT_STR_PREFIXOF:{
                 if(l->isCStr() && r->isCStr()){
-                    return strPrefixof(l->toString(), r->toString()) ? mkTrue() : mkFalse();
+                    return StringUtils::strPrefixof(l->toString(), r->toString()) ? mkTrue() : mkFalse();
                 }
                 return mkUnknown();
             }
             case NODE_KIND::NT_STR_SUFFIXOF:{
                 if(l->isCStr() && r->isCStr()){
-                    return strSuffixof(l->toString(), r->toString()) ? mkTrue() : mkFalse();
+                    return StringUtils::strSuffixof(l->toString(), r->toString()) ? mkTrue() : mkFalse();
                 }
                 return mkUnknown();
             }
             case NODE_KIND::NT_STR_CHARAT:{
                 if(l->isCStr() && r->isCInt()){
-                    return mkConstStr(strCharAt(l->toString(), toInt(r)));
+                    return mkConstStr(StringUtils::strCharAt(l->toString(), toInt(r)));
                 }
                 return mkUnknown();
             }
@@ -1181,7 +1181,7 @@ namespace SMTParser{
             }
             case NODE_KIND::NT_STR_CONTAINS:{
                 if(l->isCStr() && r->isCStr()){
-                    return strContains(l->toString(), r->toString()) ? mkTrue() : mkFalse();
+                    return StringUtils::strContains(l->toString(), r->toString()) ? mkTrue() : mkFalse();
                 }
                 return mkUnknown();
             }
@@ -1302,61 +1302,61 @@ namespace SMTParser{
             }
             case NODE_KIND::NT_BV_AND:{
                 if(l->isCBV() && r->isCBV()){
-                    return mkConstBv(bvAnd(l->toString(), r->toString()), l->getSort()->getBitWidth());
+                    return mkConstBv(BitVectorUtils::bvAnd(l->toString(), r->toString()), l->getSort()->getBitWidth());
                 }
                 return mkUnknown();
             }
             case NODE_KIND::NT_BV_OR:{
                 if(l->isCBV() && r->isCBV()){
-                    return mkConstBv(bvOr(l->toString(), r->toString()), l->getSort()->getBitWidth());
+                    return mkConstBv(BitVectorUtils::bvOr(l->toString(), r->toString()), l->getSort()->getBitWidth());
                 }
                 return mkUnknown();
             }
             case NODE_KIND::NT_BV_XOR:{
                 if(l->isCBV() && r->isCBV()){
-                    return mkConstBv(bvXor(l->toString(), r->toString()), l->getSort()->getBitWidth());
+                    return mkConstBv(BitVectorUtils::bvXor(l->toString(), r->toString()), l->getSort()->getBitWidth());
                 }
                 return mkUnknown();
             }
             case NODE_KIND::NT_BV_NAND:{
                 if(l->isCBV() && r->isCBV()){
-                    return mkConstBv(bvNand(l->toString(), r->toString()), l->getSort()->getBitWidth());
+                    return mkConstBv(BitVectorUtils::bvNand(l->toString(), r->toString()), l->getSort()->getBitWidth());
                 }
                 return mkUnknown();
             }
             case NODE_KIND::NT_BV_NOR:{
                 if(l->isCBV() && r->isCBV()){
-                    return mkConstBv(bvNor(l->toString(), r->toString()), l->getSort()->getBitWidth());
+                    return mkConstBv(BitVectorUtils::bvNor(l->toString(), r->toString()), l->getSort()->getBitWidth());
                 }
                 return mkUnknown();
             }
             case NODE_KIND::NT_BV_XNOR:{
                 if(l->isCBV() && r->isCBV()){
-                    return mkConstBv(bvXnor(l->toString(), r->toString()), l->getSort()->getBitWidth());
+                    return mkConstBv(BitVectorUtils::bvXnor(l->toString(), r->toString()), l->getSort()->getBitWidth());
                 }
                 return mkUnknown();
             }
             case NODE_KIND::NT_BV_COMP:{
                 if(l->isCBV() && r->isCBV()){
-                    return bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_COMP) ? mkTrue() : mkFalse();
+                    return BitVectorUtils::bvComp(l->toString(), r->toString(), NODE_KIND::NT_BV_COMP) ? mkTrue() : mkFalse();
                 }
                 return mkUnknown();
             }
             case NODE_KIND::NT_BV_ADD:{
                 if(l->isCBV() && r->isCBV()){
-                    return mkConstBv(bvAdd(l->toString(), r->toString()), l->getSort()->getBitWidth());
+                    return mkConstBv(BitVectorUtils::bvAdd(l->toString(), r->toString()), l->getSort()->getBitWidth());
                 }
                 return mkUnknown();
             }
             case NODE_KIND::NT_BV_SUB:{
                 if(l->isCBV() && r->isCBV()){
-                    return mkConstBv(bvSub(l->toString(), r->toString()), l->getSort()->getBitWidth());
+                    return mkConstBv(BitVectorUtils::bvSub(l->toString(), r->toString()), l->getSort()->getBitWidth());
                 }
                 return mkUnknown();
             }
             case NODE_KIND::NT_BV_MUL:{
                 if(l->isCBV() && r->isCBV()){
-                    return mkConstBv(bvMul(l->toString(), r->toString()), l->getSort()->getBitWidth());
+                    return mkConstBv(BitVectorUtils::bvMul(l->toString(), r->toString()), l->getSort()->getBitWidth());
                 }
                 return mkUnknown();
             }
@@ -1368,7 +1368,7 @@ namespace SMTParser{
             }
             case NODE_KIND::NT_BV_CONCAT:{
                 if(l->isCBV() && r->isCBV()){
-                    return mkConstBv(bvConcat(l->toString(), r->toString()), l->getSort()->getBitWidth() + r->getSort()->getBitWidth());
+                    return mkConstBv(BitVectorUtils::bvConcat(l->toString(), r->toString()), l->getSort()->getBitWidth() + r->getSort()->getBitWidth());
                 }
                 return mkUnknown();
             }
@@ -1441,31 +1441,31 @@ namespace SMTParser{
             }
             case NODE_KIND::NT_STR_SUBSTR:{
                 if(l->isCStr() && m->isCInt() && r->isCInt()){
-                    return mkConstStr(strSubstr(l->toString(), toInt(m), toInt(r)));
+                    return mkConstStr(StringUtils::strSubstr(l->toString(), toInt(m), toInt(r)));
                 }
                 return mkUnknown();
             }
             case NODE_KIND::NT_STR_INDEXOF:{
                 if(l->isCStr() && m->isCStr() && r->isCInt()){
-                    return mkConstInt(strIndexof(l->toString(), m->toString(), toInt(r)));
+                    return mkConstInt(StringUtils::strIndexof(l->toString(), m->toString(), toInt(r)));
                 }
                 return mkUnknown();
             }
             case NODE_KIND::NT_STR_UPDATE:{
                 if(l->isCStr() && m->isCInt() && r->isCStr()){
-                    return mkConstStr(strUpdate(l->toString(), toInt(m), r->toString()));
+                    return mkConstStr(StringUtils::strUpdate(l->toString(), toInt(m), r->toString()));
                 }
                 return mkUnknown();
             }
             case NODE_KIND::NT_STR_REPLACE:{
                 if(l->isCStr() && m->isCStr() && r->isCStr()){
-                    return mkConstStr(strReplace(l->toString(), m->toString(), r->toString()));
+                    return mkConstStr(StringUtils::strReplace(l->toString(), m->toString(), r->toString()));
                 }
                 return mkUnknown();
             }
             case NODE_KIND::NT_STR_REPLACE_ALL:{
                 if(l->isCStr() && m->isCStr() && r->isCStr()){
-                    return mkConstStr(strReplaceAll(l->toString(), m->toString(), r->toString()));
+                    return mkConstStr(StringUtils::strReplaceAll(l->toString(), m->toString(), r->toString()));
                 }
                 return mkUnknown();
             }
@@ -1479,7 +1479,7 @@ namespace SMTParser{
             case NODE_KIND::NT_BV_EXTRACT:{
                 if(l->isCBV() && m->isCInt() && r->isCInt()){
                     Integer size = (toInt(m) - toInt(r));
-                    return mkConstBv(bvExtract(l->toString(), toInt(m), toInt(r)), size.toULong());
+                    return mkConstBv(BitVectorUtils::bvExtract(l->toString(), toInt(m), toInt(r)), size.toULong());
                 }
                 return mkUnknown();
             }

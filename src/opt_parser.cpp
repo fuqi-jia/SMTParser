@@ -85,10 +85,10 @@ namespace SMTParser{
 
         // add the weight
         if(weight != ""){
-            if(isIntUtil(weight)){
+            if(TypeChecker::isInt(weight)){
                 soft_weights.emplace_back(mkConstInt(weight));
             }
-            else if(isRealUtil(weight)){
+            else if(TypeChecker::isReal(weight)){
                 soft_weights.emplace_back(mkConstReal(weight));
             }
             else{
