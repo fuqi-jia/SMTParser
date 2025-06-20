@@ -2574,7 +2574,7 @@ namespace SMTParser{
         
         std::shared_ptr<DAGNode> mkStrSplitAt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> s); // str.split_at(l, r, s)
         
-        std::shared_ptr<DAGNode> mkStrSplitEnd(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> s); // str.split_end(l, r, s)
+        std::shared_ptr<DAGNode> mkStrSplitRest(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> s); // str.split_rest(l, r, s)
         
         std::shared_ptr<DAGNode> mkStrNumSplits(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // str.num_splits(l, r)
         
@@ -3456,6 +3456,14 @@ namespace SMTParser{
          * @return Filename
          */
         std::string                             dumpSMT2(const std::string& filename);
+
+        /**
+         * @brief Remove functions by name
+         * 
+         * @param funcNames Vector of function names to remove
+         * @return Number of functions actually removed
+         */
+        size_t                                  removeFuns(const std::vector<std::string>& funcNames);
     private:
         // parse smt-lib2 file
         std::string	                            getSymbol();
@@ -3767,7 +3775,7 @@ namespace SMTParser{
         bool        evaluateMax(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
         bool        evaluateMin(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
         bool		evaluateStrSplitAt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
-        bool		evaluateStrSplitEnd(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
+        bool		evaluateStrSplitRest(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
         bool		evaluateStrNumSplits(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
     };
 

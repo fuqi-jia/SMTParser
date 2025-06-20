@@ -3474,12 +3474,12 @@ namespace SMTParser{
         }
         return mkOper(STR_SORT, NODE_KIND::NT_STR_SPLIT_AT, l, r, s);
     }
-    std::shared_ptr<DAGNode> Parser::mkStrSplitEnd(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> s){
+    std::shared_ptr<DAGNode> Parser::mkStrSplitRest(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> s){
         if(!isStrParam(l) || !isStrParam(r) || !isIntParam(s)) {
-            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_split_end", line_number);
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_split_rest", line_number);
             return mkUnknown();
         }
-        return mkOper(STR_SORT, NODE_KIND::NT_STR_SPLIT_END, l, r, s);
+        return mkOper(STR_SORT, NODE_KIND::NT_STR_SPLIT_REST, l, r, s);
     }
     std::shared_ptr<DAGNode> Parser::mkStrNumSplits(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(!isStrParam(l) || !isStrParam(r)) {
@@ -4251,7 +4251,7 @@ namespace SMTParser{
             case NODE_KIND::NT_STR_REPLACE:
             case NODE_KIND::NT_STR_REPLACE_ALL:
             case NODE_KIND::NT_STR_SPLIT_AT:
-            case NODE_KIND::NT_STR_SPLIT_END:
+            case NODE_KIND::NT_STR_SPLIT_REST:
             case NODE_KIND::NT_REPLACE_REG:
             case NODE_KIND::NT_REPLACE_REG_ALL:
             case NODE_KIND::NT_INDEXOF_REG:

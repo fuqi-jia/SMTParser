@@ -508,9 +508,9 @@ namespace SMTParser{
         bool isStrRev() 			const { return (kind == NODE_KIND::NT_STR_REV); };
         bool isStrSplit() 			const { return (kind == NODE_KIND::NT_STR_SPLIT); };
         bool isStrSplitAt() 		const { return (kind == NODE_KIND::NT_STR_SPLIT_AT); };
-        bool isStrSplitEnd() 		const { return (kind == NODE_KIND::NT_STR_SPLIT_END); };
+        bool isStrSplitRest() 		const { return (kind == NODE_KIND::NT_STR_SPLIT_REST); };
         bool isStrNumSplits() 		const { return (kind == NODE_KIND::NT_STR_NUM_SPLITS); };
-        bool isStrOp() 				const { return (isStrLen() || isStrConcat() || isStrSubstr() || isStrPrefixof() || isStrSuffixof() || isStrIndexof() || isStrCharat() || isStrUpdate() || isStrReplace() || isStrReplaceAll() || isStrToLower() || isStrToUpper() || isStrRev() || isStrSplit() || isStrSplitAt() || isStrSplitEnd() || isStrNumSplits() || (isApplyUF() && sort->isStr())); };
+        bool isStrOp() 				const { return (isStrLen() || isStrConcat() || isStrSubstr() || isStrPrefixof() || isStrSuffixof() || isStrIndexof() || isStrCharat() || isStrUpdate() || isStrReplace() || isStrReplaceAll() || isStrToLower() || isStrToUpper() || isStrRev() || isStrSplit() || isStrSplitAt() || isStrSplitRest() || isStrNumSplits() || (isApplyUF() && sort->isStr())); };
 
         // check strings comparison
         bool isStrLt() 				const { return (kind == NODE_KIND::NT_STR_LT); };

@@ -480,8 +480,8 @@ namespace SMTParser{
         else if(expr->isStrSplit()){
             return evaluateStrSplit(expr, model, result);
         }
-        else if(expr->isStrSplitEnd()){
-            return evaluateStrSplitEnd(expr, model, result);
+        else if(expr->isStrSplitRest()){
+            return evaluateStrSplitRest(expr, model, result);
         }
         else if(expr->isStrLt()){
             return evaluateStrLt(expr, model, result);
@@ -1737,8 +1737,8 @@ namespace SMTParser{
         result = expr;
         return false;
 	}
-    bool Parser::evaluateStrSplitEnd(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_STR_SPLIT_END);
+    bool Parser::evaluateStrSplitRest(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_STR_SPLIT_REST);
 	}
     bool Parser::evaluateStrLt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
         return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_STR_LT);

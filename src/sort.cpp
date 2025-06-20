@@ -39,4 +39,7 @@ namespace SMTParser{
     std::shared_ptr<Sort> mkArraySort(std::shared_ptr<Sort> index, std::shared_ptr<Sort> elem){
         return std::make_shared<Sort>(SORT_KIND::SK_ARRAY, "Array", 0, std::vector<std::shared_ptr<Sort>>{index, elem});
     }
+    std::shared_ptr<Sort> mkSortDec(const std::string& name, size_t arity){
+        return std::make_shared<Sort>(SORT_KIND::SK_DEC, name, arity);
+    }
 }
