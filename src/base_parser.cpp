@@ -1854,6 +1854,10 @@ namespace SMTParser{
 			cassert(params.size() == 3, "Invalid number of parameters for str.split_at");
 			return mkStrSplitAt(params[0], params[1], params[2]);
 		}
+		else if (s == "str.split_end") {
+			cassert(params.size() == 3, "Invalid number of parameters for str.split_end");
+			return mkStrSplitEnd(params[0], params[1], params[2]);
+		}
 		else if (s == "str.num_splits") {
 			cassert(params.size() == 2, "Invalid number of parameters for str.num_splits");
 			return mkStrNumSplits(params[0], params[1]);
