@@ -132,9 +132,11 @@ namespace SMTParser{
                 case SORT_KIND::SK_EXT: return "ExtReal";
                 case SORT_KIND::SK_NAT: return "Natural";
                 case SORT_KIND::SK_RAND: return "Random";
-                case SORT_KIND::SK_INTOREAL: return "IntOrReal";
+                case SORT_KIND::SK_INTOREAL: return "Int";
                 case SORT_KIND::SK_ALGEBRAIC: return "Algebraic";
                 case SORT_KIND::SK_TRANSCENDENTAL: return "Transcendental";
+                case SORT_KIND::SK_DEC: return name;
+                case SORT_KIND::SK_DEF: return name;
                 default: return "Unknown";
             }
         }
@@ -190,6 +192,7 @@ namespace SMTParser{
     std::shared_ptr<Sort> mkBVSort(size_t width);
     std::shared_ptr<Sort> mkFPSort(size_t exp, size_t sig);
     std::shared_ptr<Sort> mkArraySort(std::shared_ptr<Sort> index, std::shared_ptr<Sort> elem);
+    std::shared_ptr<Sort> mkSortDec(const std::string& name, size_t arity);
 
     // smart pointer
     typedef std::shared_ptr<Sort> SortPtr;
