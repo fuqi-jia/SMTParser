@@ -896,6 +896,7 @@ namespace SMTParser{
         case NODE_KIND::NT_STR_REPLACE:
         case NODE_KIND::NT_STR_REPLACE_ALL:
         case NODE_KIND::NT_STR_SPLIT_AT:
+        case NODE_KIND::NT_STR_SPLIT_REST:
             dumpTripleOp(kind, node->getChild(0), node->getChild(1), node->getChild(2), visited, ofs);
             break;
         case NODE_KIND::NT_STR_TO_LOWER:

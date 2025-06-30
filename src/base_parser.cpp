@@ -28,6 +28,7 @@
 #include "parser.h"
 #include <queue>
 #include <stack>
+#include <algorithm>
 
 namespace SMTParser{
 
@@ -755,6 +756,32 @@ namespace SMTParser{
 			skipToRpar();
 
 			return CMD_TYPE::CT_DECLARE_SORT;
+		}
+
+		// (define-const <symbol> <sort> <expr>)
+		if (command == "define-const") {
+			// get name
+			size_t name_ln = line_number;
+			std::string name = getSymbol();
+
+			if(fun_key_map.find(name) != fun_key_map.end()){
+				std::shared_ptr<DAGNode> check_fun = fun_key_map[name];
+				if(check_fun->getKind() == NODE_KIND::NT_FUNC_DEF){
+					err_mul_def(name, name_ln);
+				}
+				return CMD_TYPE::CT_DEFINE_FUN;
+			}
+			// keep the function name with the same order
+			function_names.emplace_back(name);
+
+			// get returned type and body
+			std::shared_ptr<Sort> out_sort = parseSort();
+			std::shared_ptr<DAGNode> func_body = parseExpr();
+			std::vector<std::shared_ptr<DAGNode>> params; // empty params for constant
+			std::shared_ptr<DAGNode> res = mkFuncDef(name, params, out_sort, func_body);
+			skipToRpar();
+			
+			return CMD_TYPE::CT_DEFINE_FUN;
 		}
 
 		//(define-fun <symbol> ((<symbol> <sort>)*) <sort> <expr>)
@@ -1830,8 +1857,8 @@ namespace SMTParser{
 			cassert(params.size() == 3, "Invalid number of parameters for str.replace_re");
 			return mkReplaceReg(params[0], params[1], params[2]);
 		}
-		else if (s == "str.replace_all_re") {
-			cassert(params.size() == 3, "Invalid number of parameters for str.replace_all_re");
+		else if (s == "str.replace_re_all") {
+			cassert(params.size() == 3, "Invalid number of parameters for str.replace_re_all");
 			return mkReplaceRegAll(params[0], params[1], params[2]);
 		}
 		else if (s == "str.to_lower") {
@@ -1853,6 +1880,10 @@ namespace SMTParser{
 		else if (s == "str.split_at") {
 			cassert(params.size() == 3, "Invalid number of parameters for str.split_at");
 			return mkStrSplitAt(params[0], params[1], params[2]);
+		}
+		else if (s == "str.split_rest") {
+			cassert(params.size() == 3, "Invalid number of parameters for str.split_rest");
+			return mkStrSplitRest(params[0], params[1], params[2]);
 		}
 		else if (s == "str.num_splits") {
 			cassert(params.size() == 2, "Invalid number of parameters for str.num_splits");
@@ -1968,6 +1999,12 @@ namespace SMTParser{
 			}
 			else if(s == "String"){
 				return STR_SORT;
+			}
+			else if(s == "Float64"){
+				return FLOAT64_SORT;
+			}
+			else if(sort_key_map.find(s) != sort_key_map.end()){
+				return sort_key_map[s];
 			}
 			else err_unkwn_sym(s, expr_ln);
 		}
@@ -2709,6 +2746,12 @@ namespace SMTParser{
 	std::string Parser::dumpSMT2(){
 		std::stringstream ss;
 		ss << "(set-logic " << options->getLogic() << ")" << std::endl;
+		// custom sorts
+		for(auto& sort_pair : sort_key_map){
+			if(sort_pair.second->isDec()){
+				ss << "(declare-sort " << sort_pair.first << " " << sort_pair.second->arity << ")" << std::endl;
+			}
+		}
 		// variables
 		std::vector<std::shared_ptr<DAGNode>> vars = getVariables();
 		for(auto& var : vars){
@@ -2716,7 +2759,7 @@ namespace SMTParser{
 		}
 		std::vector<std::shared_ptr<DAGNode>> functions = getFunctions();
 		for(auto& func : functions){
-			ss << dumpFuncDef(func);
+			ss << dumpFuncDef(func) << std::endl;
 		}
 		// constraints
 		for(auto& constraint : assertions){
@@ -2732,6 +2775,28 @@ namespace SMTParser{
 		file << dumpSMT2();
 		file.close();
 		return filename;
+	}
+
+	size_t Parser::removeFuns(const std::vector<std::string>& funcNames){
+		size_t removedCount = 0;
+		
+		for(const auto& funcName : funcNames){
+			// Check if function exists in fun_key_map
+			auto funIt = fun_key_map.find(funcName);
+			if(funIt != fun_key_map.end()){
+				// Remove from fun_key_map
+				fun_key_map.erase(funIt);
+				removedCount++;
+				
+				// Remove from function_names vector
+				auto nameIt = std::find(function_names.begin(), function_names.end(), funcName);
+				if(nameIt != function_names.end()){
+					function_names.erase(nameIt);
+				}
+			}
+		}
+		
+		return removedCount;
 	}
 
 	/*
