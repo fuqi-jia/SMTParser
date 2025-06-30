@@ -1857,8 +1857,8 @@ namespace SMTParser{
 			cassert(params.size() == 3, "Invalid number of parameters for str.replace_re");
 			return mkReplaceReg(params[0], params[1], params[2]);
 		}
-		else if (s == "str.replace_all_re") {
-			cassert(params.size() == 3, "Invalid number of parameters for str.replace_all_re");
+		else if (s == "str.replace_re_all") {
+			cassert(params.size() == 3, "Invalid number of parameters for str.replace_re_all");
 			return mkReplaceRegAll(params[0], params[1], params[2]);
 		}
 		else if (s == "str.to_lower") {
@@ -1999,6 +1999,9 @@ namespace SMTParser{
 			}
 			else if(s == "String"){
 				return STR_SORT;
+			}
+			else if(s == "Float64"){
+				return FLOAT64_SORT;
 			}
 			else if(sort_key_map.find(s) != sort_key_map.end()){
 				return sort_key_map[s];

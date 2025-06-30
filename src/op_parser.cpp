@@ -3844,12 +3844,12 @@ namespace SMTParser{
         return mkOper(STR_SORT, NODE_KIND::NT_REPLACE_REG, l, r, v);
     }
     /*
-    (str.replace_all_re Str Reg Str), return Str
+    (str.replace_re_all Str Reg Str), return Str
     */
     std::shared_ptr<DAGNode> Parser::mkReplaceRegAll(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> v){
         if(l->isErr() || r->isErr() || v->isErr()) return l->isErr()?l:r;
         if(!isStrParam(l) || !isRegParam(r) || !isStrParam(v)) {
-            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_replace_all_re", line_number);
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_replace_re_all", line_number);
             return mkUnknown();
         }
 

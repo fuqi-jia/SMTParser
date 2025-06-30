@@ -102,6 +102,11 @@ namespace SMTParser{
             else if((isReal() && other.isIntOrReal()) || (isIntOrReal() && other.isReal())){
                 return true;
             }
+            else if(isFp() && other.isFp()){
+                // For floating point types, compare exponent and significand widths
+                return getExponentWidth() == other.getExponentWidth() && 
+                       getSignificandWidth() == other.getSignificandWidth();
+            }
             else{
                 return kind == other.kind && name == other.name && arity == other.arity;
             }
@@ -132,7 +137,7 @@ namespace SMTParser{
                 case SORT_KIND::SK_EXT: return "ExtReal";
                 case SORT_KIND::SK_NAT: return "Natural";
                 case SORT_KIND::SK_RAND: return "Random";
-                case SORT_KIND::SK_INTOREAL: return "Int";
+                case SORT_KIND::SK_INTOREAL: return "IntOrReal";
                 case SORT_KIND::SK_ALGEBRAIC: return "Algebraic";
                 case SORT_KIND::SK_TRANSCENDENTAL: return "Transcendental";
                 case SORT_KIND::SK_DEC: return name;
@@ -188,6 +193,9 @@ namespace SMTParser{
     inline const std::shared_ptr<Sort> NAT_SORT = std::make_shared<Sort>(SORT_KIND::SK_NAT, "Natural", 0);
     inline const std::shared_ptr<Sort> RAND_SORT = std::make_shared<Sort>(SORT_KIND::SK_RAND, "Random", 0);
     inline const std::shared_ptr<Sort> INTOREAL_SORT = std::make_shared<Sort>(SORT_KIND::SK_INTOREAL, "IntOrReal", 0);
+
+    // Float64 type - declared in sort.cpp
+    extern const std::shared_ptr<Sort> FLOAT64_SORT;
 
     std::shared_ptr<Sort> mkBVSort(size_t width);
     std::shared_ptr<Sort> mkFPSort(size_t exp, size_t sig);
