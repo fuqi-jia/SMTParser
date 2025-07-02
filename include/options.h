@@ -27,7 +27,7 @@
 #ifndef _OPTIONS_H
 #define _OPTIONS_H
 
-#include "common.h"
+#include "asserting.h"
 #include <unordered_map>
 
 namespace SMTParser{

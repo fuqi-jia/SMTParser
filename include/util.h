@@ -29,7 +29,7 @@
 
 #include "kind.h"
 #include "number.h"
-#include "common.h"
+#include "asserting.h"
 
 #include <iostream>
 #include <iomanip>

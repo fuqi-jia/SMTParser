@@ -26,7 +26,7 @@
  */
 
 #include "interval.h"
-#include "common.h"
+#include "asserting.h"
 
 namespace SMTParser{
 

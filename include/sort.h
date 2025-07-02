@@ -29,7 +29,7 @@
 #define _SORT_H
 
 #include "kind.h"
-#include "common.h"
+#include "asserting.h"
 
 #include <vector>
 #include <string>

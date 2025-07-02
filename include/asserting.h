@@ -25,8 +25,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef COMMON_HEADER
-#define COMMON_HEADER
+#ifndef ASSERTING_HEADER
+#define ASSERTING_HEADER
 
 #include <iostream>
 
