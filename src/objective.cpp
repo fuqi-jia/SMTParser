@@ -30,7 +30,7 @@
 namespace SMTParser{
 
     COMP_KIND getDefaultCompareOperator(const std::string& logic, OPT_KIND opt_type){
-        cassert(opt_type == OPT_KIND::OPT_MINIMIZE || opt_type == OPT_KIND::OPT_MAXIMIZE, "getDefaultCompareOperator: opt_type is not minimize or maximize");
+        condAssert(opt_type == OPT_KIND::OPT_MINIMIZE || opt_type == OPT_KIND::OPT_MAXIMIZE, "getDefaultCompareOperator: opt_type is not minimize or maximize");
         if(logic == "QF_LIA" || logic == "QF_LRA" || logic == "QF_NIA" || logic == "QF_NRA" || logic == "QF_IDL" || logic == "QF_RDL" || logic == "QF_LIRA" || logic == "QF_NIRA"){
             return opt_type == OPT_KIND::OPT_MINIMIZE ? COMP_KIND::COMP_LT : COMP_KIND::COMP_GT;
         }

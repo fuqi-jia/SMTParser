@@ -629,7 +629,7 @@ namespace SMTParser{
                     result = expr;
                     return false;
                 }
-                cassert(changed, "evaluateSimpleOp: changed is false");
+                condAssert(changed, "evaluateSimpleOp: changed is false");
                 result = mkOper(expr->getSort(), op, child);
                 return true;
             }
@@ -681,7 +681,7 @@ namespace SMTParser{
                     result = expr;
                     return false;
                 }
-                cassert(changed, "evaluateSimpleOp: changed is false");
+                condAssert(changed, "evaluateSimpleOp: changed is false");
                 result = mkOper(expr->getSort(), op, l, r);
                 return true;
             }
@@ -703,7 +703,7 @@ namespace SMTParser{
                     result = expr;
                     return false;
                 }
-                cassert(changed, "evaluateSimpleOp: changed is false");
+                condAssert(changed, "evaluateSimpleOp: changed is false");
                 result = mkOper(expr->getSort(), op, {l, r, s});
                 return true;
             }
@@ -733,8 +733,8 @@ namespace SMTParser{
                     result = expr;
                     return false;
                 }
-                cassert(changed, "evaluateSimpleOp: changed is false");
-                cassert(!children.empty(), "evaluateSimpleOp: children is empty");
+                condAssert(changed, "evaluateSimpleOp: changed is false");
+                condAssert(!children.empty(), "evaluateSimpleOp: children is empty");
                 // compute the sum of the children that are constant
                 std::vector<std::shared_ptr<DAGNode>> const_children;
                 std::vector<std::shared_ptr<DAGNode>> non_const_children;
@@ -789,8 +789,8 @@ namespace SMTParser{
                     result = expr;
                     return false;
                 }
-                cassert(changed, "evaluateSimpleOp: changed is false");
-                cassert(!children.empty(), "evaluateSimpleOp: children is empty");
+                condAssert(changed, "evaluateSimpleOp: changed is false");
+                condAssert(!children.empty(), "evaluateSimpleOp: children is empty");
                 // compute the difference of the children that are constant
                 bool first_child_is_const = children[0]->isConst();
                 std::vector<std::shared_ptr<DAGNode>> const_children;
@@ -873,7 +873,7 @@ namespace SMTParser{
                             children.emplace_back(child);
                         }
                         else{
-                            cassert(!child->isConst(), "evaluateSimpleOp: child is constant");
+                            condAssert(!child->isConst(), "evaluateSimpleOp: child is constant");
                             children.emplace_back(child);
                         }
                     }
@@ -886,8 +886,8 @@ namespace SMTParser{
                     result = expr;
                     return false;
                 }
-                cassert(changed, "evaluateSimpleOp: changed is false");
-                cassert(!children.empty(), "evaluateSimpleOp: children is empty");
+                condAssert(changed, "evaluateSimpleOp: changed is false");
+                condAssert(!children.empty(), "evaluateSimpleOp: children is empty");
                 if(children.size() == 1){
                     result = children.back();
                     return false;
@@ -898,7 +898,7 @@ namespace SMTParser{
                 return true;
             }
             default:
-                cassert(false, "evaluateSimpleOp: no implementation for this kind");
+                condAssert(false, "evaluateSimpleOp: no implementation for this kind");
                 result = expr;
                 return false;
         }
@@ -925,7 +925,7 @@ namespace SMTParser{
             result = expr;
             return false;
         }
-        cassert(changed, "evaluateAnd: changed is false");
+        condAssert(changed, "evaluateAnd: changed is false");
         if(children.empty()){
             result = mkTrue();
         }
@@ -957,7 +957,7 @@ namespace SMTParser{
             result = expr;
             return false;
         }
-        cassert(changed, "evaluateOr: changed is false");
+        condAssert(changed, "evaluateOr: changed is false");
         if(children.empty()){
             result = mkFalse();
         }
@@ -1002,7 +1002,7 @@ namespace SMTParser{
             result = expr;
             return false;
         }
-        cassert(changed, "evaluateXor: changed is false");
+        condAssert(changed, "evaluateXor: changed is false");
         // all children are constants
         if (remainingChildren.empty()) {
             // result depends on true count is odd or even
@@ -1045,12 +1045,12 @@ namespace SMTParser{
             result = expr;
             return false;
         }
-        cassert(changed, "evaluateEq: changed is false");
+        condAssert(changed, "evaluateEq: changed is false");
         if(const_vals.empty()){
             result = mkEq(children);
             return true;
         }
-        cassert(!const_vals.empty(), "evaluateEq: const_vals is empty");
+        condAssert(!const_vals.empty(), "evaluateEq: const_vals is empty");
         auto const_val = const_vals[0];
         for(size_t i = 1; i < const_vals.size(); ++i){
             if(const_val->isCInt() && const_vals[i]->isCInt()){
@@ -1090,7 +1090,7 @@ namespace SMTParser{
                 }
             }
             else{
-                cassert(false, "evaluateEq: const_val is not a constant");
+                condAssert(false, "evaluateEq: const_val is not a constant");
             }
         }
         if(children.size() == 0){
@@ -1139,12 +1139,12 @@ namespace SMTParser{
             result = expr;
             return false;
         }
-        cassert(changed, "evaluateDistinct: changed is false");
+        condAssert(changed, "evaluateDistinct: changed is false");
         if(const_vals.empty()){
             result = mkDistinct(children);
             return true;
         }
-        cassert(!const_vals.empty(), "evaluateDistinct: const_vals is empty");
+        condAssert(!const_vals.empty(), "evaluateDistinct: const_vals is empty");
         if(children.empty()){
             result = mkTrue();
         }
@@ -1166,7 +1166,7 @@ namespace SMTParser{
             result = expr;
             return false;
         }
-        cassert(changed, "evaluateIte: changed is false");
+        condAssert(changed, "evaluateIte: changed is false");
         if(cond->isConst()){
             result = cond->isTrue() ? then_child : else_child;
         }
@@ -1199,8 +1199,8 @@ namespace SMTParser{
             result = expr;
             return false;
         }
-        cassert(changed, "evaluateDivInt: changed is false");
-        cassert(!children.empty(), "evaluateDivInt: children is empty");
+        condAssert(changed, "evaluateDivInt: changed is false");
+        condAssert(!children.empty(), "evaluateDivInt: children is empty");
         // compute the quotient of the children that are constant
         bool first_child_is_const = children[0]->isConst();
         std::vector<std::shared_ptr<DAGNode>> const_children;

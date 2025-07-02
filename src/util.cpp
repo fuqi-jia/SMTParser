@@ -343,7 +343,7 @@ namespace SMTParser{
     }
 
     std::string BitVectorUtils::bvNot(const std::string& bv){
-        cassert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvNot: invalid bitvector");
+        condAssert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvNot: invalid bitvector");
         std::string res = "#b";
         for(size_t i = 2; i < bv.size(); i++){
             res += bv[i] == '0' ? '1' : '0';
@@ -351,8 +351,8 @@ namespace SMTParser{
         return res;
     }
     std::string BitVectorUtils::bvAnd(const std::string& bv1, const std::string& bv2){
-        cassert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvAnd: invalid bitvector");
-        cassert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvAnd: invalid bitvector");
+        condAssert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvAnd: invalid bitvector");
+        condAssert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvAnd: invalid bitvector");
         std::string res = "#b";
         for(size_t i = 2; i < bv1.size(); i++){
             res += bv1[i] == '1' && bv2[i] == '1' ? '1' : '0';
@@ -360,8 +360,8 @@ namespace SMTParser{
         return res;
     }
     std::string BitVectorUtils::bvOr(const std::string& bv1, const std::string& bv2){
-        cassert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvOr: invalid bitvector");
-        cassert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvOr: invalid bitvector");
+        condAssert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvOr: invalid bitvector");
+        condAssert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvOr: invalid bitvector");
         std::string res = "#b";
         for(size_t i = 2; i < bv1.size(); i++){
             res += bv1[i] == '1' || bv2[i] == '1' ? '1' : '0';
@@ -369,8 +369,8 @@ namespace SMTParser{
         return res;
     }
     std::string BitVectorUtils::bvXor(const std::string& bv1, const std::string& bv2){
-        cassert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvXor: invalid bitvector");
-        cassert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvXor: invalid bitvector");
+        condAssert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvXor: invalid bitvector");
+        condAssert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvXor: invalid bitvector");
         std::string res = "#b";
         for(size_t i = 2; i < bv1.size(); i++){
             res += bv1[i] != bv2[i] ? '1' : '0';
@@ -378,8 +378,8 @@ namespace SMTParser{
         return res;
     }
     std::string BitVectorUtils::bvNand(const std::string& bv1, const std::string& bv2){
-        cassert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvNand: invalid bitvector");
-        cassert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvNand: invalid bitvector");
+        condAssert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvNand: invalid bitvector");
+        condAssert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvNand: invalid bitvector");
         std::string res = "#b";
         for(size_t i = 2; i < bv1.size(); i++){
             res += bv1[i] == '1' && bv2[i] == '1' ? '0' : '1';
@@ -387,8 +387,8 @@ namespace SMTParser{
         return res;
     }
     std::string BitVectorUtils::bvNor(const std::string& bv1, const std::string& bv2){
-        cassert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvNor: invalid bitvector");
-        cassert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvNor: invalid bitvector");
+        condAssert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvNor: invalid bitvector");
+        condAssert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvNor: invalid bitvector");
         std::string res = "#b";
         for(size_t i = 2; i < bv1.size(); i++){
             res += bv1[i] == '0' && bv2[i] == '0' ? '1' : '0';
@@ -396,8 +396,8 @@ namespace SMTParser{
         return res;
     }
     std::string BitVectorUtils::bvXnor(const std::string& bv1, const std::string& bv2){
-        cassert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvXnor: invalid bitvector");
-        cassert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvXnor: invalid bitvector");
+        condAssert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvXnor: invalid bitvector");
+        condAssert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvXnor: invalid bitvector");
         std::string res = "#b";
         for(size_t i = 2; i < bv1.size(); i++){
             res += bv1[i] == bv2[i] ? '1' : '0';
@@ -406,7 +406,7 @@ namespace SMTParser{
     }
 
     std::string BitVectorUtils::bvNeg(const std::string& bv){
-        cassert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvNeg: invalid bitvector");
+        condAssert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvNeg: invalid bitvector");
         // 2's complement
         std::string res = "";
         bool carry = true;
@@ -425,8 +425,8 @@ namespace SMTParser{
     }
 
     std::string BitVectorUtils::bvAdd(const std::string& bv1, const std::string& bv2){
-        cassert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvAdd: invalid bitvector");
-        cassert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvAdd: invalid bitvector");
+        condAssert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvAdd: invalid bitvector");
+        condAssert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvAdd: invalid bitvector");
         std::string bv1_ = bv1.substr(2, bv1.size() - 2);
         std::string bv2_ = bv2.substr(2, bv2.size() - 2);
         if(bv1_.size() != bv2_.size()){
@@ -465,8 +465,8 @@ namespace SMTParser{
         return res;
     }
     std::string BitVectorUtils::bvSub(const std::string& bv1, const std::string& bv2){
-        cassert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvSub: invalid bitvector");
-        cassert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvSub: invalid bitvector");
+        condAssert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvSub: invalid bitvector");
+        condAssert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvSub: invalid bitvector");
         std::string bv1_ = bv1.substr(2, bv1.size() - 2);
         std::string bv2_ = bv2.substr(2, bv2.size() - 2);
         if(bv1_.size() != bv2_.size()){
@@ -504,8 +504,8 @@ namespace SMTParser{
         return res;
     }
     std::string BitVectorUtils::bvMul(const std::string& bv1, const std::string& bv2){
-        cassert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvMul: invalid bitvector");
-        cassert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvMul: invalid bitvector");
+        condAssert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvMul: invalid bitvector");
+        condAssert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvMul: invalid bitvector");
         std::string bv1_ = bv1.substr(2, bv1.size() - 2);
         std::string bv2_ = bv2.substr(2, bv2.size() - 2);
         if(bv1_.size() != bv2_.size()){
@@ -544,8 +544,8 @@ namespace SMTParser{
 
 
     std::string BitVectorUtils::bvUdiv(const std::string& bv1, const std::string& bv2){
-        cassert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvUdiv: invalid bitvector");
-        cassert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvUdiv: invalid bitvector");
+        condAssert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvUdiv: invalid bitvector");
+        condAssert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvUdiv: invalid bitvector");
 
         // div 0, return all ones
         bool isBv2Zero = true;
@@ -647,8 +647,8 @@ namespace SMTParser{
         return "#b" + quotient_bits;
     }
     std::string BitVectorUtils::bvUrem(const std::string& bv1, const std::string& bv2){
-        cassert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvUrem: invalid bitvector");
-        cassert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvUrem: invalid bitvector");
+        condAssert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvUrem: invalid bitvector");
+        condAssert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvUrem: invalid bitvector");
         // div 0, return first operand
         bool isZero = true;
         for(size_t i = 2; i < bv2.size(); i++){
@@ -667,14 +667,14 @@ namespace SMTParser{
         return res;
     }
     std::string BitVectorUtils::bvUmod(const std::string& bv1, const std::string& bv2){
-        cassert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvUmod: invalid bitvector");
-        cassert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvUmod: invalid bitvector");
+        condAssert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvUmod: invalid bitvector");
+        condAssert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvUmod: invalid bitvector");
         std::string res = SMTParser::BitVectorUtils::bvUrem(bv1, bv2);
         return res;
     }
     std::string BitVectorUtils::bvSdiv(const std::string& bv1, const std::string& bv2){
-        cassert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvSdiv: invalid bitvector");
-        cassert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvSdiv: invalid bitvector");
+        condAssert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvSdiv: invalid bitvector");
+        condAssert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvSdiv: invalid bitvector");
         bool isNeg1 = bv1[2] == '1';
         bool isNeg2 = bv2[2] == '1';
         // div 0, return all ones if positive, otherwise 1
@@ -701,8 +701,8 @@ namespace SMTParser{
         return res;
     }
     std::string BitVectorUtils::bvSrem(const std::string& bv1, const std::string& bv2){
-        cassert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvSrem: invalid bitvector");
-        cassert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvSrem: invalid bitvector");
+        condAssert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvSrem: invalid bitvector");
+        condAssert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvSrem: invalid bitvector");
         // rem 0, return first operand
         bool isZero = true;
         for(size_t i = 2; i < bv2.size(); i++){
@@ -723,8 +723,8 @@ namespace SMTParser{
         return res;
     }
     std::string BitVectorUtils::bvSmod(const std::string& bv1, const std::string& bv2){
-        cassert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvSmod: invalid bitvector");
-        cassert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvSmod: invalid bitvector");
+        condAssert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvSmod: invalid bitvector");
+        condAssert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvSmod: invalid bitvector");
         bool isNeg1 = bv1[2] == '1';
         std::string res = SMTParser::BitVectorUtils::bvSrem(bv1, bv2);
         if(isNeg1){
@@ -736,8 +736,8 @@ namespace SMTParser{
 
     std::string BitVectorUtils::bvShl(const std::string& bv, const std::string& n){
         // left shift
-        cassert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvShl: invalid bitvector");
-        cassert(n[0] == '#' && n[1] == 'b', "BitVectorUtils::bvShl: invalid bitvector");
+        condAssert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvShl: invalid bitvector");
+        condAssert(n[0] == '#' && n[1] == 'b', "BitVectorUtils::bvShl: invalid bitvector");
         size_t shift = Integer(n.substr(2, n.size() - 2)).toULong();
         if(shift >= bv.size() - 2){
             return "#b0" + std::string(shift - bv.size() + 2, '0');
@@ -748,8 +748,8 @@ namespace SMTParser{
     }
     std::string BitVectorUtils::bvLshr(const std::string& bv, const std::string& n){
         // logical right shift
-        cassert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvLshr: invalid bitvector");
-        cassert(n[0] == '#' && n[1] == 'b', "BitVectorUtils::bvLshr: invalid bitvector");
+        condAssert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvLshr: invalid bitvector");
+        condAssert(n[0] == '#' && n[1] == 'b', "BitVectorUtils::bvLshr: invalid bitvector");
         size_t shift = Integer(n.substr(2, n.size() - 2)).toULong();
         if(shift >= bv.size() - 2){
             return "#b0" + std::string(shift - bv.size() + 2, '0');
@@ -760,8 +760,8 @@ namespace SMTParser{
     }
     std::string BitVectorUtils::bvAshr(const std::string& bv, const std::string& n){
         // arithmetic right shift
-        cassert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvAshr: invalid bitvector");
-        cassert(n[0] == '#' && n[1] == 'b', "BitVectorUtils::bvAshr: invalid bitvector");
+        condAssert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvAshr: invalid bitvector");
+        condAssert(n[0] == '#' && n[1] == 'b', "BitVectorUtils::bvAshr: invalid bitvector");
         size_t shift = Integer(n.substr(2, n.size() - 2)).toULong();
         if(shift >= bv.size() - 2){
             return "#b" + std::string(bv.size() - 2, bv[2]);
@@ -772,17 +772,17 @@ namespace SMTParser{
     }
 
     std::string BitVectorUtils::bvConcat(const std::string& bv1, const std::string& bv2){
-        cassert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvConcat: invalid bitvector");
-        cassert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvConcat: invalid bitvector");
+        condAssert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvConcat: invalid bitvector");
+        condAssert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvConcat: invalid bitvector");
         return "#b" + bv1.substr(2, bv1.size() - 2) + bv2.substr(2, bv2.size() - 2);
     }
     std::string BitVectorUtils::bvExtract(const std::string& bv, const Integer& i, const Integer& j){
-        cassert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvExtract: invalid bitvector");
-        cassert(i >= j, "BitVectorUtils::bvExtract: i must be greater than or equal to j");
+        condAssert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvExtract: invalid bitvector");
+        condAssert(i >= j, "BitVectorUtils::bvExtract: i must be greater than or equal to j");
         return "#b" + bv.substr(2 + bv.size() - 2 - j.toULong(), i.toULong() - j.toULong() + 1);
     }
     std::string BitVectorUtils::bvRepeat(const std::string& bv, const Integer& n){
-        cassert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvRepeat: invalid bitvector");
+        condAssert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvRepeat: invalid bitvector");
         std::string res = "";
         for(size_t i = 0; i < n.toULong(); i++){
             res += bv.substr(2, bv.size() - 2);
@@ -790,28 +790,28 @@ namespace SMTParser{
         return "#b" + res;
     }
     std::string BitVectorUtils::bvZeroExtend(const std::string& bv, const Integer& n){
-        cassert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvZeroExtend: invalid bitvector");
+        condAssert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvZeroExtend: invalid bitvector");
         return "#b" + std::string(n.toULong(), '0') + bv.substr(2, bv.size() - 2);
     }
     std::string BitVectorUtils::bvSignExtend(const std::string& bv, const Integer& n){
-        cassert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvSignExtend: invalid bitvector");
+        condAssert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvSignExtend: invalid bitvector");
         return "#b" + std::string(n.toULong(), bv[2]) + bv.substr(2, bv.size() - 2);
     }
 
     std::string BitVectorUtils::bvRotateLeft(const std::string& bv, const Integer& n){
-        cassert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvRotateLeft: invalid bitvector");
+        condAssert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvRotateLeft: invalid bitvector");
         Integer real_n = n % (bv.size() - 2);
         return "#b" + bv.substr(2 + n.toULong(), bv.size() - 2 - n.toULong()) + bv.substr(2, n.toULong());
     }
     std::string BitVectorUtils::bvRotateRight(const std::string& bv, const Integer& n){
-        cassert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvRotateRight: invalid bitvector");
+        condAssert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvRotateRight: invalid bitvector");
         Integer real_n = n % (bv.size() - 2);
         return "#b" + bv.substr(2 + bv.size() - 2 - n.toULong(), n.toULong()) + bv.substr(2, bv.size() - 2 - n.toULong());
     }
 
     bool BitVectorUtils::bvComp(const std::string& bv1, const std::string& bv2, const NODE_KIND& kind){
-        cassert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvComp: invalid bitvector");
-        cassert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvComp: invalid bitvector");
+        condAssert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvComp: invalid bitvector");
+        condAssert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvComp: invalid bitvector");
         switch(kind){
             case NODE_KIND::NT_EQ_OTHER:
                 return bv1 == bv2;
@@ -839,7 +839,7 @@ namespace SMTParser{
     }
 
     Integer BitVectorUtils::bvToNat(const std::string& bv){
-        cassert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvToNat: invalid bitvector");
+        condAssert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvToNat: invalid bitvector");
         Integer res = 0;
         for(size_t i = 2; i < bv.size(); i++){
             res = res * 2 + (bv[i] == '1' ? 1 : 0);
@@ -928,7 +928,7 @@ namespace SMTParser{
                     res += "1111";
                     break;
                 default:
-                    cassert(false, "hexToBv: invalid hex character");
+                    condAssert(false, "hexToBv: invalid hex character");
             }
         }
         return res;
@@ -966,7 +966,7 @@ namespace SMTParser{
         }
     }
     Integer BitVectorUtils::bvToInt(const std::string& bv){
-        cassert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvToInt: invalid bitvector");
+        condAssert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvToInt: invalid bitvector");
         if(bv[2] == '0'){
             Integer res = 0;
             for(size_t i = 3; i < bv.size(); i++){
@@ -1010,7 +1010,7 @@ namespace SMTParser{
 
     // TODO??
     std::string FloatingPointUtils::fpToUbv(const std::string& fp, const Integer& n){
-        cassert(fp[0] == '#' && fp[1] == 'x', "FloatingPointUtils::fpToUbv: invalid floating point");
+        condAssert(fp[0] == '#' && fp[1] == 'x', "FloatingPointUtils::fpToUbv: invalid floating point");
         std::string res = "";
         bool isNeg = fp[2] == '1';
         if(!isNeg){
@@ -1034,7 +1034,7 @@ namespace SMTParser{
         return res;
     }
     std::string FloatingPointUtils::fpToSbv(const std::string& fp, const Integer& n){
-        cassert(fp[0] == '#' && fp[1] == 'x', "FloatingPointUtils::fpToSbv: invalid floating point");
+        condAssert(fp[0] == '#' && fp[1] == 'x', "FloatingPointUtils::fpToSbv: invalid floating point");
         std::string res = "";
         bool isNeg = fp[2] == '1';
         if(!isNeg){

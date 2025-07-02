@@ -32,7 +32,7 @@
 namespace SMTParser{
 
     void DAGNode::updateFuncDef(std::shared_ptr<Sort> out_sort, std::shared_ptr<DAGNode> body, const std::vector<std::shared_ptr<DAGNode>> &params){
-        cassert(out_sort == sort, "updateFuncDef: out_sort != sort");
+        condAssert(out_sort == sort, "updateFuncDef: out_sort != sort");
         (void)out_sort;
         children.clear();
         children.emplace_back(body);
@@ -44,7 +44,7 @@ namespace SMTParser{
 
     
     void DAGNode::updateApplyFunc(std::shared_ptr<Sort> out_sort, std::shared_ptr<DAGNode> body, const std::vector<std::shared_ptr<DAGNode>> &params){
-        cassert(out_sort == sort, "updateApplyFunc: out_sort != sort");
+        condAssert(out_sort == sort, "updateApplyFunc: out_sort != sort");
         (void)out_sort;
         children.clear();
         children.emplace_back(body);
@@ -531,15 +531,15 @@ namespace SMTParser{
         {
         case NODE_KIND::NT_UNKNOWN:
             std::cout<<"Unknown kind"<<std::endl;
-            cassert(false, "Encountered unknown kind node");
+            condAssert(false, "Encountered unknown kind node");
             break;
         case NODE_KIND::NT_ERROR:
             std::cout<<"Error kind"<<std::endl;
-            cassert(false, "Encountered error kind node");
+            condAssert(false, "Encountered error kind node");
             break;
         case NODE_KIND::NT_NULL:
             std::cout<<"Null kind"<<std::endl;
-            cassert(false, "Encountered null kind node");
+            condAssert(false, "Encountered null kind node");
             ofs << "NULL";
             break;
         case NODE_KIND::NT_CONST_TRUE:

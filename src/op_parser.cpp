@@ -209,7 +209,7 @@ namespace SMTParser{
         std::shared_ptr<DAGNode> func = nullptr;
         if(fun_key_map.find(name)!=fun_key_map.end()){
             func = fun_key_map[name];
-            cassert(func->getKind() == NODE_KIND::NT_FUNC_DEC, "mkFuncDef: func is not a function declaration");
+            condAssert(func->getKind() == NODE_KIND::NT_FUNC_DEC, "mkFuncDef: func is not a function declaration");
             // NOTE: we still check it, even if it is not necessary.
             if(func->getKind() == NODE_KIND::NT_FUNC_DEC){
                 // update the function
@@ -295,8 +295,8 @@ namespace SMTParser{
         }
         else if(l->isNot() && r->isNot()){
             // reduce nested not
-            cassert(l->getChildrenSize() == 1, "mkEq: l has more than one child");
-            cassert(r->getChildrenSize() == 1, "mkEq: r has more than one child");
+            condAssert(l->getChildrenSize() == 1, "mkEq: l has more than one child");
+            condAssert(r->getChildrenSize() == 1, "mkEq: r has more than one child");
             return mkEq(l->getChild(0), r->getChild(0));
         }
         else{
@@ -388,8 +388,8 @@ namespace SMTParser{
         }
         else if(l->isNot() && r->isNot()){
             // reduce nested not
-            cassert(l->getChildrenSize() == 1, "mkDistinct: l has more than one child");
-            cassert(r->getChildrenSize() == 1, "mkDistinct: r has more than one child");
+            condAssert(l->getChildrenSize() == 1, "mkDistinct: l has more than one child");
+            condAssert(r->getChildrenSize() == 1, "mkDistinct: r has more than one child");
             return mkDistinct(l->getChild(0), r->getChild(0));
         }
         else if(l->isNot()){
@@ -473,7 +473,7 @@ namespace SMTParser{
         return mkConstInt(v.toInteger());
     }
     std::shared_ptr<DAGNode> Parser::mkConstReal(const std::string &v){
-        cassert(TypeChecker::isReal(v) || v == "e" || v == "pi", "mkConstReal: invalid real constant");
+        condAssert(TypeChecker::isReal(v) || v == "e" || v == "pi", "mkConstReal: invalid real constant");
         if(v == "e") return E_NODE;
         if(v == "pi") return PI_NODE;
         if(constants_real.find(v) != constants_real.end()){
@@ -692,7 +692,7 @@ namespace SMTParser{
         }
         if (param->isNot()) {
             // reduce nested not
-            cassert(param->getChildrenSize() == 1, "mkNot: param has more than one child");
+            condAssert(param->getChildrenSize() == 1, "mkNot: param has more than one child");
             return param->getChild(0);
         }
         else if(param->isTrue()){
@@ -937,7 +937,7 @@ namespace SMTParser{
         else if(params.size() == 1){
             return params[0];
         }
-        cassert(params.size() >= 2, "mkAdd: params has less than 2 elements");
+        condAssert(params.size() >= 2, "mkAdd: params has less than 2 elements");
         std::shared_ptr<Sort> sort = getSort(params);
 
         std::vector<std::shared_ptr<DAGNode>> new_params;
@@ -1008,7 +1008,7 @@ namespace SMTParser{
         if(params.size() == 1){
             return params[0];
         }
-        cassert(params.size() >= 2, "mkMul: params has less than 2 elements");
+        condAssert(params.size() >= 2, "mkMul: params has less than 2 elements");
         std::shared_ptr<Sort> sort = getSort(params);
 
         std::vector<std::shared_ptr<DAGNode>> new_params;
@@ -1093,7 +1093,7 @@ namespace SMTParser{
         if(params.size() == 1){
             return params[0];
         }
-        cassert(params.size() >= 2, "mkIand: params has less than 2 elements");
+        condAssert(params.size() >= 2, "mkIand: params has less than 2 elements");
         std::shared_ptr<Sort> sort = getSort(params);
 
         std::vector<std::shared_ptr<DAGNode>> new_params;
@@ -3958,7 +3958,7 @@ namespace SMTParser{
                 return mkLt(atom->getChild(0), atom->getChild(1));
             }
             else{
-                cassert(false, "negateComp: unknown arithmetic comparison operator");
+                condAssert(false, "negateComp: unknown arithmetic comparison operator");
             }
         }
 
@@ -3989,7 +3989,7 @@ namespace SMTParser{
                 return mkBvSlt(atom->getChild(0), atom->getChild(1));
             }
             else{
-                cassert(false, "negateComp: unknown bitvector comparison operator");
+                condAssert(false, "negateComp: unknown bitvector comparison operator");
             }
         }
 
@@ -4013,7 +4013,7 @@ namespace SMTParser{
                 return mkFpEq(atom->getChild(0), atom->getChild(1));
             }
             else{
-                cassert(false, "negateComp: unknown floating-point comparison operator");
+                condAssert(false, "negateComp: unknown floating-point comparison operator");
             }
         }
 
@@ -4031,7 +4031,7 @@ namespace SMTParser{
                 return mkStrLt(atom->getChild(0), atom->getChild(1));
             }
             else{
-                cassert(false, "negateComp: unknown string comparison operator");
+                condAssert(false, "negateComp: unknown string comparison operator");
             }
         }
 

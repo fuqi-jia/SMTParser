@@ -1600,7 +1600,7 @@ namespace SMTParser{
                     // all parameters are non-constants
                     return mkUnknown();
                 }
-                cassert(first_const_idx != -1, "the first constant parameter index is -1");
+                condAssert(first_const_idx != -1, "the first constant parameter index is -1");
                 std::vector<std::shared_ptr<DAGNode>> params;
                 for(size_t i=0;i<p.size();i++){
                     if(i == (size_t)first_const_idx){
@@ -1633,7 +1633,7 @@ namespace SMTParser{
                     else{
                         // multiple parameters are constants and all equivalent
                         params.emplace_back(p[first_const_idx]); // add the constant parameter to the end of the vector
-                        cassert(params.size() < p.size(), "the size of params is greater than or equal to the size of p, which may cause infinite loop");
+                        condAssert(params.size() < p.size(), "the size of params is greater than or equal to the size of p, which may cause infinite loop");
                         return simp_oper(t, params);
                     }
                 }

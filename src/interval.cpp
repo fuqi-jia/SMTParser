@@ -1496,7 +1496,7 @@ namespace SMTParser{
             return Interval(0, 0, true, true);
         }
 
-        cassert(!other.contains(0), "Division by interval containing zero");
+        condAssert(!other.contains(0), "Division by interval containing zero");
         
         Number p1 = lower / other.lower;
         Number p2 = lower / other.upper;
@@ -1736,7 +1736,7 @@ namespace SMTParser{
             }
         }
 
-        cassert(newLower >= Number(0), "2^x is always positive");
+        condAssert(newLower >= Number(0), "2^x is always positive");
 
         return Interval(newLower, newUpper, newLeftClosed, newRightClosed);
     }

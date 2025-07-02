@@ -147,27 +147,27 @@ namespace SMTParser{
         }
 
         size_t getBitWidth() const {
-            cassert(kind == SORT_KIND::SK_BV, "Cannot get bit width of non-bitvector sort");
+            condAssert(kind == SORT_KIND::SK_BV, "Cannot get bit width of non-bitvector sort");
             return children[0]->arity;
         }
 
         size_t getExponentWidth() const {
-            cassert(kind == SORT_KIND::SK_FP, "Cannot get exponent width of non-floating-point sort");
+            condAssert(kind == SORT_KIND::SK_FP, "Cannot get exponent width of non-floating-point sort");
             return children[0]->arity;
         }
 
         size_t getSignificandWidth() const {
-            cassert(kind == SORT_KIND::SK_FP, "Cannot get significand width of non-floating-point sort");
+            condAssert(kind == SORT_KIND::SK_FP, "Cannot get significand width of non-floating-point sort");
             return children[1]->arity;
         }
 
         std::shared_ptr<Sort> getIndexSort() const {
-            cassert(kind == SORT_KIND::SK_ARRAY, "Cannot get index sort of non-array sort");
+            condAssert(kind == SORT_KIND::SK_ARRAY, "Cannot get index sort of non-array sort");
             return children[0];
         }
 
         std::shared_ptr<Sort> getElemSort() const {
-            cassert(kind == SORT_KIND::SK_ARRAY, "Cannot get element sort of non-array sort");
+            condAssert(kind == SORT_KIND::SK_ARRAY, "Cannot get element sort of non-array sort");
             return children[1];
         }
         

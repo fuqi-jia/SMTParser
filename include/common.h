@@ -31,7 +31,7 @@
 #include <iostream>
 
 #ifndef NDEBUG
-#define cassert(cond, msg) \
+#define condAssert(cond, msg) \
     do { \
         if (!(cond)) { \
             std::cerr << "[" << __FILE__ << ":" << __LINE__ << "] " << msg << std::endl; \
@@ -39,7 +39,7 @@
         } \
     } while(0)
 #else
-#define cassert(cond, msg) ((void)0)
+#define condAssert(cond, msg) ((void)0)
 #endif
 
 #endif

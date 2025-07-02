@@ -54,7 +54,7 @@ namespace SMTParser{
     }
 
     void Model::add(const std::string &name, const std::shared_ptr<DAGNode> &value){
-        cassert(model_name_index.find(name) != model_name_index.end(), "Model::add: name not found");
+        condAssert(model_name_index.find(name) != model_name_index.end(), "Model::add: name not found");
         model_values[model_name_index[name]] = value;
     }
 

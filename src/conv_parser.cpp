@@ -58,7 +58,40 @@ namespace SMTParser {
             }
         }
     }
-    
+    void Parser::collectGroundAtoms(std::vector<std::shared_ptr<DAGNode>> exprs, std::unordered_set<std::shared_ptr<DAGNode>>& atoms) {
+        // convert to NNF
+        std::vector<std::shared_ptr<DAGNode>> nnf_exprs;
+        for(auto& expr : exprs) {
+            nnf_exprs.emplace_back(toNNF(expr));
+        }
+        std::unordered_set<std::shared_ptr<DAGNode>> visited;
+        for(auto& expr : nnf_exprs) {
+            if(visited.find(expr) != visited.end()){
+                continue;
+            }
+            visited.insert(expr);
+            collectGroundAtoms(expr, atoms, visited);
+        }
+    }
+    void Parser::collectGroundAtoms(std::shared_ptr<DAGNode> expr, std::unordered_set<std::shared_ptr<DAGNode>>& atoms, std::unordered_set<std::shared_ptr<DAGNode>>& visited) {
+        if(visited.find(expr) != visited.end()){
+            return;
+        }
+        visited.insert(expr);
+        if(expr->isAtom()){
+            atoms.insert(expr);
+            return;
+        }
+        else if(expr->isAnd()){
+            for(size_t i = 0; i < expr->getChildrenSize(); i++){
+                collectGroundAtoms(expr->getChild(i), atoms, visited);
+            }
+        }
+        else{
+            // TODO: handle the other cases
+        }
+    }
+
     std::shared_ptr<DAGNode> Parser::getCNFAtom(std::shared_ptr<DAGNode> bool_var) {
         if(cnf_atom_map.find(bool_var) != cnf_atom_map.end()){
             return cnf_atom_map[bool_var];
@@ -188,7 +221,7 @@ namespace SMTParser {
             visited[expr] = new_expr;
             return new_expr;
         }
-        cassert(!is_changed, "replaceAtoms: is_changed is true");
+        condAssert(!is_changed, "replaceAtoms: is_changed is true");
         visited[expr] = expr;
         return expr;
     }
@@ -226,7 +259,7 @@ namespace SMTParser {
             visited[expr] = new_expr;
             return new_expr;
         }
-        cassert(!is_changed, "replaceNodes: is_changed is true");
+        condAssert(!is_changed, "replaceNodes: is_changed is true");
         visited[expr] = expr;
         return expr;
     }
@@ -317,7 +350,7 @@ namespace SMTParser {
         // Tseitin CNF is ¬applied to atoms: all atoms are already in CNF form
         if(expr->isAtom()){
             // directly return the original expression
-            cassert(cnf_map.find(expr) != cnf_map.end(), "toTseitinCNF: expr is an atom but not in cnf_map");
+            condAssert(cnf_map.find(expr) != cnf_map.end(), "toTseitinCNF: expr is an atom but not in cnf_map");
             return cnf_map[expr];
         }
         if(expr->isLiteral() || expr->isTempVar()) {
@@ -356,7 +389,7 @@ namespace SMTParser {
             }
             if(children.size() == 1){
                 // return the only child, which is a temp var or boolean variable
-                cassert(children[0]->isLiteral(), "toTseitinCNF: children[0] is not a literal");
+                condAssert(children[0]->isLiteral(), "toTseitinCNF: children[0] is not a literal");
                 return children[0];
             }
             std::shared_ptr<DAGNode> c = mkTempVar(BOOL_SORT);
@@ -368,7 +401,7 @@ namespace SMTParser {
             or_children.emplace_back(c);
             clauses.emplace_back(mkOr(or_children));
             visited[expr] = c; // no need to visit again
-            cassert(c->isLiteral() || c->isTempVar(), "toTseitinCNF: c is not a literal or temp var");
+            condAssert(c->isLiteral() || c->isTempVar(), "toTseitinCNF: c is not a literal or temp var");
             return c;
         }
         // a or b or ... <=> c <-> a or b or ...
@@ -382,7 +415,7 @@ namespace SMTParser {
             }
             if(children.size() == 1){
                 // return the only child, which is a temp var or boolean variable
-                cassert(children[0]->isLiteral(), "toTseitinCNF: children[0] is not a literal");
+                condAssert(children[0]->isLiteral(), "toTseitinCNF: children[0] is not a literal");
                 return children[0];
             }
             std::shared_ptr<DAGNode> c = mkTempVar(BOOL_SORT);
@@ -394,7 +427,7 @@ namespace SMTParser {
             or_children.emplace_back(mkNot(c));
             clauses.emplace_back(mkOr(or_children));
             visited[expr] = c; // no need to visit again
-            cassert(c->isLiteral() || c->isTempVar(), "toTseitinCNF: c is not a literal or temp var");
+            condAssert(c->isLiteral() || c->isTempVar(), "toTseitinCNF: c is not a literal or temp var");
             return c;
         }
         // c <-> a -> b <=> c -> a -> b and a -> b -> c
@@ -408,7 +441,7 @@ namespace SMTParser {
             }
             if(children.size() == 1){
                 // return the only child, which is a temp var or boolean variable
-                cassert(children[0]->isLiteral(), "toTseitinCNF: children[0] is not a literal");
+                condAssert(children[0]->isLiteral(), "toTseitinCNF: children[0] is not a literal");
                 return children[0];
             }
             std::shared_ptr<DAGNode> c = mkTempVar(BOOL_SORT);
@@ -427,7 +460,7 @@ namespace SMTParser {
             clauses.emplace_back(mkOr(or_children1));
             clauses.emplace_back(mkOr(or_children2));
             visited[expr] = c; // no need to visit again
-            cassert(c->isLiteral() || c->isTempVar(), "toTseitinCNF: c is not a literal or temp var");
+            condAssert(c->isLiteral() || c->isTempVar(), "toTseitinCNF: c is not a literal or temp var");
             return c;
         }
         // c <-> a xor b <=> (c -> a xor b) and (a xor b -> c)
@@ -459,7 +492,7 @@ namespace SMTParser {
                 }
             }
 
-            cassert(all_bool, "toTseitinCNF: eq has non-boolean variables");
+            condAssert(all_bool, "toTseitinCNF: eq has non-boolean variables");
             
             if(all_bool){
                 if(expr->getChildrenSize() == 1){
@@ -474,7 +507,7 @@ namespace SMTParser {
                     std::shared_ptr<DAGNode> b = toTseitinCNF(expr->getChild(1), visited, clauses);
                     std::shared_ptr<DAGNode> c = toTseitinEq(a, b, clauses);
                     visited[expr] = c;
-                    cassert(c->isLiteral() || c->isTempVar(), "toTseitinCNF: c is not a literal or temp var");
+                    condAssert(c->isLiteral() || c->isTempVar(), "toTseitinCNF: c is not a literal or temp var");
                     return c;
                 }
                 else{
@@ -509,7 +542,7 @@ namespace SMTParser {
                     clauses.emplace_back(mkOr(or_children));
                     
                     visited[expr] = result;
-                    cassert(result->isLiteral() || result->isTempVar(), "toTseitinCNF: result is not a literal or temp var");
+                    condAssert(result->isLiteral() || result->isTempVar(), "toTseitinCNF: result is not a literal or temp var");
                     return result;
                 }
             }
@@ -537,7 +570,7 @@ namespace SMTParser {
                     std::shared_ptr<DAGNode> b = toTseitinCNF(expr->getChild(1), visited, clauses);
                     std::shared_ptr<DAGNode> c = toTseitinDistinct(a, b, clauses);
                     visited[expr] = c;
-                    cassert(c->isLiteral() || c->isTempVar(), "toTseitinCNF: c is not a literal or temp var");
+                    condAssert(c->isLiteral() || c->isTempVar(), "toTseitinCNF: c is not a literal or temp var");
                     return c;
                 }
                 else{
@@ -568,7 +601,7 @@ namespace SMTParser {
             clauses.emplace_back(mkOr({d, a, mkNot(c)}));
             
             visited[expr] = d;
-            cassert(d->isLiteral() || d->isTempVar(), "toTseitinCNF: d is not a literal or temp var");
+            condAssert(d->isLiteral() || d->isTempVar(), "toTseitinCNF: d is not a literal or temp var");
             return d;
         }
         else{
@@ -722,7 +755,7 @@ namespace SMTParser {
             if(!cur_is_changed){
                 break;
             }
-            cassert(cur_is_changed, "eliminateTopRedandancy: cur_is_changed is false");
+            condAssert(cur_is_changed, "eliminateTopRedandancy: cur_is_changed is false");
             is_changed = true;
         }
         new_exprs = exprs;

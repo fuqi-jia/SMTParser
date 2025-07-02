@@ -1228,7 +1228,7 @@ Number Number::operator/(const Number& other) const {
 }
 
 Number Number::operator%(const Number& other) const {
-    cassert(type == INT_TYPE && other.type == INT_TYPE, "Cannot compute modulo of non-integer numbers");
+    condAssert(type == INT_TYPE && other.type == INT_TYPE, "Cannot compute modulo of non-integer numbers");
     return Number(intValue % other.intValue);
 }
 
@@ -1269,7 +1269,7 @@ Number& Number::operator/=(const Number& other) {
 }
 
 Number& Number::operator%=(const Number& other) {
-    cassert(type == INT_TYPE && other.type == INT_TYPE, "Cannot compute modulo of non-integer numbers");
+    condAssert(type == INT_TYPE && other.type == INT_TYPE, "Cannot compute modulo of non-integer numbers");
     intValue %= other.intValue;
     return *this;
 }

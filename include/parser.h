@@ -3139,6 +3139,16 @@ namespace SMTParser{
          */
         void                                    collectAtoms(std::vector<std::shared_ptr<DAGNode>> exprs, std::unordered_set<std::shared_ptr<DAGNode>>& atoms);   
 
+
+        // collect ground atoms
+        /**
+         * @brief Collect ground atoms from an expression
+         * 
+         * @param expr Expression to collect ground atoms from
+         * @param atoms Ground atoms (stored in a set)
+         */
+        void                                    collectGroundAtoms(std::vector<std::shared_ptr<DAGNode>> exprs, std::unordered_set<std::shared_ptr<DAGNode>>& atoms);
+
         /**
          * @brief Collect variables from a vector of expressions
          * 
@@ -3600,6 +3610,7 @@ namespace SMTParser{
 
         // collect atoms
         void        collectAtoms(std::shared_ptr<DAGNode> expr, std::unordered_set<std::shared_ptr<DAGNode>>& atoms, std::unordered_set<std::shared_ptr<DAGNode>>& visited);
+        void        collectGroundAtoms(std::shared_ptr<DAGNode> expr, std::unordered_set<std::shared_ptr<DAGNode>>& atoms, std::unordered_set<std::shared_ptr<DAGNode>>& visited);
         void        collectVars(std::shared_ptr<DAGNode> expr, std::unordered_set<std::shared_ptr<DAGNode>>& vars, std::unordered_set<std::shared_ptr<DAGNode>>& visited);
         // evaluate functions
         bool		evaluateSimpleOp(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result, NODE_KIND op);
