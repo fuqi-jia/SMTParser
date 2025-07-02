@@ -67,7 +67,6 @@ if(BUILD_BOTH_LIBS)
         POSITION_INDEPENDENT_CODE ON
     )
     
-    # 如果启用了调试符号支持，为静态库添加调试标志
     if(ENABLE_DEBUG_SYMBOLS)
         target_compile_options(smtparser_static PRIVATE -g -O0)
     endif()
@@ -93,7 +92,6 @@ if(BUILD_BOTH_LIBS)
         SOVERSION ${PROJECT_VERSION_MAJOR}
     )
     
-    # 如果启用了调试符号支持，为共享库添加调试标志
     if(ENABLE_DEBUG_SYMBOLS)
         target_compile_options(smtparser_shared PRIVATE -g -O0)
     endif()
@@ -124,7 +122,6 @@ else()
     # create single library (static or shared, depending on BUILD_SHARED_LIBS)
     add_library(smtparser ${SOURCES} ${HEADERS})
     
-    # 如果启用了调试符号支持，为库添加调试标志
     if(ENABLE_DEBUG_SYMBOLS)
         target_compile_options(smtparser PRIVATE -g -O0)
     endif()
