@@ -855,7 +855,15 @@ namespace SMTParser{
             }
             case NODE_KIND::NT_DIV_REAL:{
                 if((l->isCReal() && r->isCReal()) || (l->isCInt() && r->isCReal()) || (l->isCReal() && r->isCInt()) || (l->isCInt() && r->isCInt())){
-                    if(getEvaluateUseFloating()){
+                    if(options->keep_division_if_not_divisible){
+                        if((toReal(l) / toReal(r)).isInteger()){
+                            return mkConstInt((toReal(l) / toReal(r)).floor().toInt());
+                        }
+                        else{
+                            // keep original representation
+                        }
+                    }
+                    else if(getEvaluateUseFloating()){
                         return mkConstReal(toReal(l) / toReal(r));
                     }
                 }

@@ -60,6 +60,9 @@ namespace SMTParser{
         bool evaluate_use_floating = true;
         mpfr_prec_t evaluate_precision = 128;
 
+        // keep original representation of the division if is not divisible
+        bool keep_division_if_not_divisible = true;
+
     public:
         GlobalOptions() = default;
         ~GlobalOptions() = default;
