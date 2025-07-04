@@ -33,6 +33,7 @@
 
 namespace SMTParser {
 
+// -------------HighPrecisionReal-------------
 // Constants
 HighPrecisionReal HighPrecisionReal::pi(mpfr_prec_t precision) {
     HighPrecisionReal result(precision);
@@ -652,7 +653,7 @@ bool HighPrecisionReal::isPositiveInfinity() const {
     return mpfr_inf_p(value) != 0 && mpfr_sgn(value) > 0;
 }
 
-// HighPrecisionInteger implementation
+// -------------HighPrecisionInteger-------------
 HighPrecisionInteger::HighPrecisionInteger(const mpz_t z) {
     mpz_set(value.get_mpz_t(), z);
 }
@@ -1015,8 +1016,7 @@ HighPrecisionInteger HighPrecisionInteger::nextAbove() const {
     return result;
 }
 
-// Number
-
+// -------------Number-------------
 // Constructor
 Number::Number() : type(INT_TYPE), intValue(0) {}
 
