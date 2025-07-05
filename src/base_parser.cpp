@@ -143,6 +143,24 @@ namespace SMTParser{
 	std::shared_ptr<Model> Parser::getModel(){
 		return result_model;
 	}
+
+	size_t Parser::getNodeCount(){
+		std::unordered_set<std::shared_ptr<DAGNode>> visited;
+		std::queue<std::shared_ptr<DAGNode>> q;
+		q.push(result_node);
+		visited.insert(result_node);
+		while(!q.empty()){
+			auto node = q.front();
+			q.pop();
+			for(auto& child : node->getChildren()){
+				if(visited.find(child) == visited.end()){
+					visited.insert(child);
+					q.push(child);
+				}
+			}
+		}
+		return visited.size();
+	}
 	
 	// to solver
 	std::vector<std::shared_ptr<DAGNode>> Parser::getAssertions() const{

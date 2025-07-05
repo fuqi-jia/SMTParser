@@ -433,6 +433,13 @@ namespace SMTParser{
          */
         std::shared_ptr<Model> getModel();
 
+        // get node count
+        /**
+         * @brief Get node count
+         * 
+         * @return Node count
+         */
+        size_t getNodeCount();
 
         // mk oper 
         /**
