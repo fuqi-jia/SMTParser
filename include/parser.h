@@ -133,7 +133,7 @@ namespace SMTParser{
         // FOL binding
 
         // node list
-        std::vector<std::shared_ptr<DAGNode>>           node_list;
+        std::vector<std::shared_ptr<DAGNode>>         node_list;
         // variable name list
         std::unordered_map<std::string, size_t>       var_names;
         // const node
@@ -155,7 +155,7 @@ namespace SMTParser{
         size_t temp_var_counter;
         std::unordered_map<std::string, size_t>       temp_var_names;
         // function name list
-        std::vector<std::string>                        function_names;
+        std::vector<std::string>                      function_names;
         // global options
         std::shared_ptr<GlobalOptions>                  options;
         // hash value list

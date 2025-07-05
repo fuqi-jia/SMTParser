@@ -145,10 +145,37 @@ namespace SMTParser{
 	}
 
 	size_t Parser::getNodeCount(){
+		// BFS to count the number of nodes
+		// only count the nodes in assertions, assumptions, soft_assertions, soft_weights, objectives
 		std::unordered_set<std::shared_ptr<DAGNode>> visited;
 		std::queue<std::shared_ptr<DAGNode>> q;
-		q.push(result_node);
-		visited.insert(result_node);
+		for(size_t i=0;i<assertions.size();i++){
+			auto node = assertions[i];
+			q.push(node);
+			visited.insert(node);
+		}
+		for(size_t i=0;i<assumptions.size();i++){
+			for(size_t j=0;j<assumptions[i].size();j++){
+				auto node = assumptions[i][j];
+				q.push(node);
+				visited.insert(node);
+			}
+		}
+		for(size_t i=0;i<soft_assertions.size();i++){
+			auto node = soft_assertions[i];
+			q.push(node);
+			visited.insert(node);
+		}
+		for(size_t i=0;i<soft_weights.size();i++){
+			auto node = soft_weights[i];
+			q.push(node);
+			visited.insert(node);
+		}
+		for(size_t i=0;i<objectives.size();i++){
+			auto node = objectives[i]->getObjectiveTerm();
+			q.push(node);
+			visited.insert(node);
+		}
 		while(!q.empty()){
 			auto node = q.front();
 			q.pop();
