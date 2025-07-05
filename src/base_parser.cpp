@@ -152,7 +152,8 @@ namespace SMTParser{
 		while(!q.empty()){
 			auto node = q.front();
 			q.pop();
-			for(auto& child : node->getChildren()){
+			for(size_t i=0;i<node->getChildrenSize();i++){
+				auto child = node->getChild(i);
 				if(visited.find(child) == visited.end()){
 					visited.insert(child);
 					q.push(child);
