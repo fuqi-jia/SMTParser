@@ -1,0 +1,5 @@
+(set-logic QF_LIA)
+(declare-const x Int)
+(assert (> x "not a number"))
+(check-sat)
+(exit) 
