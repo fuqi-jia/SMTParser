@@ -1219,7 +1219,12 @@ namespace SMTParser{
 				}
 			}
 			else if (s == "let") {
-				expr = parseLet();
+				if(options->parsing_preserve_let){
+					expr = parsePreservingLet();
+				}
+				else{
+					expr = parseLet();
+				}
 				if (expr->isErr())
 					err_all(expr, "let", expr_ln);
 			}
@@ -2151,6 +2156,17 @@ namespace SMTParser{
 		
 		LetContext(int level = 0) : nesting_level(level), is_complete(false) {}
 	};
+
+	// parse let expression preserving the let-binding
+	// (let (<keybinding>+) expr), return expr
+	// In this function, the let-binding is preserved, and the let-binding is not expanded
+	// So the bind_var cannot be the same in different let-binding
+	// For example, (let ((x 1) (x 2)) x) is not allowed
+	std::shared_ptr<DAGNode> Parser::parsePreservingLet(){
+		// parse let expression
+		// TODO: implement this function
+		return parseLet();
+	}
 	/*
 	keybinding ::= (<symbol> expr)
 	(let (<keybinding>+) expr), return expr

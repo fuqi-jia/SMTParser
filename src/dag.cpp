@@ -388,6 +388,10 @@ namespace SMTParser{
                 work_stack.emplace_back(node->getChild(0).get(), 0);
                 break;
             }
+            case NODE_KIND::NT_LET_BIND_VAR: {
+                out << node->getName();
+                break;
+            }
 
             case NODE_KIND::NT_APPLY_UF: {
                 out << "(" << node->getName();
@@ -983,6 +987,9 @@ namespace SMTParser{
         // LET, FROM HERE TODO
         case NODE_KIND::NT_LET:
             dumpSMTLIB2(node->getChild(0), visited, ofs);
+            break;
+        case NODE_KIND::NT_LET_BIND_VAR:
+            ofs << node->getName();
             break;
         // ITE
         case NODE_KIND::NT_ITE:

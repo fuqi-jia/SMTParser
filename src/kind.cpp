@@ -502,6 +502,8 @@ namespace SMTParser{
         // LET
         case NODE_KIND::NT_LET:
             return "let";
+        case NODE_KIND::NT_LET_BIND_VAR:
+            return "let_bind_var";
         // ITE
         case NODE_KIND::NT_ITE:
             return "ite";

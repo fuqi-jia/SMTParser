@@ -119,6 +119,8 @@ namespace SMTParser{
         std::unordered_map<std::string, std::shared_ptr<DAGNode>> 
                                                 let_key_map; // local variables, no need to hash store
         std::unordered_map<std::string, std::shared_ptr<DAGNode>> 
+                                                preserving_let_key_map; // global variables, no need to hash store
+        std::unordered_map<std::string, std::shared_ptr<DAGNode>> 
                                                 fun_key_map; 
         std::unordered_map<std::string, std::shared_ptr<DAGNode>> 
                                                 fun_var_map; // variables are not the same, no need to hash store
@@ -3499,6 +3501,7 @@ namespace SMTParser{
         std::shared_ptr<DAGNode>		        parseParamFunc(const std::string& f, const std::vector<std::shared_ptr<DAGNode>> &args, const std::vector<std::shared_ptr<DAGNode>> &params);
         std::shared_ptr<DAGNode>		        parseOper(const std::string& s, const std::vector<std::shared_ptr<DAGNode>> &params);
         std::vector<std::shared_ptr<DAGNode>>	parseParams();
+        std::shared_ptr<DAGNode>		        parsePreservingLet();
         std::shared_ptr<DAGNode>		        parseLet();
         std::string                             parseGroup();
         std::string                             parseWeight();
