@@ -63,6 +63,10 @@ namespace SMTParser{
         // keep original representation of the division if is not divisible
         bool keep_division_if_not_divisible = true;
 
+        // whether perserve let-binding
+        bool parsing_preserve_let = true;
+        bool dumping_preserve_let = true;
+
     public:
         GlobalOptions() = default;
         ~GlobalOptions() = default;
