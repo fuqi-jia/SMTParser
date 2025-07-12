@@ -451,6 +451,22 @@ namespace SMTParser{
         return mkVar(sort, name);
     }
 
+    // LET
+    std::shared_ptr<DAGNode> Parser::mkLetBindVar(const std::string& name, const std::shared_ptr<DAGNode>& expr){
+        
+        if(preserving_let_key_map.find(name)!=preserving_let_key_map.end()){
+            // multiple declarations
+            return preserving_let_key_map[name];
+        }
+        else{
+            std::vector<std::shared_ptr<DAGNode>> children;
+            children.emplace_back(expr);
+            std::shared_ptr<DAGNode> new_var = std::make_shared<DAGNode>(expr->getSort(), NODE_KIND::NT_LET_BIND_VAR, name, children);
+            preserving_let_key_map.insert(std::pair<std::string, std::shared_ptr<DAGNode>>(name, new_var));
+            return new_var;
+        }
+    }
+
     std::shared_ptr<DAGNode> Parser::mkConstInt(const Integer &v){
         std::string v_str = ConversionUtils::toString(v);
         if(constants_int.find(v_str) != constants_int.end()){
