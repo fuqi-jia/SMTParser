@@ -385,7 +385,25 @@ namespace SMTParser{
             }
 
             case NODE_KIND::NT_LET: {
-                work_stack.emplace_back(node->getChild(0).get(), 0);
+                condAssert(node->getChildrenSize() > 0, "NT_LET should have at least one child");
+                if(node->getChildrenSize() == 1){
+                    work_stack.emplace_back(node->getChild(0).get(), 0);
+                }
+                else{
+                    if(node->getChild(1)->getKind() == NODE_KIND::NT_LET_BIND_VAR){
+                        // preserved let
+                        out << "(let ";
+                        for(size_t i=1;i<node->getChildrenSize();i++){
+                            out << "(" << node->getChild(i)->getName() << " ";
+                            work_stack.emplace_back(node->getChild(i)->getChild(0).get(), 0);
+                        }
+                        out << ")";
+                    }
+                    else{
+                        // expanded let
+                        work_stack.emplace_back(node->getChild(0).get(), 0);
+                    }
+                }
                 break;
             }
             case NODE_KIND::NT_LET_BIND_VAR: {
@@ -986,7 +1004,24 @@ namespace SMTParser{
             break;
         // LET, FROM HERE TODO
         case NODE_KIND::NT_LET:
-            dumpSMTLIB2(node->getChild(0), visited, ofs);
+            condAssert(node->getChildrenSize() > 0, "NT_LET should have at least one child");
+            if(node->getChildrenSize() == 1){
+                dumpSMTLIB2(node->getChild(0), visited, ofs);
+            }
+            else{
+                if(node->getChild(1)->getKind() == NODE_KIND::NT_LET_BIND_VAR){
+                    // preserved let
+                    ofs << "(let ";
+                    for(size_t i=1;i<node->getChildrenSize();i++){
+                        ofs << "(" << node->getChild(i)->getName() << " ";
+                        dumpSMTLIB2(node->getChild(i)->getChild(0), visited, ofs);
+                    }
+                    ofs << ")";
+                }else{
+                    // expanded let
+                    dumpSMTLIB2(node->getChild(0), visited, ofs);
+                }
+            }
             break;
         case NODE_KIND::NT_LET_BIND_VAR:
             ofs << node->getName();

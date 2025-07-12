@@ -1252,7 +1252,13 @@ namespace SMTParser{
 		}
 		
 		// these have the highest priority
-		if(let_key_map.find(s) != let_key_map.end()){
+		if(options->parsing_preserve_let && preserving_let_key_map.find(s) != preserving_let_key_map.end()){
+			return preserving_let_key_map[s];
+		}
+		else if(!options->parsing_preserve_let && let_key_map.find(s) != let_key_map.end()){
+			return let_key_map[s];
+		}
+		else if(let_key_map.find(s) != let_key_map.end()){
 			return let_key_map[s];
 		}
 		else if(fun_key_map.find(s) != fun_key_map.end()){
