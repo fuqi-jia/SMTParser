@@ -65,7 +65,6 @@ namespace SMTParser{
 
         // whether perserve let-binding
         bool parsing_preserve_let = true;
-        bool dumping_preserve_let = true;
 
     public:
         GlobalOptions() = default;

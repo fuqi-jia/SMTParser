@@ -38,6 +38,12 @@ int main(int argc, char* argv[]){
         std::cout << "VARIABLES:" << variables.size() << std::endl;
         std::cout << "FUNCTIONS:" << functions.size() << std::endl;
         std::cout << "TIME:" << duration.count() << std::endl;
+
+        std::cout<<"--------------------------------"<<std::endl;
+        for(auto& assertion : assertions){
+            std::cout << parser->toString(assertion) << std::endl;
+        }
+        std::cout<<"--------------------------------"<<std::endl;
         
         return 0;
     } else {

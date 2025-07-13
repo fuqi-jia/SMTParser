@@ -44,6 +44,13 @@ namespace SMTParser{
         SM_STRING
     };
 
+    // LET mode, only used in preserving let mode
+    enum class LET_MODE {
+        LM_NON_LET, // not in let
+        LM_START_LET, // start of let
+        LM_IN_LET, // in let
+    };
+
     enum class KEYWORD{
         KW_ID, KW_WEIGHT, KW_COMP, KW_EPSILON, KW_M, KW_OPT_KIND, KW_NULL
     };
@@ -113,6 +120,8 @@ namespace SMTParser{
         char			                        *bufptr;
         size_t 	                                line_number;
         SCAN_MODE 		                        scan_mode;
+        size_t                                  preserving_let_counter; // only used in preserving let mode
+        LET_MODE 		            current_let_mode; // only used in preserving let mode
 
         bool                                    parsing_file;
 

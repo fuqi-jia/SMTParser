@@ -128,6 +128,11 @@ namespace SMTParser{
 
     std::string kindToString(const NODE_KIND& nk);
     NODE_KIND getOppositeKind(const NODE_KIND& nk);
+
+    // only used in preserving let mode
+    const std::string PRESERVING_LET_BIND_VAR_SUFFIX = "_SMTParser_Preserving_Let_Bind_Var_Suffix_"; // +k
 }
+
+
 
 #endif

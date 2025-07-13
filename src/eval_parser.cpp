@@ -26,6 +26,8 @@
  */
 
 #include "parser.h"
+#include <stack>
+#include <unordered_map>
 
 namespace SMTParser{
 
@@ -1848,7 +1850,85 @@ namespace SMTParser{
     }
 
     std::shared_ptr<DAGNode> Parser::expandLet(std::shared_ptr<DAGNode> expr){
-        return expr->getLetBody();
+        if(options->parsing_preserve_let && expr->isLet()){
+            // expand let
+            auto let_body = expr->getLetBody(); // obtain the final body
+            
+            // use iteration instead of recursion to handle all nested let_bind_var
+            std::stack<std::shared_ptr<DAGNode>> nodeStack;
+            std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> resultMap; // save the result of processed nodes
+            std::unordered_map<std::shared_ptr<DAGNode>, bool> hasChangedMap; // save the flag of whether the node has been changed
+            
+            // push the initial node
+            nodeStack.push(let_body);
+            
+            // iterate until the stack is empty
+            while(!nodeStack.empty()) {
+                std::shared_ptr<DAGNode> currentNode = nodeStack.top();
+                
+                // check if the node has been processed
+                if(resultMap.find(currentNode) != resultMap.end()) {
+                    nodeStack.pop();
+                    continue;
+                }
+                
+                // check if all children have been processed
+                bool allChildrenProcessed = true;
+                std::vector<std::shared_ptr<DAGNode>> processedChildren;
+                bool hasChanged = false;
+                
+                // process the children
+                for(size_t i = 0; i < currentNode->getChildrenSize(); i++) {
+                    std::shared_ptr<DAGNode> child = currentNode->getChild(i);
+                    
+                    // if the child has been processed, use the processed result
+                    if(resultMap.find(child) != resultMap.end()) {
+                        processedChildren.push_back(resultMap[child]);
+                        if(hasChangedMap[child]){
+                            hasChanged = true;
+                        }
+                    } else {
+                        // if the child has not been processed, push it to the stack and process it
+                        nodeStack.push(child);
+                        allChildrenProcessed = false;
+                        break;
+                    }
+                }
+                
+                // if all children have been processed, process the current node
+                if(allChildrenProcessed) {
+                    nodeStack.pop();
+                    std::shared_ptr<DAGNode> result;
+                    
+                    if(currentNode->isLetBindVar()) {
+                        // if the current node is a let_bind_var, replace it with its child(0)
+                        condAssert(currentNode->getChildrenSize() > 0, "let_bind_var should have at least one child");
+                        result = resultMap[currentNode->getChild(0)]; // use the processed child(0)
+                        hasChangedMap[currentNode] = true;
+                    } else if(hasChanged) {
+                        // if some children have been replaced, reconstruct the node
+                        result = mkOper(currentNode->getSort(), currentNode->getKind(), processedChildren);
+                        hasChangedMap[currentNode] = true;
+                    } else {
+                        // no change, keep the original node
+                        result = currentNode;
+                        hasChangedMap[currentNode] = false;
+                    }
+                    
+                    // save the processed result
+                    resultMap[currentNode] = result;
+                }
+            }
+            
+            // return the processed result
+            return resultMap[let_body];
+        }
+        else if(expr->isLet()){
+            return expr->getLetBody();
+        }
+        else{
+            return expr;
+        }
     }
     bool Parser::evaluateMax(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
         return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_MAX);

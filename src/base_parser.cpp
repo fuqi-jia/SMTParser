@@ -38,9 +38,12 @@ namespace SMTParser{
 		buflen = 0;
 		line_number = 0;
 		scan_mode = SCAN_MODE::SM_COMMON;
+		preserving_let_counter = 0;
+		current_let_mode = LET_MODE::LM_NON_LET;
 		temp_var_counter = 0;
 		parsing_file = false;
 
+		node_list.reserve(65536); // reserve the space for the node list
 		node_list.emplace_back(FALSE_NODE);
 		node_list.emplace_back(TRUE_NODE);
 		node_list.emplace_back(UNKNOWN_NODE);
@@ -73,9 +76,12 @@ namespace SMTParser{
 		buflen = 0;
 		line_number = 0;
 		scan_mode = SCAN_MODE::SM_COMMON;
+		preserving_let_counter = 0;
+		current_let_mode = LET_MODE::LM_NON_LET;
 		temp_var_counter = 0;
 		parsing_file = true;
 
+		node_list.reserve(65536); // reserve the space for the node list
 		node_list.emplace_back(FALSE_NODE);
 		node_list.emplace_back(TRUE_NODE);
 		node_list.emplace_back(UNKNOWN_NODE);
@@ -1219,6 +1225,18 @@ namespace SMTParser{
 				}
 			}
 			else if (s == "let") {
+				// LET Mode
+				// Not in let -> start of let
+				if(current_let_mode == LET_MODE::LM_NON_LET){
+					current_let_mode = LET_MODE::LM_START_LET;
+					preserving_let_counter += 1;
+				}
+				// start of let -> in let
+				else if(current_let_mode == LET_MODE::LM_START_LET){
+					current_let_mode = LET_MODE::LM_IN_LET;
+				}
+				// in let -> Not in let: at the end of the function of parsing let 
+
 				if(options->parsing_preserve_let){
 					expr = parsePreservingLet();
 				}
@@ -1252,10 +1270,11 @@ namespace SMTParser{
 		}
 		
 		// these have the highest priority
-		if(options->parsing_preserve_let && preserving_let_key_map.find(s) != preserving_let_key_map.end()){
-			return preserving_let_key_map[s];
+		std::string preserving_let_name = s + PRESERVING_LET_BIND_VAR_SUFFIX + std::to_string(preserving_let_counter);
+		if(options->parsing_preserve_let && current_let_mode != LET_MODE::LM_NON_LET && preserving_let_key_map.find(preserving_let_name) != preserving_let_key_map.end()){
+			return preserving_let_key_map[preserving_let_name];
 		}
-		else if(!options->parsing_preserve_let && let_key_map.find(s) != let_key_map.end()){
+		else if(!options->parsing_preserve_let && current_let_mode != LET_MODE::LM_NON_LET && let_key_map.find(s) != let_key_map.end()){
 			return let_key_map[s];
 		}
 		else if(let_key_map.find(s) != let_key_map.end()){
@@ -2180,6 +2199,7 @@ namespace SMTParser{
 		// Enter the initial "("
 		parseLpar();
 		
+		std::string preserving_let_bind_var_suffix = PRESERVING_LET_BIND_VAR_SUFFIX + std::to_string(preserving_let_counter);
 		
 		// Main loop to handle all nested let expressions
 		while (!stateStack.empty()) {
@@ -2195,9 +2215,10 @@ namespace SMTParser{
 					
 					size_t name_ln = line_number;
 					std::string name = getSymbol();
+					std::string prefixed_name = name + preserving_let_bind_var_suffix;
 					
 					// Check for duplicate key bindings
-					if (preserving_let_key_map.find(name) != preserving_let_key_map.end()) {
+					if (preserving_let_key_map.find(prefixed_name) != preserving_let_key_map.end()) {
 						// Clean up all variable bindings in the state stack
 						for (auto &state : stateStack) {
 							for (const auto &key : state.key_list) {
@@ -2221,11 +2242,11 @@ namespace SMTParser{
 					}
 					
 					// make let-binding variable
-					std::shared_ptr<DAGNode> let_var = mkLetBindVar(name, expr);
+					std::shared_ptr<DAGNode> let_var = mkLetBindVar(prefixed_name, expr);
 					// Add the binding inside the mkLetBindVar
-					// So only add it to params
+					// Add to params in the correct order - bindings first, body later
 					params.emplace_back(let_var);
-					key_list.emplace_back(name);
+					key_list.emplace_back(prefixed_name);
 					
 					parseRpar();
 				}
@@ -2247,26 +2268,33 @@ namespace SMTParser{
 			}
 			else{
 				if(*bufptr != ')'){
+					// Parse the let body and insert it at the beginning of params
 					std::shared_ptr<DAGNode> expr = parseExpr();
 					params.insert(params.begin(), expr);
 				}
+				
+				// Create the let expression
 				std::shared_ptr<DAGNode> res = mkOper(params[0]->getSort(), NODE_KIND::NT_LET, params);
-
-				// Not remove all variable bindings for the current state
-				// Because the let-binding is preserved
-
-
+				std::cout<<"res: "<<toString(res)<<std::endl;
+				
 				// State processing complete, pop from stack
 				stateStack.pop_back();
-
+				
 				// If stack is empty, return the result; otherwise, use the result as the body of the parent let
 				if (stateStack.empty()) {
+					// in let -> Not in let: at the end of the function of parsing let 
+					if(current_let_mode != LET_MODE::LM_NON_LET){
+						current_let_mode = LET_MODE::LM_NON_LET;
+					}
+					
 					return res;
 				}
 				else{
-					// Consume the closing parenthesis
+					// Consume the closing parenthesis if needed
 					parseRpar();
+					
 					// Use the result as the body of the parent let
+					// IMPORTANT: Insert at beginning because the body goes before the bindings
 					stateStack.back().params.insert(stateStack.back().params.begin(), res);
 					stateStack.back().is_complete = true;
 				}
@@ -2274,6 +2302,10 @@ namespace SMTParser{
 		}
 		
 		// Should not reach here, but added for safety
+		if(current_let_mode != LET_MODE::LM_NON_LET){
+			current_let_mode = LET_MODE::LM_NON_LET;
+		}
+		
 		return mkErr(ERROR_TYPE::ERR_UNEXP_EOF);
 	}
 	/*
@@ -2371,7 +2403,14 @@ namespace SMTParser{
 
 				// If stack is empty, return the result; otherwise, use the result as the body of the parent let
 				if (stateStack.empty()) {
-					return res;
+					// in let -> Not in let: at the end of the function of parsing let 
+					if(current_let_mode != LET_MODE::LM_NON_LET){
+						current_let_mode = LET_MODE::LM_NON_LET;
+					}
+					// return res;
+					// because we have preserving parsing let function now
+					// this function will directly return the let body with all bindings expanded
+					return res->getLetBody();
 				}
 				else{
 					// Consume the closing parenthesis
@@ -2384,6 +2423,10 @@ namespace SMTParser{
 		}
 		
 		// Should not reach here, but added for safety
+		if(current_let_mode != LET_MODE::LM_NON_LET){
+			current_let_mode = LET_MODE::LM_NON_LET;
+		}
+
 		return mkErr(ERROR_TYPE::ERR_UNEXP_EOF);
 	}
 

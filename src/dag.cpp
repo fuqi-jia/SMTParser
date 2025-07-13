@@ -386,20 +386,32 @@ namespace SMTParser{
 
             case NODE_KIND::NT_LET: {
                 condAssert(node->getChildrenSize() > 0, "NT_LET should have at least one child");
+                std::cout<<"--------------------------------"<<std::endl;
+                std::cout<<"node: "<<node->toString()<<std::endl;
+                std::cout<<"--------------------------------"<<std::endl;
                 if(node->getChildrenSize() == 1){
+                    std::cout<<"only one child"<<std::endl;
                     work_stack.emplace_back(node->getChild(0).get(), 0);
                 }
                 else{
                     if(node->getChild(1)->getKind() == NODE_KIND::NT_LET_BIND_VAR){
+                        std::cout<<"preserved let"<<std::endl;
                         // preserved let
-                        out << "(let ";
+                        out << "(let (";  // add (
                         for(size_t i=1;i<node->getChildrenSize();i++){
-                            out << "(" << node->getChild(i)->getName() << " ";
+                            if (i > 1) out << " ";  // add space for multiple bindings
+                            out << "(" << node->getChild(i)->getPureName() << " ";
                             work_stack.emplace_back(node->getChild(i)->getChild(0).get(), 0);
+                            work_stack.emplace_back(nullptr, 2);  // close each binding's right parenthesis
                         }
-                        out << ")";
+                        out << ") ";  // close binding list and add space
+                        
+                        // add body and final right parenthesis
+                        work_stack.emplace_back(nullptr, 2);  // the right parenthesis of the whole let expression
+                        work_stack.emplace_back(node->getChild(0).get(), 0);  // body
                     }
                     else{
+                        std::cout<<"expanded let"<<std::endl;
                         // expanded let
                         work_stack.emplace_back(node->getChild(0).get(), 0);
                     }
@@ -407,7 +419,7 @@ namespace SMTParser{
                 break;
             }
             case NODE_KIND::NT_LET_BIND_VAR: {
-                out << node->getName();
+                out << node->getPureName();
                 break;
             }
 
@@ -1011,12 +1023,16 @@ namespace SMTParser{
             else{
                 if(node->getChild(1)->getKind() == NODE_KIND::NT_LET_BIND_VAR){
                     // preserved let
-                    ofs << "(let ";
+                    ofs << "(let (";
                     for(size_t i=1;i<node->getChildrenSize();i++){
-                        ofs << "(" << node->getChild(i)->getName() << " ";
+                        if (i > 1) ofs << " ";  // add space for multiple bindings
+                        ofs << "(" << node->getChild(i)->getPureName() << " ";
                         dumpSMTLIB2(node->getChild(i)->getChild(0), visited, ofs);
+                        ofs << ")";  // close each binding's right parenthesis
                     }
-                    ofs << ")";
+                    ofs << ") ";  // close binding list
+                    dumpSMTLIB2(node->getChild(0), visited, ofs);  // output body
+                    ofs << ")";  // close the whole let expression
                 }else{
                     // expanded let
                     dumpSMTLIB2(node->getChild(0), visited, ofs);
@@ -1024,7 +1040,7 @@ namespace SMTParser{
             }
             break;
         case NODE_KIND::NT_LET_BIND_VAR:
-            ofs << node->getName();
+            ofs << node->getPureName();
             break;
         // ITE
         case NODE_KIND::NT_ITE:

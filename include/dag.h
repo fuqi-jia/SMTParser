@@ -49,6 +49,22 @@
 #include <unordered_set>
 
 namespace SMTParser{
+    // Forward declaration of DAGNode class
+    class DAGNode;
+    
+    // define hash function and equal function for std::pair<const DAGNode*, const DAGNode*>
+    struct PairNodePtrHash {
+        size_t operator()(const std::pair<const DAGNode*, const DAGNode*>& p) const {
+            return std::hash<const void*>()(p.first) ^ std::hash<const void*>()(p.second);
+        }
+    };
+
+    struct PairNodePtrEqual {
+        bool operator()(const std::pair<const DAGNode*, const DAGNode*>& p1, const std::pair<const DAGNode*, const DAGNode*>& p2) const {
+            return p1.first == p2.first && p1.second == p2.second;
+        }
+    };
+
     class DAGNode {
     // <sort, kind, name> --- <sort, node_kind, name>
     private:
@@ -206,6 +222,10 @@ namespace SMTParser{
         bool operator==(const DAGNode elem)
         {
             return (sort == elem.sort && kind == elem.kind && name == elem.name && children_hash == elem.children_hash);
+        }
+        bool operator!=(const DAGNode elem)
+        {
+            return (sort != elem.sort || kind != elem.kind || name != elem.name || children_hash != elem.children_hash);
         }
         
         bool isLeaf() 				const { return children.empty(); };
@@ -567,7 +587,15 @@ namespace SMTParser{
         bool isFuncParam()			const { return (kind == NODE_KIND::NT_FUNC_PARAM); };
         bool isFuncApply()          const { return (kind == NODE_KIND::NT_FUNC_APPLY); };
 
-        std::string toString()      const { return name; };
+        // get pure variable name for let bind var
+        std::string getPureName()   const {
+            if(isLetBindVar()){
+                return name.substr(0, name.find(PRESERVING_LET_BIND_VAR_SUFFIX));
+            }
+            return name;
+        }
+
+        std::string toString()      const { return getPureName(); };
 
         // other functions
         /**
@@ -717,20 +745,19 @@ namespace SMTParser{
          * @param other The other node
          * @return True if the node is equivalent to the other node, false otherwise
          */
+        bool isEquivalentTo(const std::shared_ptr<DAGNode>& other) const {
+            return isEquivalentTo(*other);
+        }
+
+        /**
+         * @brief Check if the node is equivalent to another node
+         * 
+         * @param other The other node
+         * @return True if the node is equivalent to the other node, false otherwise
+         */
         bool isEquivalentTo(const DAGNode& other) const {
-            if(hashString() != other.hashString()) {
-                return false;
-            }
-            
-            if (sort != other.sort || kind != other.kind || name != other.name || children.size() != other.children.size()) {
-                return false;
-            }
-            for (size_t i = 0; i < children.size(); i++) {
-                if (!children[i]->isEquivalentTo(*other.children[i])) {
-                    return false;
-                }
-            }
-            return true;
+            std::unordered_set<std::pair<const DAGNode*, const DAGNode*>, PairNodePtrHash, PairNodePtrEqual> visited;
+            return isEquivalentTo(other, visited);
         }
 
         /**
@@ -772,6 +799,29 @@ namespace SMTParser{
          * @param params The parameters of the function
          */
         void updateApplyFunc(std::shared_ptr<Sort> out_sort, std::shared_ptr<DAGNode> body, const std::vector<std::shared_ptr<DAGNode>> &params);
+
+    private:
+        bool isEquivalentTo(const DAGNode& other, std::unordered_set<std::pair<const DAGNode*, const DAGNode*>, PairNodePtrHash, PairNodePtrEqual>& visited) const {
+            auto p = std::make_pair(this, &other);
+            if(visited.find(p) != visited.end()){
+                return true;
+            }
+            visited.insert(p);
+            
+            if(hashString() != other.hashString()) {
+                return false;
+            }
+            
+            if (sort != other.sort || kind != other.kind || name != other.name || children.size() != other.children.size()) {
+                return false;
+            }
+            for (size_t i = 0; i < children.size(); i++) {
+                if (!children[i]->isEquivalentTo(*other.children[i], visited)) {
+                    return false;
+                }
+            }
+            return true;
+        }
     };
 
     inline const std::shared_ptr<DAGNode> NULL_NODE = std::make_shared<DAGNode>(NULL_SORT, NODE_KIND::NT_NULL, "null");
