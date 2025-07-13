@@ -84,9 +84,9 @@ namespace SMTParser{
         if (!root) return;
 
         std::shared_ptr<DAGNode> actualRoot = root;
-        while (actualRoot->isLet()) {
-            actualRoot = actualRoot->getLetBody();
-        }
+        // while (actualRoot->isLet()) {
+        //     actualRoot = actualRoot->getLetBody();
+        // }
 
         // Static kind string cache for performance
         static std::unordered_map<NODE_KIND, const char*> kind_cache;
@@ -386,22 +386,18 @@ namespace SMTParser{
 
             case NODE_KIND::NT_LET: {
                 condAssert(node->getChildrenSize() > 0, "NT_LET should have at least one child");
-                std::cout<<"--------------------------------"<<std::endl;
-                std::cout<<"node: "<<node->toString()<<std::endl;
-                std::cout<<"--------------------------------"<<std::endl;
                 if(node->getChildrenSize() == 1){
-                    std::cout<<"only one child"<<std::endl;
                     work_stack.emplace_back(node->getChild(0).get(), 0);
                 }
                 else{
                     if(node->getChild(1)->getKind() == NODE_KIND::NT_LET_BIND_VAR){
-                        std::cout<<"preserved let"<<std::endl;
                         // preserved let
                         out << "(let (";  // add (
                         for(size_t i=1;i<node->getChildrenSize();i++){
                             if (i > 1) out << " ";  // add space for multiple bindings
                             out << "(" << node->getChild(i)->getPureName() << " ";
-                            work_stack.emplace_back(node->getChild(i)->getChild(0).get(), 0);
+                            auto child_0 = node->getChild(i)->getChild(0);
+                            out << dumpSMTLIB2(child_0);
                             work_stack.emplace_back(nullptr, 2);  // close each binding's right parenthesis
                         }
                         out << ") ";  // close binding list and add space
@@ -411,7 +407,6 @@ namespace SMTParser{
                         work_stack.emplace_back(node->getChild(0).get(), 0);  // body
                     }
                     else{
-                        std::cout<<"expanded let"<<std::endl;
                         // expanded let
                         work_stack.emplace_back(node->getChild(0).get(), 0);
                     }

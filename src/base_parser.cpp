@@ -2230,6 +2230,7 @@ namespace SMTParser{
 					
 					// Parse the expression value (this won't trigger recursive let parsing)
 					std::shared_ptr<DAGNode> expr = parseExpr();
+					std::cout<<"expr: "<<toString(expr)<<std::endl;
 					
 					if (expr->isErr()) {
 						// Clean up all variable bindings in the state stack
@@ -2275,7 +2276,6 @@ namespace SMTParser{
 				
 				// Create the let expression
 				std::shared_ptr<DAGNode> res = mkOper(params[0]->getSort(), NODE_KIND::NT_LET, params);
-				std::cout<<"res: "<<toString(res)<<std::endl;
 				
 				// State processing complete, pop from stack
 				stateStack.pop_back();
