@@ -2230,7 +2230,6 @@ namespace SMTParser{
 					
 					// Parse the expression value (this won't trigger recursive let parsing)
 					std::shared_ptr<DAGNode> expr = parseExpr();
-					std::cout<<"expr: "<<toString(expr)<<std::endl;
 					
 					if (expr->isErr()) {
 						// Clean up all variable bindings in the state stack
