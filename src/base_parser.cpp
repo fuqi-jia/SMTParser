@@ -2393,8 +2393,7 @@ namespace SMTParser{
 					std::shared_ptr<DAGNode> expr = parseExpr();
 					params.insert(params.begin(), expr);
 				}
-				std::shared_ptr<DAGNode> res = mkOper(params[0]->getSort(), NODE_KIND::NT_LET, params);
-
+				
 				// Remove all variable bindings for the current state
 				for (const auto &key : key_list) {
 					let_key_map.erase(key);
@@ -2403,16 +2402,16 @@ namespace SMTParser{
 				// State processing complete, pop from stack
 				stateStack.pop_back();
 
-				// If stack is empty, return the result; otherwise, use the result as the body of the parent let
+				// If stack is empty, return the expanded body directly (not wrapped in let)
 				if (stateStack.empty()) {
-					// Let mode state is now managed in parseExpr, not here
-					return res;
+					// Return the expanded body without let binding
+					return params[0];
 				}
 				else{
 					// Consume the closing parenthesis
 					parseRpar();
-					// Use the result as the body of the parent let
-					stateStack.back().params.insert(stateStack.back().params.begin(), res);
+					// Use the expanded body as the body of the parent let
+					stateStack.back().params.insert(stateStack.back().params.begin(), params[0]);
 					stateStack.back().is_complete = true;
 				}
 			}
