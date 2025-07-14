@@ -84,9 +84,6 @@ namespace SMTParser{
         if (!root) return;
 
         std::shared_ptr<DAGNode> actualRoot = root;
-        // while (actualRoot->isLet()) {
-        //     actualRoot = actualRoot->getLetBody();
-        // }
 
         // Static kind string cache for performance
         static std::unordered_map<NODE_KIND, const char*> kind_cache;
@@ -175,9 +172,7 @@ namespace SMTParser{
             case NODE_KIND::NT_DIV_REAL: {
                 if (node->getChildrenSize() == 2) {
                     auto child0 = node->getChild(0).get();
-                    while(child0->isLet()) child0 = child0->getLetBody().get();
                     auto child1 = node->getChild(1).get();
-                    while(child1->isLet()) child1 = child1->getLetBody().get();
 
                     const char* op = kind_cache[kind];
                     out << "(" << op << " ";
@@ -208,7 +203,6 @@ namespace SMTParser{
                 // Push children in reverse order, each preceded by a space
                 for (int i = children.size() - 1; i >= 0; i--) {
                     auto child = children[i].get();
-                    while(child->isLet()) child = child->getLetBody().get();
                     work_stack.emplace_back(child, 0);
                     work_stack.emplace_back(nullptr, 1); // space before child
                 }
@@ -217,11 +211,8 @@ namespace SMTParser{
 
             case NODE_KIND::NT_REG_LOOP: {
                 auto child0 = node->getChild(0).get();
-                while(child0->isLet()) child0 = child0->getLetBody().get();
                 auto child1 = node->getChild(1).get();
-                while(child1->isLet()) child1 = child1->getLetBody().get();
                 auto child2 = node->getChild(2).get();
-                while(child2->isLet()) child2 = child2->getLetBody().get();
 
                 out << "((_ re.loop ";
 
@@ -238,7 +229,6 @@ namespace SMTParser{
             case NODE_KIND::NT_NOT:
             case NODE_KIND::NT_NEG: {
                 auto child = node->getChild(0).get();
-                while(child->isLet()) child = child->getLetBody().get();
                 const char* op = kind_cache[kind];
 
                 out << "(" << op << " ";
@@ -250,11 +240,8 @@ namespace SMTParser{
             // Ternary operations
             case NODE_KIND::NT_ITE: {
                 auto child0 = node->getChild(0).get();
-                while(child0->isLet()) child0 = child0->getLetBody().get();
                 auto child1 = node->getChild(1).get();
-                while(child1->isLet()) child1 = child1->getLetBody().get();
                 auto child2 = node->getChild(2).get();
-                while(child2->isLet()) child2 = child2->getLetBody().get();
 
                 out << "(ite ";
                 work_stack.emplace_back(nullptr, 2);  // )
@@ -269,11 +256,8 @@ namespace SMTParser{
             // Special processing operations
             case NODE_KIND::NT_BV_EXTRACT: {
                 auto child0 = node->getChild(0).get();
-                while(child0->isLet()) child0 = child0->getLetBody().get();
                 auto child1 = node->getChild(1).get();
-                while(child1->isLet()) child1 = child1->getLetBody().get();
                 auto child2 = node->getChild(2).get();
-                while(child2->isLet()) child2 = child2->getLetBody().get();
 
                 out << "((_ extract ";
                 work_stack.emplace_back(nullptr, 2);  // )
@@ -290,9 +274,7 @@ namespace SMTParser{
             case NODE_KIND::NT_BV_ROTATE_LEFT:
             case NODE_KIND::NT_BV_ROTATE_RIGHT: {
                 auto child0 = node->getChild(0).get();
-                while(child0->isLet()) child0 = child0->getLetBody().get();
                 auto child1 = node->getChild(1).get();
-                while(child1->isLet()) child1 = child1->getLetBody().get();
 
                 out << "((_ " << kindToString(kind) << " ";
                 work_stack.emplace_back(nullptr, 2);  // )
@@ -346,7 +328,6 @@ namespace SMTParser{
                 out << "(" << kindToString(kind) << " (";
                 for (size_t i = 1; i < node->getChildrenSize(); i++) {
                     auto current_child = node->getChild(i).get();
-                    while(current_child->isLet()) current_child = current_child->getLetBody().get();
                     if (i == 1){
                         out << "(" << current_child->getName() << " " << current_child->getSort()->toString() << ")";
                     }
@@ -377,7 +358,6 @@ namespace SMTParser{
                 work_stack.emplace_back(nullptr, 2);  // )
                 for (int i = node->getChildrenSize() - 1; i >= 1; i--) {
                     auto current_child = node->getChild(i).get();
-                    while(current_child->isLet()) current_child = current_child->getLetBody().get();
                     work_stack.emplace_back(current_child, 0);
                     work_stack.emplace_back(nullptr, 1);  // space
                 }
@@ -424,7 +404,6 @@ namespace SMTParser{
                 const auto& children = node->getChildren();
                 for (int i = children.size() - 1; i >= 0; i--) {
                     auto current_child = children[i].get();
-                    while(current_child->isLet()) current_child = current_child->getLetBody().get();
                     work_stack.emplace_back(current_child, 0);
                     work_stack.emplace_back(nullptr, 1);  // space
                 }
@@ -440,7 +419,6 @@ namespace SMTParser{
                     out << kind_str;
                 } else if (children.size() == 1) {
                     auto child = children[0].get();
-                    while(child->isLet()) child = child->getLetBody().get();
                     out << "(" << kind_str << " ";
                     work_stack.emplace_back(nullptr, 2);  // )
                     work_stack.emplace_back(child, 0);    // child
@@ -449,7 +427,6 @@ namespace SMTParser{
                     work_stack.emplace_back(nullptr, 2);  // )
                     for (int i = children.size() - 1; i >= 0; i--) {
                         auto child = children[i].get();
-                        while(child->isLet()) child = child->getLetBody().get();
                         work_stack.emplace_back(child, 0);
                         work_stack.emplace_back(nullptr, 1);  // space
                     }

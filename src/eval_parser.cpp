@@ -1852,7 +1852,7 @@ namespace SMTParser{
     std::shared_ptr<DAGNode> Parser::expandLet(std::shared_ptr<DAGNode> expr){
         if(options->parsing_preserve_let && expr->isLet()){
             // expand let
-            auto let_body = expr->getLetBody(); // obtain the final body
+            auto let_body = expr;
             
             // use iteration instead of recursion to handle all nested let_bind_var
             std::stack<std::shared_ptr<DAGNode>> nodeStack;
@@ -1922,9 +1922,6 @@ namespace SMTParser{
             
             // return the processed result
             return resultMap[let_body];
-        }
-        else if(expr->isLet()){
-            return expr->getLetBody();
         }
         else{
             return expr;

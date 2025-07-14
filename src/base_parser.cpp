@@ -40,6 +40,7 @@ namespace SMTParser{
 		scan_mode = SCAN_MODE::SM_COMMON;
 		preserving_let_counter = 0;
 		current_let_mode = LET_MODE::LM_NON_LET;
+		let_nesting_depth = 0;
 		temp_var_counter = 0;
 		parsing_file = false;
 
@@ -78,6 +79,7 @@ namespace SMTParser{
 		scan_mode = SCAN_MODE::SM_COMMON;
 		preserving_let_counter = 0;
 		current_let_mode = LET_MODE::LM_NON_LET;
+		let_nesting_depth = 0;
 		temp_var_counter = 0;
 		parsing_file = true;
 
@@ -1225,17 +1227,17 @@ namespace SMTParser{
 				}
 			}
 			else if (s == "let") {
-				// LET Mode
-				// Not in let -> start of let
-				if(current_let_mode == LET_MODE::LM_NON_LET){
+				// LET Mode - use nesting depth to track let state
+				if(let_nesting_depth == 0){
+					// Entering the outermost let
 					current_let_mode = LET_MODE::LM_START_LET;
 					preserving_let_counter += 1;
 				}
-				// start of let -> in let
 				else if(current_let_mode == LET_MODE::LM_START_LET){
 					current_let_mode = LET_MODE::LM_IN_LET;
 				}
-				// in let -> Not in let: at the end of the function of parsing let 
+				// Increment nesting depth for any let
+				let_nesting_depth++;
 
 				if(options->parsing_preserve_let){
 					expr = parsePreservingLet();
@@ -1243,6 +1245,15 @@ namespace SMTParser{
 				else{
 					expr = parseLet();
 				}
+				
+				// Decrement nesting depth when let parsing is complete
+				let_nesting_depth--;
+				
+				// Only reset let mode when completely out of all lets
+				if(let_nesting_depth == 0){
+					current_let_mode = LET_MODE::LM_NON_LET;
+				}
+				
 				if (expr->isErr())
 					err_all(expr, "let", expr_ln);
 			}
@@ -2161,7 +2172,8 @@ namespace SMTParser{
 		std::vector<std::shared_ptr<DAGNode>> params;
 
 		while (*bufptr != ')'){
-			params.emplace_back(parseExpr());
+			std::shared_ptr<DAGNode> expr = parseExpr();
+			params.emplace_back(expr);
 		}
 
 		return params;
@@ -2196,6 +2208,9 @@ namespace SMTParser{
 		parseLpar();
 		
 		std::string preserving_let_bind_var_suffix = PRESERVING_LET_BIND_VAR_SUFFIX + std::to_string(preserving_let_counter);
+		
+		// Track the initial nesting level to know when we're completely done
+		int initial_nesting_level = stateStack.size();
 		
 		// Main loop to handle all nested let expressions
 		while (!stateStack.empty()) {
@@ -2277,11 +2292,7 @@ namespace SMTParser{
 				
 				// If stack is empty, return the result; otherwise, use the result as the body of the parent let
 				if (stateStack.empty()) {
-					// in let -> Not in let: at the end of the function of parsing let 
-					if(current_let_mode != LET_MODE::LM_NON_LET){
-						current_let_mode = LET_MODE::LM_NON_LET;
-					}
-					
+					// Let mode state is now managed in parseExpr, not here
 					return res;
 				}
 				else{
@@ -2296,11 +2307,7 @@ namespace SMTParser{
 			}
 		}
 		
-		// Should not reach here, but added for safety
-		if(current_let_mode != LET_MODE::LM_NON_LET){
-			current_let_mode = LET_MODE::LM_NON_LET;
-		}
-		
+		// Should not reach here, but added for safety  
 		return mkErr(ERROR_TYPE::ERR_UNEXP_EOF);
 	}
 	/*
@@ -2398,14 +2405,8 @@ namespace SMTParser{
 
 				// If stack is empty, return the result; otherwise, use the result as the body of the parent let
 				if (stateStack.empty()) {
-					// in let -> Not in let: at the end of the function of parsing let 
-					if(current_let_mode != LET_MODE::LM_NON_LET){
-						current_let_mode = LET_MODE::LM_NON_LET;
-					}
-					// return res;
-					// because we have preserving parsing let function now
-					// this function will directly return the let body with all bindings expanded
-					return res->getLetBody();
+					// Let mode state is now managed in parseExpr, not here
+					return res;
 				}
 				else{
 					// Consume the closing parenthesis
@@ -2418,10 +2419,6 @@ namespace SMTParser{
 		}
 		
 		// Should not reach here, but added for safety
-		if(current_let_mode != LET_MODE::LM_NON_LET){
-			current_let_mode = LET_MODE::LM_NON_LET;
-		}
-
 		return mkErr(ERROR_TYPE::ERR_UNEXP_EOF);
 	}
 
