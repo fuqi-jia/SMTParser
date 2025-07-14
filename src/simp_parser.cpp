@@ -1486,7 +1486,7 @@ namespace SMTParser{
             // Special processing operation
             case NODE_KIND::NT_BV_EXTRACT:{
                 if(l->isCBV() && m->isCInt() && r->isCInt()){
-                    Integer size = (toInt(m) - toInt(r));
+                    Integer size = (toInt(m) - toInt(r) + 1);
                     return mkConstBv(BitVectorUtils::bvExtract(l->toString(), toInt(m), toInt(r)), size.toULong());
                 }
                 return mkUnknown();

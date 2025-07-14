@@ -223,7 +223,11 @@ namespace SMTParser{
                 str[i] != 'c' && 
                 str[i] != 'C' && 
                 str[i] != 'd' && 
-                str[i] != 'D')) return false;
+                str[i] != 'D' &&
+                str[i] != 'e' &&
+                str[i] != 'E' &&
+                str[i] != 'f' &&
+                str[i] != 'F')) return false;
             if ((str[1] == 'd' || str[1] == 'D') && 
                 (str[i] != '0' && 
                 str[i] != '1' && 
@@ -779,7 +783,13 @@ namespace SMTParser{
     std::string BitVectorUtils::bvExtract(const std::string& bv, const Integer& i, const Integer& j){
         condAssert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvExtract: invalid bitvector");
         condAssert(i >= j, "BitVectorUtils::bvExtract: i must be greater than or equal to j");
-        return "#b" + bv.substr(2 + bv.size() - 2 - j.toULong(), i.toULong() - j.toULong() + 1);
+        
+        // for bitvector "#b1010", bit3=1, bit2=0, bit1=1, bit0=0
+        size_t bit_width = bv.size() - 2;  // actual bit width
+        size_t start_pos = 2 + (bit_width - 1 - i.toULong());  // start position from left
+        size_t length = i.toULong() - j.toULong() + 1;         // length of extracted bits
+        
+        return "#b" + bv.substr(start_pos, length);
     }
     std::string BitVectorUtils::bvRepeat(const std::string& bv, const Integer& n){
         condAssert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvRepeat: invalid bitvector");

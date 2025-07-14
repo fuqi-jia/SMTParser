@@ -1296,10 +1296,6 @@ namespace SMTParser{
 			// quantifier variable name
 			return quant_var_map[s];
 		}
-		else if(let_var_map.find(s) != let_var_map.end()){
-			// let variable name
-			return let_var_map[s];
-		}
 		// following Common Lisp's conventions, enclosing
 		// a simple symbol in vertical bars does not produce a new symbol.
 		else if(s.size() > 1 && 
