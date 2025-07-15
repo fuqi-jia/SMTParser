@@ -366,35 +366,63 @@ namespace SMTParser{
 
             case NODE_KIND::NT_LET: {
                 condAssert(node->getChildrenSize() > 0, "NT_LET should have at least one child");
-                if(node->getChildrenSize() == 1){
-                    work_stack.emplace_back(node->getChild(0).get(), 0);
+                out << "(let (";  // add (
+                for(size_t i=1;i<node->getChildrenSize();i++){
+                    if (i > 1) out << " ";  // add space for multiple bindings
+                    out << "(" << node->getChild(i)->getPureName() << " ";
+                    auto child_0 = node->getChild(i)->getChild(0);
+                    out << dumpSMTLIB2(child_0);
+                    work_stack.emplace_back(nullptr, 2);  // close each binding's right parenthesis
                 }
-                else{
-                    if(node->getChild(1)->getKind() == NODE_KIND::NT_LET_BIND_VAR){
-                        // preserved let
-                        out << "(let (";  // add (
-                        for(size_t i=1;i<node->getChildrenSize();i++){
-                            if (i > 1) out << " ";  // add space for multiple bindings
-                            out << "(" << node->getChild(i)->getPureName() << " ";
-                            auto child_0 = node->getChild(i)->getChild(0);
+                out << ") ";  // close binding list and add space
+                
+                // add body and final right parenthesis
+                work_stack.emplace_back(nullptr, 2);  // the right parenthesis of the whole let expression
+                work_stack.emplace_back(node->getChild(0).get(), 0);  // body
+                break;
+            }
+            case NODE_KIND::NT_LET_CHAIN: {
+                // let-chain:
+                // children: [LET_BIND_VAR_LIST, LET_BIND_VAR_LIST, ..., Body]
+                // output the let-binding list
+                for(size_t i=0;i<node->getChildrenSize();i++){
+                    if(i < node->getChildrenSize() - 1){ // LET_BIND_VAR_LIST
+                        condAssert(node->getChild(i)->isLetBindVarList(), "NT_LET_CHAIN: child is not LET_BIND_VAR_LIST");
+                        auto var_list = node->getChild(i);
+                        // output let + binding list
+                        out << "(let (";
+                        for(size_t j=0;j<var_list->getChildrenSize();j++){
+                            if(j==0) out << "(" << var_list->getChild(j)->getPureName() << " ";
+                            else out << " (" << var_list->getChild(j)->getPureName() << " ";
+                            auto child_0 = var_list->getChild(j)->getChild(0);
                             out << dumpSMTLIB2(child_0);
-                            work_stack.emplace_back(nullptr, 2);  // close each binding's right parenthesis
+                            out << ")"; // close each binding's right parenthesis and add space
                         }
-                        out << ") ";  // close binding list and add space
-                        
-                        // add body and final right parenthesis
-                        work_stack.emplace_back(nullptr, 2);  // the right parenthesis of the whole let expression
-                        work_stack.emplace_back(node->getChild(0).get(), 0);  // body
+                        out << ") ";
                     }
-                    else{
-                        // expanded let
-                        work_stack.emplace_back(node->getChild(0).get(), 0);
+                    else{ // Body
+                        out << dumpSMTLIB2(node->getChild(i));
                     }
+                }
+                for(size_t i=0;i<node->getChildrenSize() - 1;i++){
+                    out << ")";
                 }
                 break;
             }
             case NODE_KIND::NT_LET_BIND_VAR: {
                 out << node->getPureName();
+                break;
+            }
+            case NODE_KIND::NT_LET_BIND_VAR_LIST: {
+                out <<"( ";
+                for(size_t i=1;i<node->getChildrenSize();i++){
+                    if(i==1) out << "(" << node->getChild(i)->getPureName() << " ";
+                    else out << " (" << node->getChild(i)->getPureName() << " ";
+                    auto child_0 = node->getChild(i)->getChild(0);
+                    out << dumpSMTLIB2(child_0);
+                    out << ")"; // close each binding's right parenthesis
+                }
+                out << ")";
                 break;
             }
 
@@ -988,31 +1016,57 @@ namespace SMTParser{
             break;
         // LET, FROM HERE TODO
         case NODE_KIND::NT_LET:
-            condAssert(node->getChildrenSize() > 0, "NT_LET should have at least one child");
-            if(node->getChildrenSize() == 1){
-                dumpSMTLIB2(node->getChild(0), visited, ofs);
+            ofs << "(let (";
+            for(size_t i=1;i<node->getChildrenSize();i++){
+                if (i > 1) ofs << " ";  // add space for multiple bindings
+                ofs << "(" << node->getChild(i)->getPureName() << " ";
+                dumpSMTLIB2(node->getChild(i)->getChild(0), visited, ofs);
+                ofs << ")";  // close each binding's right parenthesis
             }
-            else{
-                if(node->getChild(1)->getKind() == NODE_KIND::NT_LET_BIND_VAR){
-                    // preserved let
+            ofs << ") ";  // close binding list
+            dumpSMTLIB2(node->getChild(0), visited, ofs);  // output body
+            ofs << ")";  // close the whole let expression
+            break;
+        case NODE_KIND::NT_LET_CHAIN:
+            // let-chain:
+            // children: [LET_BIND_VAR_LIST, LET_BIND_VAR_LIST, ..., Body]
+            // output the let-binding list
+            for(size_t i=0;i<node->getChildrenSize();i++){
+                if(i < node->getChildrenSize() - 1){ // LET_BIND_VAR_LIST
+                    condAssert(node->getChild(i)->isLetBindVarList(), "NT_LET_CHAIN: child is not LET_BIND_VAR_LIST");
+                    auto var_list = node->getChild(i);
+                    // output let + binding list
                     ofs << "(let (";
-                    for(size_t i=1;i<node->getChildrenSize();i++){
-                        if (i > 1) ofs << " ";  // add space for multiple bindings
-                        ofs << "(" << node->getChild(i)->getPureName() << " ";
-                        dumpSMTLIB2(node->getChild(i)->getChild(0), visited, ofs);
-                        ofs << ")";  // close each binding's right parenthesis
+                    for(size_t j=0;j<var_list->getChildrenSize();j++){
+                        if(j==0) ofs << "(" << var_list->getChild(j)->getPureName() << " ";
+                        else ofs << " (" << var_list->getChild(j)->getPureName() << " ";
+                        auto child_0 = var_list->getChild(j)->getChild(0);
+                        dumpSMTLIB2(child_0, visited, ofs);
+                        ofs << ")"; // close each binding's right parenthesis and add space
                     }
-                    ofs << ") ";  // close binding list
-                    dumpSMTLIB2(node->getChild(0), visited, ofs);  // output body
-                    ofs << ")";  // close the whole let expression
-                }else{
-                    // expanded let
-                    dumpSMTLIB2(node->getChild(0), visited, ofs);
+                    ofs << ") ";
                 }
+                else{ // Body
+                    dumpSMTLIB2(node->getChild(i), visited, ofs);
+                }
+            }
+            for(size_t i=0;i<node->getChildrenSize() - 1;i++){ // close the let-binding list
+                ofs << ")";
             }
             break;
         case NODE_KIND::NT_LET_BIND_VAR:
             ofs << node->getPureName();
+            break;
+        case NODE_KIND::NT_LET_BIND_VAR_LIST:
+            ofs << "( ";
+            for(size_t i=1;i<node->getChildrenSize();i++){
+                if(i==1) ofs << "(" << node->getChild(i)->getPureName() << " ";
+                else ofs << " (" << node->getChild(i)->getPureName() << " ";
+                auto child_0 = node->getChild(i)->getChild(0);
+                dumpSMTLIB2(child_0, visited, ofs); // dump the value of the binding
+                ofs << ")"; // close each binding's right parenthesis
+            }
+            ofs << ")";
             break;
         // ITE
         case NODE_KIND::NT_ITE:
