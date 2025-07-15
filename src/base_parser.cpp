@@ -1309,12 +1309,16 @@ namespace SMTParser{
 		}
 		// following Common Lisp's conventions, enclosing
 		// a simple symbol in vertical bars does not produce a new symbol.
-		else if(s.size() > 1 && 
+		else if(s.size() > 2 && 
 				s[0] == '|'  && 
 				s[s.size() - 1] == '|' &&
 				var_names.find(s.substr(1, s.size() - 2)) != var_names.end()){
 			// string
 			return node_list[var_names[s.substr(1, s.size() - 2)]];
+		}
+		else if(var_names.find('|' + s + '|') != var_names.end()){
+			// string
+			return node_list[var_names['|' + s + '|']];
 		}
 		// otherwise, it is a constant
 		else if(s == "pi"){
@@ -1378,8 +1382,9 @@ namespace SMTParser{
 			return mkRegAllChar();
 		}
 		else {
-			return mkErr(ERROR_TYPE::ERR_UNKWN_SYM);
+			err_unkwn_sym(s, line_number);
 		}
+		return mkErr(ERROR_TYPE::ERR_UNKWN_SYM);
 	}
 
 	std::shared_ptr<DAGNode> Parser::parseParamFunc(const std::string& f, const std::vector<std::shared_ptr<DAGNode>> &args, const std::vector<std::shared_ptr<DAGNode>> &params){
