@@ -1280,7 +1280,8 @@ namespace SMTParser{
 			// string
 			return node_manager->getNode(var_names[s.substr(1, s.size() - 2)]);
 		}
-		else if(var_names.find('|' + s + '|') != var_names.end()){
+		else if(!TypeChecker::isNumber(s) && 
+				var_names.find('|' + s + '|') != var_names.end()){
 			// string
 			return node_manager->getNode(var_names['|' + s + '|']);
 		}

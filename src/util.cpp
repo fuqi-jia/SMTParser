@@ -39,6 +39,10 @@ namespace SMTParser{
         return SHA256::hash(input);
     }
 
+    bool TypeChecker::isNumber(const std::string& str){
+        return isInt(str) || isReal(str);
+    }
+
     bool TypeChecker::isInt(const std::string& str){
         if (str.empty()) return false;
         for (size_t i = 0; i < str.size(); i++){

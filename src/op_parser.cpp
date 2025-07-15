@@ -1557,6 +1557,8 @@ namespace SMTParser{
     std::shared_ptr<DAGNode> Parser::mkGe(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         
         if(!l->getSort()->isEqTo(r->getSort())) {
+            std::cout<<l->toString()<<" "<<r->toString()<<std::endl;
+            std::cout<<l->getSort()->toString()<<" "<<r->getSort()->toString()<<std::endl;
             if(canExempt(l->getSort(), r->getSort())){
                 std::cerr << "Type mismatch in ge, but now exempt for int/real"<<std::endl;
             }
