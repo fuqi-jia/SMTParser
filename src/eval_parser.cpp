@@ -1850,9 +1850,17 @@ namespace SMTParser{
     }
 
     std::shared_ptr<DAGNode> Parser::expandLet(std::shared_ptr<DAGNode> expr){
-        if(options->parsing_preserve_let && expr->isLet()){
-            // expand let - start from the let body (first child)
-            auto let_body = expr->getChild(0);
+        if(options->parsing_preserve_let && (expr->isLet() || expr->isLetChain())){
+            // Determine the body based on the structure type
+            std::shared_ptr<DAGNode> body;
+            if(expr->isLet()){
+                // expand let - body is the first child
+                body = expr->getChild(0);
+            } else {
+                // expand let-chain - body is the last child: [bind_var_list1, ..., bind_var_listN, body]
+                condAssert(expr->getChildrenSize() >= 2, "let-chain should have at least one bind_var_list and one body");
+                body = expr->getChild(expr->getChildrenSize() - 1);
+            }
             
             // use iteration instead of recursion to handle all nested let_bind_var
             std::stack<std::shared_ptr<DAGNode>> nodeStack;
@@ -1860,7 +1868,7 @@ namespace SMTParser{
             std::unordered_map<std::shared_ptr<DAGNode>, bool> hasChangedMap; // save the flag of whether the node has been changed
             
             // push the initial node
-            nodeStack.push(let_body);
+            nodeStack.push(body);
             
             // iterate until the stack is empty
             while(!nodeStack.empty()) {
@@ -1921,7 +1929,7 @@ namespace SMTParser{
             }
             
             // return the processed result
-            return resultMap[let_body];
+            return resultMap[body];
         }
         else{
             return expr;
