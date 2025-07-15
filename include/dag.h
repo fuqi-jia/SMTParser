@@ -577,6 +577,8 @@ namespace SMTParser{
                                                     (isApplyUF() && sort->isBool())); };
         // check let
         bool isLet()				const { return kind == NODE_KIND::NT_LET; };
+        bool isLetChain()			const { return kind == NODE_KIND::NT_LET_CHAIN; };
+        bool isLetBindVarList()		const { return kind == NODE_KIND::NT_LET_BIND_VAR_LIST; };
 
         // check ite
         bool isIte()				const { return kind == NODE_KIND::NT_ITE; };

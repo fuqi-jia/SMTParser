@@ -113,8 +113,10 @@ namespace SMTParser{
         // INTERVAL
         NT_MAX, NT_MIN, 
 
-        // LET 
-        NT_LET, NT_LET_BIND_VAR,
+        // LET (CHAIN)
+        NT_LET, NT_LET_CHAIN,
+        // LET BIND VAR (LIST)
+        NT_LET_BIND_VAR, NT_LET_BIND_VAR_LIST,
         // ITE
         NT_ITE,
         // QUANTIFIERS

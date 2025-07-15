@@ -68,3 +68,5 @@ conaninfo.txt
 # Doxygen 文档
 docs/
 
+# test
+test/instances

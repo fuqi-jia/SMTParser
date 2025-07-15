@@ -2189,10 +2189,11 @@ namespace SMTParser{
 	struct LetContext {
 		std::vector<std::shared_ptr<DAGNode>> params;
 		std::vector<std::string> key_list;
+		std::shared_ptr<DAGNode> result;  // Store the result directly
 		int nesting_level;
 		bool is_complete;
 		
-		LetContext(int level = 0) : nesting_level(level), is_complete(false) {}
+		LetContext(int level = 0) : nesting_level(level), is_complete(false), result(nullptr) {}
 	};
 
 	// parse let expression preserving the let-binding
@@ -2284,13 +2285,17 @@ namespace SMTParser{
 			}
 			else{
 				if(*bufptr != ')'){
-					// Parse the let body and insert it at the beginning of params
-					std::shared_ptr<DAGNode> expr = parseExpr();
-					params.insert(params.begin(), expr);
+					// Parse the let body and store as result
+					currentState.result = parseExpr();
 				}
 				
-				// Create the let expression
-				std::shared_ptr<DAGNode> res = mkOper(params[0]->getSort(), NODE_KIND::NT_LET, params);
+				// Create the let expression with result at the beginning
+				std::vector<std::shared_ptr<DAGNode>> let_params;
+				let_params.emplace_back(currentState.result);
+				for (auto& param : params) {
+					let_params.emplace_back(param);
+				}
+				std::shared_ptr<DAGNode> res = mkOper(currentState.result->getSort(), NODE_KIND::NT_LET, let_params);
 				
 				// State processing complete, pop from stack
 				stateStack.pop_back();
@@ -2304,9 +2309,8 @@ namespace SMTParser{
 					// Consume the closing parenthesis if needed
 					parseRpar();
 					
-					// Use the result as the body of the parent let
-					// IMPORTANT: Insert at beginning because the body goes before the bindings
-					stateStack.back().params.insert(stateStack.back().params.begin(), res);
+					// Store the result in the parent context directly
+					stateStack.back().result = res;
 					stateStack.back().is_complete = true;
 				}
 			}
@@ -2395,8 +2399,7 @@ namespace SMTParser{
 			}
 			else{
 				if(*bufptr != ')'){
-					std::shared_ptr<DAGNode> expr = parseExpr();
-					params.insert(params.begin(), expr);
+					currentState.result = parseExpr();
 				}
 				
 				// Remove all variable bindings for the current state
@@ -2407,16 +2410,15 @@ namespace SMTParser{
 				// State processing complete, pop from stack
 				stateStack.pop_back();
 
-				// If stack is empty, return the expanded body directly (not wrapped in let)
+				// If stack is empty, return the result directly
 				if (stateStack.empty()) {
-					// Return the expanded body without let binding
-					return params[0];
+					return currentState.result;
 				}
 				else{
 					// Consume the closing parenthesis
 					parseRpar();
-					// Use the expanded body as the body of the parent let
-					stateStack.back().params.insert(stateStack.back().params.begin(), params[0]);
+					// Store the result in the parent context
+					stateStack.back().result = currentState.result;
 					stateStack.back().is_complete = true;
 				}
 			}
