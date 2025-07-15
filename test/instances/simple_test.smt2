@@ -1,8 +1,0 @@
-(set-logic QF_LIA)
-(declare-const x Int)
-(declare-const y Int)
-(assert (> x 0))
-(assert (< y 10))
-(assert (= (+ x y) 5))
-(check-sat)
-(exit) 
