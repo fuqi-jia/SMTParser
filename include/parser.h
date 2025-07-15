@@ -3512,6 +3512,8 @@ namespace SMTParser{
         std::shared_ptr<DAGNode>		        parsePreservingLet();
         std::shared_ptr<DAGNode>		        parseLet();
         std::shared_ptr<DAGNode>		        mkLetBindVar(const std::string& name, const std::shared_ptr<DAGNode>& expr);
+        std::shared_ptr<DAGNode>		        mkLetBindVarList(const std::vector<std::shared_ptr<DAGNode>>& bind_vars);
+        std::shared_ptr<DAGNode>		        mkLetChain(const std::vector<std::shared_ptr<DAGNode>>& bind_var_lists, const std::shared_ptr<DAGNode>& body);
         std::string                             parseGroup();
         std::string                             parseWeight();
         std::shared_ptr<DAGNode>                parseQuant(const std::string& type);

@@ -2187,13 +2187,14 @@ namespace SMTParser{
 
 	// struct for let context
 	struct LetContext {
-		std::vector<std::shared_ptr<DAGNode>> params;
+		std::vector<std::shared_ptr<DAGNode>> params;  // let bind vars for current level
 		std::vector<std::string> key_list;
 		std::shared_ptr<DAGNode> result;  // Store the result directly
+		std::shared_ptr<DAGNode> bind_var_list;  // LET_BIND_VAR_LIST for current level
 		int nesting_level;
 		bool is_complete;
 		
-		LetContext(int level = 0) : nesting_level(level), is_complete(false), result(nullptr) {}
+		LetContext(int level = 0) : nesting_level(level), is_complete(false), result(nullptr), bind_var_list(nullptr) {}
 	};
 
 	// parse let expression preserving the let-binding
@@ -2201,11 +2202,19 @@ namespace SMTParser{
 	// In this function, the let-binding is preserved, and the let-binding is not expanded
 	// So the bind_var cannot be the same in different let-binding
 	// For example, (let ((x 1) (x 2)) x) is not allowed
+	// Use let-chain to parse the let expression
+	// let-chain: [LET_BIND_VAR_LIST, LET_BIND_VAR_LIST, ..., Body]
+	// LET_BIND_VAR_LIST: [(<symbol> expr)]
+	// Body: expr
 	std::shared_ptr<DAGNode> Parser::parsePreservingLet(){
 		// This function uses an iterative approach instead of recursion to handle nested let expressions
+		// and constructs let-chain to avoid deep nesting issues
 		
 		// Create a stack to store parsing states and contexts
 		std::vector<LetContext> stateStack;
+		
+		// Collect all bind_var_lists for final let-chain construction
+		std::vector<std::shared_ptr<DAGNode>> all_bind_var_lists;
 		
 		// Push initial state onto the stack
 		stateStack.emplace_back(LetContext(0));
@@ -2214,9 +2223,6 @@ namespace SMTParser{
 		parseLpar();
 		
 		std::string preserving_let_bind_var_suffix = PRESERVING_LET_BIND_VAR_SUFFIX + std::to_string(preserving_let_counter);
-		
-		// Track the initial nesting level to know when we're completely done
-		int initial_nesting_level = stateStack.size();
 		
 		// Main loop to handle all nested let expressions
 		while (!stateStack.empty()) {
@@ -2258,21 +2264,25 @@ namespace SMTParser{
 						err_all(expr, name, name_ln);
 					}
 					
-					// make let-binding variable
-					std::shared_ptr<DAGNode> let_var = mkLetBindVar(prefixed_name, expr);
-					// Add the binding inside the mkLetBindVar
-					// Add to params in the correct order - bindings first, body later
-					params.emplace_back(let_var);
-					key_list.emplace_back(prefixed_name);
-					
-					parseRpar();
-				}
+				// make let-binding variable
+				std::shared_ptr<DAGNode> let_var = mkLetBindVar(prefixed_name, expr);
+				// Add the binding inside the mkLetBindVar
+				// Add to params in the correct order - bindings first, body later
+				params.emplace_back(let_var);
+				key_list.emplace_back(prefixed_name);
 				
-				// Finished parsing all bindings for the current let, handle the closing parenthesis
 				parseRpar();
 			}
 			
-			// Process the body of the let expression
+			// Create LET_BIND_VAR_LIST for current level and add to collection
+			currentState.bind_var_list = mkLetBindVarList(params);
+			all_bind_var_lists.emplace_back(currentState.bind_var_list);
+			
+			// Finished parsing all bindings for the current let, handle the closing parenthesis
+			parseRpar();
+		}
+		
+		// Process the body of the let expression
 			if (*bufptr == '(' && peekSymbol() == "let") {
 				// If the body is another let expression, we don't recursively call parseLet
 				// Instead, push it as a new state onto the stack
@@ -2289,28 +2299,22 @@ namespace SMTParser{
 					currentState.result = parseExpr();
 				}
 				
-				// Create the let expression with result at the beginning
-				std::vector<std::shared_ptr<DAGNode>> let_params;
-				let_params.emplace_back(currentState.result);
-				for (auto& param : params) {
-					let_params.emplace_back(param);
-				}
-				std::shared_ptr<DAGNode> res = mkOper(currentState.result->getSort(), NODE_KIND::NT_LET, let_params);
-				
 				// State processing complete, pop from stack
+				auto completedState = currentState;
 				stateStack.pop_back();
 				
-				// If stack is empty, return the result; otherwise, use the result as the body of the parent let
+				// If stack is empty, construct final let-chain and return
 				if (stateStack.empty()) {
-					// Let mode state is now managed in parseExpr, not here
-					return res;
+					// Create let-chain with all collected bind_var_lists + final body
+					std::shared_ptr<DAGNode> result = mkLetChain(all_bind_var_lists, completedState.result);
+					return result;
 				}
 				else{
 					// Consume the closing parenthesis if needed
 					parseRpar();
 					
-					// Store the result in the parent context directly
-					stateStack.back().result = res;
+					// Pass the result to parent level (don't create let-chain yet)
+					stateStack.back().result = completedState.result;
 					stateStack.back().is_complete = true;
 				}
 			}

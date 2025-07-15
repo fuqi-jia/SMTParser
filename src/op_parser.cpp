@@ -467,6 +467,29 @@ namespace SMTParser{
         }
     }
 
+    std::shared_ptr<DAGNode> Parser::mkLetBindVarList(const std::vector<std::shared_ptr<DAGNode>>& bind_vars){
+        // empty is allowed
+        
+        // Use the sort of the first binding variable for the list
+        std::shared_ptr<Sort> list_sort = bind_vars[0]->getSort();
+        return std::make_shared<DAGNode>(list_sort, NODE_KIND::NT_LET_BIND_VAR_LIST, "", bind_vars);
+    }
+
+    std::shared_ptr<DAGNode> Parser::mkLetChain(const std::vector<std::shared_ptr<DAGNode>>& bind_var_lists, const std::shared_ptr<DAGNode>& body){
+        if(!body){
+            return mkErr(ERROR_TYPE::ERR_UNKWN_SYM);
+        }
+        
+        // Create children: [bind_var_lists..., body]
+        std::vector<std::shared_ptr<DAGNode>> children;
+        for(const auto& list : bind_var_lists){
+            children.emplace_back(list);
+        }
+        children.emplace_back(body);
+        
+        return std::make_shared<DAGNode>(body->getSort(), NODE_KIND::NT_LET_CHAIN, "", children);
+    }
+
     std::shared_ptr<DAGNode> Parser::mkConstInt(const Integer &v){
         std::string v_str = ConversionUtils::toString(v);
         if(constants_int.find(v_str) != constants_int.end()){
