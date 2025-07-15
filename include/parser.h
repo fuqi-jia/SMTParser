@@ -154,9 +154,6 @@ namespace SMTParser{
         std::vector<std::string>                      function_names;
         // global options
         std::shared_ptr<GlobalOptions>                  options;
-        // hash value list
-        std::unordered_map<std::shared_ptr<DAGNode>, size_t, NodeHash, NodeEqual>
-                                                        complex_node_map;
         // (define-objective name single_opt)
         std::unordered_map<std::string, std::shared_ptr<Objective>> 
                                                         objective_map;

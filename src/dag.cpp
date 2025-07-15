@@ -1181,6 +1181,10 @@ namespace SMTParser{
         initializeStaticNodes();
     }
 
+    NodeManager::~NodeManager(){
+        clear();
+    }
+
     std::shared_ptr<DAGNode> NodeManager::getNode(const size_t index) const{
         return nodes[index];
     }

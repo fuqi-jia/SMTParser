@@ -857,6 +857,7 @@ namespace SMTParser{
             std::array<std::unordered_map<std::shared_ptr<DAGNode>, size_t, NodeHash, NodeEqual>, NUM_KINDS> node_buckets;
         public:
             NodeManager();
+            ~NodeManager();
             std::shared_ptr<DAGNode> getNode(const size_t index) const;
             size_t getIndex(const std::shared_ptr<DAGNode>& node) const;
             size_t size() const;
