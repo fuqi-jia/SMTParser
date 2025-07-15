@@ -135,11 +135,11 @@ namespace SMTParser{
         SingleObjective(OPT_KIND opt_type, const std::shared_ptr<DAGNode>& objective_term, COMP_KIND compare_operator, const std::shared_ptr<DAGNode>& epsilon, const std::shared_ptr<DAGNode>& M):
             SingleObjective(opt_type, objective_term, compare_operator, epsilon, M, ""){}
         SingleObjective(OPT_KIND opt_type, const std::shared_ptr<DAGNode>& objective_term, COMP_KIND compare_operator, const std::shared_ptr<DAGNode>& epsilon):
-            SingleObjective(opt_type, objective_term, compare_operator, epsilon, NULL_NODE, ""){}
+            SingleObjective(opt_type, objective_term, compare_operator, epsilon, NodeManager::NULL_NODE, ""){}
         SingleObjective(OPT_KIND opt_type, const std::shared_ptr<DAGNode>& objective_term, COMP_KIND compare_operator):
-            SingleObjective(opt_type, objective_term, compare_operator, NULL_NODE, NULL_NODE, ""){}
+            SingleObjective(opt_type, objective_term, compare_operator, NodeManager::NULL_NODE, NodeManager::NULL_NODE, ""){}
         SingleObjective(OPT_KIND opt_type, const std::string& group_id):
-            SingleObjective(opt_type, NULL_NODE, COMP_KIND::COMP_LT, NULL_NODE, NULL_NODE, group_id){}
+            SingleObjective(opt_type, NodeManager::NULL_NODE, COMP_KIND::COMP_LT, NodeManager::NULL_NODE, NodeManager::NULL_NODE, group_id){}
         ~SingleObjective(){}
 
         // single objective
@@ -196,7 +196,7 @@ namespace SMTParser{
             if(isSingleObjective()){
                 return objectives[0]->getObjectiveTerm();
             }
-            return NULL_NODE;
+            return NodeManager::NULL_NODE;
         }
         // get the compare operator
         COMP_KIND getCompareOperator() const override{
@@ -210,14 +210,14 @@ namespace SMTParser{
             if(isSingleObjective()){
                 return objectives[0]->getEpsilon();
             }
-            return NULL_NODE;
+            return NodeManager::NULL_NODE;
         }
         // get the M
         const std::shared_ptr<DAGNode>& getM() const override{
             if(isSingleObjective()){
                 return objectives[0]->getM();
             }
-            return NULL_NODE;
+            return NodeManager::NULL_NODE;
         }
 
         // multi-objective

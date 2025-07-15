@@ -1136,4 +1136,175 @@ namespace SMTParser{
         }
         ofs << ") " << node->getChild(0)->getSort()->toString() << ")";
     }
+
+    // NodeManager
+    
+    // Static constant node definitions
+    const std::shared_ptr<DAGNode> NodeManager::NULL_NODE = std::make_shared<DAGNode>(NULL_SORT, NODE_KIND::NT_NULL, "null");
+    const std::shared_ptr<DAGNode> NodeManager::UNKNOWN_NODE = std::make_shared<DAGNode>(UNKNOWN_SORT, NODE_KIND::NT_UNKNOWN, "unknown");
+    const std::shared_ptr<DAGNode> NodeManager::TRUE_NODE = std::make_shared<DAGNode>(BOOL_SORT, NODE_KIND::NT_CONST_TRUE, "true");
+    const std::shared_ptr<DAGNode> NodeManager::FALSE_NODE = std::make_shared<DAGNode>(BOOL_SORT, NODE_KIND::NT_CONST_FALSE, "false");
+    const std::shared_ptr<DAGNode> NodeManager::E_NODE = std::make_shared<DAGNode>(REAL_SORT, NODE_KIND::NT_CONST_E, "e");
+    const std::shared_ptr<DAGNode> NodeManager::PI_NODE = std::make_shared<DAGNode>(REAL_SORT, NODE_KIND::NT_CONST_PI, "pi");
+    // const std::shared_ptr<DAGNode> NodeManager::INF_NODE = std::make_shared<DAGNode>(EXT_SORT, NODE_KIND::NT_INFINITY, "INF");
+    // const std::shared_ptr<DAGNode> NodeManager::POS_INF_NODE = std::make_shared<DAGNode>(EXT_SORT, NODE_KIND::NT_POS_INFINITY, "+INF");
+    // const std::shared_ptr<DAGNode> NodeManager::NEG_INF_NODE = std::make_shared<DAGNode>(EXT_SORT, NODE_KIND::NT_NEG_INFINITY, "-INF");
+    const std::shared_ptr<DAGNode> NodeManager::NAN_NODE = std::make_shared<DAGNode>(EXT_SORT, NODE_KIND::NT_NAN, "NaN");
+    const std::shared_ptr<DAGNode> NodeManager::EPSILON_NODE = std::make_shared<DAGNode>(EXT_SORT, NODE_KIND::NT_EPSILON, "EPSILON");
+    const std::shared_ptr<DAGNode> NodeManager::POS_EPSILON_NODE = std::make_shared<DAGNode>(EXT_SORT, NODE_KIND::NT_POS_EPSILON, "+EPSILON");
+    const std::shared_ptr<DAGNode> NodeManager::NEG_EPSILON_NODE = std::make_shared<DAGNode>(EXT_SORT, NODE_KIND::NT_NEG_EPSILON, "-EPSILON");
+    
+    // infinity
+    const std::shared_ptr<DAGNode> NodeManager::STR_INF_NODE = std::make_shared<DAGNode>(STR_SORT, NODE_KIND::NT_INFINITY, "INF");
+    const std::shared_ptr<DAGNode> NodeManager::STR_POS_INF_NODE = std::make_shared<DAGNode>(STR_SORT, NODE_KIND::NT_POS_INFINITY, "+INF");
+    const std::shared_ptr<DAGNode> NodeManager::STR_NEG_INF_NODE = std::make_shared<DAGNode>(STR_SORT, NODE_KIND::NT_NEG_INFINITY, "-INF");
+    const std::shared_ptr<DAGNode> NodeManager::INT_INF_NODE = std::make_shared<DAGNode>(INT_SORT, NODE_KIND::NT_INFINITY, "INF");
+    const std::shared_ptr<DAGNode> NodeManager::INT_POS_INF_NODE = std::make_shared<DAGNode>(INT_SORT, NODE_KIND::NT_POS_INFINITY, "+INF");
+    const std::shared_ptr<DAGNode> NodeManager::INT_NEG_INF_NODE = std::make_shared<DAGNode>(INT_SORT, NODE_KIND::NT_NEG_INFINITY, "-INF");
+    const std::shared_ptr<DAGNode> NodeManager::REAL_INF_NODE = std::make_shared<DAGNode>(REAL_SORT, NODE_KIND::NT_INFINITY, "INF");
+    const std::shared_ptr<DAGNode> NodeManager::REAL_POS_INF_NODE = std::make_shared<DAGNode>(REAL_SORT, NODE_KIND::NT_POS_INFINITY, "+INF");
+    const std::shared_ptr<DAGNode> NodeManager::REAL_NEG_INF_NODE = std::make_shared<DAGNode>(REAL_SORT, NODE_KIND::NT_NEG_INFINITY, "-INF");
+
+    NodeManager::NodeManager() {
+        // 1. Reserve before inserting anything
+        nodes.reserve(65536);
+        for (size_t i = 0; i < NUM_KINDS; i++) {
+            NODE_KIND kind = static_cast<NODE_KIND>(i);
+            if (static_kinds.count(kind) > 0) {
+                node_buckets[i].reserve(1);
+            }
+            else{
+                node_buckets[i].reserve(2048);
+            }
+        }
+        // 2. Initialize static constant nodes and insert them into buckets
+        initializeStaticNodes();
+    }
+
+    std::shared_ptr<DAGNode> NodeManager::getNode(const size_t index) const{
+        return nodes[index];
+    }
+    size_t NodeManager::getIndex(const std::shared_ptr<DAGNode>& node) const{
+        auto bucket_index = static_cast<size_t>(node->getKind());
+        auto it = node_buckets[bucket_index].find(node);
+        if(it != node_buckets[bucket_index].end()){
+            return it->second;
+        }
+        return -1;
+    }
+    size_t NodeManager::size() const{
+        return nodes.size();
+    }
+
+    void NodeManager::clear() {
+        for (auto& node : nodes) {
+            node->clear();
+        }
+        nodes.clear();
+        for (auto& bucket : node_buckets) {
+            bucket.clear();
+        }
+    }
+    
+    std::shared_ptr<DAGNode> NodeManager::insertNodeToBucket(const std::shared_ptr<DAGNode>& node) {
+        auto bucket_index = static_cast<size_t>(node->getKind());
+        auto it = node_buckets[bucket_index].find(node);
+        if(it != node_buckets[bucket_index].end()){
+            return nodes[it->second];
+        }
+        node_buckets[bucket_index].insert(std::pair<std::shared_ptr<DAGNode>, size_t>(node, nodes.size()));
+        nodes.emplace_back(node);
+        return node;
+    }
+
+    void NodeManager::initializeStaticNodes() {
+        // Basic constants
+        insertNodeToBucket(NULL_NODE);
+        insertNodeToBucket(UNKNOWN_NODE);
+        insertNodeToBucket(TRUE_NODE);
+        insertNodeToBucket(FALSE_NODE);
+        insertNodeToBucket(E_NODE);
+        insertNodeToBucket(PI_NODE);
+        insertNodeToBucket(NAN_NODE);
+        insertNodeToBucket(EPSILON_NODE);
+        insertNodeToBucket(POS_EPSILON_NODE);
+        insertNodeToBucket(NEG_EPSILON_NODE);
+        
+        // Infinity nodes
+        insertNodeToBucket(STR_INF_NODE);
+        insertNodeToBucket(STR_POS_INF_NODE);
+        insertNodeToBucket(STR_NEG_INF_NODE);
+        insertNodeToBucket(INT_INF_NODE);
+        insertNodeToBucket(INT_POS_INF_NODE);
+        insertNodeToBucket(INT_NEG_INF_NODE);
+        insertNodeToBucket(REAL_INF_NODE);
+        insertNodeToBucket(REAL_POS_INF_NODE);
+        insertNodeToBucket(REAL_NEG_INF_NODE);
+    }
+
+    std::shared_ptr<DAGNode> NodeManager::createNode(std::shared_ptr<Sort> sort, NODE_KIND kind, std::string name, std::vector<std::shared_ptr<DAGNode>> children) {
+        auto node = std::make_shared<DAGNode>(sort, kind, name, children);
+        return insertNodeToBucket(node);
+    }
+
+    std::shared_ptr<DAGNode> NodeManager::createNode(std::shared_ptr<Sort> sort, NODE_KIND kind, std::string name) {
+        auto node = std::make_shared<DAGNode>(sort, kind, name);
+        return insertNodeToBucket(node);
+    }
+
+    std::shared_ptr<DAGNode> NodeManager::createNode(std::shared_ptr<Sort> sort, NODE_KIND kind) {
+        auto node = std::make_shared<DAGNode>(sort, kind);
+        return insertNodeToBucket(node);
+    }
+
+    std::shared_ptr<DAGNode> NodeManager::createNode(std::shared_ptr<Sort> sort) {
+        auto node = std::make_shared<DAGNode>(sort);
+        return insertNodeToBucket(node);
+    }
+
+    std::shared_ptr<DAGNode> NodeManager::createNode() {
+        auto node = std::make_shared<DAGNode>();
+        return insertNodeToBucket(node);
+    }
+
+    std::shared_ptr<DAGNode> NodeManager::createNode(NODE_KIND kind, std::string name) {
+        auto node = std::make_shared<DAGNode>(kind, name);
+        return insertNodeToBucket(node);
+    }
+
+    std::shared_ptr<DAGNode> NodeManager::createNode(NODE_KIND kind) {
+        auto node = std::make_shared<DAGNode>(kind);
+        return insertNodeToBucket(node);
+    }
+
+    std::shared_ptr<DAGNode> NodeManager::createNode(std::shared_ptr<Sort> sort, const Integer& v) {
+        auto node = std::make_shared<DAGNode>(sort, v);
+        return insertNodeToBucket(node);
+    }
+
+    std::shared_ptr<DAGNode> NodeManager::createNode(std::shared_ptr<Sort> sort, const Real& v) {
+        auto node = std::make_shared<DAGNode>(sort, v);
+        return insertNodeToBucket(node);
+    }
+
+    std::shared_ptr<DAGNode> NodeManager::createNode(std::shared_ptr<Sort> sort, const double& v) {
+        auto node = std::make_shared<DAGNode>(sort, v);
+        return insertNodeToBucket(node);
+    }
+
+    std::shared_ptr<DAGNode> NodeManager::createNode(std::shared_ptr<Sort> sort, const int& v) {
+        auto node = std::make_shared<DAGNode>(sort, v);
+        return insertNodeToBucket(node);
+    }
+
+    std::shared_ptr<DAGNode> NodeManager::createNode(std::shared_ptr<Sort> sort, const bool& v) {
+        auto node = std::make_shared<DAGNode>(sort, v);
+        return insertNodeToBucket(node);
+    }
+
+    std::shared_ptr<DAGNode> NodeManager::createNode(const std::string& n) {
+        auto node = std::make_shared<DAGNode>(n);
+        return insertNodeToBucket(node);
+    }
+
 }

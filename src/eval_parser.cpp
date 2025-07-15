@@ -35,14 +35,14 @@ namespace SMTParser{
         std::cerr << "Not implemented warning: " << op << " is not implemented" << std::endl;
     }
     std::shared_ptr<DAGNode> Parser::evaluate(std::shared_ptr<DAGNode> expr, const Model &model){
-        std::shared_ptr<DAGNode> result = NULL_NODE;
+        std::shared_ptr<DAGNode> result = NodeManager::NULL_NODE;
         std::shared_ptr<Model> model_ptr = std::make_shared<Model>(model);
         evaluate(expr, model_ptr, result);
         return result;
     }
 
     std::shared_ptr<DAGNode> Parser::evaluate(std::shared_ptr<DAGNode> expr, const std::shared_ptr<Model> &model){
-        std::shared_ptr<DAGNode> result = NULL_NODE;
+        std::shared_ptr<DAGNode> result = NodeManager::NULL_NODE;
         evaluate(expr, model, result);
         return result;
     }
@@ -625,7 +625,7 @@ namespace SMTParser{
             case NODE_KIND::NT_STR_TO_CODE:
             case NODE_KIND::NT_STR_FROM_CODE:
             {
-                std::shared_ptr<DAGNode> child = NULL_NODE;
+                std::shared_ptr<DAGNode> child = NodeManager::NULL_NODE;
                 changed |= evaluate(expr->getChildren()[0], model, child);
                 if(!changed){
                     result = expr;
@@ -675,8 +675,8 @@ namespace SMTParser{
             case NODE_KIND::NT_STR_GE: // TODO: lt/le/gt/ge now is binary operation, but it should be n-ary operation
             case NODE_KIND::NT_STR_IN_REG:
             {
-                std::shared_ptr<DAGNode> l = NULL_NODE;
-                std::shared_ptr<DAGNode> r = NULL_NODE;
+                std::shared_ptr<DAGNode> l = NodeManager::NULL_NODE;
+                std::shared_ptr<DAGNode> r = NodeManager::NULL_NODE;
                 changed |= evaluate(expr->getChildren()[0], model, l);
                 changed |= evaluate(expr->getChildren()[1], model, r);
                 if(!changed){
@@ -695,9 +695,9 @@ namespace SMTParser{
             case NODE_KIND::NT_STR_REPLACE_ALL:
             {
                 bool changed = false;
-                std::shared_ptr<DAGNode> l = NULL_NODE;
-                std::shared_ptr<DAGNode> r = NULL_NODE;
-                std::shared_ptr<DAGNode> s = NULL_NODE;
+                std::shared_ptr<DAGNode> l = NodeManager::NULL_NODE;
+                std::shared_ptr<DAGNode> r = NodeManager::NULL_NODE;
+                std::shared_ptr<DAGNode> s = NodeManager::NULL_NODE;
                 changed |= evaluate(expr->getChildren()[0], model, l);
                 changed |= evaluate(expr->getChildren()[1], model, r);
                 changed |= evaluate(expr->getChildren()[2], model, s);
@@ -727,7 +727,7 @@ namespace SMTParser{
                 changed = false;
                 std::vector<std::shared_ptr<DAGNode>> children;
                 for(auto child : expr->getChildren()){
-                    std::shared_ptr<DAGNode> eval = NULL_NODE;
+                    std::shared_ptr<DAGNode> eval = NodeManager::NULL_NODE;
                     changed |= evaluate(child, model, eval);
                     children.emplace_back(eval);
                 }
@@ -783,7 +783,7 @@ namespace SMTParser{
                 changed = false;
                 std::vector<std::shared_ptr<DAGNode>> children;
                 for(auto child : expr->getChildren()){
-                    std::shared_ptr<DAGNode> eval = NULL_NODE;
+                    std::shared_ptr<DAGNode> eval = NodeManager::NULL_NODE;
                     changed |= evaluate(child, model, eval);
                     children.emplace_back(eval);
                 }
@@ -854,11 +854,11 @@ namespace SMTParser{
                 size_t i = 0;
                 while(i < expr->getChildren().size()){
                     // concat until the last constant child
-                    std::shared_ptr<DAGNode> child = NULL_NODE;
+                    std::shared_ptr<DAGNode> child = NodeManager::NULL_NODE;
                     changed |= evaluate(expr->getChildren()[i], model, child);
                     if(child->isConst()){
                         // go on until the child is not constant
-                        std::shared_ptr<DAGNode> child_ = NULL_NODE;
+                        std::shared_ptr<DAGNode> child_ = NodeManager::NULL_NODE;
                         while(i < expr->getChildren().size()){
                             changed |= evaluate(expr->getChildren()[i], model, child_);
                             if(!child_->isConst()) break;
@@ -911,7 +911,7 @@ namespace SMTParser{
         std::vector<std::shared_ptr<DAGNode>> children;
         bool changed = false;
         for(auto child : expr->getChildren()){
-            std::shared_ptr<DAGNode> eval = NULL_NODE;
+            std::shared_ptr<DAGNode> eval = NodeManager::NULL_NODE;
             changed |= evaluate(child, model, eval);
             if(eval->isConst()){
                 if(eval->isFalse()){
@@ -943,7 +943,7 @@ namespace SMTParser{
         std::vector<std::shared_ptr<DAGNode>> children;
         bool changed = false;
         for(auto child : expr->getChildren()){
-            std::shared_ptr<DAGNode> eval = NULL_NODE;
+            std::shared_ptr<DAGNode> eval = NodeManager::NULL_NODE;
             changed |= evaluate(child, model, eval);
             if(eval->isConst()){
                 if(eval->isTrue()){
@@ -986,7 +986,7 @@ namespace SMTParser{
         
         // traverse all children
         for (auto child : expr->getChildren()) {
-            std::shared_ptr<DAGNode> evaluatedChild = NULL_NODE;
+            std::shared_ptr<DAGNode> evaluatedChild = NodeManager::NULL_NODE;
             changed |= evaluate(child, model, evaluatedChild);
             
             // evaluated as constant
@@ -1034,7 +1034,7 @@ namespace SMTParser{
         std::vector<std::shared_ptr<DAGNode>> children;
         std::vector<std::shared_ptr<DAGNode>> const_vals;
         for(auto child : expr->getChildren()){
-            std::shared_ptr<DAGNode> eval = NULL_NODE;
+            std::shared_ptr<DAGNode> eval = NodeManager::NULL_NODE;
             changed |= evaluate(child, model, eval);
             if(eval->isConst()){
                 const_vals.emplace_back(eval);
@@ -1119,7 +1119,7 @@ namespace SMTParser{
         std::vector<std::shared_ptr<DAGNode>> children;
         std::unordered_set<std::shared_ptr<DAGNode>> const_vals;
         for(auto child : expr->getChildren()){
-            std::shared_ptr<DAGNode> eval = NULL_NODE;
+            std::shared_ptr<DAGNode> eval = NodeManager::NULL_NODE;
             changed |= evaluate(child, model, eval);
             if(eval->isConst()){
                 if(const_vals.empty()){
@@ -1158,9 +1158,9 @@ namespace SMTParser{
     }
     bool Parser::evaluateIte(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode>& result) {
         bool changed = false;
-        std::shared_ptr<DAGNode> cond = NULL_NODE;
-        std::shared_ptr<DAGNode> then_child = NULL_NODE;
-        std::shared_ptr<DAGNode> else_child = NULL_NODE;
+        std::shared_ptr<DAGNode> cond = NodeManager::NULL_NODE;
+        std::shared_ptr<DAGNode> then_child = NodeManager::NULL_NODE;
+        std::shared_ptr<DAGNode> else_child = NodeManager::NULL_NODE;
         changed |= evaluate(expr->getChild(0), model, cond);
         changed |= evaluate(expr->getChild(1), model, then_child);
         changed |= evaluate(expr->getChild(2), model, else_child);
@@ -1193,7 +1193,7 @@ namespace SMTParser{
         bool changed = false;
         std::vector<std::shared_ptr<DAGNode>> children;
         for(auto child : expr->getChildren()){
-            std::shared_ptr<DAGNode> eval = NULL_NODE;
+            std::shared_ptr<DAGNode> eval = NodeManager::NULL_NODE;
             changed |= evaluate(child, model, eval);
             children.emplace_back(eval);
         }

@@ -190,8 +190,8 @@ namespace SMTParser{
         else{
             // minimize or maximize
             COMP_KIND comp_op = comp == "" ? getDefaultCompareOperator(options->logic, opt_type) : getCompareOperator(comp);
-            std::shared_ptr<DAGNode> epsilon_node = epsilon == "" ? NULL_NODE : std::make_shared<DAGNode>(NODE_KIND::NT_CONST, epsilon);
-            std::shared_ptr<DAGNode> M_node = M == "" ? NULL_NODE : std::make_shared<DAGNode>(NODE_KIND::NT_CONST, M);
+            std::shared_ptr<DAGNode> epsilon_node = epsilon == "" ? NodeManager::NULL_NODE : NodeManager::EPSILON_NODE;
+            std::shared_ptr<DAGNode> M_node = M == "" ? NodeManager::NULL_NODE : NodeManager::INT_INF_NODE;
             obj = std::make_shared<SingleObjective>(opt_type, min_expr, comp_op, epsilon_node, M_node, grp_id);
         }
 

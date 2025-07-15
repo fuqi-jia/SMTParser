@@ -44,25 +44,7 @@ namespace SMTParser{
 		temp_var_counter = 0;
 		parsing_file = false;
 
-		node_list.reserve(65536); // reserve the space for the node list
-		node_list.emplace_back(FALSE_NODE);
-		node_list.emplace_back(TRUE_NODE);
-		node_list.emplace_back(UNKNOWN_NODE);
-		node_list.emplace_back(E_NODE);
-		node_list.emplace_back(PI_NODE);
-		node_list.emplace_back(STR_INF_NODE);
-		node_list.emplace_back(STR_POS_INF_NODE);
-		node_list.emplace_back(STR_NEG_INF_NODE);
-		node_list.emplace_back(INT_INF_NODE);
-		node_list.emplace_back(INT_POS_INF_NODE);
-		node_list.emplace_back(INT_NEG_INF_NODE);
-		node_list.emplace_back(REAL_INF_NODE);
-		node_list.emplace_back(REAL_POS_INF_NODE);
-		node_list.emplace_back(REAL_NEG_INF_NODE);
-		node_list.emplace_back(NAN_NODE);
-		node_list.emplace_back(EPSILON_NODE);
-		node_list.emplace_back(POS_EPSILON_NODE);
-		node_list.emplace_back(NEG_EPSILON_NODE);
+		node_manager = std::make_shared<NodeManager>();
 		options = std::make_shared<GlobalOptions>();
 	}
 
@@ -83,25 +65,7 @@ namespace SMTParser{
 		temp_var_counter = 0;
 		parsing_file = true;
 
-		node_list.reserve(65536); // reserve the space for the node list
-		node_list.emplace_back(FALSE_NODE);
-		node_list.emplace_back(TRUE_NODE);
-		node_list.emplace_back(UNKNOWN_NODE);
-		node_list.emplace_back(E_NODE);
-		node_list.emplace_back(PI_NODE);
-		node_list.emplace_back(STR_INF_NODE);
-		node_list.emplace_back(STR_POS_INF_NODE);
-		node_list.emplace_back(STR_NEG_INF_NODE);
-		node_list.emplace_back(INT_INF_NODE);
-		node_list.emplace_back(INT_POS_INF_NODE);
-		node_list.emplace_back(INT_NEG_INF_NODE);
-		node_list.emplace_back(REAL_INF_NODE);
-		node_list.emplace_back(REAL_POS_INF_NODE);
-		node_list.emplace_back(NAN_NODE);
-		node_list.emplace_back(EPSILON_NODE);
-		node_list.emplace_back(POS_EPSILON_NODE);
-		node_list.emplace_back(NEG_EPSILON_NODE);
-
+		node_manager = std::make_shared<NodeManager>();
 		options = std::make_shared<GlobalOptions>();
 
 		parseSmtlib2File(filename);
@@ -226,28 +190,28 @@ namespace SMTParser{
 	std::vector<std::shared_ptr<DAGNode>> Parser::getVariables() const{
 		std::vector<std::shared_ptr<DAGNode>> vars;
 		for(auto& var : var_names){
-			vars.emplace_back(node_list[var.second]);
+			vars.emplace_back(node_manager->getNode(var.second));
 		}
 		for(auto& var : temp_var_names){
-			vars.emplace_back(node_list[var.second]);
+			vars.emplace_back(node_manager->getNode(var.second));
 		}
 		return vars;
 	}
 	std::vector<std::shared_ptr<DAGNode>> Parser::getDeclaredVariables() const{
 		std::vector<std::shared_ptr<DAGNode>> vars;
 		for(auto& var : var_names){
-			vars.emplace_back(node_list[var.second]);
+			vars.emplace_back(node_manager->getNode(var.second));
 		}
 		return vars;
 	}
 	std::shared_ptr<DAGNode> Parser::getVariable(const std::string& var_name){
 		if(var_names.find(var_name) != var_names.end()){
-			return node_list[var_names.at(var_name)];
+			return node_manager->getNode(var_names.at(var_name));
 		}
 		else if(temp_var_names.find(var_name) != temp_var_names.end()){
-			return node_list[temp_var_names.at(var_name)];
+			return node_manager->getNode(temp_var_names.at(var_name));
 		}
-		return NULL_NODE;
+		return NodeManager::NULL_NODE;
 	}
 	std::vector<std::shared_ptr<DAGNode>> Parser::getFunctions() const{
 		std::vector<std::shared_ptr<DAGNode>> funs;
@@ -1301,7 +1265,7 @@ namespace SMTParser{
 		}
 		else if(var_names.find(s) != var_names.end()){
 			// variable name
-			return node_list[var_names[s]];
+			return node_manager->getNode(var_names[s]);
 		}
 		else if(quant_var_map.find(s) != quant_var_map.end()){
 			// quantifier variable name
@@ -1314,11 +1278,11 @@ namespace SMTParser{
 				s[s.size() - 1] == '|' &&
 				var_names.find(s.substr(1, s.size() - 2)) != var_names.end()){
 			// string
-			return node_list[var_names[s.substr(1, s.size() - 2)]];
+			return node_manager->getNode(var_names[s.substr(1, s.size() - 2)]);
 		}
 		else if(var_names.find('|' + s + '|') != var_names.end()){
 			// string
-			return node_list[var_names['|' + s + '|']];
+			return node_manager->getNode(var_names['|' + s + '|']);
 		}
 		// otherwise, it is a constant
 		else if(s == "pi"){
@@ -2464,7 +2428,7 @@ namespace SMTParser{
 		// For declare-fun (uninterpreted functions), create a function application node
 		if(fun->getFuncBody()->isNull()){
 			// Create a function application node with proper structure
-			std::shared_ptr<DAGNode> result = std::make_shared<DAGNode>(fun->getSort(), NODE_KIND::NT_APPLY_UF, fun->getName(), params);
+			std::shared_ptr<DAGNode> result = node_manager->createNode(fun->getSort(), NODE_KIND::NT_APPLY_UF, fun->getName(), params);
 			return result;
 		}
 
@@ -2577,7 +2541,7 @@ namespace SMTParser{
 			return quant_var_map[name];
 		}
 		else{
-			std::shared_ptr<DAGNode> var = std::make_shared<DAGNode>(sort, NODE_KIND::NT_QUANT_VAR, name);
+			std::shared_ptr<DAGNode> var = node_manager->createNode(sort, NODE_KIND::NT_QUANT_VAR, name);
 			quant_var_map.insert(std::pair<std::string, std::shared_ptr<DAGNode>>(name, var));
 			return var;
 		}
@@ -2602,7 +2566,7 @@ namespace SMTParser{
 		parseRpar();
 		std::shared_ptr<DAGNode> body = parseExpr();
 		params.insert(params.begin(), body);
-		std::shared_ptr<DAGNode> res = NULL_NODE;
+		std::shared_ptr<DAGNode> res = NodeManager::NULL_NODE;
 		if (type == "forall") {
 			res = mkForall(params);
 			quant_var_map.clear(); // local variable map
@@ -2767,7 +2731,7 @@ namespace SMTParser{
 	}
 	// error operations
 	std::shared_ptr<DAGNode> Parser::mkErr(const ERROR_TYPE t){
-		return std::make_shared<DAGNode>(NULL_SORT, (NODE_KIND)t);
+		return node_manager->createNode(NODE_KIND::NT_ERROR);
 	}
 	void Parser::err_all(const ERROR_TYPE e, const std::string s, const size_t ln) const {
 		switch (e) {

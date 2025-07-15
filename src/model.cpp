@@ -62,14 +62,14 @@ namespace SMTParser{
         if(model_name_index.find(node->getName()) != model_name_index.end()){
             return model_values[model_name_index[node->getName()]];
         }
-        return UNKNOWN_NODE;
+        return NodeManager::UNKNOWN_NODE;
     }
 
     std::shared_ptr<DAGNode> Model::get(const std::string &name){
         if(model_name_index.find(name) != model_name_index.end()){
             return model_values[model_name_index[name]];
         }
-        return UNKNOWN_NODE;
+        return NodeManager::UNKNOWN_NODE;
     }
 
     void Model::addVar(const std::shared_ptr<DAGNode> &node){
@@ -78,7 +78,7 @@ namespace SMTParser{
         }
         model_name_index[node->getName()] = model_vars.size();
         model_vars.emplace_back(node);
-        model_values.emplace_back(UNKNOWN_NODE);
+        model_values.emplace_back(NodeManager::UNKNOWN_NODE);
     }
 
     bool Model::isFull() const{
@@ -110,7 +110,7 @@ namespace SMTParser{
 
     void Model::clearValues(){
         for(size_t i = 0; i < model_vars.size(); i++){
-            model_values[i] = UNKNOWN_NODE;
+            model_values[i] = NodeManager::UNKNOWN_NODE;
         }
     }
 
