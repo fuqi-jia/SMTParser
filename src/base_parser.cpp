@@ -2194,7 +2194,7 @@ namespace SMTParser{
 		int nesting_level;
 		bool is_complete;
 		
-		LetContext(int level = 0) : nesting_level(level), is_complete(false), result(nullptr), bind_var_list(nullptr) {}
+		LetContext(int level = 0) : result(nullptr), bind_var_list(nullptr), nesting_level(level), is_complete(false) {}
 	};
 
 	// parse let expression preserving the let-binding
