@@ -511,44 +511,49 @@ namespace SMTParser{
         res = "#b" + res;
         return res;
     }
-    std::string BitVectorUtils::bvMul(const std::string& bv1, const std::string& bv2){
-        condAssert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvMul: invalid bitvector");
-        condAssert(bv2[0] == '#' && bv2[1] == 'b', "BitVectorUtils::bvMul: invalid bitvector");
-        std::string bv1_ = bv1.substr(2, bv1.size() - 2);
-        std::string bv2_ = bv2.substr(2, bv2.size() - 2);
-        if(bv1_.size() != bv2_.size()){
-            // add prefix 0 to the shorter one
-            if(bv1_.size() < bv2_.size()){
-                bv1_ = "#b" + std::string(bv2_.size() - bv1_.size(), '0') + bv1_;
-                bv2_ = "#b" + bv2_;
-            }
-            else{
-                bv2_ = "#b" + std::string(bv1_.size() - bv2_.size(), '0') + bv2_;
-                bv1_ = "#b" + bv1_;
-            }
-        }
-        else{
-            bv1_ = "#b" + bv1_;
-            bv2_ = "#b" + bv2_;
-        }
-        std::vector<std::string> partials;
-        for(int i = bv2_.size() - 1; i >= 0; i--){
-            if(bv2_[i] == '1'){
-                std::string partial = bv1_.substr(0, bv2_.size() - i);
-                partial = partial + std::string(i - 1, '0');
-                partial = "#b" + partial;
-                partials.push_back(partial);
+    std::string BitVectorUtils::bvMul(const std::string& bv1, const std::string& bv2) {
+        condAssert(bv1.rfind("#b", 0) == 0, "BitVectorUtils::bvMul: invalid bitvector");
+        condAssert(bv2.rfind("#b", 0) == 0, "BitVectorUtils::bvMul: invalid bitvector");
+    
+        std::string bin1 = bv1.substr(2);
+        std::string bin2 = bv2.substr(2);
+    
+        // Padding to same length
+        size_t N = std::max(bin1.size(), bin2.size());
+        if (bin1.size() < N) bin1 = std::string(N - bin1.size(), '0') + bin1;
+        if (bin2.size() < N) bin2 = std::string(N - bin2.size(), '0') + bin2;
+    
+        // Init result as 0
+        std::vector<int> result(N * 2, 0);
+    
+        // Manual binary multiplication (like pen-and-paper)
+        for (int i = N - 1; i >= 0; --i) {
+            if (bin2[i] == '1') {
+                for (int j = N - 1; j >= 0; --j) {
+                    if (bin1[j] == '1') {
+                        result[i + j + 1] += 1;
+                    }
+                }
             }
         }
-        if(partials.empty()){
-            return "#b" + std::string(bv1_.size() - 2, '0');
+    
+        // Carry handling
+        for (int k = result.size() - 1; k > 0; --k) {
+            if (result[k] >= 2) {
+                result[k - 1] += result[k] / 2;
+                result[k] %= 2;
+            }
         }
-        std::string res = partials[0];
-        for(size_t i = 1; i < partials.size(); i++){
-            res = SMTParser::BitVectorUtils::bvAdd(res, partials[i]);
+    
+        // Convert to binary string
+        std::string resBin;
+        for (int i = result.size() - N; i < result.size(); ++i) {
+            resBin += (result[i] ? '1' : '0');
         }
-        return res;
+    
+        return "#b" + resBin;
     }
+    
 
 
     std::string BitVectorUtils::bvUdiv(const std::string& bv1, const std::string& bv2){

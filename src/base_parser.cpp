@@ -184,6 +184,19 @@ namespace SMTParser{
 	std::vector<std::shared_ptr<Objective>> Parser::getObjectives() const{
 		return objectives;
 	}
+	
+	void Parser::setOption(const std::string& key, const std::string& value){
+		options->setOption(key, value);
+	}
+	void Parser::setOption(const std::string& key, const int& value){
+		options->setOption(key, std::to_string(value));
+	}
+	void  Parser::setOption(const std::string& key, const double& value){
+		options->setOption(key, std::to_string(value));
+	}
+	void Parser::setOption(const std::string& key, const bool& value){
+		options->setOption(key, value?"true":"false");
+	}
 	std::shared_ptr<GlobalOptions> Parser::getOptions() const{
 		return options;
 	}

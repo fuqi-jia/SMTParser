@@ -323,6 +323,16 @@ namespace SMTParser{
          */
         std::vector<std::shared_ptr<Objective>> getObjectives() const;
 
+        /** 
+        * @brief Set global options
+        * 
+        * @return set option value
+        */
+        void setOption(const std::string& key, const std::string& value);
+        void setOption(const std::string& key, const int& value);
+        void setOption(const std::string& key, const double& value);
+        void setOption(const std::string& key, const bool& value);
+
         /**
          * @brief Get global options
          * 

@@ -130,6 +130,18 @@ namespace SMTParser{
 
         void setOption(const std::string& key, const std::string& value) {
             options[key] = value;
+            if(key == "keep_let") {
+                setKeepLet(value == "true");
+            }
+            else if(key == "keep_division"){
+                setKeepDivision(value == "true");
+            }
+            else if(key == "precision"){
+                setEvaluatePrecision((size_t)(std::stoi(value)));
+            }
+            else if(key == "float_evaluate"){
+                setEvaluateUseFloating(value == "true");
+            }
         }
 
         void setInfo(const std::string& key, const std::string& value) {
@@ -179,7 +191,11 @@ namespace SMTParser{
         bool getEvaluateUseFloating() const {
             return evaluate_use_floating;
         }
-        
+
+        void setKeepDivision(bool keep){ keep_division_if_not_divisible = keep; }
+        void setKeepLet(bool keep){ parsing_preserve_let = keep; }
+        bool getKeepDivision() const { return keep_division_if_not_divisible; }
+        bool getKeepLet() const { return parsing_preserve_let; }
     };
 }
 #endif // _OPTIONS_H
