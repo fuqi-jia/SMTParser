@@ -117,50 +117,50 @@ namespace SMTParser{
 	}
 
 	size_t Parser::getNodeCount(){
-		return node_manager->size();
-		// // BFS to count the number of nodes
-		// // only count the nodes in assertions, assumptions, soft_assertions, soft_weights, objectives
-		// std::unordered_set<std::shared_ptr<DAGNode>> visited;
-		// std::queue<std::shared_ptr<DAGNode>> q;
-		// for(size_t i=0;i<assertions.size();i++){
-		// 	auto node = assertions[i];
-		// 	q.push(node);
-		// 	visited.insert(node);
-		// }
-		// for(size_t i=0;i<assumptions.size();i++){
-		// 	for(size_t j=0;j<assumptions[i].size();j++){
-		// 		auto node = assumptions[i][j];
-		// 		q.push(node);
-		// 		visited.insert(node);
-		// 	}
-		// }
-		// for(size_t i=0;i<soft_assertions.size();i++){
-		// 	auto node = soft_assertions[i];
-		// 	q.push(node);
-		// 	visited.insert(node);
-		// }
-		// for(size_t i=0;i<soft_weights.size();i++){
-		// 	auto node = soft_weights[i];
-		// 	q.push(node);
-		// 	visited.insert(node);
-		// }
-		// for(size_t i=0;i<objectives.size();i++){
-		// 	auto node = objectives[i]->getObjectiveTerm();
-		// 	q.push(node);
-		// 	visited.insert(node);
-		// }
-		// while(!q.empty()){
-		// 	auto node = q.front();
-		// 	q.pop();
-		// 	for(size_t i=0;i<node->getChildrenSize();i++){
-		// 		auto child = node->getChild(i);
-		// 		if(visited.find(child) == visited.end()){
-		// 			visited.insert(child);
-		// 			q.push(child);
-		// 		}
-		// 	}
-		// }
-		// return visited.size();
+		// return node_manager->size();
+		// BFS to count the number of nodes
+		// only count the nodes in assertions, assumptions, soft_assertions, soft_weights, objectives
+		std::unordered_set<std::shared_ptr<DAGNode>> visited;
+		std::queue<std::shared_ptr<DAGNode>> q;
+		for(size_t i=0;i<assertions.size();i++){
+			auto node = assertions[i];
+			q.push(node);
+			visited.insert(node);
+		}
+		for(size_t i=0;i<assumptions.size();i++){
+			for(size_t j=0;j<assumptions[i].size();j++){
+				auto node = assumptions[i][j];
+				q.push(node);
+				visited.insert(node);
+			}
+		}
+		for(size_t i=0;i<soft_assertions.size();i++){
+			auto node = soft_assertions[i];
+			q.push(node);
+			visited.insert(node);
+		}
+		for(size_t i=0;i<soft_weights.size();i++){
+			auto node = soft_weights[i];
+			q.push(node);
+			visited.insert(node);
+		}
+		for(size_t i=0;i<objectives.size();i++){
+			auto node = objectives[i]->getObjectiveTerm();
+			q.push(node);
+			visited.insert(node);
+		}
+		while(!q.empty()){
+			auto node = q.front();
+			q.pop();
+			for(size_t i=0;i<node->getChildrenSize();i++){
+				auto child = node->getChild(i);
+				if(visited.find(child) == visited.end()){
+					visited.insert(child);
+					q.push(child);
+				}
+			}
+		}
+		return visited.size();
 	}
 	
 	// to solver
