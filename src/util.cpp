@@ -527,9 +527,9 @@ namespace SMTParser{
         std::vector<int> result(N * 2, 0);
     
         // Manual binary multiplication (like pen-and-paper)
-        for (int i = N - 1; i >= 0; --i) {
+        for (size_t i = N - 1; i >= 0; --i) {
             if (bin2[i] == '1') {
-                for (int j = N - 1; j >= 0; --j) {
+                for (size_t j = N - 1; j >= 0; --j) {
                     if (bin1[j] == '1') {
                         result[i + j + 1] += 1;
                     }
@@ -538,7 +538,7 @@ namespace SMTParser{
         }
     
         // Carry handling
-        for (int k = result.size() - 1; k > 0; --k) {
+        for (size_t k = result.size() - 1; k > 0; --k) {
             if (result[k] >= 2) {
                 result[k - 1] += result[k] / 2;
                 result[k] %= 2;
@@ -547,7 +547,7 @@ namespace SMTParser{
     
         // Convert to binary string
         std::string resBin;
-        for (int i = result.size() - N; i < result.size(); ++i) {
+        for (size_t i = result.size() - N; i < result.size(); ++i) {
             resBin += (result[i] ? '1' : '0');
         }
     
