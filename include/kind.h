@@ -29,6 +29,7 @@
 #define _TYPES_H
 
 #include <string>
+#include <unordered_set>
 
 namespace SMTParser{
     // common types
@@ -126,6 +127,26 @@ namespace SMTParser{
         NT_FUNC_DEF, // define-fun
         NT_FUNC_PARAM, // function parameter
         NT_FUNC_APPLY, // function application
+        // NUM_KINDS
+        NUM_KINDS
+    };
+    // NOTE: the last one is the number of kinds
+    constexpr size_t NUM_KINDS = static_cast<size_t>(NODE_KIND::NUM_KINDS);
+    const std::unordered_set<NODE_KIND> static_kinds = {
+        NODE_KIND::NT_NULL,
+        NODE_KIND::NT_UNKNOWN,
+        NODE_KIND::NT_ERROR,
+        NODE_KIND::NT_CONST_TRUE,
+        NODE_KIND::NT_CONST_FALSE,
+        NODE_KIND::NT_CONST_E,
+        NODE_KIND::NT_CONST_PI,
+        NODE_KIND::NT_NAN,
+        NODE_KIND::NT_EPSILON,
+        NODE_KIND::NT_POS_EPSILON,
+        NODE_KIND::NT_NEG_EPSILON,
+        NODE_KIND::NT_INFINITY,
+        NODE_KIND::NT_POS_INFINITY,
+        NODE_KIND::NT_NEG_INFINITY
     };
 
     std::string kindToString(const NODE_KIND& nk);

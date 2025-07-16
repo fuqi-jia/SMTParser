@@ -96,13 +96,13 @@ namespace SMTParser {
         if(cnf_atom_map.find(bool_var) != cnf_atom_map.end()){
             return cnf_atom_map[bool_var];
         }
-        return NULL_NODE;
+        return NodeManager::NULL_NODE;
     }
     std::shared_ptr<DAGNode> Parser::getTExplanation(std::shared_ptr<DAGNode> expr) {
         if(cnf_atom_map.find(expr) != cnf_atom_map.end()){
             return cnf_atom_map[expr];
         }
-        return NULL_NODE;
+        return NodeManager::NULL_NODE;
     }
     bool Parser::isTAbstraction(std::shared_ptr<DAGNode> expr) {
         if(cnf_atom_map.find(expr) != cnf_atom_map.end()){
@@ -136,7 +136,7 @@ namespace SMTParser {
         if(cnf_bool_var_map.find(atom) != cnf_bool_var_map.end()){
             return cnf_bool_var_map[atom];
         }
-        return NULL_NODE;
+        return NodeManager::NULL_NODE;
     }
     std::vector<std::shared_ptr<DAGNode>> Parser::getCNFBoolVars() {
         std::vector<std::shared_ptr<DAGNode>> bool_vars;
@@ -1629,14 +1629,14 @@ namespace SMTParser {
             return visited[expr];
         }
         if(nodes.find(expr) != nodes.end()){
-            return NULL_NODE;
+            return NodeManager::NULL_NODE;
         }
         bool is_changed = false;
         std::vector<std::shared_ptr<DAGNode>> children;
         for(size_t i = 0; i < expr->getChildrenSize(); i++){
             std::shared_ptr<DAGNode> child = expr->getChild(i);
             std::shared_ptr<DAGNode> removed_child = remove(child, nodes, visited);
-            if(removed_child != NULL_NODE){
+            if(removed_child != NodeManager::NULL_NODE){
                 children.emplace_back(removed_child);
             }
             else{

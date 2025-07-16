@@ -48,6 +48,7 @@ namespace SMTParser{
         static bool isFP(const std::string& str);
         static bool isString(const std::string& str);
         static bool isScientificNotation(const std::string& str);
+        static bool isNumber(const std::string& str);
     };
 
     // Mathematical utilities

@@ -42,9 +42,9 @@ namespace SMTParser{
     bool isArrayParam(std::shared_ptr<DAGNode> param){return param->getSort()->isArray();}
 
     // mk operations
-    std::shared_ptr<DAGNode> Parser::mkTrue() { return TRUE_NODE; }
-    std::shared_ptr<DAGNode> Parser::mkFalse() { return FALSE_NODE; }
-    std::shared_ptr<DAGNode> Parser::mkUnknown() { return UNKNOWN_NODE; }
+    std::shared_ptr<DAGNode> Parser::mkTrue() { return NodeManager::TRUE_NODE; }
+    std::shared_ptr<DAGNode> Parser::mkFalse() { return NodeManager::FALSE_NODE; }
+    std::shared_ptr<DAGNode> Parser::mkUnknown() { return NodeManager::UNKNOWN_NODE; }
     // mk oper 
     bool isCommutative(const NODE_KIND t){
         switch(t){
@@ -167,16 +167,7 @@ namespace SMTParser{
             params = sortParams(p);
         }
         
-        // check if the node is already in the node_list
-        std::shared_ptr<DAGNode> newnode = std::make_shared<DAGNode>(sort, t, kindToString(t), params);
-        if(complex_node_map.find(newnode)!=complex_node_map.end()){
-            return node_list[complex_node_map[newnode]];
-        }
-        else{
-            complex_node_map.insert(std::pair<std::shared_ptr<SMTParser::DAGNode>, size_t>(newnode, node_list.size()));
-            node_list.emplace_back(newnode);
-            return newnode;
-        }
+        return node_manager->createNode(sort, t, kindToString(t), params);
     }
 
     // mk function
@@ -193,13 +184,13 @@ namespace SMTParser{
             std::vector<std::shared_ptr<DAGNode>> children;
             for(auto &param: params){
                 // TODO, a random name and not record it.
-                std::shared_ptr <DAGNode> param_node = std::make_shared<DAGNode>(param, NODE_KIND::NT_FUNC_PARAM, param->toString());
+                std::shared_ptr <DAGNode> param_node = node_manager->createNode(param, NODE_KIND::NT_FUNC_PARAM, param->toString());
                 children.emplace_back(param_node);
             }
-            // add a NULL_NODE to represent the function body.
-            children.insert(children.begin(), NULL_NODE);
+            // add a NodeManager::NULL_NODE to represent the function body.
+            children.insert(children.begin(), NodeManager::NULL_NODE);
 
-            std::shared_ptr<DAGNode> func = std::make_shared<DAGNode>(out_sort, NODE_KIND::NT_FUNC_DEC, name, children);
+            std::shared_ptr<DAGNode> func = node_manager->createNode(out_sort, NODE_KIND::NT_FUNC_DEC, name, children);
             fun_key_map.insert(std::pair<std::string, std::shared_ptr<DAGNode>>(name, func));
             return func;
         }
@@ -233,7 +224,7 @@ namespace SMTParser{
             for(auto &param: params){
                 children.emplace_back(param);
             }
-            std::shared_ptr<DAGNode> func = std::make_shared<DAGNode>(out_sort, NODE_KIND::NT_FUNC_DEF, name, children);
+            std::shared_ptr<DAGNode> func = node_manager->createNode(out_sort, NODE_KIND::NT_FUNC_DEF, name, children);
             fun_key_map.insert(std::pair<std::string, std::shared_ptr<DAGNode>>(name, func));
             return func;
         }
@@ -461,7 +452,7 @@ namespace SMTParser{
         else{
             std::vector<std::shared_ptr<DAGNode>> children;
             children.emplace_back(expr);
-            std::shared_ptr<DAGNode> new_var = std::make_shared<DAGNode>(expr->getSort(), NODE_KIND::NT_LET_BIND_VAR, name, children);
+            std::shared_ptr<DAGNode> new_var = node_manager->createNode(expr->getSort(), NODE_KIND::NT_LET_BIND_VAR, name, children);
             preserving_let_key_map.insert(std::pair<std::string, std::shared_ptr<DAGNode>>(name, new_var));
             return new_var;
         }
@@ -472,7 +463,7 @@ namespace SMTParser{
         
         // Use the sort of the first binding variable for the list
         std::shared_ptr<Sort> list_sort = bind_vars[0]->getSort();
-        return std::make_shared<DAGNode>(list_sort, NODE_KIND::NT_LET_BIND_VAR_LIST, "", bind_vars);
+        return node_manager->createNode(list_sort, NODE_KIND::NT_LET_BIND_VAR_LIST, "", bind_vars);
     }
 
     std::shared_ptr<DAGNode> Parser::mkLetChain(const std::vector<std::shared_ptr<DAGNode>>& bind_var_lists, const std::shared_ptr<DAGNode>& body){
@@ -487,20 +478,12 @@ namespace SMTParser{
         }
         children.emplace_back(body);
         
-        return std::make_shared<DAGNode>(body->getSort(), NODE_KIND::NT_LET_CHAIN, "", children);
+        return node_manager->createNode(body->getSort(), NODE_KIND::NT_LET_CHAIN, "", children);
     }
 
     std::shared_ptr<DAGNode> Parser::mkConstInt(const Integer &v){
         std::string v_str = ConversionUtils::toString(v);
-        if(constants_int.find(v_str) != constants_int.end()){
-            return node_list[constants_int[v_str]];
-        }
-        else{
-            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(INTOREAL_SORT, v);
-            constants_int.insert(std::pair<std::string, size_t>(v_str, node_list.size()));
-            node_list.emplace_back(newconst);
-            return newconst;
-        }
+        return node_manager->createNode(INTOREAL_SORT, NODE_KIND::NT_CONST, v_str);
     }
     std::shared_ptr<DAGNode> Parser::mkConstInt(const std::string &v){
         return mkConstInt(Integer(v));
@@ -513,53 +496,21 @@ namespace SMTParser{
     }
     std::shared_ptr<DAGNode> Parser::mkConstReal(const std::string &v){
         condAssert(TypeChecker::isReal(v) || v == "e" || v == "pi", "mkConstReal: invalid real constant");
-        if(v == "e") return E_NODE;
-        if(v == "pi") return PI_NODE;
-        if(constants_real.find(v) != constants_real.end()){
-            return node_list[constants_real[v]];
-        }
-        else{
-            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(REAL_SORT, NODE_KIND::NT_CONST, v);
-            constants_real.insert(std::pair<std::string, size_t>(v, node_list.size()));
-            node_list.emplace_back(newconst);
-            return newconst;
-        }
+        if(v == "e") return NodeManager::E_NODE;
+        if(v == "pi") return NodeManager::PI_NODE;
+        return node_manager->createNode(REAL_SORT, NODE_KIND::NT_CONST, v);
     }
     std::shared_ptr<DAGNode> Parser::mkConstReal(const Real &v){
         std::string v_str = ConversionUtils::toString(v);
-        if(constants_real.find(v_str) != constants_real.end()){
-            return node_list[constants_real[v_str]];
-        }
-        else{
-            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(REAL_SORT, v);
-            constants_real.insert(std::pair<std::string, size_t>(v_str, node_list.size()));
-            node_list.emplace_back(newconst);
-            return newconst;
-        }
+        return node_manager->createNode(REAL_SORT, NODE_KIND::NT_CONST, v_str);
     }
     std::shared_ptr<DAGNode> Parser::mkConstReal(const double &v){
         std::string v_str = std::to_string(v);
-        if(constants_real.find(v_str) != constants_real.end()){
-            return node_list[constants_real[v_str]];
-        }
-        else{
-            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(REAL_SORT, NODE_KIND::NT_CONST, v_str);
-            constants_real.insert(std::pair<std::string, size_t>(v_str, node_list.size()));
-            node_list.emplace_back(newconst);
-            return newconst;
-        }
+        return node_manager->createNode(REAL_SORT, NODE_KIND::NT_CONST, v_str);
     }
     std::shared_ptr<DAGNode> Parser::mkConstReal(const Integer &v){
         std::string v_str = ConversionUtils::toString(v);
-        if(constants_real.find(v_str) != constants_real.end()){
-            return node_list[constants_real[v_str]];
-        }
-        else{
-            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(REAL_SORT, NODE_KIND::NT_CONST, v_str);
-            constants_real.insert(std::pair<std::string, size_t>(v_str, node_list.size()));
-            node_list.emplace_back(newconst);
-            return newconst;
-        }
+        return node_manager->createNode(REAL_SORT, NODE_KIND::NT_CONST, v_str);
     }
     std::shared_ptr<DAGNode> Parser::mkConstReal(const Number& v){
         return mkConstReal(v.toReal());
@@ -572,16 +523,7 @@ namespace SMTParser{
             processed_v = ConversionUtils::unescapeString(v.substr(1, v.length()-2));
             processed_v = "\"" + ConversionUtils::escapeString(processed_v) + "\"";
         }
-        
-        if(constants_str.find(processed_v) != constants_str.end()){
-            return node_list[constants_str[processed_v]];
-        }
-        else{
-            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(STR_SORT, NODE_KIND::NT_CONST, processed_v);
-            constants_str.insert(std::pair<std::string, size_t>(processed_v, node_list.size()));
-            node_list.emplace_back(newconst);
-            return newconst;
-        }
+        return node_manager->createNode(STR_SORT, NODE_KIND::NT_CONST, processed_v);
     }
     std::shared_ptr<DAGNode> Parser::mkConstBv(const std::string &v, const size_t& width){
         std::string sort_key_name = "BV_" + std::to_string(width);
@@ -594,16 +536,7 @@ namespace SMTParser{
             sort = sort_key_map[sort_key_name];
         }
         std::string bv_v = BitVectorUtils::natToBv(v, width);
-
-        if(constants_bv.find(bv_v) != constants_bv.end()){
-            return node_list[constants_bv[bv_v]];
-        }
-        else{
-            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(sort, NODE_KIND::NT_CONST, bv_v);
-            constants_bv.insert(std::pair<std::string, size_t>(bv_v, node_list.size()));
-            node_list.emplace_back(newconst);
-            return newconst;
-        }
+        return node_manager->createNode(sort, NODE_KIND::NT_CONST, bv_v);
     }
     std::shared_ptr<DAGNode> Parser::mkConstFp(const std::string &v, const size_t& e, const size_t& s){
         std::string sort_key_name = "FP_" + std::to_string(e) + "_" + std::to_string(s);
@@ -615,27 +548,10 @@ namespace SMTParser{
         else{
             sort = sort_key_map[sort_key_name];
         }
-
-        if(constants_fp.find(v) != constants_fp.end()){
-            return node_list[constants_fp[v]];
-        }
-        else{
-            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(sort, NODE_KIND::NT_CONST, v);
-            constants_fp.insert(std::pair<std::string, size_t>(v, node_list.size()));
-            node_list.emplace_back(newconst);
-            return newconst;
-        }
+        return node_manager->createNode(sort, NODE_KIND::NT_CONST, v);
     }
     std::shared_ptr<DAGNode> Parser::mkConstReg(const std::string &v){
-        if(constants_reg.find(v) != constants_reg.end()){
-            return node_list[constants_reg[v]];
-        }
-        else{
-            std::shared_ptr<DAGNode> newconst = std::make_shared<DAGNode>(REG_SORT, NODE_KIND::NT_CONST, v);
-            constants_reg.insert(std::pair<std::string, size_t>(v, node_list.size()));
-            node_list.emplace_back(newconst);
-            return newconst;
-        }
+        return node_manager->createNode(REG_SORT, NODE_KIND::NT_CONST, v);
     }
     
     // VAR
@@ -645,20 +561,18 @@ namespace SMTParser{
             err_all(ERROR_TYPE::ERR_PARAM_MIS, "Temp variable name already exists", line_number);
             return mkUnknown();
         }
-        std::shared_ptr<DAGNode> newvar = std::make_shared<DAGNode>(sort, NODE_KIND::NT_TEMP_VAR, temp_var_name);
-        temp_var_names.insert(std::pair<std::string, size_t>(temp_var_name, node_list.size()));
-        node_list.emplace_back(newvar);
+        std::shared_ptr<DAGNode> newvar = node_manager->createNode(sort, NODE_KIND::NT_TEMP_VAR, temp_var_name);
+        temp_var_names.insert(std::pair<std::string, size_t>(temp_var_name, node_manager->getIndex(newvar)));
         return newvar;
     }
     std::shared_ptr<DAGNode> Parser::mkVar(const std::shared_ptr<Sort>& sort, const std::string &name){
         if(var_names.find(name)!=var_names.end()){
             // multiple declarations
-            return node_list[var_names[name]];
+            return node_manager->getNode(var_names[name]);
         }
         else{
-            std::shared_ptr<DAGNode> newvar = std::make_shared<DAGNode>(sort, NODE_KIND::NT_VAR, name);
-            var_names.insert(std::pair<std::string, size_t>(name, node_list.size()));
-            node_list.emplace_back(newvar);
+            std::shared_ptr<DAGNode> newvar = node_manager->createNode(sort, NODE_KIND::NT_VAR, name);
+            var_names.insert(std::pair<std::string, size_t>(name, node_manager->getIndex(newvar)));
             return newvar;
         }
     }
@@ -702,7 +616,7 @@ namespace SMTParser{
         return mkVar(REG_SORT, name);
     }
     std::shared_ptr<DAGNode> Parser::mkFunParamVar(std::shared_ptr<Sort> sort, const std::string &name){
-        std::shared_ptr<DAGNode> newvar = std::make_shared<DAGNode>(sort, NODE_KIND::NT_FUNC_PARAM, name);
+        std::shared_ptr<DAGNode> newvar = node_manager->createNode(sort, NODE_KIND::NT_FUNC_PARAM, name);
         // do not insert into variables
         // it is a function parameter
         return newvar;
@@ -1643,6 +1557,8 @@ namespace SMTParser{
     std::shared_ptr<DAGNode> Parser::mkGe(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         
         if(!l->getSort()->isEqTo(r->getSort())) {
+            std::cout<<l->toString()<<" "<<r->toString()<<std::endl;
+            std::cout<<l->getSort()->toString()<<" "<<r->getSort()->toString()<<std::endl;
             if(canExempt(l->getSort(), r->getSort())){
                 std::cerr << "Type mismatch in ge, but now exempt for int/real"<<std::endl;
             }
@@ -1881,20 +1797,20 @@ namespace SMTParser{
     }
     // ARITHMATIC CONSTANTS
     std::shared_ptr<DAGNode> Parser::mkPi(){
-        return PI_NODE;
+        return NodeManager::PI_NODE;
     }
     std::shared_ptr<DAGNode> Parser::mkE(){
-        return E_NODE;
+        return NodeManager::E_NODE;
     }
     std::shared_ptr<DAGNode> Parser::mkInfinity(std::shared_ptr<Sort> sort){
         if(sort->isEqTo(STR_SORT)){
-            return STR_INF_NODE;
+            return NodeManager::STR_INF_NODE;
         }
         else if(sort->isEqTo(INT_SORT)){
-            return INT_INF_NODE;
+            return NodeManager::INT_INF_NODE;
         }
         else if(sort->isEqTo(REAL_SORT)){
-            return REAL_INF_NODE;
+            return NodeManager::REAL_INF_NODE;
         }
         else{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in infinity", line_number);
@@ -1903,13 +1819,13 @@ namespace SMTParser{
     }
     std::shared_ptr<DAGNode> Parser::mkPosInfinity(std::shared_ptr<Sort> sort){
         if(sort->isEqTo(STR_SORT)){
-            return STR_POS_INF_NODE;
+            return NodeManager::STR_POS_INF_NODE;
         }
         else if(sort->isEqTo(INT_SORT)){
-            return INT_POS_INF_NODE;
+            return NodeManager::INT_POS_INF_NODE;
         }
         else if(sort->isEqTo(REAL_SORT)){
-            return REAL_POS_INF_NODE;
+            return NodeManager::REAL_POS_INF_NODE;
         }
         else{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in pos_infinity", line_number);
@@ -1918,13 +1834,13 @@ namespace SMTParser{
     }
     std::shared_ptr<DAGNode> Parser::mkNegInfinity(std::shared_ptr<Sort> sort){
         if(sort->isEqTo(STR_SORT)){
-            return STR_NEG_INF_NODE;
+            return NodeManager::STR_NEG_INF_NODE;
         }
         else if(sort->isEqTo(INT_SORT)){
-            return INT_NEG_INF_NODE;
+            return NodeManager::INT_NEG_INF_NODE;
         }
         else if(sort->isEqTo(REAL_SORT)){
-            return REAL_NEG_INF_NODE;
+            return NodeManager::REAL_NEG_INF_NODE;
         }
         else{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in neg_infinity", line_number);
@@ -1932,16 +1848,16 @@ namespace SMTParser{
         }
     }
     std::shared_ptr<DAGNode> Parser::mkNan(){
-        return NAN_NODE;
+        return NodeManager::NAN_NODE;
     }
     std::shared_ptr<DAGNode> Parser::mkEpsilon(){
-        return EPSILON_NODE;
+        return NodeManager::EPSILON_NODE;
     }
     std::shared_ptr<DAGNode> Parser::mkPosEpsilon(){
-        return POS_EPSILON_NODE;
+        return NodeManager::POS_EPSILON_NODE;
     }
     std::shared_ptr<DAGNode> Parser::mkNegEpsilon(){
-        return NEG_EPSILON_NODE;
+        return NodeManager::NEG_EPSILON_NODE;
     }
     // ARITHMATIC FUNCTIONS
     // /*

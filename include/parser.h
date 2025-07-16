@@ -121,10 +121,13 @@ namespace SMTParser{
         size_t 	                                line_number;
         SCAN_MODE 		                        scan_mode;
         size_t                                  preserving_let_counter; // only used in preserving let mode
-        LET_MODE 		            current_let_mode; // only used in preserving let mode
+        LET_MODE 		                        current_let_mode; // only used in preserving let mode
         size_t                                  let_nesting_depth; // track let nesting depth
 
         bool                                    parsing_file;
+
+        // node manager
+        std::shared_ptr<NodeManager>            node_manager;
 
         std::unordered_map<std::string, std::shared_ptr<DAGNode>> 
                                                 let_key_map; // local variables, no need to hash store
@@ -140,37 +143,17 @@ namespace SMTParser{
                                                 quant_var_map;
         std::vector<std::shared_ptr<DAGNode>>   static_functions; // static functions without substitution
 
-        // FOL binding
-
-        // node list
-        std::vector<std::shared_ptr<DAGNode>>         node_list;
         // variable name list
         std::unordered_map<std::string, size_t>       var_names;
-        // const node
-        std::unordered_map<std::string, size_t>       constants_real;
-        std::unordered_map<std::string, size_t>       constants_int;
-        std::unordered_map<std::string, size_t>       constants_str;
-        std::unordered_map<std::string, size_t>       constants_bv;
-        std::unordered_map<std::string, size_t>       constants_fp;
-        std::unordered_map<std::string, size_t>       constants_reg;
-        std::unordered_map<std::string, size_t>       constants_array;
-        std::unordered_map<std::string, size_t>       constants_map;
-        std::unordered_map<std::string, size_t>       constants_seq;
-        std::unordered_map<std::string, size_t>       constants_tuple;
-        std::unordered_map<std::string, size_t>       constants_record;
-        std::unordered_map<std::string, size_t>       constants_union;
-        
-
-        // temp var name list
+        // temp var
         size_t temp_var_counter;
         std::unordered_map<std::string, size_t>       temp_var_names;
+
+        // temp var name list
         // function name list
         std::vector<std::string>                      function_names;
         // global options
         std::shared_ptr<GlobalOptions>                  options;
-        // hash value list
-        std::unordered_map<std::shared_ptr<DAGNode>, size_t, NodeHash, NodeEqual>
-                                                        complex_node_map;
         // (define-objective name single_opt)
         std::unordered_map<std::string, std::shared_ptr<Objective>> 
                                                         objective_map;
@@ -3237,7 +3220,7 @@ namespace SMTParser{
         /**
          * @brief Get the original atom from the CNF atom
          * 
-         * @note If the bool_var is not a CNF atom, the function will return NULL_NODE.
+         * @note If the bool_var is not a CNF atom, the function will return NodeManager::NULL_NODE.
          * 
          * @param bool_var Boolean variable
          * @return Original atom
@@ -3273,7 +3256,7 @@ namespace SMTParser{
         /**
          * @brief Get the CNF variable from the original atom
          * 
-         * @note If the atom is not a CNF variable, the function will return NULL_NODE.
+         * @note If the atom is not a CNF variable, the function will return NodeManager::NULL_NODE.
          * 
          * @param atom Original atom
          * @return CNF variable
