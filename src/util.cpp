@@ -527,11 +527,11 @@ namespace SMTParser{
         std::vector<int> result(N * 2, 0);
     
         // Manual binary multiplication (like pen-and-paper)
-        for (size_t i = N - 1; i >= 0; --i) {
-            if (bin2[i] == '1') {
-                for (size_t j = N - 1; j >= 0; --j) {
-                    if (bin1[j] == '1') {
-                        result[i + j + 1] += 1;
+        for (size_t i = N; i > 0; --i) {
+            if (bin2[i - 1] == '1') {
+                for (size_t j = N; j > 0; --j) {
+                    if (bin1[j - 1] == '1') {
+                        result[i - 1 + j - 1 + 1] += 1;
                     }
                 }
             }
