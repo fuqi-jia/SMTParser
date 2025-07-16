@@ -29,8 +29,28 @@ namespace SMTParser{
     // State of the parser
     enum class FrameState {
         Start,
-        ProcessingArgs,
+        ReadingHead,           // 正在读取头部符号
+        ProcessingArgs,        // 正在处理普通参数
+        ProcessingSpecial,     // 正在处理特殊语法
+        ProcessingParams,      // 正在处理参数列表
+        ProcessingBindings,    // 正在处理let绑定
+        ProcessingLetBody,     // 正在处理let体
+        ProcessingQuantVars,   // 正在处理量词变量
+        ProcessingQuantBody,   // 正在处理量词体
+        ProcessingParamFuncArgs, // 正在处理参数化函数的参数
+        ProcessingParamFuncParams, // 正在处理参数化函数的参数
         Finish
+    };
+
+    // 特殊处理类型
+    enum class SpecialType {
+        None,
+        Let,
+        Exists,
+        Forall,
+        ParamFunc,
+        BV,
+        Underscore
     };
 
 	// struct for let context
@@ -44,174 +64,228 @@ namespace SMTParser{
 		
 		LetContext(int level = 0) : result(nullptr), bind_var_list(nullptr), nesting_level(level), is_complete(false) {}
 	};
+
     // Frame of the parser
-    struct ParseFrame {
+    struct ExprFrame {
         FrameState state;
+        SpecialType special_type;
         std::string headSymbol;  // symbol of the head of the frame
         std::vector<std::shared_ptr<DAGNode>> args;
+        std::vector<std::shared_ptr<DAGNode>> params;  // for parameterized functions
         size_t argIndex = 0;     // index of the current argument
+        size_t paramIndex = 0;   // index of the current parameter
         int line;                // line number of the frame
         LetContext let_context;  // let context of the frame
+        
+        // 用于特殊处理的额外数据
+        std::string second_symbol;  // 用于存储第二个符号
+        std::string width_str;      // 用于bitvector宽度
+        size_t width;               // 用于bitvector宽度
+        bool reading_inner_paren = false;  // 是否在读取内部括号
+        
+        ExprFrame() : state(FrameState::Start), special_type(SpecialType::None), 
+                     argIndex(0), paramIndex(0), line(0), width(0) {}
     };
     
 	// expr ::= const | func | (<identifier> <expr>+)
+	// 原来的递归版本，现在调用迭代版本
 	std::shared_ptr<DAGNode> Parser::parseExpr() {
-
-		// const | func
-		if (*bufptr != '(') {
-			//const | func
-
-			size_t expr_ln = line_number;
-			std::string s = getSymbol();
-
-			std::shared_ptr<DAGNode> expr = parseConstFunc(s);
-			if(expr->isErr()) err_unkwn_sym(s, expr_ln);
-			return expr;
-		}
-
-		// (<identifier> <expr>+)
-		// ((_ f args) <expr>+)
-		parseLpar();
-		std::shared_ptr<DAGNode> expr = nullptr;
-		size_t expr_ln = line_number;
-		if(*bufptr == '('){
-			parseLpar();
-			// ((_ f args) <expr>+)
-			std::string s = getSymbol();
-			if(s == "_"){
-				// (_ f args): a function with parameters
-				// ((_ f args) param) 
-				std::string f = getSymbol();
-				std::vector<std::shared_ptr<DAGNode>> args = parseParams();
-				parseRpar();
-				std::vector<std::shared_ptr<DAGNode>> params = parseParams();
-				expr = parseParamFunc(f, args, params);
-			}
-			if(!expr || expr->isErr()) err_unkwn_sym(s, expr_ln);
-		}
-		else{
-			// (<identifier> <expr>+)
-			std::string s = getSymbol();
-			if(s == "exists"){
-				expr = parseQuant("exists");
-			}
-			else if(s == "forall"){
-				expr = parseQuant("forall");
-			}
-			//parse identifier and get params
-			else if(s == "_"){
-				// ( _ <identifier> <expr>+)
-				//     ^
-				std::string s = getSymbol();
-				if(s[0] == 'b' && s[1] == 'v'){
-					// e.g. (_ bv13 32)
-					std::string num = s.substr(2);
-					std::string width_ = getSymbol();
-					size_t width = std::stoi(width_);
-					expr = mkConstBv(num, width);
-				}
-			}
-			else if (s == "let") {
-				// LET Mode - use nesting depth to track let state
-				if(let_nesting_depth == 0){
-					// Entering the outermost let
-					current_let_mode = LET_MODE::LM_START_LET;
-					preserving_let_counter += 1;
-				}
-				else if(current_let_mode == LET_MODE::LM_START_LET){
-					current_let_mode = LET_MODE::LM_IN_LET;
-				}
-				// Increment nesting depth for any let
-				let_nesting_depth++;
-
-				if(options->parsing_preserve_let){
-					expr = parsePreservingLet();
-				}
-				else{
-					expr = parseLet();
-				}
-				
-				// Decrement nesting depth when let parsing is complete
-				let_nesting_depth--;
-				
-				// Only reset let mode when completely out of all lets
-				if(let_nesting_depth == 0){
-					current_let_mode = LET_MODE::LM_NON_LET;
-				}
-				
-				if (expr->isErr())
-					err_all(expr, "let", expr_ln);
-			}
-			else {
-				std::vector<std::shared_ptr<DAGNode>> params = parseParams();
-				expr = parseOper(s, params);
-
-				// check error
-				if (expr->isErr()) err_all(expr, s, expr_ln);
-			}
-		}
-		parseRpar();
-
-		return expr;
+		return parseExprIterative();
 	}
 
     std::shared_ptr<DAGNode> Parser::parseExprIterative() {
-        std::stack<ParseFrame> callStack;
+        std::stack<ExprFrame> callStack;
         std::stack<std::shared_ptr<DAGNode>> resultStack;
-    
-        while (true) {
-            if (*bufptr != '(') {
-                //const | func
-                // handle const or func with no args
-                size_t expr_ln = line_number;
-                std::string s = getSymbol();
-    
-                std::shared_ptr<DAGNode> expr = parseConstFunc(s);
-                if(expr->isErr()) err_unkwn_sym(s, expr_ln);
-                resultStack.push(expr);
-                if (callStack.empty()) break;
-                continue;
-            }
-    
-            // start of a compound expression
-		    parseLpar();
-    
-            std::string head = getSymbol();  // e.g. and, +, let, exists, etc.
-            ParseFrame frame;
-            frame.state = FrameState::ProcessingArgs;
-            frame.headSymbol = head;
-            frame.line = line_number;
-            callStack.push(frame);
-    
-            // continue to read arguments
-            while (!callStack.empty()) {
-                ParseFrame& top = callStack.top();
-                if (top.state == FrameState::ProcessingArgs) {
-                    skipWhitespace();
-                    if (*bufptr == ')') {
-                        parseRpar(); // consume ')'
-                        auto node = makeNode(top.headSymbol, top.args);
+        
+        // 初始调用
+        callStack.push(ExprFrame());
+        
+        while (!callStack.empty()) {
+            ExprFrame& frame = callStack.top();
+            
+            if (frame.state == FrameState::Start) {
+                // 开始处理新表达式
+                if (*bufptr != '(') {
+                    // 常量或函数
+                    size_t expr_ln = line_number;
+                    std::string s = getSymbol();
+                    
+                    std::shared_ptr<DAGNode> expr = parseConstFunc(s);
+                    if(expr->isErr()) err_unkwn_sym(s, expr_ln);
+                    
+                    resultStack.push(expr);
+                    callStack.pop();
+                    continue;
+                }
+                
+                // 复合表达式
+                parseLpar();
+                frame.line = line_number;
+                
+                // 检查内部括号
+                if (*bufptr == '(') {
+                    // ((_ f args) <expr>+) 形式
+                    parseLpar();
+                    std::string s = getSymbol();
+                    if (s == "_") {
+                        frame.special_type = SpecialType::ParamFunc;
+                        frame.second_symbol = getSymbol(); // 函数名
+                        frame.state = FrameState::ProcessingParamFuncArgs;
+                        continue;
+                    } else {
+                        err_unkwn_sym(s, frame.line);
+                        resultStack.push(mkErr(ERROR_TYPE::ERR_UNKWN_SYM));
                         callStack.pop();
-                        resultStack.push(node);
                         continue;
                     }
-    
-                    // otherwise, read a sub-expression
-                    top.state = FrameState::ProcessingArgs;
-                    callStack.push(ParseFrame{FrameState::Start});  // new expr sub-item
-                    break;  // enter the next round of processing
-                } else if (top.state == FrameState::Start) {
-                    // get the just processed sub-expression from resultStack
-                    auto arg = resultStack.top(); resultStack.pop();
-                    callStack.pop();
-                    callStack.top().args.push_back(arg);  // push to the upper frame
                 }
+                
+                // 读取头部符号
+                std::string head = getSymbol();
+                frame.headSymbol = head;
+                
+                if (head == "exists" || head == "forall") {
+                    // 量词表达式 - 暂时用递归处理
+                    std::shared_ptr<DAGNode> result = parseQuant(head);
+                    parseRpar();
+                    resultStack.push(result);
+                    callStack.pop();
+                } else if (head == "_") {
+                    // (_ <identifier> <expr>+) 形式
+                    std::string second = getSymbol();
+                    if (second.size() >= 2 && second[0] == 'b' && second[1] == 'v') {
+                        // (_ bv13 32) 形式
+                        std::string width_str = getSymbol();
+                        size_t width = std::stoi(width_str);
+                        std::string num = second.substr(2);
+                        auto expr = mkConstBv(num, width);
+                        parseRpar();
+                        resultStack.push(expr);
+                        callStack.pop();
+                    } else {
+                        // 其他下划线情况 - 继续处理参数
+                        frame.second_symbol = second;
+                        frame.state = FrameState::ProcessingArgs;
+                    }
+                } else if (head == "let") {
+                    // let表达式 - 暂时用递归处理
+                    if(let_nesting_depth == 0){
+                        current_let_mode = LET_MODE::LM_START_LET;
+                        preserving_let_counter += 1;
+                    } else if(current_let_mode == LET_MODE::LM_START_LET){
+                        current_let_mode = LET_MODE::LM_IN_LET;
+                    }
+                    let_nesting_depth++;
+                    
+                    std::shared_ptr<DAGNode> result;
+                    if(options->parsing_preserve_let){
+                        result = parsePreservingLet();
+                    } else {
+                        result = parseLet();
+                    }
+                    
+                    let_nesting_depth--;
+                    if(let_nesting_depth == 0){
+                        current_let_mode = LET_MODE::LM_NON_LET;
+                    }
+                    
+                    if (result->isErr())
+                        err_all(result, "let", frame.line);
+                    
+                    parseRpar();
+                    resultStack.push(result);
+                    callStack.pop();
+                } else {
+                    // 普通运算符
+                    frame.state = FrameState::ProcessingArgs;
+                }
+                continue;
             }
-    
-            if (callStack.empty()) break;
+            
+            if (frame.state == FrameState::ProcessingArgs) {
+                skipWhitespace();
+                if (*bufptr == ')') {
+                    // 参数读取完毕，创建节点
+                    parseRpar();
+                    
+                    std::shared_ptr<DAGNode> result;
+                    if (frame.headSymbol == "_") {
+                        // 下划线运算符需要特殊处理
+                        // 这里简化处理，可以根据second_symbol进一步分类
+                        result = parseOper(frame.second_symbol, frame.args);
+                    } else {
+                        result = parseOper(frame.headSymbol, frame.args);
+                    }
+                    
+                    if (result->isErr()) err_all(result, frame.headSymbol, frame.line);
+                    
+                    resultStack.push(result);
+                    callStack.pop();
+                    continue;
+                }
+                
+                // 需要读取下一个参数
+                callStack.push(ExprFrame()); // 新的子表达式
+                continue;
+            }
+            
+            if (frame.state == FrameState::ProcessingParamFuncArgs) {
+                skipWhitespace();
+                if (*bufptr == ')') {
+                    // 内部参数读取完毕
+                    parseRpar();
+                    frame.state = FrameState::ProcessingParamFuncParams;
+                    continue;
+                }
+                
+                // 读取参数化函数的参数
+                callStack.push(ExprFrame());
+                continue;
+            }
+            
+            if (frame.state == FrameState::ProcessingParamFuncParams) {
+                skipWhitespace();
+                if (*bufptr == ')') {
+                    // 外部参数读取完毕
+                    parseRpar();
+                    
+                    auto result = parseParamFunc(frame.second_symbol, frame.args, frame.params);
+                    if (!result || result->isErr()) err_unkwn_sym(frame.second_symbol, frame.line);
+                    
+                    resultStack.push(result);
+                    callStack.pop();
+                    continue;
+                }
+                
+                // 读取外部参数
+                callStack.push(ExprFrame());
+                continue;
+            }
+            
+            // 处理子表达式完成的情况
+            if (!resultStack.empty() && callStack.size() > 1) {
+                auto result = resultStack.top();
+                resultStack.pop();
+                callStack.pop(); // 弹出子表达式frame
+                
+                if (!callStack.empty()) {
+                    auto& parent = callStack.top();
+                    if (parent.state == FrameState::ProcessingArgs) {
+                        parent.args.push_back(result);
+                    } else if (parent.state == FrameState::ProcessingParamFuncArgs) {
+                        parent.args.push_back(result);
+                    } else if (parent.state == FrameState::ProcessingParamFuncParams) {
+                        parent.params.push_back(result);
+                    }
+                }
+                continue;
+            }
+            
+            // 如果到这里，说明出现了未处理的状态
+            callStack.pop();
         }
-    
-        return resultStack.top();
+        
+        return resultStack.empty() ? mkErr(ERROR_TYPE::ERR_UNKWN_SYM) : resultStack.top();
     }
 
 	
