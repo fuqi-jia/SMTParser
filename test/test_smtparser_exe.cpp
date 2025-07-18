@@ -13,7 +13,7 @@ int main(int argc, char* argv[]){
 
     std::shared_ptr<SMTParser::Parser> parser = 
         std::make_shared<SMTParser::Parser>();
-
+        parser->setOption("keep_let", false);
     // the input file
     std::string input_file = argv[1];
 

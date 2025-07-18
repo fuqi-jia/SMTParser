@@ -76,6 +76,7 @@ namespace SMTParser{
         size_t paramIndex = 0;   // index of the current parameter
         int line;                // line number of the frame
         LetContext let_context;  // let context of the frame
+        std::shared_ptr<DAGNode> result;  // 当前帧已解析出的结果
         
         // 用于特殊处理的额外数据
         std::string second_symbol;  // 用于存储第二个符号
@@ -84,7 +85,7 @@ namespace SMTParser{
         bool reading_inner_paren = false;  // 是否在读取内部括号
         
         ExprFrame() : state(FrameState::Start), special_type(SpecialType::None), 
-                     argIndex(0), paramIndex(0), line(0), width(0) {}
+                     argIndex(0), paramIndex(0), line(0), width(0), result(nullptr) {}
     };
     
 	// expr ::= const | func | (<identifier> <expr>+)
@@ -93,199 +94,168 @@ namespace SMTParser{
 		return parseExprIterative();
 	}
 
-    std::shared_ptr<DAGNode> Parser::parseExprIterative() {
-        std::stack<ExprFrame> callStack;
-        std::stack<std::shared_ptr<DAGNode>> resultStack;
-        
-        // 初始调用
-        callStack.push(ExprFrame());
-        
-        while (!callStack.empty()) {
-            ExprFrame& frame = callStack.top();
-            
-            if (frame.state == FrameState::Start) {
-                // 开始处理新表达式
-                if (*bufptr != '(') {
-                    // 常量或函数
-                    size_t expr_ln = line_number;
-                    std::string s = getSymbol();
-                    
-                    std::shared_ptr<DAGNode> expr = parseConstFunc(s);
-                    if(expr->isErr()) err_unkwn_sym(s, expr_ln);
-                    
-                    resultStack.push(expr);
-                    callStack.pop();
-                    continue;
-                }
-                
-                // 复合表达式
-                parseLpar();
-                frame.line = line_number;
-                
-                // 检查内部括号
-                if (*bufptr == '(') {
-                    // ((_ f args) <expr>+) 形式
-                    parseLpar();
-                    std::string s = getSymbol();
-                    if (s == "_") {
-                        frame.special_type = SpecialType::ParamFunc;
-                        frame.second_symbol = getSymbol(); // 函数名
-                        frame.state = FrameState::ProcessingParamFuncArgs;
-                        continue;
-                    } else {
-                        err_unkwn_sym(s, frame.line);
-                        resultStack.push(mkErr(ERROR_TYPE::ERR_UNKWN_SYM));
-                        callStack.pop();
-                        continue;
+    std::shared_ptr<DAGNode> Parser::parseExprIterative(){
+        std::stack<ExprFrame> st;
+        st.push(ExprFrame());
+
+        while(!st.empty()){
+            ExprFrame &frame = st.top();
+
+            switch(frame.state){
+                case FrameState::Start:{
+                    // 处理最简单的符号或常量
+                    if(*bufptr != '('){
+                        size_t ln = line_number;
+                        std::string sym = getSymbol();
+                        auto node = parseConstFunc(sym);
+                        if(node->isErr()) err_unkwn_sym(sym, ln);
+                        frame.result = node;
+                        frame.state = FrameState::Finish;
+                        break;
                     }
-                }
-                
-                // 读取头部符号
-                std::string head = getSymbol();
-                frame.headSymbol = head;
-                
-                if (head == "exists" || head == "forall") {
-                    // 量词表达式 - 暂时用递归处理
-                    std::shared_ptr<DAGNode> result = parseQuant(head);
-                    parseRpar();
-                    resultStack.push(result);
-                    callStack.pop();
-                } else if (head == "_") {
-                    // (_ <identifier> <expr>+) 形式
-                    std::string second = getSymbol();
-                    if (second.size() >= 2 && second[0] == 'b' && second[1] == 'v') {
-                        // (_ bv13 32) 形式
-                        std::string width_str = getSymbol();
-                        size_t width = std::stoi(width_str);
-                        std::string num = second.substr(2);
-                        auto expr = mkConstBv(num, width);
+
+                    // 复合表达式
+                    parseLpar();
+                    frame.line = line_number;
+
+                    // 检查 ((_ f args) ...) 这种形式
+                    if(*bufptr == '('){
+                        parseLpar();
+                        std::string s = getSymbol();
+                        if(s != "_"){
+                            err_unkwn_sym(s, frame.line);
+                            frame.result = mkErr(ERROR_TYPE::ERR_UNKWN_SYM);
+                            frame.state = FrameState::Finish;
+                            break;
+                        }
+                        frame.special_type = SpecialType::ParamFunc;
+                        frame.second_symbol = getSymbol();
+                        frame.state = FrameState::ProcessingParamFuncArgs;
+                        break;
+                    }
+
+                    // 读取头部符号
+                    std::string head = getSymbol();
+                    frame.headSymbol = head;
+
+                    if(head == "exists" || head == "forall"){
+                        auto res = parseQuant(head);
                         parseRpar();
-                        resultStack.push(expr);
-                        callStack.pop();
-                    } else {
-                        // 其他下划线情况 - 继续处理参数
-                        frame.second_symbol = second;
+                        frame.result = res;
+                        frame.state = FrameState::Finish;
+                    }
+                    else if(head == "_"){
+                        std::string second = getSymbol();
+                        if(second.size() >= 2 && second[0]=='b' && second[1]=='v'){
+                            std::string width_str = getSymbol();
+                            size_t width = std::stoul(width_str);
+                            std::string num = second.substr(2);
+                            frame.result = mkConstBv(num, width);
+                            parseRpar();
+                            frame.state = FrameState::Finish;
+                        }else{
+                            frame.second_symbol = second;
+                            frame.state = FrameState::ProcessingArgs;
+                        }
+                    }
+                    else if(head == "let"){
+                        if(let_nesting_depth == 0){
+                            current_let_mode = LET_MODE::LM_START_LET;
+                            preserving_let_counter += 1;
+                        }else if(current_let_mode == LET_MODE::LM_START_LET){
+                            current_let_mode = LET_MODE::LM_IN_LET;
+                        }
+                        let_nesting_depth++;
+
+                        std::shared_ptr<DAGNode> res;
+                        if(options->parsing_preserve_let){
+                            res = parsePreservingLet();
+                        }else{
+                            res = parseLet();
+                        }
+
+                        let_nesting_depth--;
+                        if(let_nesting_depth == 0){
+                            current_let_mode = LET_MODE::LM_NON_LET;
+                        }
+
+                        if(res->isErr()) err_all(res, "let", frame.line);
+                        parseRpar();
+                        frame.result = res;
+                        frame.state = FrameState::Finish;
+                    }
+                    else{
                         frame.state = FrameState::ProcessingArgs;
                     }
-                } else if (head == "let") {
-                    // let表达式 - 暂时用递归处理
-                    if(let_nesting_depth == 0){
-                        current_let_mode = LET_MODE::LM_START_LET;
-                        preserving_let_counter += 1;
-                    } else if(current_let_mode == LET_MODE::LM_START_LET){
-                        current_let_mode = LET_MODE::LM_IN_LET;
-                    }
-                    let_nesting_depth++;
-                    
-                    std::shared_ptr<DAGNode> result;
-                    if(options->parsing_preserve_let){
-                        result = parsePreservingLet();
-                    } else {
-                        result = parseLet();
-                    }
-                    
-                    let_nesting_depth--;
-                    if(let_nesting_depth == 0){
-                        current_let_mode = LET_MODE::LM_NON_LET;
-                    }
-                    
-                    if (result->isErr())
-                        err_all(result, "let", frame.line);
-                    
-                    parseRpar();
-                    resultStack.push(result);
-                    callStack.pop();
-                } else {
-                    // 普通运算符
-                    frame.state = FrameState::ProcessingArgs;
+                    break;
                 }
-                continue;
-            }
-            
-            if (frame.state == FrameState::ProcessingArgs) {
-                skipWhitespace();
-                if (*bufptr == ')') {
-                    // 参数读取完毕，创建节点
-                    parseRpar();
-                    
-                    std::shared_ptr<DAGNode> result;
-                    if (frame.headSymbol == "_") {
-                        // 下划线运算符需要特殊处理
-                        // 这里简化处理，可以根据second_symbol进一步分类
-                        result = parseOper(frame.second_symbol, frame.args);
-                    } else {
-                        result = parseOper(frame.headSymbol, frame.args);
+
+                case FrameState::ProcessingArgs:{
+                    skipWhitespace();
+                    if(*bufptr == ')'){
+                        parseRpar();
+                        std::shared_ptr<DAGNode> res;
+                        if(frame.headSymbol == "_"){
+                            res = parseOper(frame.second_symbol, frame.args);
+                        }else{
+                            res = parseOper(frame.headSymbol, frame.args);
+                        }
+                        if(res->isErr()) err_all(res, frame.headSymbol, frame.line);
+                        frame.result = res;
+                        frame.state = FrameState::Finish;
+                        break;
                     }
-                    
-                    if (result->isErr()) err_all(result, frame.headSymbol, frame.line);
-                    
-                    resultStack.push(result);
-                    callStack.pop();
-                    continue;
+                    st.push(ExprFrame());
+                    break;
                 }
-                
-                // 需要读取下一个参数
-                callStack.push(ExprFrame()); // 新的子表达式
-                continue;
-            }
-            
-            if (frame.state == FrameState::ProcessingParamFuncArgs) {
-                skipWhitespace();
-                if (*bufptr == ')') {
-                    // 内部参数读取完毕
-                    parseRpar();
-                    frame.state = FrameState::ProcessingParamFuncParams;
-                    continue;
-                }
-                
-                // 读取参数化函数的参数
-                callStack.push(ExprFrame());
-                continue;
-            }
-            
-            if (frame.state == FrameState::ProcessingParamFuncParams) {
-                skipWhitespace();
-                if (*bufptr == ')') {
-                    // 外部参数读取完毕
-                    parseRpar();
-                    
-                    auto result = parseParamFunc(frame.second_symbol, frame.args, frame.params);
-                    if (!result || result->isErr()) err_unkwn_sym(frame.second_symbol, frame.line);
-                    
-                    resultStack.push(result);
-                    callStack.pop();
-                    continue;
-                }
-                
-                // 读取外部参数
-                callStack.push(ExprFrame());
-                continue;
-            }
-            
-            // 处理子表达式完成的情况
-            if (!resultStack.empty() && callStack.size() > 1) {
-                auto result = resultStack.top();
-                resultStack.pop();
-                callStack.pop(); // 弹出子表达式frame
-                
-                if (!callStack.empty()) {
-                    auto& parent = callStack.top();
-                    if (parent.state == FrameState::ProcessingArgs) {
-                        parent.args.push_back(result);
-                    } else if (parent.state == FrameState::ProcessingParamFuncArgs) {
-                        parent.args.push_back(result);
-                    } else if (parent.state == FrameState::ProcessingParamFuncParams) {
-                        parent.params.push_back(result);
+
+                case FrameState::ProcessingParamFuncArgs:{
+                    skipWhitespace();
+                    if(*bufptr == ')'){
+                        parseRpar();
+                        frame.state = FrameState::ProcessingParamFuncParams;
+                        break;
                     }
+                    st.push(ExprFrame());
+                    break;
                 }
-                continue;
+
+                case FrameState::ProcessingParamFuncParams:{
+                    skipWhitespace();
+                    if(*bufptr == ')'){
+                        parseRpar();
+                        auto res = parseParamFunc(frame.second_symbol, frame.args, frame.params);
+                        if(!res || res->isErr()) err_unkwn_sym(frame.second_symbol, frame.line);
+                        frame.result = res;
+                        frame.state = FrameState::Finish;
+                        break;
+                    }
+                    st.push(ExprFrame());
+                    break;
+                }
+
+                case FrameState::Finish:{
+                    auto res = frame.result;
+                    st.pop();
+                    if(st.empty()) return res;
+                    ExprFrame &parent = st.top();
+                    if(parent.state == FrameState::ProcessingArgs){
+                        parent.args.push_back(res);
+                    }else if(parent.state == FrameState::ProcessingParamFuncArgs){
+                        parent.args.push_back(res);
+                    }else if(parent.state == FrameState::ProcessingParamFuncParams){
+                        parent.params.push_back(res);
+                    }
+                    break;
+                }
+                default:{
+                    st.pop();
+                    break;
+                }
             }
-            
-            // 如果到这里，说明出现了未处理的状态
-            callStack.pop();
         }
-        
-        return resultStack.empty() ? mkErr(ERROR_TYPE::ERR_UNKWN_SYM) : resultStack.top();
+
+        return mkErr(ERROR_TYPE::ERR_UNKWN_SYM); // cannot reach here
     }
 
 	
