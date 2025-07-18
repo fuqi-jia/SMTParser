@@ -120,7 +120,7 @@ namespace SMTParser{
 
         // Pre-allocate stack with reasonable capacity to avoid frequent reallocations
         std::vector<WorkItem> work_stack;
-        work_stack.reserve(10000); // Reserve space for deep expressions
+        work_stack.reserve(65536); // Reserve space for deep expressions
         work_stack.emplace_back(actualRoot.get(), 0);
 
         while (!work_stack.empty()) {
@@ -370,8 +370,8 @@ namespace SMTParser{
                 for(size_t i=1;i<node->getChildrenSize();i++){
                     if (i > 1) out << " ";  // add space for multiple bindings
                     out << "(" << node->getChild(i)->getPureName() << " ";
-                    auto child_0 = node->getChild(i)->getChild(0);
-                    out << dumpSMTLIB2(child_0);
+                    auto child_0 = node->getChild(i)->getChild(0).get();
+                    work_stack.emplace_back(child_0, 0);
                     work_stack.emplace_back(nullptr, 2);  // close each binding's right parenthesis
                 }
                 out << ") ";  // close binding list and add space
@@ -394,14 +394,14 @@ namespace SMTParser{
                         for(size_t j=0;j<var_list->getChildrenSize();j++){
                             if(j==0) out << "(" << var_list->getChild(j)->getPureName() << " ";
                             else out << " (" << var_list->getChild(j)->getPureName() << " ";
-                            auto child_0 = var_list->getChild(j)->getChild(0);
-                            out << dumpSMTLIB2(child_0);
+                            auto child_0 = var_list->getChild(j)->getChild(0).get();
+                            work_stack.emplace_back(child_0, 0);
                             out << ")"; // close each binding's right parenthesis and add space
                         }
                         out << ") ";
                     }
                     else{ // Body
-                        out << dumpSMTLIB2(node->getChild(i));
+                        work_stack.emplace_back(node->getChild(i).get(), 0);
                     }
                 }
                 for(size_t i=0;i<node->getChildrenSize() - 1;i++){
@@ -418,8 +418,8 @@ namespace SMTParser{
                 for(size_t i=1;i<node->getChildrenSize();i++){
                     if(i==1) out << "(" << node->getChild(i)->getPureName() << " ";
                     else out << " (" << node->getChild(i)->getPureName() << " ";
-                    auto child_0 = node->getChild(i)->getChild(0);
-                    out << dumpSMTLIB2(child_0);
+                    auto child_0 = node->getChild(i)->getChild(0).get();
+                    work_stack.emplace_back(child_0, 0);
                     out << ")"; // close each binding's right parenthesis
                 }
                 out << ")";
