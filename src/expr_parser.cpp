@@ -24,25 +24,27 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
+#include "parser.h"
+#include <stack>
 
 namespace SMTParser{
     // State of the parser
     enum class FrameState {
         Start,
-        ReadingHead,           // 正在读取头部符号
-        ProcessingArgs,        // 正在处理普通参数
-        ProcessingSpecial,     // 正在处理特殊语法
-        ProcessingParams,      // 正在处理参数列表
-        ProcessingBindings,    // 正在处理let绑定
-        ProcessingLetBody,     // 正在处理let体
-        ProcessingQuantVars,   // 正在处理量词变量
-        ProcessingQuantBody,   // 正在处理量词体
-        ProcessingParamFuncArgs, // 正在处理参数化函数的参数
-        ProcessingParamFuncParams, // 正在处理参数化函数的参数
+        ReadingHead,           // reading head symbol
+        ProcessingArgs,        // processing normal arguments
+        ProcessingSpecial,     // processing special syntax
+        ProcessingParams,      // processing parameter list
+        ProcessingBindings,    // processing let bindings
+        ProcessingLetBody,     // processing let body
+        ProcessingQuantVars,   // processing quantifier variables
+        ProcessingQuantBody,   // processing quantifier body
+        ProcessingParamFuncArgs, // processing parameter function arguments
+        ProcessingParamFuncParams, // processing parameter function parameters
         Finish
     };
 
-    // 特殊处理类型
+    // special processing type
     enum class SpecialType {
         None,
         Let,
@@ -53,48 +55,22 @@ namespace SMTParser{
         Underscore
     };
 
-	// struct for let context
-	struct LetContext {
-		std::vector<std::shared_ptr<DAGNode>> params;  // let bind vars for current level
-		std::vector<std::string> key_list;
-		std::shared_ptr<DAGNode> result;  // Store the result directly
-		std::shared_ptr<DAGNode> bind_var_list;  // LET_BIND_VAR_LIST for current level
-		int nesting_level;
-		bool is_complete;
-		
-		LetContext(int level = 0) : result(nullptr), bind_var_list(nullptr), nesting_level(level), is_complete(false) {}
-	};
-
-    // Frame of the parser
+    // Frame of the parser (精简版)
     struct ExprFrame {
-        FrameState state;
-        SpecialType special_type;
-        std::string headSymbol;  // symbol of the head of the frame
-        std::vector<std::shared_ptr<DAGNode>> args;
-        std::vector<std::shared_ptr<DAGNode>> params;  // for parameterized functions
-        size_t argIndex = 0;     // index of the current argument
-        size_t paramIndex = 0;   // index of the current parameter
-        int line;                // line number of the frame
-        LetContext let_context;  // let context of the frame
-        std::shared_ptr<DAGNode> result;  // 当前帧已解析出的结果
-        
-        // 用于特殊处理的额外数据
-        std::string second_symbol;  // 用于存储第二个符号
-        std::string width_str;      // 用于bitvector宽度
-        size_t width;               // 用于bitvector宽度
-        bool reading_inner_paren = false;  // 是否在读取内部括号
-        
-        ExprFrame() : state(FrameState::Start), special_type(SpecialType::None), 
-                     argIndex(0), paramIndex(0), line(0), width(0), result(nullptr) {}
+        FrameState state = FrameState::Start;
+        SpecialType special_type = SpecialType::None;
+        std::string headSymbol;                      // 头符号
+        std::string second_symbol;                   // "(_ f …)" 里的 f
+        std::vector<std::shared_ptr<DAGNode>> args;  // 普通实参
+        std::vector<std::shared_ptr<DAGNode>> params;// 参数化函数的参数
+        int line = 0;                                // 行号
+        std::shared_ptr<DAGNode> result;             // 解析结果
+
+        ExprFrame() = default;
     };
     
 	// expr ::= const | func | (<identifier> <expr>+)
-	// 原来的递归版本，现在调用迭代版本
 	std::shared_ptr<DAGNode> Parser::parseExpr() {
-		return parseExprIterative();
-	}
-
-    std::shared_ptr<DAGNode> Parser::parseExprIterative(){
         std::stack<ExprFrame> st;
         st.push(ExprFrame());
 
@@ -191,7 +167,7 @@ namespace SMTParser{
                 }
 
                 case FrameState::ProcessingArgs:{
-                    skipWhitespace();
+                    skipToRpar();
                     if(*bufptr == ')'){
                         parseRpar();
                         std::shared_ptr<DAGNode> res;
@@ -210,7 +186,7 @@ namespace SMTParser{
                 }
 
                 case FrameState::ProcessingParamFuncArgs:{
-                    skipWhitespace();
+                    skipToRpar();
                     if(*bufptr == ')'){
                         parseRpar();
                         frame.state = FrameState::ProcessingParamFuncParams;
@@ -221,7 +197,7 @@ namespace SMTParser{
                 }
 
                 case FrameState::ProcessingParamFuncParams:{
-                    skipWhitespace();
+                    skipToRpar();
                     if(*bufptr == ')'){
                         parseRpar();
                         auto res = parseParamFunc(frame.second_symbol, frame.args, frame.params);
