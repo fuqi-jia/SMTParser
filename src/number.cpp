@@ -549,12 +549,38 @@ bool HighPrecisionReal::isNaN() const {
 
 // Conversion functions
 std::string HighPrecisionReal::toString() const {
-    // it is not recommended to use mpfr_asprintf, because it may cause rounding error
+    // for integer, output decimal directly, without scientific notation;
+    // for other cases, output at most 17 significant digits, unless the exponent is too large.
+
+    // 1. NaN / Inf
+    if(mpfr_nan_p(value)) return "NaN";
+    if(mpfr_inf_p(value)) return mpfr_sgn(value) < 0 ? "-inf" : "inf";
+
+    // 2. integer: %.0Rf
     char *buf = nullptr;
-    // Shortest decimal, no extra 0, no rounding error
-    mpfr_asprintf(&buf, "%RNg", value);
+    if(mpfr_integer_p(value)){
+        mpfr_asprintf(&buf, "%.0Rf", value);  // No fractional part
+    } else {
+        // 3. non-integer: output at most 17 significant digits, if the exponent is in [-6,6] use f, otherwise use g
+        // get the exponent
+        mpfr_exp_t exp10;
+        mpfr_get_str(nullptr, &exp10, 10, 0, value, MPFR_RNDN);
+        if(exp10 >= -6 && exp10 <= 6){
+            // fixed decimal format, keep enough significant digits
+            mpfr_asprintf(&buf, "%.17Rf", value);
+            // remove trailing zeros and decimal point
+            std::string tmp(buf);
+            mpfr_free_str(buf);
+            // remove trailing zeros
+            while(tmp.size()>1 && tmp.back()=='0') tmp.pop_back();
+            if(!tmp.empty() && tmp.back()=='.') tmp.pop_back();
+            return tmp;
+        } else {
+            mpfr_asprintf(&buf, "%.17Rg", value); // scientific notation, but control significant digits
+        }
+    }
     std::string s(buf);
-    mpfr_free_str(buf);          // Symmetric release
+    mpfr_free_str(buf);
     return s;
 }
 

@@ -3484,6 +3484,13 @@ namespace SMTParser{
          * @return Number of functions actually removed
          */
         size_t                                  removeFuns(const std::vector<std::string>& funcNames);
+
+        /**
+         * @brief ensure the expression is a number
+         * 
+         * @param expr Expression to ensure
+         */
+        void ensureNumberValue(std::shared_ptr<DAGNode> expr);
     private:
         // parse smt-lib2 file
         std::string	                            getSymbol();

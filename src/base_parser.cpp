@@ -247,12 +247,14 @@ namespace SMTParser{
 		return options->getEvaluateUseFloating();
 	}
 	Real Parser::toReal(std::shared_ptr<DAGNode> expr){
+		ensureNumberValue(expr);
 		condAssert(expr->isCReal() || expr->isCInt(), "Cannot convert non-constant expression to real");
 		if(expr->isPi()) return Real::pi(getEvaluatePrecision());
 		if(expr->isE()) return Real::e(getEvaluatePrecision());
 		return expr->getValue()->getNumberValue().toReal(getEvaluatePrecision());
 	}
 	Integer Parser::toInt(std::shared_ptr<DAGNode> expr){
+		ensureNumberValue(expr);
 		condAssert(expr->isCInt(), "Cannot convert non-integer expression to integer");
 		return expr->getValue()->getNumberValue().toInteger();
 	}
@@ -265,6 +267,30 @@ namespace SMTParser{
 		if(expr->isCReal()) return toReal(expr) == 1.0;
 		if(expr->isCInt()) return toInt(expr) == 1;
 		return false;
+	}
+
+	void Parser::ensureNumberValue(std::shared_ptr<DAGNode> expr){
+		if(!expr || !expr->isConst()) return;
+		if(expr->getValue()!=nullptr) return;
+
+		std::string s = expr->toString();
+		try{
+			if(TypeChecker::isInt(s)){
+				Integer i(s);
+				expr->setValue(i);
+			}
+			else if(TypeChecker::isReal(s)){
+				// dynamic precision
+				size_t digits = 0;
+				for(char c: s){ if(std::isdigit(c)) digits++; }
+				mpfr_prec_t prec = digits*4 + 16;
+				Real r(s, prec);
+				expr->setValue(r);
+			}
+		}catch(...){
+			// raise error
+			err_all(expr, "Cannot convert non-number expression to number", line_number);
+		}
 	}
 
 	// parse smt-lib2 file

@@ -79,7 +79,7 @@ namespace SMTParser{
 
             switch(frame.state){
                 case FrameState::Start:{
-                    // 处理最简单的符号或常量
+                    // handle the simplest symbol or constant
                     if(*bufptr != '('){
                         size_t ln = line_number;
                         std::string sym = getSymbol();
@@ -90,11 +90,11 @@ namespace SMTParser{
                         break;
                     }
 
-                    // 复合表达式
+                    // complex expression
                     parseLpar();
                     frame.line = line_number;
 
-                    // 检查 ((_ f args) ...) 这种形式
+                    // check ((_ f args) ...)
                     if(*bufptr == '('){
                         parseLpar();
                         std::string s = getSymbol();
@@ -110,7 +110,7 @@ namespace SMTParser{
                         break;
                     }
 
-                    // 读取头部符号
+                    // read the head symbol
                     std::string head = getSymbol();
                     frame.headSymbol = head;
 
@@ -167,7 +167,8 @@ namespace SMTParser{
                 }
 
                 case FrameState::ProcessingArgs:{
-                    skipToRpar();
+                    // escape the space and comment
+                    scanToNextSymbol();
                     if(*bufptr == ')'){
                         parseRpar();
                         std::shared_ptr<DAGNode> res;
@@ -186,7 +187,8 @@ namespace SMTParser{
                 }
 
                 case FrameState::ProcessingParamFuncArgs:{
-                    skipToRpar();
+                    // escape the space and comment
+                    scanToNextSymbol();
                     if(*bufptr == ')'){
                         parseRpar();
                         frame.state = FrameState::ProcessingParamFuncParams;
@@ -197,7 +199,8 @@ namespace SMTParser{
                 }
 
                 case FrameState::ProcessingParamFuncParams:{
-                    skipToRpar();
+                    // escape the space and comment
+                    scanToNextSymbol();
                     if(*bufptr == ')'){
                         parseRpar();
                         auto res = parseParamFunc(frame.second_symbol, frame.args, frame.params);
