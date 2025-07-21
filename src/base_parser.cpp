@@ -26,6 +26,7 @@
  */
 
 #include "parser.h"
+#include "timing.h"
 #include <queue>
 #include <stack>
 #include <algorithm>
@@ -50,6 +51,7 @@ namespace SMTParser{
 
 	
 	bool Parser::parse(const std::string& filename){
+		TIME_FUNC();
 		return parseSmtlib2File(filename);
 	}
 
@@ -680,6 +682,7 @@ namespace SMTParser{
 	}
 
 	CMD_TYPE Parser::parseCommand() {
+		TIME_FUNC();
 
 		size_t command_ln = line_number;
 		std::string command = getSymbol();
@@ -1218,6 +1221,8 @@ namespace SMTParser{
 	}
 
 	std::shared_ptr<DAGNode> Parser::parseOper(const std::string& s, const std::vector<std::shared_ptr<DAGNode>> &params){
+		TIME_FUNC();
+		auto kind = getKind(s);
 		if (s == "and") {
 			return mkAnd(params);
 		}
@@ -1993,6 +1998,7 @@ namespace SMTParser{
 	// LET_BIND_VAR_LIST: [(<symbol> expr)]
 	// Body: expr
 	std::shared_ptr<DAGNode> Parser::parsePreservingLet(){
+		TIME_FUNC();
 		// This function uses an iterative approach instead of recursion to handle nested let expressions
 		// and constructs let-chain to avoid deep nesting issues
 		
@@ -2114,6 +2120,7 @@ namespace SMTParser{
 	(let (<keybinding>+) expr), return expr
 	*/
 	std::shared_ptr<DAGNode> Parser::parseLet() {
+		TIME_FUNC();
 		// This function uses an iterative approach instead of recursion to handle nested let expressions
 		
 		// Create a stack to store parsing states and contexts

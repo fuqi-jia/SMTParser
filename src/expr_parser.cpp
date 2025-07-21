@@ -25,6 +25,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 #include "parser.h"
+#include "timing.h"
 #include <stack>
 
 namespace SMTParser{
@@ -71,6 +72,7 @@ namespace SMTParser{
     
 	// expr ::= const | func | (<identifier> <expr>+)
 	std::shared_ptr<DAGNode> Parser::parseExpr() {
+        TIME_FUNC();
         std::stack<ExprFrame> st;
         st.push(ExprFrame());
 

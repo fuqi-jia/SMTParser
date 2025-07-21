@@ -1,6 +1,6 @@
 /* -*- Header -*-
  *
- * The Common Header
+ * The Asserting Header
  *
  * Author: Fuqi Jia <jiafq@ios.ac.cn>
  *

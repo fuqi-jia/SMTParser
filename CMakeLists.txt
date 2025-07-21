@@ -20,7 +20,12 @@ option(BUILD_SHARED_LIBS "Build shared libraries (.so/.dll)" OFF)
 option(BUILD_BOTH_LIBS "Build both static and shared libraries" ON)
 option(BUILD_TESTS "Build the tests" OFF)
 option(ENABLE_DEBUG_SYMBOLS "Enable debug symbols for GDB support" OFF)
+option(ENABLE_TIMING "Enable timing profiler" OFF)
 
+# enable time functions
+if(ENABLE_TIMING)
+    add_compile_definitions(ENABLE_TIMING)
+endif()
 
 # use pkg-config to find GMP and MPFR
 find_package(PkgConfig REQUIRED)
