@@ -154,6 +154,19 @@ namespace SMTParser{
 
     // only used in preserving let mode
     const std::string PRESERVING_LET_BIND_VAR_SUFFIX = "_SMTParser_Preserving_Let_Bind_Var_Suffix_"; // +k
+    const std::unordered_map<std::string, NODE_KIND> kind_key_map = {
+        {"true", NODE_KIND::NT_CONST_TRUE},
+        {"false", NODE_KIND::NT_CONST_FALSE},
+        {"pi", NODE_KIND::NT_CONST_PI},
+        {"e", NODE_KIND::NT_CONST_E},
+        {"nan", NODE_KIND::NT_NAN},
+        {"epsilon", NODE_KIND::NT_EPSILON},
+        {"+epsilon", NODE_KIND::NT_POS_EPSILON},
+        {"-epsilon", NODE_KIND::NT_NEG_EPSILON},
+        {"+oo", NODE_KIND::NT_POS_INFINITY},
+        {"-oo", NODE_KIND::NT_NEG_INFINITY},
+        {"+oo", NODE_KIND::NT_POS_INFINITY},
+    };
 }
 
 

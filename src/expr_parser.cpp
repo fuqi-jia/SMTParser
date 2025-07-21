@@ -29,6 +29,646 @@
 #include <stack>
 
 namespace SMTParser{
+
+    std::shared_ptr<DAGNode> Parser::parseOper(const std::string& s, const std::vector<std::shared_ptr<DAGNode>> &params){
+        if (s == "and") {
+            return mkAnd(params);
+        }
+        else if (s == "or") {
+            return mkOr(params);
+        }
+        else if (s == "not") {
+            condAssert(params.size() == 1, "Invalid number of parameters for not");
+            return mkNot(params[0]);
+        }
+        else if (s == "=>") {
+            return mkImplies(params);
+        }
+        else if (s == "xor") {
+            return mkXor(params);
+        }
+        else if (s == "=" || s == "==" || s == "<->" || s == "iff" || s == "<=>") {
+            return mkEq(params);
+        }
+        else if (s == "distinct" || s == "!=" || s == "<>") {
+            return mkDistinct(params);
+        }
+        else if (s == "ite") {
+            return mkIte(params);
+        }
+        else if (s == "+") {
+            return mkAdd(params);
+        }
+        else if (s == "-") {
+            return mkSub(params);
+        }
+        else if (s == "*") {
+            return mkMul(params);
+        }
+        else if (s == "iand") {
+            return mkIand(params);
+        }
+        else if (s == "pow2") {
+            condAssert(params.size() == 1, "Invalid number of parameters for pow2");
+            return mkPow2(params[0]);
+        }
+        else if (s == "pow" || s == "**" || s == "^") {
+            condAssert(params.size() == 2, "Invalid number of parameters for pow");
+            return mkPow(params[0], params[1]);
+        }
+        else if (s == "div") {
+            condAssert(params.size() == 2, "Invalid number of parameters for div");
+            return mkDivInt(params[0], params[1]);
+        }
+        else if (s == "/") {
+            condAssert(params.size() == 2, "Invalid number of parameters for div");
+            return mkDivReal(params[0], params[1]);
+        }
+        else if (s == "mod") {
+            condAssert(params.size() == 2, "Invalid number of parameters for mod");
+            return mkMod(params[0], params[1]);
+        }
+        else if (s == "abs") {
+            condAssert(params.size() == 1, "Invalid number of parameters for abs");
+            return mkAbs(params[0]);
+        }
+        else if (s == "sqrt") {
+            condAssert(params.size() == 1, "Invalid number of parameters for sqrt");
+            return mkSqrt(params[0]);
+        }
+        else if (s == "safeSqrt") {
+            condAssert(params.size() == 1, "Invalid number of parameters for safeSqrt");
+            return mkSafeSqrt(params[0]);
+        }
+        else if (s == "ceil") {
+            condAssert(params.size() == 1, "Invalid number of parameters for ceil");
+            return mkCeil(params[0]);
+        }
+        else if (s == "floor") {
+            condAssert(params.size() == 1, "Invalid number of parameters for floor");
+            return mkFloor(params[0]);
+        }
+        else if (s == "round") {
+            condAssert(params.size() == 1, "Invalid number of parameters for round");
+            return mkRound(params[0]);
+        }
+        else if (s == "exp") {
+            condAssert(params.size() == 1, "Invalid number of parameters for exp");
+            return mkExp(params[0]);
+        }
+        else if (s == "ln" || s == "loge") {
+            condAssert(params.size() == 1, "Invalid number of parameters for ln");
+            return mkLn(params[0]);
+        }
+        else if (s == "lg" || s == "log10"){
+            condAssert(params.size() == 1, "Invalid number of parameters for lg");
+            return mkLg(params[0]);
+        }
+        else if (s == "lb" || s == "log2"){
+            condAssert(params.size() == 1, "Invalid number of parameters for lb");
+            return mkLb(params[0]);
+        }
+        else if (s == "log") {
+            if(params.size() == 1){
+                // ln(param)
+                return mkLn(params[0]);
+            }
+            else if(params.size() == 2){
+                // log(param1, param2)
+                return mkLog(params[0], params[1]);
+            }
+            else err_param_mis("log", line_number);
+        }
+        else if (s == "sin") {
+            condAssert(params.size() == 1, "Invalid number of parameters for sin");
+            return mkSin(params[0]);
+        }
+        else if (s == "cos") {
+            condAssert(params.size() == 1, "Invalid number of parameters for cos");
+            return mkCos(params[0]);
+        }
+        else if (s == "tan") {
+            condAssert(params.size() == 1, "Invalid number of parameters for tan");
+            return mkTan(params[0]);
+        }
+        else if (s == "asin" || s == "arcsin") {
+            condAssert(params.size() == 1, "Invalid number of parameters for asin");
+            return mkAsin(params[0]);
+        }
+        else if (s == "acos" || s == "arccos") {
+            condAssert(params.size() == 1, "Invalid number of parameters for acos");
+            return mkAcos(params[0]);
+        }
+        else if (s == "atan" || s == "arctan") {
+            condAssert(params.size() == 1, "Invalid number of parameters for atan");
+            return mkAtan(params[0]);
+        }
+        else if (s == "sinh") {
+            condAssert(params.size() == 1, "Invalid number of parameters for sinh");
+            return mkSinh(params[0]);
+        }
+        else if (s == "cosh") {
+            condAssert(params.size() == 1, "Invalid number of parameters for cosh");
+            return mkCosh(params[0]);
+        }
+        else if (s == "tanh") {
+            condAssert(params.size() == 1, "Invalid number of parameters for tanh");
+            return mkTanh(params[0]);
+        }
+        else if (s == "asinh" || s == "arcsinh") {
+            condAssert(params.size() == 1, "Invalid number of parameters for asinh");
+            return mkAsinh(params[0]);
+        }
+        else if (s == "acosh" || s == "arccosh") {
+            condAssert(params.size() == 1, "Invalid number of parameters for acosh");
+            return mkAcosh(params[0]);
+        }
+        else if (s == "atanh" || s == "arctanh") {
+            condAssert(params.size() == 1, "Invalid number of parameters for atanh");
+            return mkAtanh(params[0]);
+        }
+        else if (s == "asech" || s == "arcsec") {
+            condAssert(params.size() == 1, "Invalid number of parameters for asech");
+            return mkAsech(params[0]);
+        }
+        else if (s == "acsch" || s == "arccsch") {
+            condAssert(params.size() == 1, "Invalid number of parameters for acsch");
+            return mkAcsch(params[0]);
+        }
+        else if (s == "acoth" || s == "arccoth") {
+            condAssert(params.size() == 1, "Invalid number of parameters for acoth");
+            return mkAcoth(params[0]);
+        }
+        else if (s == "atan2" || s == "arctan2") {
+            condAssert(params.size() == 2, "Invalid number of parameters for atan2");
+            return mkAtan2(params[0], params[1]);
+        }
+        else if (s == "<=") {
+            condAssert(params.size() == 2, "Invalid number of parameters for <= ");
+            return mkLe(params[0], params[1]);
+        }
+        else if (s == "<") {
+            condAssert(params.size() == 2, "Invalid number of parameters for <");
+            return mkLt(params[0], params[1]);
+        }
+        else if (s == ">=") {
+            condAssert(params.size() == 2, "Invalid number of parameters for >= ");
+            return mkGe(params[0], params[1]);
+        }
+        else if (s == ">") {
+            condAssert(params.size() == 2, "Invalid number of parameters for >");
+            return mkGt(params[0], params[1]);
+        }
+        else if (s == "to_real") {
+            condAssert(params.size() == 1, "Invalid number of parameters for to_real");
+            return mkToReal(params[0]);
+        }
+        else if (s == "to_int") {
+            condAssert(params.size() == 1, "Invalid number of parameters for to_int");
+            return mkToInt(params[0]);
+        }
+        else if (s == "is_int") {
+            condAssert(params.size() == 1, "Invalid number of parameters for is_int");
+            return mkIsInt(params[0]);
+        }
+        else if (s == "is_divisible") {
+            condAssert(params.size() == 2, "Invalid number of parameters for is_divisible");
+            return mkIsDivisible(params[0], params[1]);
+        }
+        else if (s == "is_prime") {
+            condAssert(params.size() == 1, "Invalid number of parameters for is_prime");
+            return mkIsPrime(params[0]);
+        }
+        else if (s == "is_even") {
+            condAssert(params.size() == 1, "Invalid number of parameters for is_even");
+            return mkIsEven(params[0]);
+        }
+        else if (s == "is_odd") {
+            condAssert(params.size() == 1, "Invalid number of parameters for is_odd");
+            return mkIsOdd(params[0]);
+        }
+        else if (s == "gcd") {
+            condAssert(params.size() == 2, "Invalid number of parameters for gcd");
+            return mkGcd(params[0], params[1]);
+        }
+        else if (s == "lcm") {
+            condAssert(params.size() == 2, "Invalid number of parameters for lcm");
+            return mkLcm(params[0], params[1]);
+        }
+        else if (s == "factorial") {
+            condAssert(params.size() == 1, "Invalid number of parameters for factorial");
+            return mkFact(params[0]);
+        }
+        else if (s == "bvnot") {
+            condAssert(params.size() == 1, "Invalid number of parameters for bvnot");
+            return mkBvNot(params[0]);
+        }
+        else if (s == "bvneg") {
+            condAssert(params.size() == 1, "Invalid number of parameters for bvneg");
+            return mkBvNeg(params[0]);
+        }
+        else if (s == "bvand") {
+            return mkBvAnd(params);
+        }
+        else if (s == "bvor") {
+            return mkBvOr(params);
+        }
+        else if (s == "bvxor") {
+            return mkBvXor(params);
+        }
+        else if (s == "bvnand") {
+            return mkBvNand(params);
+        }
+        else if (s == "bvnor") {
+            return mkBvNor(params);
+        }
+        else if (s == "bvxnor") {
+            return mkBvXnor(params);
+        }
+        else if (s == "bvcomp") {
+            condAssert(params.size() == 2, "Invalid number of parameters for bvcomp");
+            return mkBvComp(params[0], params[1]);
+        }
+        else if (s == "bvadd") {
+            return mkBvAdd(params);
+        }
+        else if (s == "bvsub") {
+            return mkBvSub(params);
+        }
+        else if (s == "bvmul") {
+            return mkBvMul(params);
+        }
+        else if (s == "bvudiv") {
+            condAssert(params.size() == 2, "Invalid number of parameters for bvudiv");
+            return mkBvUdiv(params[0], params[1]);
+        }
+        else if (s == "bvurem") {
+            condAssert(params.size() == 2, "Invalid number of parameters for bvurem");
+            return mkBvUrem(params[0], params[1]);
+        }
+        else if (s == "bvsdiv") {
+            condAssert(params.size() == 2, "Invalid number of parameters for bvsdiv");
+            return mkBvSdiv(params[0], params[1]);
+        }
+        else if (s == "bvsrem") {
+            condAssert(params.size() == 2, "Invalid number of parameters for bvsrem");
+            return mkBvSrem(params[0], params[1]);
+        }
+        else if (s == "bvsmod") {
+            condAssert(params.size() == 2, "Invalid number of parameters for bvsmod");
+            return mkBvSmod(params[0], params[1]);
+        }
+        else if (s == "bvshl") {
+            condAssert(params.size() == 2, "Invalid number of parameters for bvshl");
+            return mkBvShl(params[0], params[1]);
+        }
+        else if (s == "bvlshr") {
+            condAssert(params.size() == 2, "Invalid number of parameters for bvlshr");
+            return mkBvLshr(params[0], params[1]);
+        }
+        else if (s == "bvashr") {
+            condAssert(params.size() == 2, "Invalid number of parameters for bvashr");
+            return mkBvAshr(params[0], params[1]);
+        }
+        else if (s == "bvult") {
+            condAssert(params.size() == 2, "Invalid number of parameters for bvult");
+            return mkBvUlt(params[0], params[1]);
+        }
+        else if (s == "bvule") {
+            condAssert(params.size() == 2, "Invalid number of parameters for bvule");
+            return mkBvUle(params[0], params[1]);
+        }
+        else if (s == "bvugt") {
+            condAssert(params.size() == 2, "Invalid number of parameters for bvugt");
+            return mkBvUgt(params[0], params[1]);
+        }
+        else if (s == "bvuge") {
+            condAssert(params.size() == 2, "Invalid number of parameters for bvuge");
+            return mkBvUge(params[0], params[1]);
+        }
+        else if (s == "bvslt") {
+            condAssert(params.size() == 2, "Invalid number of parameters for bvslt");
+            return mkBvSlt(params[0], params[1]);
+        }
+        else if (s == "bvsle") {
+            condAssert(params.size() == 2, "Invalid number of parameters for bvsle");
+            return mkBvSle(params[0], params[1]);
+        }
+        else if (s == "bvsgt") {
+            condAssert(params.size() == 2, "Invalid number of parameters for bvsgt");
+            return mkBvSgt(params[0], params[1]);
+        }
+        else if (s == "bvsge") {
+            condAssert(params.size() == 2, "Invalid number of parameters for bvsge");
+            return mkBvSge(params[0], params[1]);
+        }
+        else if (s == "concat") {
+            return mkBvConcat(params);
+        }
+        else if (s == "bv2nat") {
+            condAssert(params.size() == 1, "Invalid number of parameters for bv2nat");
+            return mkBvToNat(params[0]);
+        }
+        else if (s == "nat2bv") {
+            condAssert(params.size() == 2, "Invalid number of parameters for nat2bv");
+            return mkNatToBv(params[0], params[1]);
+        }
+        else if (s == "int2bv") {
+            condAssert(params.size() == 2, "Invalid number of parameters for int2bv");
+            return mkIntToBv(params[0], params[1]);
+        }
+        else if (s == "bv2int") {
+            condAssert(params.size() == 1, "Invalid number of parameters for bv2int");
+            return mkBvToInt(params[0]);
+        }
+        else if (s == "fp.abs") {
+            condAssert(params.size() == 1, "Invalid number of parameters for fp.abs");
+            return mkFpAbs(params[0]);
+        }
+        else if (s == "fp.neg") {
+            condAssert(params.size() == 1, "Invalid number of parameters for fp.neg");
+            return mkFpNeg(params[0]);
+        }
+        else if (s == "fp.add") {
+            return mkFpAdd(params);
+        }
+        else if (s == "fp.sub") {
+            return mkFpSub(params);
+        }
+        else if (s == "fp.mul") {
+            return mkFpMul(params);
+        }
+        else if (s == "fp.div") {
+            return mkFpDiv(params);
+        }
+        else if (s == "fp.fma") {
+            condAssert(params.size() == 3, "Invalid number of parameters for fp.fma");
+            return mkFpFma(params);
+        }
+        else if (s == "fp.sqrt") {
+            condAssert(params.size() == 1, "Invalid number of parameters for fp.sqrt");
+            return mkFpSqrt(params[0]);
+        }
+        else if (s == "fp.rem") {
+            condAssert(params.size() == 2, "Invalid number of parameters for fp.rem");
+            return mkFpRem(params[0], params[1]);
+        }
+        else if (s == "fp.roundToIntegral") {
+            condAssert(params.size() == 1, "Invalid number of parameters for fp.roundToIntegral");
+            return mkFpRoundToIntegral(params[0]);
+        }
+        else if (s == "fp.min") {
+            condAssert(params.size() == 2, "Invalid number of parameters for fp.min");
+            return mkFpMin(params);
+        }
+        else if (s == "fp.max") {
+            condAssert(params.size() == 2, "Invalid number of parameters for fp.max");
+            return mkFpMax(params);
+        }
+        else if (s == "fp.leq") {
+            condAssert(params.size() == 2, "Invalid number of parameters for fp.leq");
+            return mkFpLe(params[0], params[1]);
+        }
+        else if (s == "fp.lt") {
+            condAssert(params.size() == 2, "Invalid number of parameters for fp.lt");
+            return mkFpLt(params[0], params[1]);
+        }
+        else if (s == "fp.geq") {
+            condAssert(params.size() == 2, "Invalid number of parameters for fp.geq");
+            return mkFpGe(params[0], params[1]);
+        }
+        else if (s == "fp.gt") {
+            condAssert(params.size() == 2, "Invalid number of parameters for fp.gt");
+            return mkFpGt(params[0], params[1]);
+        }
+        else if (s == "fp.eq" || s == "fp.=" || s == "fp.==") {
+            condAssert(params.size() == 2, "Invalid number of parameters for fp.eq");
+            return mkFpEq(params[0], params[1]);
+        }
+        else if (s == "fp.ne" || s == "fp.!=" || s == "fp.neq") {
+            condAssert(params.size() == 2, "Invalid number of parameters for fp.ne");
+            return mkFpNe(params[0], params[1]);
+        }
+        else if (s == "fp.to_ubv") {
+            condAssert(params.size() == 2, "Invalid number of parameters for fp.to_ubv");
+            return mkFpToUbv(params[0], params[1]);
+        }
+        else if (s == "fp.to_sbv") {
+            condAssert(params.size() == 2, "Invalid number of parameters for fp.to_sbv");
+            return mkFpToSbv(params[0], params[1]);
+        }
+        else if (s == "fp.to_real") {
+            condAssert(params.size() == 1, "Invalid number of parameters for fp.to_real");
+            return mkFpToReal(params[0]);
+        }
+        else if (s == "to_fp") {
+            condAssert(params.size() == 3, "Invalid number of parameters for to_fp");
+            return mkToFp(params[0], params[1], params[2]);
+        }
+        else if (s == "fp.isNormal"){
+            condAssert(params.size() == 1, "Invalid number of parameters for fp.isNormal");
+            return mkFpIsNormal(params[0]);
+        }
+        else if (s == "fp.isSubnormal"){
+            condAssert(params.size() == 1, "Invalid number of parameters for fp.isSubnormal");
+            return mkFpIsSubnormal(params[0]);
+        }
+        else if (s == "fp.isZero"){
+            condAssert(params.size() == 1, "Invalid number of parameters for fp.isZero");
+            return mkFpIsZero(params[0]);
+        }
+        else if (s == "fp.isInfinite"){
+            condAssert(params.size() == 1, "Invalid number of parameters for fp.isInfinite");
+            return mkFpIsInf(params[0]);
+        }
+        else if (s == "fp.isNaN"){
+            condAssert(params.size() == 1, "Invalid number of parameters for fp.isNaN");
+            return mkFpIsNan(params[0]);
+        }
+        else if (s == "fp.isNegative"){
+            condAssert(params.size() == 1, "Invalid number of parameters for fp.isNegative");
+            return mkFpIsNeg(params[0]);
+        }
+        else if (s == "fp.isPositive"){
+            condAssert(params.size() == 1, "Invalid number of parameters for fp.isPositive");
+            return mkFpIsPos(params[0]);
+        }
+        else if (s == "select") {
+            condAssert(params.size() == 2, "Invalid number of parameters for select");
+            return mkSelect(params[0], params[1]);
+        }
+        else if (s == "store") {
+            condAssert(params.size() == 3, "Invalid number of parameters for store");
+            return mkStore(params[0], params[1], params[2]);
+        }
+        else if (s == "str.len") {
+            condAssert(params.size() == 1, "Invalid number of parameters for str.len");
+            return mkStrLen(params[0]);
+        }
+        else if (s == "str.++") {
+            return mkStrConcat(params);
+        }
+        else if (s == "str.substr") {
+            condAssert(params.size() == 3, "Invalid number of parameters for str.substr");
+            return mkStrSubstr(params[0], params[1], params[2]);
+        }
+        else if (s == "str.prefixof") {
+            condAssert(params.size() == 2, "Invalid number of parameters for str.prefixof");
+            return mkStrPrefixof(params[0], params[1]);
+        }
+        else if (s == "str.suffixof") {
+            condAssert(params.size() == 2, "Invalid number of parameters for str.suffixof");
+            return mkStrSuffixof(params[0], params[1]);
+        }
+        else if (s == "str.indexof") {
+            condAssert(params.size() == 3, "Invalid number of parameters for str.indexof");
+            return mkStrIndexof(params[0], params[1], params[2]);
+        }
+        else if (s == "str.at") {
+            condAssert(params.size() == 2, "Invalid number of parameters for str.at");
+            return mkStrCharat(params[0], params[1]);
+        }
+        else if (s == "str.update") {
+            condAssert(params.size() == 3, "Invalid number of parameters for str.update");
+            return mkStrUpdate(params[0], params[1], params[2]);
+        }
+        else if (s == "str.replace") {
+            condAssert(params.size() == 3, "Invalid number of parameters for str.replace");
+            return mkStrReplace(params[0], params[1], params[2]);
+        }
+        else if (s == "str.replace_all") {
+            condAssert(params.size() == 3, "Invalid number of parameters for str.replace_all");
+            return mkStrReplaceAll(params[0], params[1], params[2]);
+        }
+        else if (s == "str.replace_re") {
+            condAssert(params.size() == 3, "Invalid number of parameters for str.replace_re");
+            return mkReplaceReg(params[0], params[1], params[2]);
+        }
+        else if (s == "str.replace_re_all") {
+            condAssert(params.size() == 3, "Invalid number of parameters for str.replace_re_all");
+            return mkReplaceRegAll(params[0], params[1], params[2]);
+        }
+        else if (s == "str.to_lower") {
+            condAssert(params.size() == 1, "Invalid number of parameters for str.to_lower");
+            return mkStrToLower(params[0]);
+        }
+        else if (s == "str.to_upper") {
+            condAssert(params.size() == 1, "Invalid number of parameters for str.to_upper");
+            return mkStrToUpper(params[0]);
+        }
+        else if (s == "str.rev") {
+            condAssert(params.size() == 1, "Invalid number of parameters for str.rev");
+            return mkStrRev(params[0]);
+        }
+        else if (s == "str.split") {
+            condAssert(params.size() == 2, "Invalid number of parameters for str.split");
+            return mkStrSplit(params[0], params[1]);
+        }
+        else if (s == "str.split_at") {
+            condAssert(params.size() == 3, "Invalid number of parameters for str.split_at");
+            return mkStrSplitAt(params[0], params[1], params[2]);
+        }
+        else if (s == "str.split_rest") {
+            condAssert(params.size() == 3, "Invalid number of parameters for str.split_rest");
+            return mkStrSplitRest(params[0], params[1], params[2]);
+        }
+        else if (s == "str.num_splits") {
+            condAssert(params.size() == 2, "Invalid number of parameters for str.num_splits");
+            return mkStrNumSplits(params[0], params[1]);
+        }
+        else if (s == "str.<"){
+            condAssert(params.size() == 2, "Invalid number of parameters for str.<");
+            return mkStrLt(params[0], params[1]);
+        }
+        else if (s == "str.<="){
+            condAssert(params.size() == 2, "Invalid number of parameters for str.<=");
+            return mkStrLe(params[0], params[1]);
+        }
+        else if (s == "str.>"){
+            condAssert(params.size() == 2, "Invalid number of parameters for str.>");
+            return mkStrGt(params[0], params[1]);
+        }
+        else if (s == "str.>="){
+            condAssert(params.size() == 2, "Invalid number of parameters for str.>=");
+            return mkStrGe(params[0], params[1]);
+        }
+        else if (s == "str.in_re"){
+            condAssert(params.size() == 2, "Invalid number of parameters for str.in_re");
+            return mkStrInReg(params[0], params[1]);
+        }
+        else if (s == "str.contains"){
+            condAssert(params.size() == 2, "Invalid number of parameters for str.contains");
+            return mkStrContains(params[0], params[1]);
+        }
+        else if (s == "str.is_digit"){
+            condAssert(params.size() == 1, "Invalid number of parameters for str.is_digit");
+            return mkStrIsDigit(params[0]);
+        }
+        else if (s == "str.from_int"){
+            condAssert(params.size() == 1, "Invalid number of parameters for str.from_int");
+            return mkStrFromInt(params[0]);
+        }
+        else if (s == "str.to_int"){
+            condAssert(params.size() == 1, "Invalid number of parameters for str.to_int");
+            return mkStrToInt(params[0]);
+        }
+        else if (s == "str.to_re"){
+            condAssert(params.size() == 1, "Invalid number of parameters for str.to_re");
+            return mkStrToReg(params[0]);
+        }
+        else if (s == "str.to_code"){
+            condAssert(params.size() == 1, "Invalid number of parameters for str.to_code");
+            return mkStrToCode(params[0]);
+        }
+        else if (s == "str.from_code"){
+            condAssert(params.size() == 1, "Invalid number of parameters for str.from_code");
+            return mkStrFromCode(params[0]);
+        }
+        else if (s == "re.++") {
+            return mkRegConcat(params);
+        }
+        else if (s == "re.union") {
+            return mkRegUnion(params);
+        }
+        else if (s == "re.inter") {
+            return mkRegInter(params);
+        }
+        else if (s == "re.diff") {
+            return mkRegDiff(params);
+        }
+        else if (s == "re.*") {
+            condAssert(params.size() == 1, "Invalid number of parameters for re.*");
+            return mkRegStar(params[0]);
+        }
+        else if (s == "re.+") {
+            condAssert(params.size() == 1, "Invalid number of parameters for re.+");
+            return mkRegPlus(params[0]);
+        }
+        else if (s == "re.?" || s == "re.opt") {
+            condAssert(params.size() == 1, "Invalid number of parameters for re.?");
+            return mkRegOpt(params[0]);
+        }
+        else if (s == "re.range") {
+            condAssert(params.size() == 2, "Invalid number of parameters for re.range");
+            return mkRegRange(params[0], params[1]);
+        }
+        else if (s == "re.repeat") {
+            condAssert(params.size() == 2, "Invalid number of parameters for re.repeat");
+            return mkRegRepeat(params[0], params[1]);
+        }
+        else if (s == "re.comp") {
+            condAssert(params.size() == 1, "Invalid number of parameters for re.comp");
+            return mkRegComplement(params[0]);
+        }
+        else if (fun_key_map.find(s) != fun_key_map.end()) {
+            // function
+            return applyFun(fun_key_map[s], params);
+        }
+        
+        return mkErr(ERROR_TYPE::ERR_UNKWN_SYM);
+    }
+    
+
     // State of the parser
     enum class FrameState {
         Start,
@@ -354,6 +994,537 @@ namespace SMTParser{
 		else {
 			err_unkwn_sym(s, line_number);
 		}
+		return mkErr(ERROR_TYPE::ERR_UNKWN_SYM);
+	}
+
+    
+	std::shared_ptr<DAGNode> Parser::parseOper(const std::string& s, const std::vector<std::shared_ptr<DAGNode>> &params){
+		TIME_FUNC();
+		auto kind = getKind(s);
+		switch(kind){
+			case NODE_KIND::AND:
+				return mkAnd(params);
+			case NODE_KIND::OR:
+				return mkOr(params);
+			case NODE_KIND::NOT:
+				condAssert(params.size() == 1, "Invalid number of parameters for not");
+				return mkNot(params[0]);
+			case NODE_KIND::IMPLIES:
+				return mkImplies(params);
+			case NODE_KIND::XOR:
+				return mkXor(params);
+			case NODE_KIND::EQ:
+				return mkEq(params);
+			case NODE_KIND::DISTINCT:
+				return mkDistinct(params);
+			case NODE_KIND::ITE:
+				return mkIte(params);
+			case NODE_KIND::ADD:
+				return mkAdd(params);
+			case NODE_KIND::SUB:
+				return mkSub(params);
+			case NODE_KIND::MUL:
+				return mkMul(params);
+			case NODE_KIND::IAND:
+				return mkIand(params);
+			case NODE_KIND::POW2:
+				condAssert(params.size() == 1, "Invalid number of parameters for pow2");
+				return mkPow2(params[0]);
+			case NODE_KIND::POW:
+				condAssert(params.size() == 2, "Invalid number of parameters for pow");
+				return mkPow(params[0], params[1]);
+			case NODE_KIND::DIV_INT:
+				condAssert(params.size() == 2, "Invalid number of parameters for div");
+				return mkDivInt(params[0], params[1]);
+			case NODE_KIND::DIV_REAL:
+				condAssert(params.size() == 2, "Invalid number of parameters for div");
+				return mkDivReal(params[0], params[1]);
+			case NODE_KIND::MOD:
+				condAssert(params.size() == 2, "Invalid number of parameters for mod");
+				return mkMod(params[0], params[1]);
+			case NODE_KIND::ABS:
+				condAssert(params.size() == 1, "Invalid number of parameters for abs");
+				return mkAbs(params[0]);
+			case NODE_KIND::SQRT:
+				condAssert(params.size() == 1, "Invalid number of parameters for sqrt");
+				return mkSqrt(params[0]);
+			case NODE_KIND::SAFE_SQRT:
+				condAssert(params.size() == 1, "Invalid number of parameters for safeSqrt");
+				return mkSafeSqrt(params[0]);
+			case NODE_KIND::CEIL:
+				condAssert(params.size() == 1, "Invalid number of parameters for ceil");
+				return mkCeil(params[0]);
+			case NODE_KIND::FLOOR:
+				condAssert(params.size() == 1, "Invalid number of parameters for floor");
+				return mkFloor(params[0]);
+			case NODE_KIND::ROUND:
+				condAssert(params.size() == 1, "Invalid number of parameters for round");
+				return mkRound(params[0]);
+			case NODE_KIND::EXP:
+				condAssert(params.size() == 1, "Invalid number of parameters for exp");
+				return mkExp(params[0]);
+			case NODE_KIND::LN:
+				condAssert(params.size() == 1, "Invalid number of parameters for ln");
+				return mkLn(params[0]);
+			case NODE_KIND::LG:
+				condAssert(params.size() == 1, "Invalid number of parameters for lg");
+				return mkLg(params[0]);
+			case NODE_KIND::LB:
+				condAssert(params.size() == 1, "Invalid number of parameters for lb");
+				return mkLb(params[0]);
+			case NODE_KIND::LOG:
+				if(params.size() == 1){
+					return mkLn(params[0]);
+				}
+				else if(params.size() == 2){
+					return mkLog(params[0], params[1]);
+				}
+				else err_param_mis("log", line_number);
+			case NODE_KIND::NT_SIN:
+				condAssert(params.size() == 1, "Invalid number of parameters for sin");
+				return mkSin(params[0]);
+			case NODE_KIND::NT_COS:
+				condAssert(params.size() == 1, "Invalid number of parameters for cos");
+				return mkCos(params[0]);
+			case NODE_KIND::NT_TAN:
+				condAssert(params.size() == 1, "Invalid number of parameters for tan");
+				return mkTan(params[0]);
+			case NODE_KIND::NT_COT:
+				condAssert(params.size() == 1, "Invalid number of parameters for cot");
+				return mkCot(params[0]);
+			case NODE_KIND::NT_SEC:
+				condAssert(params.size() == 1, "Invalid number of parameters for sec");
+				return mkSec(params[0]);
+			case NODE_KIND::NT_CSC:
+				condAssert(params.size() == 1, "Invalid number of parameters for csc");
+			case NODE_KIND::NT_ASIN:
+				condAssert(params.size() == 1, "Invalid number of parameters for asin");
+				return mkAsin(params[0]);
+			case NODE_KIND::NT_ACOS:
+				condAssert(params.size() == 1, "Invalid number of parameters for acos");
+				return mkAcos(params[0]);
+			case NODE_KIND::NT_ATAN:
+				condAssert(params.size() == 1, "Invalid number of parameters for atan");
+				return mkAtan(params[0]);
+			case NODE_KIND::NT_ACOT:
+				condAssert(params.size() == 1, "Invalid number of parameters for acot");
+				return mkAcot(params[0]);
+			case NODE_KIND::NT_ASEC:
+				condAssert(params.size() == 1, "Invalid number of parameters for asec");
+				return mkAsec(params[0]);
+			case NODE_KIND::NT_ACSC:
+				condAssert(params.size() == 1, "Invalid number of parameters for acsc");
+			case NODE_KIND::NT_SINH:
+				condAssert(params.size() == 1, "Invalid number of parameters for sinh");
+				return mkSinh(params[0]);
+			case NODE_KIND::NT_COSH:
+				condAssert(params.size() == 1, "Invalid number of parameters for cosh");
+				return mkCosh(params[0]);
+			case NODE_KIND::NT_TANH:
+				condAssert(params.size() == 1, "Invalid number of parameters for tanh");
+				return mkTanh(params[0]);
+			case NODE_KIND::NT_ASECH:
+				condAssert(params.size() == 1, "Invalid number of parameters for asech");
+				return mkAsech(params[0]);
+			case NODE_KIND::NT_ACSCH:
+				condAssert(params.size() == 1, "Invalid number of parameters for acsch");
+				return mkAcsch(params[0]);
+			case NODE_KIND::NT_ACOTH:
+				condAssert(params.size() == 1, "Invalid number of parameters for acoth");
+				return mkAcoth(params[0]);
+			case NODE_KIND::NT_ATAN2:
+				condAssert(params.size() == 2, "Invalid number of parameters for atan2");
+				return mkAtan2(params[0], params[1]);
+			case NODE_KIND::NT_ASINH:
+				condAssert(params.size() == 1, "Invalid number of parameters for asinh");
+				return mkAsinh(params[0]);
+			case NODE_KIND::NT_ACOSH:
+				condAssert(params.size() == 1, "Invalid number of parameters for acosh");
+				return mkAcosh(params[0]);
+			case NODE_KIND::NT_ATANH:
+				condAssert(params.size() == 1, "Invalid number of parameters for atanh");
+				return mkAtanh(params[0]);
+			case NODE_KIND::NT_ACOTH:
+				condAssert(params.size() == 1, "Invalid number of parameters for acoth");
+				return mkAcoth(params[0]);
+			case NODE_KIND::NT_ASECH:
+				condAssert(params.size() == 1, "Invalid number of parameters for asech");
+				return mkAsech(params[0]);
+			case NODE_KIND::NT_ACSCH:
+				condAssert(params.size() == 1, "Invalid number of parameters for acsch");
+				return mkAcosh(params[0]);
+			case NODE_KIND::NT_LE:
+				condAssert(params.size() == 2, "Invalid number of parameters for <= ");
+				return mkLe(params[0], params[1]);
+			case NODE_KIND::NT_LT:
+				condAssert(params.size() == 2, "Invalid number of parameters for <");
+				return mkLt(params[0], params[1]);
+			case NODE_KIND::NT_GE:
+				condAssert(params.size() == 2, "Invalid number of parameters for >= ");
+				return mkGe(params[0], params[1]);
+			case NODE_KIND::NT_GT:
+				condAssert(params.size() == 2, "Invalid number of parameters for >");
+				return mkGt(params[0], params[1]);
+			case NODE_KIND::NT_TO_REAL:
+				condAssert(params.size() == 1, "Invalid number of parameters for to_real");
+				return mkToReal(params[0]);
+			case NODE_KIND::NT_TO_INT:
+				condAssert(params.size() == 1, "Invalid number of parameters for to_int");
+				return mkToInt(params[0]);
+			case NODE_KIND::NT_IS_INT:
+				condAssert(params.size() == 1, "Invalid number of parameters for is_int");
+				return mkIsInt(params[0]);
+			case NODE_KIND::NT_IS_DIVISIBLE:
+				condAssert(params.size() == 2, "Invalid number of parameters for is_divisible");
+				return mkIsDivisible(params[0], params[1]);
+			case NODE_KIND::NT_IS_PRIME:
+				condAssert(params.size() == 1, "Invalid number of parameters for is_prime");
+				return mkIsPrime(params[0]);
+			case NODE_KIND::NT_IS_EVEN:
+				condAssert(params.size() == 1, "Invalid number of parameters for is_even");
+				return mkIsEven(params[0]);
+			case NODE_KIND::NT_IS_ODD:
+				condAssert(params.size() == 1, "Invalid number of parameters for is_odd");
+				return mkIsOdd(params[0]);
+			case NODE_KIND::NT_GCD:
+				condAssert(params.size() == 2, "Invalid number of parameters for gcd");
+				return mkGcd(params[0], params[1]);
+			case NODE_KIND::NT_LCM:
+				condAssert(params.size() == 2, "Invalid number of parameters for lcm");
+				return mkLcm(params[0], params[1]);
+			case NODE_KIND::NT_FACTORIAL:
+				condAssert(params.size() == 1, "Invalid number of parameters for factorial");
+				return mkFact(params[0]);
+			case NODE_KIND::NT_BV_NOT:
+				condAssert(params.size() == 1, "Invalid number of parameters for bvnot");
+				return mkBvNot(params[0]);
+			case NODE_KIND::NT_BV_NEG:
+				condAssert(params.size() == 1, "Invalid number of parameters for bvneg");
+				return mkBvNeg(params[0]);
+			case NODE_KIND::NT_BV_AND:
+				return mkBvAnd(params);
+			case NODE_KIND::NT_BV_OR:
+				return mkBvOr(params);
+			case NODE_KIND::NT_BV_XOR:
+				return mkBvXor(params);
+			case NODE_KIND::NT_BV_NAND:
+				return mkBvNand(params);
+			case NODE_KIND::NT_BV_NOR:
+				return mkBvNor(params);
+			case NODE_KIND::NT_BV_XNOR:
+				return mkBvXnor(params);
+			case NODE_KIND::NT_BV_COMP:
+				condAssert(params.size() == 2, "Invalid number of parameters for bvcomp");
+				return mkBvComp(params[0], params[1]);
+			case NODE_KIND::NT_BV_ADD:
+				return mkBvAdd(params);
+			case NODE_KIND::NT_BV_SUB:
+				return mkBvSub(params);
+			case NODE_KIND::NT_BV_MUL:
+				return mkBvMul(params);
+			case NODE_KIND::NT_BV_UDIV:
+				condAssert(params.size() == 2, "Invalid number of parameters for bvudiv");
+				return mkBvUdiv(params[0], params[1]);
+			case NODE_KIND::NT_BV_UREM:
+				condAssert(params.size() == 2, "Invalid number of parameters for bvurem");
+				return mkBvUrem(params[0], params[1]);
+			case NODE_KIND::NT_BV_SDIV:
+				condAssert(params.size() == 2, "Invalid number of parameters for bvsdiv");
+				return mkBvSdiv(params[0], params[1]);
+			case NODE_KIND::NT_BV_SREM:
+				condAssert(params.size() == 2, "Invalid number of parameters for bvsmod");
+				return mkBvSmod(params[0], params[1]);
+			case NODE_KIND::NT_BV_SHL:
+				condAssert(params.size() == 2, "Invalid number of parameters for bvshl");
+				return mkBvShl(params[0], params[1]);
+			case NODE_KIND::NT_BV_ASHR:
+				condAssert(params.size() == 2, "Invalid number of parameters for bvashr");
+				return mkBvAshr(params[0], params[1]);
+            case NODE_KIND::NT_BV_ULT:
+                condAssert(params.size() == 2, "Invalid number of parameters for bvult");
+                return mkBvUlt(params[0], params[1]);
+            case NODE_KIND::NT_BV_ULE:
+                condAssert(params.size() == 2, "Invalid number of parameters for bvule");
+                return mkBvUle(params[0], params[1]);
+            case NODE_KIND::NT_BV_UGT:
+                condAssert(params.size() == 2, "Invalid number of parameters for bvugt");
+                return mkBvUgt(params[0], params[1]);
+            case NODE_KIND::NT_BV_UGE:
+                condAssert(params.size() == 2, "Invalid number of parameters for bvuge");
+                return mkBvUge(params[0], params[1]);
+            case NODE_KIND::NT_BV_SLT:
+                condAssert(params.size() == 2, "Invalid number of parameters for bvslt");
+                return mkBvSlt(params[0], params[1]);
+            case NODE_KIND::NT_BV_SLE:
+                condAssert(params.size() == 2, "Invalid number of parameters for bvsle");
+                return mkBvSle(params[0], params[1]);
+            case NODE_KIND::NT_BV_SGT:
+                condAssert(params.size() == 2, "Invalid number of parameters for bvsgt");
+                return mkBvSgt(params[0], params[1]);
+            case NODE_KIND::NT_BV_SGE:
+                condAssert(params.size() == 2, "Invalid number of parameters for bvsge");
+                return mkBvSge(params[0], params[1]);
+            case NODE_KIND::NT_BV_CONCAT:
+				return mkBvConcat(params);
+            case NODE_KIND::NT_BV_TO_INT:
+                condAssert(params.size() == 1, "Invalid number of parameters for bv2int");
+                return mkBvToInt(params[0]);
+            case NODE_KIND::NT_BV_TO_NAT:
+                condAssert(params.size() == 1, "Invalid number of parameters for bv2nat");
+                return mkBvToNat(params[0]);
+            case NODE_KIND::NT_NAT_TO_BV:
+                condAssert(params.size() == 2, "Invalid number of parameters for nat2bv");
+                return mkNatToBv(params[0], params[1]);
+            case NODE_KIND::NT_FP_ABS:
+                condAssert(params.size() == 1, "Invalid number of parameters for fp.abs");
+                return mkFpAbs(params[0]);
+            case NODE_KIND::NT_FP_NEG:
+                condAssert(params.size() == 1, "Invalid number of parameters for fp.neg");
+                return mkFpNeg(params[0]);
+            case NODE_KIND::NT_FP_ADD:
+                return mkFpAdd(params);
+            case NODE_KIND::NT_FP_SUB:
+                return mkFpSub(params);
+            case NODE_KIND::NT_FP_MUL:
+                return mkFpMul(params);
+            case NODE_KIND::NT_FP_DIV:
+                return mkFpDiv(params);
+            case NODE_KIND::NT_FP_FMA:
+                condAssert(params.size() == 3, "Invalid number of parameters for fp.fma");
+                return mkFpFma(params);
+            case NODE_KIND::NT_FP_SQRT:
+                condAssert(params.size() == 1, "Invalid number of parameters for fp.sqrt");
+                return mkFpSqrt(params[0]);
+            case NODE_KIND::NT_FP_REM:
+                condAssert(params.size() == 2, "Invalid number of parameters for fp.rem");
+                return mkFpRem(params[0], params[1]);
+            case NODE_KIND::NT_FP_ROUND_TO_INTEGRAL:
+                condAssert(params.size() == 1, "Invalid number of parameters for fp.roundToIntegral");
+                return mkFpRoundToIntegral(params[0]);
+            case NODE_KIND::NT_FP_MIN:
+                condAssert(params.size() == 2, "Invalid number of parameters for fp.min");
+                return mkFpMin(params);
+            case NODE_KIND::NT_FP_MAX:
+                condAssert(params.size() == 2, "Invalid number of parameters for fp.max");
+                return mkFpMax(params);
+            case NODE_KIND::NT_FP_LE:
+                condAssert(params.size() == 2, "Invalid number of parameters for fp.le");
+                return mkFpLe(params[0], params[1]);
+            case NODE_KIND::NT_FP_LT:
+                condAssert(params.size() == 2, "Invalid number of parameters for fp.lt");
+                return mkFpLt(params[0], params[1]);
+            case NODE_KIND::NT_FP_GE:
+                condAssert(params.size() == 2, "Invalid number of parameters for fp.ge");
+                return mkFpGe(params[0], params[1]);
+            case NODE_KIND::NT_FP_GT:
+                condAssert(params.size() == 2, "Invalid number of parameters for fp.gt");
+                return mkFpGt(params[0], params[1]);
+            case NODE_KIND::NT_FP_EQ:
+                condAssert(params.size() == 2, "Invalid number of parameters for fp.eq");
+                return mkFpEq(params[0], params[1]);
+            case NODE_KIND::NT_FP_NE:
+                condAssert(params.size() == 2, "Invalid number of parameters for fp.ne");
+                return mkFpNe(params[0], params[1]);
+            case NODE_KIND::NT_FP_TO_UBV:
+                condAssert(params.size() == 2, "Invalid number of parameters for fp.to_ubv");
+                return mkFpToUbv(params[0], params[1]);
+            case NODE_KIND::NT_FP_TO_SBV:
+                condAssert(params.size() == 2, "Invalid number of parameters for fp.to_sbv");
+                return mkFpToSbv(params[0], params[1]);
+            case NODE_KIND::NT_FP_TO_REAL:
+                condAssert(params.size() == 1, "Invalid number of parameters for fp.to_real");
+                return mkFpToReal(params[0]);
+            case NODE_KIND::NT_FP_TO_FP:
+                condAssert(params.size() == 2, "Invalid number of parameters for fp.to_fp");
+                return mkFpToFp(params[0], params[1]);
+            case NODE_KIND::NT_FP_IS_NORMAL:
+                condAssert(params.size() == 1, "Invalid number of parameters for fp.isNormal");
+                return mkFpIsNormal(params[0]);
+            case NODE_KIND::NT_FP_IS_SUBNORMAL:
+                condAssert(params.size() == 1, "Invalid number of parameters for fp.isSubnormal");
+                return mkFpIsSubnormal(params[0]);
+            case NODE_KIND::NT_FP_IS_ZERO:
+                condAssert(params.size() == 1, "Invalid number of parameters for fp.isZero");
+                return mkFpIsZero(params[0]);
+            case NODE_KIND::NT_FP_IS_INF:
+                condAssert(params.size() == 1, "Invalid number of parameters for fp.isInfinite");
+                return mkFpIsInf(params[0]);
+            case NODE_KIND::NT_FP_IS_NAN:
+                condAssert(params.size() == 1, "Invalid number of parameters for fp.isNaN");
+                return mkFpIsNan(params[0]);
+            case NODE_KIND::NT_FP_IS_NEG:
+                condAssert(params.size() == 1, "Invalid number of parameters for fp.isNegative");
+                return mkFpIsNeg(params[0]);
+            case NODE_KIND::NT_FP_IS_POS:
+                condAssert(params.size() == 1, "Invalid number of parameters for fp.isPositive");
+                return mkFpIsPos(params[0]);
+            case NODE_KIND::NT_SELECT:
+                condAssert(params.size() == 2, "Invalid number of parameters for select");
+                return mkSelect(params[0], params[1]);
+            case NODE_KIND::NT_STORE:
+                condAssert(params.size() == 3, "Invalid number of parameters for store");
+                return mkStore(params[0], params[1], params[2]);
+            case NODE_KIND::NT_STR_LEN:
+                condAssert(params.size() == 1, "Invalid number of parameters for str.len");
+                return mkStrLen(params[0]);
+            case NODE_KIND::NT_STR_CONCAT:
+                return mkStrConcat(params);
+            case NODE_KIND::NT_STR_SUBSTR:
+                condAssert(params.size() == 3, "Invalid number of parameters for str.substr");
+                return mkStrSubstr(params[0], params[1], params[2]);
+            case NODE_KIND::NT_STR_PREFIXOF:
+                condAssert(params.size() == 2, "Invalid number of parameters for str.prefixof");
+			    return mkStrPrefixof(params[0], params[1]);
+            case NODE_KIND::NT_STR_SUFFIXOF:
+                condAssert(params.size() == 2, "Invalid number of parameters for str.suffixof");
+                return mkStrSuffixof(params[0], params[1]);
+            case NODE_KIND::NT_STR_INDEXOF:
+                condAssert(params.size() == 3, "Invalid number of parameters for str.indexof");
+                return mkStrIndexof(params[0], params[1], params[2]);
+            case NODE_KIND::NT_STR_AT:
+                condAssert(params.size() == 2, "Invalid number of parameters for str.at");
+                return mkStrCharat(params[0], params[1]);
+            case NODE_KIND::NT_STR_UPDATE:
+                condAssert(params.size() == 3, "Invalid number of parameters for str.update");
+                return mkStrUpdate(params[0], params[1], params[2]);
+            case NODE_KIND::NT_STR_REPLACE:
+                condAssert(params.size() == 3, "Invalid number of parameters for str.replace");
+                return mkStrReplace(params[0], params[1], params[2]);
+            case NODE_KIND::NT_STR_REPLACE_ALL:
+                condAssert(params.size() == 3, "Invalid number of parameters for str.replace_all");
+                return mkStrReplaceAll(params[0], params[1], params[2]);
+            case NODE_KIND::NT_REPLACE_REG:
+                condAssert(params.size() == 3, "Invalid number of parameters for str.replace_re");
+                return mkReplaceReg(params[0], params[1], params[2]);
+            case NODE_KIND::NT_REPLACE_REG_ALL:
+                condAssert(params.size() == 3, "Invalid number of parameters for str.replace_re_all");
+                return mkReplaceRegAll(params[0], params[1], params[2]);
+            case NODE_KIND::NT_STR_TO_LOWER:
+                condAssert(params.size() == 1, "Invalid number of parameters for str.to_lower");
+                return mkStrToLower(params[0]);
+            case NODE_KIND::NT_STR_TO_UPPER:
+                condAssert(params.size() == 1, "Invalid number of parameters for str.to_upper");
+                return mkStrToUpper(params[0]);
+            case NODE_KIND::NT_STR_REV:
+                condAssert(params.size() == 1, "Invalid number of parameters for str.rev");
+                return mkStrRev(params[0]);
+            case NODE_KIND::NT_STR_SPLIT:
+                condAssert(params.size() == 2, "Invalid number of parameters for str.split");
+                return mkStrSplit(params[0], params[1]);
+            case NODE_KIND::NT_STR_SPLIT_AT:
+                condAssert(params.size() == 3, "Invalid number of parameters for str.split_at");
+                return mkStrSplitAt(params[0], params[1], params[2]);
+            case NODE_KIND::NT_STR_SPLIT_REST:
+                condAssert(params.size() == 3, "Invalid number of parameters for str.split_rest");
+                return mkStrSplitRest(params[0], params[1], params[2]);
+            case NODE_KIND::NT_STR_NUM_SPLITS:
+                condAssert(params.size() == 2, "Invalid number of parameters for str.num_splits");
+                return mkStrNumSplits(params[0], params[1]);
+            case NODE_KIND::NT_STR_LT:
+                condAssert(params.size() == 2, "Invalid number of parameters for str.<");
+                return mkStrLt(params[0], params[1]);
+            case NODE_KIND::NT_STR_LE:
+                condAssert(params.size() == 2, "Invalid number of parameters for str.<=");
+                return mkStrLe(params[0], params[1]);
+            case NODE_KIND::NT_STR_GT:
+                condAssert(params.size() == 2, "Invalid number of parameters for str.>");
+                return mkStrGt(params[0], params[1]);
+            case NODE_KIND::NT_STR_GE:
+                condAssert(params.size() == 2, "Invalid number of parameters for str.>=");
+                return mkStrGe(params[0], params[1]);
+            case NODE_KIND::NT_STR_IN_RE:
+                condAssert(params.size() == 2, "Invalid number of parameters for str.in_re");
+                return mkStrInReg(params[0], params[1]);
+            case NODE_KIND::NT_STR_CONTAINS:
+                condAssert(params.size() == 2, "Invalid number of parameters for str.contains");
+                return mkStrContains(params[0], params[1]);
+            case NODE_KIND::NT_STR_IS_DIGIT:
+                condAssert(params.size() == 1, "Invalid number of parameters for str.is_digit");
+                return mkStrIsDigit(params[0]);
+            case NODE_KIND::NT_STR_FROM_INT:
+                condAssert(params.size() == 1, "Invalid number of parameters for str.from_int");
+                return mkStrFromInt(params[0]);
+            case NODE_KIND::NT_STR_TO_INT:
+                condAssert(params.size() == 1, "Invalid number of parameters for str.to_int");
+                return mkStrToInt(params[0]);
+            case NODE_KIND::NT_STR_TO_RE:
+                condAssert(params.size() == 1, "Invalid number of parameters for str.to_re");
+                return mkStrToReg(params[0]);
+            case NODE_KIND::NT_STR_TO_CODE:
+                condAssert(params.size() == 1, "Invalid number of parameters for str.to_code");
+                return mkStrToCode(params[0]);
+            case NODE_KIND::NT_STR_FROM_CODE:
+                condAssert(params.size() == 1, "Invalid number of parameters for str.from_code");
+                return mkStrFromCode(params[0]);
+            case NODE_KIND::NT_REG_CONCAT:
+                return mkRegConcat(params);
+            case NODE_KIND::NT_REG_UNION:
+                return mkRegUnion(params);
+            case NODE_KIND::NT_REG_INTER:
+                return mkRegInter(params);
+            case NODE_KIND::NT_REG_DIFF:
+                return mkRegDiff(params);
+            case NODE_KIND::NT_REG_STAR:
+                condAssert(params.size() == 1, "Invalid number of parameters for re.*");
+                return mkRegStar(params[0]);
+            case NODE_KIND::NT_REG_PLUS:
+                condAssert(params.size() == 1, "Invalid number of parameters for re.+");
+                return mkRegPlus(params[0]);
+            case NODE_KIND::NT_REG_OPT:
+                condAssert(params.size() == 1, "Invalid number of parameters for re.?");
+                return mkRegOpt(params[0]);
+            case NODE_KIND::NT_REG_RANGE:
+                condAssert(params.size() == 2, "Invalid number of parameters for re.range");
+                return mkRegRange(params[0], params[1]);
+            case NODE_KIND::NT_REG_REPEAT:
+                condAssert(params.size() == 2, "Invalid number of parameters for re.repeat");
+                return mkRegRepeat(params[0], params[1]);
+            case NODE_KIND::NT_REG_COMPLEMENT:
+                condAssert(params.size() == 1, "Invalid number of parameters for re.comp");
+                return mkRegComplement(params[0]);
+            case NODE_KIND::NT_FUNC_APPLY:
+            case NODE_KIND::NT_FUNC_DEC:
+            case NODE_KIND::NT_FUNC_DEF:
+                if (fun_key_map.find(s) != fun_key_map.end()) {
+                    // function
+                    return applyFun(fun_key_map[s], params);
+                }
+                else {
+                    err_unkwn_sym(s, line_number);
+                }
+                return mkErr(ERROR_TYPE::ERR_UNKWN_SYM);
+            case NODE_KIND::NT_UNKNOWN:
+            case NODE_KIND::NT_ERROR:
+            case NODE_KIND::NT_NULL:
+            case NODE_KIND::NT_CONST:
+            case NODE_KIND::NT_VAR:
+            case NODE_KIND::NT_CONST_TRUE:
+            case NODE_KIND::NT_CONST_FALSE:
+            case NODE_KIND::NT_TEMP_VAR:
+            case NODE_KIND::NT_APPLY_UF:
+            case NODE_KIND::NT_BV_EXTRACT:
+            case NODE_KIND::NT_BV_REPEAT:
+            case NODE_KIND::NT_BV_ZERO_EXT:
+            case NODE_KIND::NT_BV_SIGN_EXT:
+            case NODE_KIND::NT_BV_ROTATE_LEFT:
+            case NODE_KIND::NT_BV_ROTATE_RIGHT:
+            case NODE_KIND::NT_INT_TO_BV:
+            case NODE_KIND::NT_REG_LOOP:
+            case NODE_KIND::NT_MAX:
+            case NODE_KIND::NT_MIN:
+            case NODE_KIND::NT_LET:
+            case NODE_KIND::NT_LET_CHAIN:
+            case NODE_KIND::NT_LET_BIND_VAR:
+            case NODE_KIND::NT_LET_BIND_VAR_LIST:
+            case NODE_KIND::NT_ITE:
+            case NODE_KIND::NT_FORALL:
+            case NODE_KIND::NT_EXISTS:
+            case NODE_KIND::NT_QUANT_VAR:
+            case NODE_KIND::NT_FUNC_PARAM:
+            case NODE_KIND::NUM_KINDS:
+                condAssert(false, "Invalid kind");
+		}
+		
 		return mkErr(ERROR_TYPE::ERR_UNKWN_SYM);
 	}
 }

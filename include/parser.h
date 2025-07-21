@@ -403,6 +403,22 @@ namespace SMTParser{
          * @return Sort
          */
         std::shared_ptr<Sort> getSort(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> m);
+        
+        /**
+         * @brief Get kind
+         * 
+         * @param s String
+         * @return NODE_KIND
+         */
+        NODE_KIND getKind(const std::string& s);
+
+        /**
+         * @brief Get kind
+         * 
+         * @param node Node
+         * @return NODE_KIND
+         */
+        NODE_KIND getKind(const std::shared_ptr<DAGNode>& node);
 
         // get result type
         /**
