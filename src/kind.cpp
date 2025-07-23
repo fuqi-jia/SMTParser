@@ -618,4 +618,12 @@ namespace SMTParser{
                 return NODE_KIND::NT_UNKNOWN;
         }
     }
+
+    NODE_KIND getKind(const std::string& s) {
+        auto it = oper_key_map.find(s);
+        if (it != oper_key_map.end()) {
+            return it->second;
+        }
+        return NODE_KIND::NT_UNKNOWN;
+    }
 }
