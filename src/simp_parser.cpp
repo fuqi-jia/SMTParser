@@ -33,7 +33,6 @@ namespace SMTParser{
         std::cerr << "Precision warning: " << op << " will use double precision" << std::endl;
     }
     std::shared_ptr<DAGNode> Parser::simp_oper(const NODE_KIND& t, std::shared_ptr<DAGNode> p){
-        TIME_FUNC();
         switch(t){
             // Unary operation - accepts one parameter
             case NODE_KIND::NT_NOT:{

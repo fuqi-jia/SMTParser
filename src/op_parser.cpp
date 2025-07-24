@@ -297,7 +297,6 @@ namespace SMTParser{
     (= A A+ :chainable), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkEq(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        TIME_FUNC();
         if(!l->getSort()->isEqTo(r->getSort())) {
             if(canExempt(l->getSort(), r->getSort())){
                 std::cerr << "Type mismatch in eq, but now exempt for int/real"<<std::endl;
@@ -343,7 +342,6 @@ namespace SMTParser{
         }
     }
     std::shared_ptr<DAGNode> Parser::mkEq(const std::vector<std::shared_ptr<DAGNode>> &params){
-        TIME_FUNC();
         if(params.size() < 2) {
             err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for equality", line_number);
             return mkUnknown();
@@ -384,7 +382,13 @@ namespace SMTParser{
             return new_params[0];
         }
         else{
-            return mkOper(BOOL_SORT, NODE_KIND::NT_EQ, new_params);
+            if(new_params.size() > 100){
+                // [OPTIMIZE] have not use mkOper, because it will sort parameters
+                return node_manager->createNode(BOOL_SORT, NODE_KIND::NT_EQ, "eq", new_params);
+            }
+            else{
+                return mkOper(BOOL_SORT, NODE_KIND::NT_EQ, new_params);
+            }
         }
     }
     /*
@@ -480,7 +484,14 @@ namespace SMTParser{
             return new_params[0];
         }
         else{
-            return mkOper(BOOL_SORT, NODE_KIND::NT_DISTINCT, new_params);
+            // for large distinct, create node directly without sorting parameters
+            // the semantics of distinct does not depend on the order of parameters, and sorting is too expensive
+            if(new_params.size() > 100) {
+                // [OPTIMIZE] have not use mkOper, because it will sort parameters
+                return node_manager->createNode(BOOL_SORT, NODE_KIND::NT_DISTINCT, "distinct", new_params);
+            } else {
+                return mkOper(BOOL_SORT, NODE_KIND::NT_DISTINCT, new_params);
+            }
         }
     }
     // CONST
@@ -720,7 +731,6 @@ namespace SMTParser{
         return mkAnd({l, m, r});
     }
     std::shared_ptr<DAGNode> Parser::mkAnd(const std::vector<std::shared_ptr<DAGNode>> &params){
-        TIME_FUNC();
         if(params.size() == 0){
             std::cerr << "AND on empty parameters, return true" << std::endl;
             return mkTrue();
@@ -830,7 +840,6 @@ namespace SMTParser{
         return mkImplies({l, r});
     }
     std::shared_ptr<DAGNode> Parser::mkImplies(const std::vector<std::shared_ptr<DAGNode>> &params){
-        TIME_FUNC();
         if(params.size() < 2) {
             err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for implies", line_number);
             return mkUnknown();

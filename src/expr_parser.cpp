@@ -69,9 +69,9 @@ namespace SMTParser{
 
         ExprFrame() {
             // pre-allocate container space, reduce dynamic expansion overhead
-            // according to common expressions, most operators have 2-4 parameters
+            // according to common expressions, most operators have 2-4 args and a lot of params
             func_args.reserve(4);
-            oper_params.reserve(4);
+            oper_params.reserve(64);
         }
     };
     
@@ -86,6 +86,7 @@ namespace SMTParser{
 
             switch(frame.state){
                 case FrameState::Start:{
+                    TIME_BLOCK("parseExpr FrameState::Start");
                     // handle the simplest symbol or constant
                     if(*bufptr != '('){
                         size_t ln = line_number;
@@ -174,6 +175,7 @@ namespace SMTParser{
                 }
 
                 case FrameState::ProcessingParams:{
+                    TIME_BLOCK("parseExpr FrameState::ProcessingParams");
                     // escape the space and comment
                     scanToNextSymbol();
                     if(*bufptr == ')'){
@@ -234,7 +236,7 @@ namespace SMTParser{
                         } else if(opName == "bvsgt"){
                             condAssert(frame.oper_params.size() == 2, "Invalid number of parameters for bvsgt");
                             res = mkBvSgt(frame.oper_params[0], frame.oper_params[1]);
-                        } else if(opName == "bvsle"){
+                        } else if(opName == "bvsle"){   
                             condAssert(frame.oper_params.size() == 2, "Invalid number of parameters for bvsle");
                             res = mkBvSle(frame.oper_params[0], frame.oper_params[1]);
                         } else if(opName == "bvsle"){
@@ -258,6 +260,7 @@ namespace SMTParser{
                 }
 
                 case FrameState::ProcessingParamFuncArgs:{
+                    TIME_BLOCK("parseExpr FrameState::ProcessingParamFuncArgs");
                     // escape the space and comment
                     scanToNextSymbol();
                     if(*bufptr == ')'){
@@ -270,6 +273,7 @@ namespace SMTParser{
                 }
 
                 case FrameState::ProcessingParamFuncParams:{
+                    TIME_BLOCK("parseExpr FrameState::ProcessingParamFuncParams");
                     // escape the space and comment
                     scanToNextSymbol();
                     if(*bufptr == ')'){
@@ -291,20 +295,22 @@ namespace SMTParser{
                 }
 
                 case FrameState::Finish:{
+                    TIME_BLOCK("parseExpr FrameState::Finish");
                     auto res = frame.result;
                     st.pop();
                     if(st.empty()) return res;
                     ExprFrame &parent = st.top();
                     if(parent.state == FrameState::ProcessingParams){
-                        parent.oper_params.push_back(res);
+                        parent.oper_params.emplace_back(res);
                     }else if(parent.state == FrameState::ProcessingParamFuncArgs){
-                        parent.func_args.push_back(res);
+                        parent.func_args.emplace_back(res);
                     }else if(parent.state == FrameState::ProcessingParamFuncParams){
-                        parent.oper_params.push_back(res);
+                        parent.oper_params.emplace_back(res);
                     }
                     break;
                 }
                 default:{
+                    TIME_BLOCK("parseExpr Default");
                     st.pop();
                     break;
                 }

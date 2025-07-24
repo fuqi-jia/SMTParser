@@ -538,7 +538,7 @@ namespace SMTParser{
                 node_buckets[i].reserve(1);
             }
             else{
-                node_buckets[i].reserve(2048);
+                node_buckets[i].reserve(8192);
             }
         }
         // 2. Initialize static constant nodes and insert them into buckets
@@ -587,26 +587,33 @@ namespace SMTParser{
         auto bucket_index = static_cast<size_t>(node->getKind());
         auto& kind_bucket = node_buckets[bucket_index];
         
-        // 预计算哈希码避免重复计算
+        // pre-calculate hash code to avoid repeated calculation
         size_t node_hash = node->hashCode();
         
-        // 二级哈希查找：先用哈希码定位到小桶
+        // secondary hash lookup: first use hash code to locate the small bucket
         auto hash_it = kind_bucket.find(node_hash);
         if(hash_it != kind_bucket.end()) {
-            // 在小桶中线性查找
+            TIME_BLOCK("NodeManager::insertNodeToBucket: hash_it != kind_bucket.end()");
+            // linear search in the small bucket
             for(const auto& pair : hash_it->second) {
-                // 快速比较：指针 -> 简单字段 -> 深度比较
-                if(pair.first.get() == node.get() ||
-                   (pair.first->getKind() == node->getKind() &&
-                    pair.first->getName() == node->getName() &&
-                    pair.first->getChildrenSize() == node->getChildrenSize() &&
-                    pair.first->isEquivalentTo(*node))) {
+                // optimize comparison order: the most likely different ones are in front, to avoid the expensive isEquivalentTo
+                if(pair.first.get() == node.get()) {
+                    // completely the same pointer, return directly
                     return nodes[pair.second];
+                }
+                // fast structure comparison (avoid the expensive isEquivalentTo call)
+                if(pair.first->getKind() == node->getKind() &&
+                   pair.first->getChildrenSize() == node->getChildrenSize() &&
+                   pair.first->getName() == node->getName()) {
+                    // only call the expensive isEquivalentTo when the structure matches completely
+                    if(pair.first->isEquivalentTo(*node)) {
+                        return nodes[pair.second];
+                    }
                 }
             }
         }
         
-        // 节点不存在，插入新节点
+        // node does not exist, insert new node
         size_t new_index = nodes.size();
         kind_bucket[node_hash].emplace_back(node, new_index);
         nodes.emplace_back(node);

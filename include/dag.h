@@ -32,6 +32,7 @@
 #include "sort.h"
 #include "util.h"
 #include "value.h"
+#include "timing.h"
 
 #include <iostream>
 #include <fstream>
@@ -804,17 +805,24 @@ namespace SMTParser{
                 return cached_hash_code;
             }
             
-            // 使用更快的哈希算法，避免昂贵的 SHA256
-            size_t hash_value = 0;
+            // high quality hash algorithm, reduce conflicts
+            size_t h1 = reinterpret_cast<size_t>(sort.get()); // Sort pointer, avoid string hash
+            size_t h2 = static_cast<size_t>(kind);
+            size_t h3 = name.empty() ? 0 : std::hash<std::string>{}(name);
+            size_t h4 = children.size();
+            size_t h5 = children_hash.empty() ? 0 : std::hash<std::string>{}(children_hash);
             
-            // 组合各个组件的哈希
-            hash_value ^= std::hash<std::string>{}(sort->toString()) + 0x9e3779b9 + (hash_value << 6) + (hash_value >> 2);
-            hash_value ^= std::hash<int>{}(static_cast<int>(kind)) + 0x9e3779b9 + (hash_value << 6) + (hash_value >> 2);
-            hash_value ^= std::hash<std::string>{}(name) + 0x9e3779b9 + (hash_value << 6) + (hash_value >> 2);
-            hash_value ^= std::hash<size_t>{}(children.size()) + 0x9e3779b9 + (hash_value << 6) + (hash_value >> 2);
-            hash_value ^= std::hash<std::string>{}(children_hash) + 0x9e3779b9 + (hash_value << 6) + (hash_value >> 2);
+            // use better hash combination algorithm (based on boost::hash_combine)
+            size_t seed = 0;
+            seed ^= h1 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+            seed ^= h2 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+            seed ^= h3 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+            seed ^= h4 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+            seed ^= h5 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
             
-            cached_hash_code = hash_value;
+            seed ^= 0x9e3779b9 + (seed << 6) + (seed >> 2);
+            
+            cached_hash_code = seed;
             hash_computed = true;
             return cached_hash_code;
         }
@@ -852,19 +860,38 @@ namespace SMTParser{
 
     private:
         bool isEquivalentTo(const DAGNode& other, std::unordered_set<std::pair<const DAGNode*, const DAGNode*>, PairNodePtrHash, PairNodePtrEqual>& visited) const {
+            TIME_FUNC();
+            
+            // fastest check: pointer same
+            if (this == &other) {
+                return true;
+            }
+            
+            // fast structure check (avoid the expensive subsequent comparison)
+            if (kind != other.kind || 
+                children.size() != other.children.size() || 
+                sort.get() != other.sort.get()) {
+                return false;
+            }
+            
+            // name check
+            if (name != other.name) {
+                return false;
+            }
+            
+            // children_hash check (if both are calculated, this is the fastest deep comparison)
+            if (!children_hash.empty() && !other.children_hash.empty() && 
+                children_hash != other.children_hash) {
+                return false;
+            }
+            
             auto p = std::make_pair(this, &other);
             if(visited.find(p) != visited.end()){
                 return true;
             }
             visited.insert(p);
             
-            if(hashString() != other.hashString()) {
-                return false;
-            }
-            
-            if (sort != other.sort || kind != other.kind || name != other.name || children.size() != other.children.size()) {
-                return false;
-            }
+            // most expensive recursive comparison at the end
             for (size_t i = 0; i < children.size(); i++) {
                 if (!children[i]->isEquivalentTo(*other.children[i], visited)) {
                     return false;
@@ -876,17 +903,17 @@ namespace SMTParser{
 
     struct NodeHash {
         size_t operator()(const std::shared_ptr<DAGNode>& node) const {
-            return node->hashCode();  // 直接使用已缓存的哈希码
+            return node->hashCode();  // directly use the cached hash code
         }
     };
 
     struct NodeEqual {
         bool operator()(const std::shared_ptr<DAGNode>& node1, const std::shared_ptr<DAGNode>& node2) const {
-            // 快速路径：先比较哈希码
+            // fast path: first compare hash code
             if(node1->hashCode() != node2->hashCode()) {
                 return false;
             }
-            // 只有哈希相同时才进行昂贵的等价性检查
+            // only check the expensive equivalence when the hash is the same
             return node1->isEquivalentTo(*node2);
         }
     };
@@ -902,7 +929,7 @@ namespace SMTParser{
     class NodeManager{
         private:
             std::vector<std::shared_ptr<DAGNode>> nodes;
-            // 使用二级哈希：Kind -> Hash -> NodeIndex
+            // use secondary hash: Kind -> Hash -> NodeIndex
             std::array<std::unordered_map<size_t, std::vector<std::pair<std::shared_ptr<DAGNode>, size_t>>>, NUM_KINDS> node_buckets;
         public:
             NodeManager();
