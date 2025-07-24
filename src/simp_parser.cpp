@@ -1478,9 +1478,9 @@ namespace SMTParser{
                 return mkUnknown();
             }
             case NODE_KIND::NT_REG_LOOP:
-            case NODE_KIND::NT_REPLACE_REG:
-            case NODE_KIND::NT_REPLACE_REG_ALL:
-            case NODE_KIND::NT_INDEXOF_REG:{
+            case NODE_KIND::NT_STR_REPLACE_REG:
+            case NODE_KIND::NT_STR_REPLACE_REG_ALL:
+            case NODE_KIND::NT_STR_INDEXOF_REG:{
                 return mkUnknown();
             }
             // Special processing operation

@@ -13,7 +13,7 @@ int main(int argc, char* argv[]){
 
     std::shared_ptr<SMTParser::Parser> parser = 
         std::make_shared<SMTParser::Parser>();
-
+        // parser->setOption("keep_let", false);
     // the input file
     std::string input_file = argv[1];
 
@@ -40,15 +40,15 @@ int main(int argc, char* argv[]){
         std::cout << "FUNCTIONS:" << functions.size() << std::endl;
         std::cout << "TIME:" << duration.count() << std::endl;
 
-        std::ofstream ofs("./tmp.smt2");
-        if (ofs.is_open()) {
-            std::string smt2_content = parser->dumpSMT2();
-            ofs << smt2_content;
-            ofs.close();
-            std::cout << "OUTPUT_FILE: ./tmp.smt2" << std::endl;
-        } else {
-            std::cout << "ERROR: Failed to open output file ./tmp.smt2" << std::endl;
-        }
+        // std::ofstream ofs("./tmp.smt2");
+        // if (ofs.is_open()) {
+        //     std::string smt2_content = parser->dumpSMT2();
+        //     ofs << smt2_content;
+        //     ofs.close();
+        //     std::cout << "OUTPUT_FILE: ./tmp.smt2" << std::endl;
+        // } else {
+        //     std::cout << "ERROR: Failed to open output file ./tmp.smt2" << std::endl;
+        // }
 
         return 0;
     } else {

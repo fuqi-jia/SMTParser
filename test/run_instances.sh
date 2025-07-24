@@ -131,7 +131,7 @@ compile_executable() {
     # Check if CMakeCache.txt exists and if tests are enabled
     if [[ ! -f "CMakeCache.txt" ]]; then
         echo -e "${YELLOW}Running CMake configuration...${NC}"
-        cmake .. -DBUILD_TESTS=ON || {
+        cmake .. -DBUILD_TESTS=ON -DENABLE_TIMING=ON || {
             echo -e "${RED}Error: CMake configuration failed.${NC}"
             exit 1
         }
@@ -139,7 +139,7 @@ compile_executable() {
         # Check if BUILD_TESTS is enabled in the existing configuration
         if ! grep -q "BUILD_TESTS:BOOL=ON" CMakeCache.txt 2>/dev/null; then
             echo -e "${YELLOW}Reconfiguring CMake with tests enabled...${NC}"
-            cmake .. -DBUILD_TESTS=ON || {
+            cmake .. -DBUILD_TESTS=ON -DENABLE_TIMING=ON || {
                 echo -e "${RED}Error: CMake reconfiguration failed.${NC}"
                 exit 1
             }
@@ -302,8 +302,11 @@ for file in "$INSTANCES_DIR"/*; do
     
     echo -n "Processing $filename... "
     
-    # Run the executable and capture output
+    # Run the executable and capture output (stdout+stderr)
     output=$("$EXECUTABLE" "$file" 2>&1)
+
+    # 若包含 Timing 结果块，提前截取方便后续输出
+    timing_block=$(echo "$output" | sed -n '/========= Timing Result =========/,/=================================/p')
     exit_code=$?
     
     # Parse the output
@@ -329,6 +332,11 @@ for file in "$INSTANCES_DIR"/*; do
         file_stats[total_files]="A:$assertions V:$variables F:$functions"
         
         echo "    Time: ${time_ms}ms, Assertions: $assertions, Variables: $variables, Functions: $functions"
+        # 显示计时分析块（若存在且用户启用了详细或 verbose 模式）
+        if [[ -n "$timing_block" && ( "$VERBOSE" == true || "$DETAILED" == true ) ]]; then
+            echo -e "${BLUE}    Timing profile:${NC}"
+            echo "$timing_block" | sed 's/^/        /'
+        fi
     else
         echo -e "${RED}FAILURE${NC}"
         failure_count=$((failure_count + 1))
@@ -350,6 +358,11 @@ for file in "$INSTANCES_DIR"/*; do
         if [[ "$VERBOSE" == true ]]; then
             echo "    Error details:"
             echo "$output" | sed 's/^/        /'
+        fi
+        # If timing block present but verbose not enabled, optionally show
+        if [[ -n "$timing_block" && "$VERBOSE" == true ]]; then
+            echo -e "${BLUE}    Timing profile:${NC}"
+            echo "$timing_block" | sed 's/^/        /'
         fi
     fi
 done
