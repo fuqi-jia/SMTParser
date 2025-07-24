@@ -842,12 +842,7 @@ namespace SMTParser{
     std::string dumpFuncDef(const std::shared_ptr<DAGNode>& node);
     std::string dumpFuncDec(const std::shared_ptr<DAGNode>& node);
     std::string dumpSMTLIB2(const std::vector<std::shared_ptr<DAGNode>>& assertions);
-    void dumpSMTLIB2(const std::shared_ptr<DAGNode>& node, std::ofstream& ofs);
-    void dumpSMTLIB2(const std::shared_ptr<DAGNode>& node, std::unordered_set<std::shared_ptr<DAGNode>>& visited, std::ofstream& ofs);
-    void dumpSMTLIB2(const std::vector<std::shared_ptr<DAGNode>>& assertions, std::ofstream& ofs);
-    void dumpFuncDef(const std::shared_ptr<DAGNode>& node, std::ofstream& ofs);
-    void dumpFuncDec(const std::shared_ptr<DAGNode>& node, std::ofstream& ofs);
-
+    
     // smart pointer
     typedef std::shared_ptr<DAGNode> NodePtr;
 
