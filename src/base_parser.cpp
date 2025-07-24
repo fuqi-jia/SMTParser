@@ -1740,30 +1740,73 @@ namespace SMTParser{
 	}
 	// visited is used to avoid infinite loop
 	std::shared_ptr<DAGNode> Parser::substitute(std::shared_ptr<DAGNode> expr, std::unordered_map<std::string, std::shared_ptr<DAGNode>> &params, std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> & visited){
-		if( visited.find(expr) != visited.end()){
+		/*
+			Convert the previously recursive implementation into an iterative, stack-based
+			post-order traversal to avoid potential stack-overflow on very deep/large DAGs.
+			The algorithm mirrors the logic of applyFunPostOrder used elsewhere in this file.
+		*/
+
+		// Quick hit: if we already substituted this node, return the cached result.
+		if(visited.find(expr) != visited.end()){
 			return visited[expr];
 		}
-		if(expr->isVar()){
-			if(params.find(expr->getName()) != params.end()){
-				return params[expr->getName()];
+
+		// (node, processed?)  processed==false  => first time we see the node
+		//                      processed==true   => all children have been handled
+		std::stack<std::pair<std::shared_ptr<DAGNode>, bool>> todo;
+		todo.push(std::make_pair(expr, false));
+
+		while(!todo.empty()){
+			auto curPair   = todo.top();
+			todo.pop();
+			std::shared_ptr<DAGNode> current = curPair.first;
+			bool processed                  = curPair.second;
+
+			// If we already computed a substitute for this node elsewhere, skip.
+			if(visited.find(current) != visited.end()){
+				continue;
+			}
+
+			if(processed){
+				/*
+					All children have been processed – build the new node using the
+					(possibly substituted) child results that are now stored in
+					`visited`.
+				*/
+				std::vector<std::shared_ptr<DAGNode>> newChildren;
+				newChildren.reserve(current->getChildrenSize());
+				for(size_t i = 0; i < current->getChildrenSize(); ++i){
+					newChildren.emplace_back(visited[current->getChild(i)]);
+				}
+				std::shared_ptr<DAGNode> newNode = mkOper(current->getSort(), current->getKind(), newChildren);
+				visited[current] = newNode;
 			}
 			else{
-				return expr;
+				/* First visit */
+				if(current->isVar()){
+					// Variable: replace if it appears in the substitution map
+					auto it = params.find(current->getName());
+					visited[current] = (it != params.end()) ? it->second : current;
+				}
+				else if(current->isConst() || current->isFuncParam()){
+					// Constants and function-parameters stay unchanged
+					visited[current] = current;
+				}
+				else{
+					// Non-leaf operator node – schedule a second visit after children
+					todo.push(std::make_pair(current, true));
+					// Push children (reverse order keeps original left-to-right after pop)
+					for(int i = static_cast<int>(current->getChildrenSize()) - 1; i >= 0; --i){
+						auto child = current->getChild(i);
+						if(visited.find(child) == visited.end()){
+							todo.push(std::make_pair(child, false));
+						}
+					}
+				}
 			}
 		}
-		else if(expr->isConst() || 
-				expr->isFuncParam()){
-			return expr;
-		}
-		else{
-			std::vector<std::shared_ptr<DAGNode>> record;
-			for(size_t i=0;i<expr->getChildrenSize();i++){
-				record.emplace_back(substitute(expr->getChild(i), params, visited));
-			}
-			std::shared_ptr<DAGNode> res = mkOper(expr->getSort(), expr->getKind(), record);
-			visited[expr] = res;
-			return res;
-		}
+
+		return visited[expr];
 	}
 
 	std::shared_ptr<DAGNode> Parser::arithNormalize(std::shared_ptr<DAGNode> expr){
@@ -1773,58 +1816,103 @@ namespace SMTParser{
 
 
 	std::shared_ptr<DAGNode> Parser::arithNormalize(std::shared_ptr<DAGNode> expr, bool& is_changed){
+		// Iterative implementation to avoid stack overflow on very deep/large DAGs
 		if(expr->isErr()){
+			is_changed = false;
 			return expr;
 		}
-		// expand let
+
+		// Expand outer let expression (expandLet itself can still be recursive, but the overall depth is usually limited)
 		if(expr->isLet()){
 			expr = expandLet(expr);
 		}
-		
-		if(expr->isArithTerm()){
-			return expr;
-		}
-		if(expr->isConst()){
-			return expr;
-		}
-		else if(expr->isVar()){
-			return expr;
-		}
-		else if(expr->isArithComp()){
-			condAssert(expr->getChildrenSize() == 2, "ArithComp should have two children");
-			std::shared_ptr<DAGNode> left_side = expr->getChild(0);
-			std::shared_ptr<DAGNode> right_side = expr->getChild(1);
-			condAssert(left_side->isArithTerm() && right_side->isArithTerm(), "ArithComp should have two arith terms");
-			if(right_side->isConst()){
-				// no need to change
-				is_changed = false;
-				return expr;
+
+		// Use manual post-order traversal stack
+		std::stack<std::pair<std::shared_ptr<DAGNode>, bool>> todo;
+		std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> result_map;   // Record normalized nodes
+		std::unordered_map<std::shared_ptr<DAGNode>, bool>                     changed_map;  // Record if the node has changed
+
+		todo.push({expr, false});
+
+		while(!todo.empty()){
+			auto [node, processed] = todo.top();
+			todo.pop();
+
+			// If already processed, skip
+			if(result_map.find(node) != result_map.end()) continue;
+
+			if(processed){
+				/* Second visit: all children have been processed, can construct the current node */
+				if(node->isConst() || node->isVar() || node->isArithTerm() || node->isErr()){
+					result_map[node]  = node;
+					changed_map[node] = false;
+					continue;
+				}
+
+				if(node->isArithComp()){
+					condAssert(node->getChildrenSize()==2, "ArithComp should have two children");
+					std::shared_ptr<DAGNode> leftN  = result_map[node->getChild(0)];
+					std::shared_ptr<DAGNode> rightN = result_map[node->getChild(1)];
+					bool child_changed = changed_map[node->getChild(0)] || changed_map[node->getChild(1)];
+
+					bool cur_changed = child_changed;
+					std::shared_ptr<DAGNode> new_node = node; // default to keep unchanged
+
+					if(!rightN->isConst()){
+						cur_changed = true;
+						auto left_sub = mkOper(leftN->getSort(), NODE_KIND::NT_SUB, {leftN, rightN});
+						auto zero     = getZero(leftN->getSort());
+						new_node      = mkOper(BOOL_SORT, node->getKind(), {left_sub, zero});
+					}else if(child_changed){
+						new_node = mkOper(node->getSort(), node->getKind(), {leftN, rightN});
+					}
+
+					result_map[node]  = new_node;
+					changed_map[node] = cur_changed;
+					continue;
+				}
+
+				/* General operator */
+				std::vector<std::shared_ptr<DAGNode>> new_children;
+				bool any_changed = false;
+				new_children.reserve(node->getChildrenSize());
+				for(size_t i=0;i<node->getChildrenSize();++i){
+					auto child = node->getChild(i);
+					new_children.emplace_back(result_map[child]);
+					any_changed = any_changed || changed_map[child];
+				}
+
+				std::shared_ptr<DAGNode> new_node = any_changed ?
+					mkOper(node->getSort(), node->getKind(), new_children) : node;
+
+				result_map[node]  = new_node;
+				changed_map[node] = any_changed;
+			}else{
+				/* First visit */
+				// Leaf node directly processed
+				if(node->isConst() || node->isVar() || node->isArithTerm() || node->isErr()){
+					result_map[node]  = node;
+					changed_map[node] = false;
+					continue;
+				}
+
+				// If it is still let, expand and push back to stack for processing
+				if(node->isLet()){
+					node = expandLet(node);
+					todo.push({node, false});
+					continue;
+				}
+
+				// Push back self (mark as visited), then push children
+				todo.push({node, true});
+				for(int i = static_cast<int>(node->getChildrenSize()) - 1; i >= 0; --i){
+					todo.push({node->getChild(i), false});
+				}
 			}
-			else{
-				// need to change
-				is_changed = true;
-				std::shared_ptr<DAGNode> left = mkOper(left_side->getSort(), NODE_KIND::NT_SUB, {left_side, right_side});
-				return mkOper(BOOL_SORT, expr->getKind(), {left, getZero(left_side->getSort())});
-			}
 		}
-		else{
-			bool cur_is_changed = false;
-			std::vector<std::shared_ptr<DAGNode>> record;
-			for(size_t i=0;i<expr->getChildrenSize();i++){
-				bool child_changed = false;
-				record.emplace_back(arithNormalize(expr->getChild(i), child_changed));
-				cur_is_changed = cur_is_changed || child_changed;
-			}
-			if(cur_is_changed){
-				std::shared_ptr<DAGNode> res = mkOper(expr->getSort(), expr->getKind(), record);
-				is_changed = true;
-				return res;
-			}
-			else{
-				is_changed = false;
-				return expr;
-			}
-		}
+
+		is_changed = changed_map[expr];
+		return result_map[expr];
 	}
 
 	std::vector<std::shared_ptr<DAGNode>> Parser::arithNormalize(std::vector<std::shared_ptr<DAGNode>> exprs){
