@@ -685,8 +685,11 @@ namespace SMTParser{
 				condAssert(oper_params.size() == 2, "Invalid number of parameters for bvsdiv");
 				return mkBvSdiv(oper_params[0], oper_params[1]);
 			case NODE_KIND::NT_BV_SREM:
-				condAssert(oper_params.size() == 2, "Invalid number of parameters for bvsmod");
-				return mkBvSmod(oper_params[0], oper_params[1]);
+				condAssert(oper_params.size() == 2, "Invalid number of parameters for bvsrem");
+				return mkBvSrem(oper_params[0], oper_params[1]);
+            case NODE_KIND::NT_BV_SMOD:
+                condAssert(oper_params.size() == 2, "Invalid number of parameters for bvsrem");
+                return mkBvSmod(oper_params[0], oper_params[1]);
 			case NODE_KIND::NT_BV_SHL:
 				condAssert(oper_params.size() == 2, "Invalid number of parameters for bvshl");
 				return mkBvShl(oper_params[0], oper_params[1]);
