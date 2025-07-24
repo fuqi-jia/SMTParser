@@ -488,11 +488,11 @@ namespace SMTParser{
         case NODE_KIND::NT_REG_COMPLEMENT:
             return "re.comp";
         // STRINGS RE FUNCTIONS
-        case NODE_KIND::NT_REPLACE_REG:
+        case NODE_KIND::NT_STR_REPLACE_REG:
             return "str.replace_re";
-        case NODE_KIND::NT_REPLACE_REG_ALL:
+        case NODE_KIND::NT_STR_REPLACE_REG_ALL:
             return "str.replace_re_all";
-        case NODE_KIND::NT_INDEXOF_REG:
+        case NODE_KIND::NT_STR_INDEXOF_REG:
             return "str.indexof";
         // INTERVAL
         case NODE_KIND::NT_MAX:
@@ -619,7 +619,7 @@ namespace SMTParser{
         }
     }
 
-    NODE_KIND getKind(const std::string& s) {
+    NODE_KIND getOperKind(const std::string& s) {
         auto it = oper_key_map.find(s);
         if (it != oper_key_map.end()) {
             return it->second;

@@ -38,96 +38,99 @@ namespace SMTParser{
 
     enum class NODE_KIND {
         NT_UNKNOWN=0,NT_ERROR,NT_NULL, 
-        // CORE OPERATORS
-        NT_EQ,NT_DISTINCT,NT_EQ_BOOL,NT_EQ_OTHER,NT_DISTINCT_BOOL,NT_DISTINCT_OTHER, 
-
-        // CONSTANT / VARIABLE
+        
+        // CONSTANT / VARIABLE (not in parseOper)
         NT_CONST,NT_VAR,NT_CONST_TRUE,NT_CONST_FALSE,NT_TEMP_VAR,
-        // BOOLEAN
-        NT_NOT,NT_AND,NT_OR,NT_IMPLIES,NT_XOR, 
-        // UF
-        NT_APPLY_UF,
-        // ARITHMATIC COMMON OPERATORS
-        NT_ADD,NT_MUL,NT_IAND,NT_POW2,NT_POW,NT_SUB,NT_NEG,NT_DIV_INT,NT_DIV_REAL,NT_MOD,NT_ABS,NT_SQRT,NT_SAFESQRT,NT_CEIL,NT_FLOOR,NT_ROUND,
-        // TRANSCENDENTAL ARITHMATIC
-        NT_EXP,NT_LOG,NT_LN,NT_LG,NT_LB,NT_SIN,NT_COS,NT_SEC,NT_CSC,NT_TAN,NT_COT,NT_ASIN,NT_ACOS,NT_ASEC,NT_ACSC,NT_ATAN,NT_ACOT,NT_SINH,NT_COSH,NT_TANH,NT_SECH,NT_CSCH,NT_COTH,NT_ASINH,NT_ACOSH,NT_ATANH,NT_ASECH,NT_ACSCH,NT_ACOTH,NT_ATAN2,
-        // ARITHMATIC COMP
+        
+        // === START OF PARSEOPER CONTINUOUS SECTION ===
+        // BOOLEAN OPERATORS (in parseOper)
+        NT_AND,NT_OR,NT_NOT,NT_IMPLIES,NT_XOR,
+        
+        // CORE OPERATORS (in parseOper)  
+        NT_EQ,NT_DISTINCT,NT_ITE,
+        
+        // ARITHMETIC COMMON OPERATORS (in parseOper)
+        NT_ADD,NT_NEG,NT_SUB,NT_MUL,NT_IAND,NT_POW2,NT_POW,NT_DIV_INT,NT_DIV_REAL,NT_MOD,NT_ABS,NT_SQRT,NT_SAFESQRT,NT_CEIL,NT_FLOOR,NT_ROUND,
+        
+        // TRANSCENDENTAL ARITHMETIC (in parseOper)
+        NT_EXP,NT_LN,NT_LG,NT_LB,NT_LOG,NT_SIN,NT_COS,NT_TAN,NT_COT,NT_SEC,NT_CSC,NT_ASIN,NT_ACOS,NT_ATAN,NT_ACOT,NT_ASEC,NT_ACSC,NT_SINH,NT_COSH,NT_TANH,NT_ASECH,NT_ACSCH,NT_ACOTH,NT_ATAN2,NT_ASINH,NT_ACOSH,NT_ATANH,NT_SECH,NT_CSCH,NT_COTH,
+        
+        // ARITHMETIC COMPARISON (in parseOper)
         NT_LE,NT_LT,NT_GE,NT_GT,
-        // ARITHMATIC CONVERSION
-        NT_TO_INT,NT_TO_REAL, 
-        // ARITHMATIC PROPERTIES
+        
+        // ARITHMETIC CONVERSION (in parseOper)
+        NT_TO_INT,NT_TO_REAL,
+        
+        // ARITHMETIC PROPERTIES (in parseOper)
         NT_IS_INT,NT_IS_DIVISIBLE,NT_IS_PRIME,NT_IS_EVEN,NT_IS_ODD,
-        // ARITHMATIC CONSTANTS
-        NT_CONST_PI,NT_CONST_E,NT_INFINITY,NT_NAN,NT_EPSILON,NT_POS_INFINITY,NT_NEG_INFINITY,NT_POS_EPSILON,NT_NEG_EPSILON,
-        // ARITHMATIC FUNCTIONS
-        //NT_SUM,NT_PROD, 
+        
+        // ARITHMETIC FUNCTIONS (in parseOper)
         NT_GCD,NT_LCM,NT_FACT,
-        // BITVECTOR COMMON OPERATORS
-        // Bit-wise operations
-        NT_BV_NOT,NT_BV_AND,NT_BV_OR,NT_BV_XOR,NT_BV_NAND,NT_BV_NOR,NT_BV_XNOR,NT_BV_COMP,
-        // Arithmetic operations
-        NT_BV_NEG,NT_BV_ADD,NT_BV_SUB,NT_BV_MUL,NT_BV_UDIV,NT_BV_SDIV,NT_BV_UREM,NT_BV_SREM,NT_BV_UMOD,NT_BV_SMOD, 
-        // Arithmetic operations with overflow
-        NT_BV_NEGO,NT_BV_UADDO,NT_BV_SADDO,NT_BV_UMULO,NT_BV_SMULO,NT_BV_UDIVO,NT_BV_SDIVO,NT_BV_UREMO,NT_BV_SREMO,NT_BV_UMODO,NT_BV_SMODO,
-        // Shift operations
-        NT_BV_SHL,NT_BV_LSHR,NT_BV_ASHR, 
-        // Function
-        NT_BV_CONCAT,NT_BV_EXTRACT,NT_BV_REPEAT,NT_BV_ZERO_EXT,NT_BV_SIGN_EXT,NT_BV_ROTATE_LEFT,NT_BV_ROTATE_RIGHT, 
-        // BITVECTOR COMP
-        NT_BV_ULT,NT_BV_ULE,NT_BV_UGT,NT_BV_UGE,NT_BV_SLT,NT_BV_SLE,NT_BV_SGT,NT_BV_SGE, 
-        // BITVECTOR CONVERSION
-        NT_BV_TO_NAT,NT_NAT_TO_BV, NT_BV_TO_INT, NT_INT_TO_BV,
-        // FINITE FIELD
-        // FLOATING POINT COMMON OPERATORS
+        
+        // BITVECTOR OPERATORS (in parseOper)
+        NT_BV_NOT,NT_BV_NEG,NT_BV_AND,NT_BV_OR,NT_BV_XOR,NT_BV_NAND,NT_BV_NOR,NT_BV_XNOR,NT_BV_COMP,
+        NT_BV_ADD,NT_BV_SUB,NT_BV_MUL,NT_BV_UDIV,NT_BV_SDIV,NT_BV_UREM,NT_BV_SREM,NT_BV_UMOD,NT_BV_SMOD,
+        NT_BV_SHL,NT_BV_LSHR,NT_BV_ASHR,
+        NT_BV_ULT,NT_BV_ULE,NT_BV_UGT,NT_BV_UGE,NT_BV_SLT,NT_BV_SLE,NT_BV_SGT,NT_BV_SGE,
+        NT_BV_CONCAT,NT_BV_TO_NAT,NT_NAT_TO_BV,NT_BV_TO_INT,
+        // BITVECTOR FUNCTIONS (in parseOper with args and params)
+        NT_INT_TO_BV,NT_BV_EXTRACT,NT_BV_REPEAT,NT_BV_ZERO_EXT,NT_BV_SIGN_EXT,NT_BV_ROTATE_LEFT,NT_BV_ROTATE_RIGHT,
+        
+        // FLOATING POINT OPERATORS (in parseOper)
         NT_FP_ADD,NT_FP_SUB,NT_FP_MUL,NT_FP_DIV,NT_FP_ABS,NT_FP_NEG,NT_FP_REM,NT_FP_FMA,NT_FP_SQRT,NT_FP_ROUND_TO_INTEGRAL,NT_FP_MIN,NT_FP_MAX,
-        // FLOATING POINT COMP
         NT_FP_LE,NT_FP_LT,NT_FP_GE,NT_FP_GT,NT_FP_EQ,NT_FP_NE,
-        // FLOATING POINT CONVERSION
         NT_FP_TO_UBV,NT_FP_TO_SBV,NT_FP_TO_REAL,NT_FP_TO_FP,
-        // FLOATING POINT PROPERTIES
         NT_FP_IS_NORMAL,NT_FP_IS_SUBNORMAL,NT_FP_IS_ZERO,NT_FP_IS_INF,NT_FP_IS_NAN,NT_FP_IS_NEG,NT_FP_IS_POS,
-        // ARRAY
-        NT_SELECT,NT_STORE, 
-        // // DATATYPE
-        //NT_CONSTRUCTOR,NT_TESTER,NT_SELECTOR,NT_ACCESSOR,NT_UPDATE,NT_DATATYPE_DEFAULT,
-        // SET
-        // RELATION
-        // BAGS
-        // STRINGS COMMON OPERATORS
-        NT_STR_LEN,NT_STR_CONCAT,NT_STR_SUBSTR,NT_STR_INDEXOF,NT_STR_CHARAT,NT_STR_UPDATE,NT_STR_REPLACE,NT_STR_REPLACE_ALL,NT_STR_TO_LOWER,NT_STR_TO_UPPER,NT_STR_REV,NT_STR_SPLIT,NT_STR_SPLIT_AT,NT_STR_SPLIT_REST,NT_STR_NUM_SPLITS,
-        // STRINGS COMP
+        
+        // ARRAY OPERATORS (in parseOper)
+        NT_SELECT,NT_STORE,
+        
+        // STRING OPERATORS (in parseOper)
+        NT_STR_LEN,NT_STR_CONCAT,NT_STR_SUBSTR,NT_STR_INDEXOF,NT_STR_CHARAT,NT_STR_UPDATE,NT_STR_REPLACE,NT_STR_REPLACE_ALL,
+        NT_STR_REPLACE_REG,NT_STR_REPLACE_REG_ALL,NT_STR_INDEXOF_REG,
+        NT_STR_TO_LOWER,NT_STR_TO_UPPER,NT_STR_REV,NT_STR_SPLIT,NT_STR_SPLIT_AT,NT_STR_SPLIT_REST,NT_STR_NUM_SPLITS,
         NT_STR_LT,NT_STR_LE,NT_STR_GT,NT_STR_GE,
-        // STRINGS PROPERTIES
         NT_STR_IN_REG,NT_STR_CONTAINS,NT_STR_IS_DIGIT,NT_STR_PREFIXOF,NT_STR_SUFFIXOF,
-        // STRINGS CONVERSION
-        NT_STR_FROM_INT,NT_STR_TO_INT,NT_STR_TO_REG,NT_STR_TO_CODE,NT_STR_FROM_CODE, 
-        // STRINGS RE CONSTANTS
-        NT_REG_NONE,NT_REG_ALL,NT_REG_ALLCHAR, 
-        // STRINGS RE COMMON OPERATORS
-        NT_REG_CONCAT,NT_REG_UNION,NT_REG_INTER,NT_REG_DIFF,NT_REG_STAR,NT_REG_PLUS,NT_REG_OPT,NT_REG_RANGE,NT_REG_REPEAT,NT_REG_LOOP,NT_REG_COMPLEMENT,
-        // STRINGS RE COMP
-        // STRINGS RE PROPERTIES
-        // STRINGS RE CONVERSION
-        // STRINGS RE FUNCTIONS
-        NT_REPLACE_REG, NT_REPLACE_REG_ALL,NT_INDEXOF_REG, 
-        // SEQUENCE
-
+        NT_STR_FROM_INT,NT_STR_TO_INT,NT_STR_TO_REG,NT_STR_TO_CODE,NT_STR_FROM_CODE,
+        
+        // REGULAR EXPRESSION OPERATORS (in parseOper)
+        NT_REG_CONCAT,NT_REG_UNION,NT_REG_INTER,NT_REG_DIFF,NT_REG_STAR,NT_REG_PLUS,NT_REG_OPT,NT_REG_RANGE,NT_REG_REPEAT,NT_REG_COMPLEMENT,
+        
+        // STRING RE FUNCTIONS (in parseOper with args and params)
+        NT_REG_LOOP,
+        
+        // FUNCTION OPERATORS (in parseOper)
+        NT_FUNC_APPLY,NT_FUNC_DEC,NT_FUNC_DEF,
+        
+        // === END OF PARSEOPER CONTINUOUS SECTION ===
+        // BITVECTOR OVERFLOW OPERATIONS
+        NT_BV_NEGO,NT_BV_UADDO,NT_BV_SADDO,NT_BV_UMULO,NT_BV_SMULO,NT_BV_UDIVO,NT_BV_SDIVO,NT_BV_UREMO,NT_BV_SREMO,NT_BV_UMODO,NT_BV_SMODO,
+        
+        // TYPES NOT IN PARSEOPER
+        NT_EQ_BOOL,NT_EQ_OTHER,NT_DISTINCT_BOOL,NT_DISTINCT_OTHER,
+        NT_APPLY_UF,
+        
+        // ARITHMETIC CONSTANTS
+        NT_CONST_PI,NT_CONST_E,NT_INFINITY,NT_NAN,NT_EPSILON,NT_POS_INFINITY,NT_NEG_INFINITY,NT_POS_EPSILON,NT_NEG_EPSILON,
+        
+        // STRING RE CONSTANTS
+        NT_REG_NONE,NT_REG_ALL,NT_REG_ALLCHAR,
+        
         // INTERVAL
-        NT_MAX, NT_MIN, 
-
+        NT_MAX, NT_MIN,
+        
         // LET (CHAIN)
         NT_LET, NT_LET_CHAIN,
+        
         // LET BIND VAR (LIST)
         NT_LET_BIND_VAR, NT_LET_BIND_VAR_LIST,
-        // ITE
-        NT_ITE,
+        
         // QUANTIFIERS
         NT_FORALL,NT_EXISTS, NT_QUANT_VAR,
-        // FUNC
-        NT_FUNC_DEC, // declare-fun, not for 0-arity functions (constant variables)
-        NT_FUNC_DEF, // define-fun
-        NT_FUNC_PARAM, // function parameter
-        NT_FUNC_APPLY, // function application
+        
+        // FUNC PARAMETERS
+        NT_FUNC_PARAM,
+        
         // NUM_KINDS
         NUM_KINDS
     };
@@ -207,15 +210,29 @@ namespace SMTParser{
         {"sin", NODE_KIND::NT_SIN},
         {"cos", NODE_KIND::NT_COS},
         {"tan", NODE_KIND::NT_TAN},
+        {"sec", NODE_KIND::NT_SEC},
+        {"csc", NODE_KIND::NT_CSC},
+        {"cot", NODE_KIND::NT_COT},
         {"asin", NODE_KIND::NT_ASIN},
         {"arcsin", NODE_KIND::NT_ASIN},
         {"acos", NODE_KIND::NT_ACOS},
         {"arccos", NODE_KIND::NT_ACOS},
         {"atan", NODE_KIND::NT_ATAN},
         {"arctan", NODE_KIND::NT_ATAN},
+        {"asec", NODE_KIND::NT_ASEC},
+        {"arcsec", NODE_KIND::NT_ASEC},
+        {"acsc", NODE_KIND::NT_ACSC},
+        {"arccsc", NODE_KIND::NT_ACSC},
+        {"acot", NODE_KIND::NT_ACOT},
+        {"arccot", NODE_KIND::NT_ACOT},
+        {"atan2", NODE_KIND::NT_ATAN2},
+        {"arctan2", NODE_KIND::NT_ATAN2},
         {"sinh", NODE_KIND::NT_SINH},
         {"cosh", NODE_KIND::NT_COSH},
         {"tanh", NODE_KIND::NT_TANH},
+        {"sech", NODE_KIND::NT_SECH},
+        {"csch", NODE_KIND::NT_CSCH},
+        {"coth", NODE_KIND::NT_COTH},
         {"asinh", NODE_KIND::NT_ASINH},
         {"arcsinh", NODE_KIND::NT_ASINH},
         {"acosh", NODE_KIND::NT_ACOSH},
@@ -224,12 +241,12 @@ namespace SMTParser{
         {"arctanh", NODE_KIND::NT_ATANH},
         {"asech", NODE_KIND::NT_ASECH},
         {"arcsec", NODE_KIND::NT_ASECH},
+        {"asech", NODE_KIND::NT_ASECH},
+        {"arcsec", NODE_KIND::NT_ASECH},
         {"acsch", NODE_KIND::NT_ACSCH},
         {"arccsch", NODE_KIND::NT_ACSCH},
         {"acoth", NODE_KIND::NT_ACOTH},
         {"arccoth", NODE_KIND::NT_ACOTH},
-        {"atan2", NODE_KIND::NT_ATAN2},
-        {"arctan2", NODE_KIND::NT_ATAN2},
         {"<=", NODE_KIND::NT_LE},
         {"<", NODE_KIND::NT_LT},
         {">=", NODE_KIND::NT_GE},
@@ -275,8 +292,14 @@ namespace SMTParser{
         {"concat", NODE_KIND::NT_BV_CONCAT},
         {"bv2nat", NODE_KIND::NT_BV_TO_NAT},
         {"nat2bv", NODE_KIND::NT_NAT_TO_BV},
-        {"int2bv", NODE_KIND::NT_INT_TO_BV},
         {"bv2int", NODE_KIND::NT_BV_TO_INT},
+        {"int2bv", NODE_KIND::NT_INT_TO_BV},
+        {"extract", NODE_KIND::NT_BV_EXTRACT},
+        {"repeat", NODE_KIND::NT_BV_REPEAT},
+        {"zero_extend", NODE_KIND::NT_BV_ZERO_EXT},
+        {"sign_extend", NODE_KIND::NT_BV_SIGN_EXT},
+        {"rotate_left", NODE_KIND::NT_BV_ROTATE_LEFT},
+        {"rotate_right", NODE_KIND::NT_BV_ROTATE_RIGHT},
         {"fp.abs", NODE_KIND::NT_FP_ABS},
         {"fp.neg", NODE_KIND::NT_FP_NEG},
         {"fp.add", NODE_KIND::NT_FP_ADD},
@@ -322,8 +345,9 @@ namespace SMTParser{
         {"str.update", NODE_KIND::NT_STR_UPDATE},
         {"str.replace", NODE_KIND::NT_STR_REPLACE},
         {"str.replace_all", NODE_KIND::NT_STR_REPLACE_ALL},
-        {"str.replace_re", NODE_KIND::NT_REPLACE_REG},
-        {"str.replace_re_all", NODE_KIND::NT_REPLACE_REG_ALL},
+        {"str.replace_re", NODE_KIND::NT_STR_REPLACE_REG},
+        {"str.replace_re_all", NODE_KIND::NT_STR_REPLACE_REG_ALL},
+        {"str.indexof_re", NODE_KIND::NT_STR_INDEXOF_REG},
         {"str.to_lower", NODE_KIND::NT_STR_TO_LOWER},
         {"str.to_upper", NODE_KIND::NT_STR_TO_UPPER},
         {"str.rev", NODE_KIND::NT_STR_REV},
@@ -358,7 +382,7 @@ namespace SMTParser{
 
     std::string kindToString(const NODE_KIND& nk);
     NODE_KIND getOppositeKind(const NODE_KIND& nk);
-    NODE_KIND getKind(const std::string& s);
+    NODE_KIND getOperKind(const std::string& s);
 }
 
 

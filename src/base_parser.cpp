@@ -1176,50 +1176,6 @@ namespace SMTParser{
 
 	}
 
-	std::shared_ptr<DAGNode> Parser::parseParamFunc(const std::string& f, const std::vector<std::shared_ptr<DAGNode>> &args, const std::vector<std::shared_ptr<DAGNode>> &params){
-		if (f == "extract") {
-			condAssert(args.size() == 2, "Invalid number of arguments for extract");
-			condAssert(params.size() == 1, "Invalid number of parameters for extract");
-			return mkBvExtract(params[0], args[0], args[1]);
-		}
-		else if (f == "repeat") {
-			condAssert(args.size() == 1, "Invalid number of arguments for repeat");
-			condAssert(params.size() == 1, "Invalid number of parameters for repeat");
-			return mkBvRepeat(params[0], args[0]);
-		}
-		else if (f == "zero_extend") {
-			condAssert(args.size() == 1, "Invalid number of arguments for zero_extend");
-			condAssert(params.size() == 1, "Invalid number of parameters for zero_extend");
-			return mkBvZeroExt(params[0], args[0]);
-		}
-		else if (f == "sign_extend") {
-			condAssert(args.size() == 1, "Invalid number of arguments for sign_extend");
-			condAssert(params.size() == 1, "Invalid number of parameters for sign_extend");
-			return mkBvSignExt(params[0], args[0]);
-		}
-		else if(f == "int_to_bv") {
-			condAssert(args.size() == 1, "Invalid number of arguments for int_to_bv");
-			condAssert(params.size() == 1, "Invalid number of parameters for int_to_bv");
-			return mkIntToBv(params[0], args[0]);
-		}
-		else if(f == "rotate_left") {
-			condAssert(args.size() == 1, "Invalid number of arguments for rotate_left");
-			condAssert(params.size() == 1, "Invalid number of parameters for rotate_left");
-			return mkBvRotateLeft(params[0], args[0]);
-		}
-		else if(f == "rotate_right"){
-			condAssert(args.size() == 1, "Invalid number of arguments for rotate_right");
-			condAssert(params.size() == 1, "Invalid number of parameters for rotate_right");
-			return mkBvRotateRight(params[0], args[0]);
-		}
-		else if (f == "re.loop") {
-			condAssert(params.size() == 1, "Invalid number of parameters for re.loop");
-			condAssert(args.size() == 2, "Invalid number of arguments for re.loop");
-			return mkRegLoop(params[0], args[0], args[1]);
-		}
-		else return mkErr(ERROR_TYPE::ERR_UNKWN_SYM);
-	}
-
 	// sort ::= <identifier> | (<identifier> <sort>+)
 	std::shared_ptr<Sort> Parser::parseSort(){
 		if (*bufptr != '(') {

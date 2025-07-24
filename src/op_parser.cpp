@@ -3377,6 +3377,42 @@ namespace SMTParser{
         return mkOper(l->getSort(), NODE_KIND::NT_STR_REPLACE_ALL, l, r, v);
     }
     /*
+    (str.replace_re Str Reg Str), return Str
+    */
+    std::shared_ptr<DAGNode> Parser::mkStrReplaceReg(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> v){
+        if(l->isErr() || r->isErr() || v->isErr()) return l->isErr()?l:r;
+        if(!isStrParam(l) || !isRegParam(r) || !isStrParam(v)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_replace_re", line_number);
+            return mkUnknown();
+        }
+        return mkOper(l->getSort(), NODE_KIND::NT_STR_REPLACE_REG, l, r, v);
+    }
+
+    /*
+    (str.replace_re_all Str Reg Str), return Str
+    */
+    std::shared_ptr<DAGNode> Parser::mkStrReplaceRegAll(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> v){
+        if(l->isErr() || r->isErr() || v->isErr()) return l->isErr()?l:r;
+        if(!isStrParam(l) || !isRegParam(r) || !isStrParam(v)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_replace_re_all", line_number);
+            return mkUnknown();
+        }
+        return mkOper(l->getSort(), NODE_KIND::NT_STR_REPLACE_REG_ALL, l, r, v);
+    }
+
+    /*
+    (str.indexof_re Str Reg), return Int
+    */
+    std::shared_ptr<DAGNode> Parser::mkStrIndexofReg(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
+        if(l->isErr() || r->isErr()) return l->isErr()?l:r;
+        if(!isStrParam(l) || !isRegParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_indexof_re", line_number);
+            return mkUnknown();
+        }
+        return mkOper(INT_SORT, NODE_KIND::NT_STR_INDEXOF_REG, l, r);
+    }
+
+    /*
     (str.to_lower Str), return Str
     */
     std::shared_ptr<DAGNode> Parser::mkStrToLower(std::shared_ptr<DAGNode> param){
@@ -3796,7 +3832,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(STR_SORT, NODE_KIND::NT_REPLACE_REG, l, r, v);
+        return mkOper(STR_SORT, NODE_KIND::NT_STR_REPLACE_REG, l, r, v);
     }
     /*
     (str.replace_re_all Str Reg Str), return Str
@@ -3808,7 +3844,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(STR_SORT, NODE_KIND::NT_REPLACE_REG_ALL, l, r, v);
+        return mkOper(STR_SORT, NODE_KIND::NT_STR_REPLACE_REG_ALL, l, r, v);
     }
     /*
     (str.indexof_re Str Reg), return Int
@@ -3820,7 +3856,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(INT_SORT, NODE_KIND::NT_INDEXOF_REG, l, r);
+        return mkOper(INT_SORT, NODE_KIND::NT_STR_INDEXOF_REG, l, r);
     }
 
     // INTERVAL
@@ -4207,9 +4243,9 @@ namespace SMTParser{
             case NODE_KIND::NT_STR_REPLACE_ALL:
             case NODE_KIND::NT_STR_SPLIT_AT:
             case NODE_KIND::NT_STR_SPLIT_REST:
-            case NODE_KIND::NT_REPLACE_REG:
-            case NODE_KIND::NT_REPLACE_REG_ALL:
-            case NODE_KIND::NT_INDEXOF_REG:
+            case NODE_KIND::NT_STR_REPLACE_REG:
+            case NODE_KIND::NT_STR_REPLACE_REG_ALL:
+            case NODE_KIND::NT_STR_INDEXOF_REG:
             case NODE_KIND::NT_REG_LOOP:
             case NODE_KIND::NT_BV_EXTRACT:
                 return 3;

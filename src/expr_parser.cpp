@@ -176,9 +176,9 @@ namespace SMTParser{
                         parseRpar();
                         std::shared_ptr<DAGNode> res;
                         if(frame.headSymbol == "_"){
-                            res = parseOper(frame.second_symbol, frame.args);
+                            res = parseOper(frame.second_symbol, {}, frame.args);
                         }else{
-                            res = parseOper(frame.headSymbol, frame.args);
+                            res = parseOper(frame.headSymbol, {}, frame.args);
                         }
                         if(res->isErr()) err_all(res, frame.headSymbol, frame.line);
                         frame.result = res;
@@ -206,7 +206,7 @@ namespace SMTParser{
                     scanToNextSymbol();
                     if(*bufptr == ')'){
                         parseRpar();
-                        auto res = parseParamFunc(frame.second_symbol, frame.args, frame.params);
+                        auto res = parseOper(frame.second_symbol, frame.args, frame.params);
                         if(!res || res->isErr()) err_unkwn_sym(frame.second_symbol, frame.line);
                         frame.result = res;
                         frame.state = FrameState::Finish;
@@ -358,10 +358,17 @@ namespace SMTParser{
 		return mkErr(ERROR_TYPE::ERR_UNKWN_SYM);
 	}
 
+    NODE_KIND Parser::getKind(const std::string& s){
+        auto kind = SMTParser::getOperKind(s);
+        if(kind == NODE_KIND::NT_UNKNOWN && fun_key_map.find(s) != fun_key_map.end()){
+            kind = NODE_KIND::NT_FUNC_APPLY;
+        }
+        return kind;
+    }
     
-	std::shared_ptr<DAGNode> Parser::parseOper(const std::string& s, const std::vector<std::shared_ptr<DAGNode>> &params){
+	std::shared_ptr<DAGNode> Parser::parseOper(const std::string& s, const std::vector<std::shared_ptr<DAGNode>>& args, const std::vector<std::shared_ptr<DAGNode>> &params){
 		TIME_FUNC();
-		auto kind = SMTParser::getKind(s);
+		auto kind = SMTParser::getOperKind(s);
 		switch(kind){
 			case NODE_KIND::NT_AND:
 				return mkAnd(params);
@@ -382,6 +389,9 @@ namespace SMTParser{
 				return mkIte(params);
 			case NODE_KIND::NT_ADD:
 				return mkAdd(params);
+            case NODE_KIND::NT_NEG:
+                condAssert(params.size() == 1, "Invalid number of parameters for neg");
+                return mkNeg(params[0]);
 			case NODE_KIND::NT_SUB:
 				return mkSub(params);
 			case NODE_KIND::NT_MUL:
@@ -461,6 +471,7 @@ namespace SMTParser{
 				return mkSec(params[0]);
 			case NODE_KIND::NT_CSC:
 				condAssert(params.size() == 1, "Invalid number of parameters for csc");
+				return mkCsc(params[0]);
 			case NODE_KIND::NT_ASIN:
 				condAssert(params.size() == 1, "Invalid number of parameters for asin");
 				return mkAsin(params[0]);
@@ -478,6 +489,7 @@ namespace SMTParser{
 				return mkAsec(params[0]);
 			case NODE_KIND::NT_ACSC:
 				condAssert(params.size() == 1, "Invalid number of parameters for acsc");
+				return mkAcsc(params[0]);
 			case NODE_KIND::NT_SINH:
 				condAssert(params.size() == 1, "Invalid number of parameters for sinh");
 				return mkSinh(params[0]);
@@ -508,7 +520,13 @@ namespace SMTParser{
 			case NODE_KIND::NT_ATANH:
 				condAssert(params.size() == 1, "Invalid number of parameters for atanh");
 				return mkAtanh(params[0]);
-			case NODE_KIND::NT_LE:
+            case NODE_KIND::NT_SECH:
+                condAssert(params.size() == 1, "Invalid number of parameters for sech");
+                return mkSech(params[0]);
+            case NODE_KIND::NT_CSCH:
+                condAssert(params.size() == 1, "Invalid number of parameters for csch");
+                return mkCsch(params[0]);
+            case NODE_KIND::NT_LE:
 				condAssert(params.size() == 2, "Invalid number of parameters for <= ");
 				return mkLe(params[0], params[1]);
 			case NODE_KIND::NT_LT:
@@ -630,6 +648,34 @@ namespace SMTParser{
             case NODE_KIND::NT_NAT_TO_BV:
                 condAssert(params.size() == 2, "Invalid number of parameters for nat2bv");
                 return mkNatToBv(params[0], params[1]);
+            case NODE_KIND::NT_INT_TO_BV:
+                condAssert(args.size() == 1, "Invalid number of arguments for int_to_bv");
+                condAssert(params.size() == 1, "Invalid number of parameters for int_to_bv");
+                return mkIntToBv(params[0], args[0]);
+            case NODE_KIND::NT_BV_EXTRACT:
+                condAssert(args.size() == 2, "Invalid number of arguments for extract");
+                condAssert(params.size() == 1, "Invalid number of parameters for extract");
+                return mkBvExtract(params[0], args[0], args[1]);
+            case NODE_KIND::NT_BV_REPEAT:
+                condAssert(args.size() == 1, "Invalid number of arguments for repeat");
+                condAssert(params.size() == 1, "Invalid number of parameters for repeat");
+                return mkBvRepeat(params[0], args[0]);
+            case NODE_KIND::NT_BV_ZERO_EXT:
+                condAssert(args.size() == 1, "Invalid number of arguments for zero_extend");
+                condAssert(params.size() == 1, "Invalid number of parameters for zero_extend");
+                return mkBvZeroExt(params[0], args[0]);
+            case NODE_KIND::NT_BV_SIGN_EXT:
+                condAssert(args.size() == 1, "Invalid number of arguments for sign_extend");
+                condAssert(params.size() == 1, "Invalid number of parameters for sign_extend");
+                return mkBvSignExt(params[0], args[0]);
+            case NODE_KIND::NT_BV_ROTATE_LEFT:
+                condAssert(args.size() == 1, "Invalid number of arguments for rotate_left");
+                condAssert(params.size() == 1, "Invalid number of parameters for rotate_left");
+                return mkBvRotateLeft(params[0], args[0]);
+            case NODE_KIND::NT_BV_ROTATE_RIGHT:
+                condAssert(args.size() == 1, "Invalid number of arguments for rotate_right");
+                condAssert(params.size() == 1, "Invalid number of parameters for rotate_right");
+                return mkBvRotateRight(params[0], args[0]);
             case NODE_KIND::NT_FP_ABS:
                 condAssert(params.size() == 1, "Invalid number of parameters for fp.abs");
                 return mkFpAbs(params[0]);
@@ -748,12 +794,15 @@ namespace SMTParser{
             case NODE_KIND::NT_STR_REPLACE_ALL:
                 condAssert(params.size() == 3, "Invalid number of parameters for str.replace_all");
                 return mkStrReplaceAll(params[0], params[1], params[2]);
-            case NODE_KIND::NT_REPLACE_REG:
+            case NODE_KIND::NT_STR_REPLACE_REG:
                 condAssert(params.size() == 3, "Invalid number of parameters for str.replace_re");
-                return mkReplaceReg(params[0], params[1], params[2]);
-            case NODE_KIND::NT_REPLACE_REG_ALL:
+                return mkStrReplaceReg(params[0], params[1], params[2]);
+            case NODE_KIND::NT_STR_REPLACE_REG_ALL:
                 condAssert(params.size() == 3, "Invalid number of parameters for str.replace_re_all");
-                return mkReplaceRegAll(params[0], params[1], params[2]);
+                return mkStrReplaceRegAll(params[0], params[1], params[2]);
+            case NODE_KIND::NT_STR_INDEXOF_REG:
+                condAssert(params.size() == 2, "Invalid number of parameters for str.indexof_re");
+                return mkStrIndexofReg(params[0], params[1]);
             case NODE_KIND::NT_STR_TO_LOWER:
                 condAssert(params.size() == 1, "Invalid number of parameters for str.to_lower");
                 return mkStrToLower(params[0]);
@@ -837,6 +886,10 @@ namespace SMTParser{
             case NODE_KIND::NT_REG_COMPLEMENT:
                 condAssert(params.size() == 1, "Invalid number of parameters for re.comp");
                 return mkRegComplement(params[0]);
+            case NODE_KIND::NT_REG_LOOP:
+                condAssert(params.size() == 1, "Invalid number of parameters for re.loop");
+                condAssert(args.size() == 2, "Invalid number of arguments for re.loop");
+                return mkRegLoop(params[0], args[0], args[1]);
             case NODE_KIND::NT_FUNC_APPLY:
             case NODE_KIND::NT_FUNC_DEC:
             case NODE_KIND::NT_FUNC_DEF:
@@ -856,15 +909,6 @@ namespace SMTParser{
             case NODE_KIND::NT_CONST_TRUE:
             case NODE_KIND::NT_CONST_FALSE:
             case NODE_KIND::NT_TEMP_VAR:
-            case NODE_KIND::NT_APPLY_UF:
-            case NODE_KIND::NT_BV_EXTRACT:
-            case NODE_KIND::NT_BV_REPEAT:
-            case NODE_KIND::NT_BV_ZERO_EXT:
-            case NODE_KIND::NT_BV_SIGN_EXT:
-            case NODE_KIND::NT_BV_ROTATE_LEFT:
-            case NODE_KIND::NT_BV_ROTATE_RIGHT:
-            case NODE_KIND::NT_INT_TO_BV:
-            case NODE_KIND::NT_REG_LOOP:
             case NODE_KIND::NT_MAX:
             case NODE_KIND::NT_MIN:
             case NODE_KIND::NT_LET:

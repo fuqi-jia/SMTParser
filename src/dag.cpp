@@ -1009,9 +1009,9 @@ namespace SMTParser{
             dumpChainOp(kind, node->getChildren(), visited, ofs);
             break;
         // STRINGS RE FUNCTIONS
-        case NODE_KIND::NT_REPLACE_REG:
-        case NODE_KIND::NT_REPLACE_REG_ALL:
-        case NODE_KIND::NT_INDEXOF_REG:
+        case NODE_KIND::NT_STR_REPLACE_REG:
+        case NODE_KIND::NT_STR_REPLACE_REG_ALL:
+        case NODE_KIND::NT_STR_INDEXOF_REG:
             dumpTripleOp(kind, node->getChild(0), node->getChild(1), node->getChild(2), visited, ofs);
             break;
         // LET, FROM HERE TODO
