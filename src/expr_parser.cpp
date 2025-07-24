@@ -610,6 +610,9 @@ namespace SMTParser{
 			case NODE_KIND::NT_BV_SHL:
 				condAssert(params.size() == 2, "Invalid number of parameters for bvshl");
 				return mkBvShl(params[0], params[1]);
+            case NODE_KIND::NT_BV_LSHR:
+                condAssert(params.size() == 2, "Invalid number of parameters for bvlshr");
+                return mkBvLshr(params[0], params[1]);
 			case NODE_KIND::NT_BV_ASHR:
 				condAssert(params.size() == 2, "Invalid number of parameters for bvashr");
 				return mkBvAshr(params[0], params[1]);
