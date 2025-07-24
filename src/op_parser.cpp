@@ -26,6 +26,7 @@
 */
 
 #include "parser.h"
+#include "timing.h"
 #include <queue>
 #include <stack>
 #include "util.h"
@@ -112,10 +113,56 @@ namespace SMTParser{
     }
 
     std::vector<std::shared_ptr<DAGNode>> sortParams(const std::vector<std::shared_ptr<DAGNode>> &p){
+        // fast path
+        if(p.size() <= 1) {
+            return p;
+        }
+        if(p.size() == 2) {
+            std::vector<std::shared_ptr<DAGNode>> params = p;
+            size_t hash0 = params[0]->hashCode();
+            size_t hash1 = params[1]->hashCode();
+            if(hash0 > hash1) {
+                std::swap(params[0], params[1]);
+            }
+            return params;
+        }
+        if(p.size() == 3) {
+            std::vector<std::shared_ptr<DAGNode>> params = p;
+            size_t hash0 = params[0]->hashCode();
+            size_t hash1 = params[1]->hashCode();
+            size_t hash2 = params[2]->hashCode();
+            
+            // 简单的3元素排序网络
+            if(hash0 > hash1) { std::swap(params[0], params[1]); std::swap(hash0, hash1); }
+            if(hash1 > hash2) { std::swap(params[1], params[2]); std::swap(hash1, hash2); }
+            if(hash0 > hash1) { std::swap(params[0], params[1]); }
+            
+            return params;
+        }
+        
+        // large case
         std::vector<std::shared_ptr<DAGNode>> params = p;
-        std::sort(params.begin(), params.end(), [](const std::shared_ptr<DAGNode> &a, const std::shared_ptr<DAGNode> &b){
-            return a->hashCode() < b->hashCode();
-        });
+        
+        // pre-compute hash code
+        std::vector<std::pair<std::shared_ptr<DAGNode>, size_t>> params_with_hash;
+        params_with_hash.reserve(params.size());
+        
+        for(const auto& param : params) {
+            params_with_hash.emplace_back(param, param->hashCode());
+        }
+        
+        // sort by hash code
+        std::sort(params_with_hash.begin(), params_with_hash.end(), 
+                 [](const std::pair<std::shared_ptr<DAGNode>, size_t> &a, 
+                    const std::pair<std::shared_ptr<DAGNode>, size_t> &b){
+                     return a.second < b.second;
+                 });
+        
+        // extract sorted nodes
+        for(size_t i = 0; i < params_with_hash.size(); i++) {
+            params[i] = params_with_hash[i].first;
+        }
+        
         return params;
     }
     std::shared_ptr<DAGNode> Parser::mkOper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, std::shared_ptr<DAGNode> p){
@@ -161,12 +208,12 @@ namespace SMTParser{
         return mkInternalOper(sort, t, p);
     }
     std::shared_ptr<DAGNode> Parser::mkInternalOper(const std::shared_ptr<Sort>& sort, const NODE_KIND& t, const std::vector<std::shared_ptr<DAGNode>> &p){
+        TIME_FUNC();
         // make the params unique
         std::vector<std::shared_ptr<DAGNode>> params(p);
         if(isCommutative(t)){
             params = sortParams(p);
         }
-        
         return node_manager->createNode(sort, t, kindToString(t), params);
     }
 
@@ -250,6 +297,7 @@ namespace SMTParser{
     (= A A+ :chainable), return Bool
     */
     std::shared_ptr<DAGNode> Parser::mkEq(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
+        TIME_FUNC();
         if(!l->getSort()->isEqTo(r->getSort())) {
             if(canExempt(l->getSort(), r->getSort())){
                 std::cerr << "Type mismatch in eq, but now exempt for int/real"<<std::endl;
@@ -295,6 +343,7 @@ namespace SMTParser{
         }
     }
     std::shared_ptr<DAGNode> Parser::mkEq(const std::vector<std::shared_ptr<DAGNode>> &params){
+        TIME_FUNC();
         if(params.size() < 2) {
             err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for equality", line_number);
             return mkUnknown();
@@ -671,6 +720,7 @@ namespace SMTParser{
         return mkAnd({l, m, r});
     }
     std::shared_ptr<DAGNode> Parser::mkAnd(const std::vector<std::shared_ptr<DAGNode>> &params){
+        TIME_FUNC();
         if(params.size() == 0){
             std::cerr << "AND on empty parameters, return true" << std::endl;
             return mkTrue();
@@ -780,6 +830,7 @@ namespace SMTParser{
         return mkImplies({l, r});
     }
     std::shared_ptr<DAGNode> Parser::mkImplies(const std::vector<std::shared_ptr<DAGNode>> &params){
+        TIME_FUNC();
         if(params.size() < 2) {
             err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for implies", line_number);
             return mkUnknown();
@@ -3956,6 +4007,18 @@ namespace SMTParser{
         // negate a bitvector atom
         if(atom->isBVCompOp()){
             if(atom->isBVUlt()){
+                return mkBvUge(atom->getChild(0), atom->getChild(1));
+            }
+            else if(atom->isBVUle()){
+                return mkBvUgt(atom->getChild(0), atom->getChild(1));
+            }
+            else if(atom->isBVUgt()){
+                return mkBvUle(atom->getChild(0), atom->getChild(1));
+            }
+            else if(atom->isBVUge()){
+                return mkBvUlt(atom->getChild(0), atom->getChild(1));
+            }
+            else if(atom->isBVUlt()){
                 return mkBvUge(atom->getChild(0), atom->getChild(1));
             }
             else if(atom->isBVUle()){
