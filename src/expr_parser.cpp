@@ -835,14 +835,26 @@ namespace SMTParser{
                 condAssert(oper_params.size() == 3, "Invalid number of parameters for fp.fma");
                 return mkFpFma(oper_params);
             case NODE_KIND::NT_FP_SQRT:
-                condAssert(oper_params.size() == 1, "Invalid number of parameters for fp.sqrt");
-                return mkFpSqrt(oper_params[0]);
+                if(oper_params.size() == 1) {
+                    return mkFpSqrt(oper_params[0]);
+                } else if(oper_params.size() == 2) {
+                    return mkFpSqrt(oper_params[0], oper_params[1]);
+                } else {
+                    err_param_mis("fp.sqrt", line_number);
+                    return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+                }
             case NODE_KIND::NT_FP_REM:
                 condAssert(oper_params.size() == 2, "Invalid number of parameters for fp.rem");
                 return mkFpRem(oper_params[0], oper_params[1]);
             case NODE_KIND::NT_FP_ROUND_TO_INTEGRAL:
-                condAssert(oper_params.size() == 1, "Invalid number of parameters for fp.roundToIntegral");
-                return mkFpRoundToIntegral(oper_params[0]);
+                if(oper_params.size() == 1) {
+                    return mkFpRoundToIntegral(oper_params[0]);
+                } else if(oper_params.size() == 2) {
+                    return mkFpRoundToIntegral(oper_params[0], oper_params[1]);
+                } else {
+                    err_param_mis("fp.roundToIntegral", line_number);
+                    return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+                }
             case NODE_KIND::NT_FP_MIN:
                 condAssert(oper_params.size() == 2, "Invalid number of parameters for fp.min");
                 return mkFpMin(oper_params);

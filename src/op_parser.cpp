@@ -3262,8 +3262,8 @@ namespace SMTParser{
         std::shared_ptr<Sort> sort = mkFPSort(exponent_width, significand_width);
 
         // Validate param type
-        if(!isRealParam(param) && !isBvParam(param)) {
-            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Fourth parameter must be Real or BitVec in to_fp", line_number);
+        if(!isRealParam(param) && !isBvParam(param) && !isFpParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Fourth parameter must be Real, BitVec, or FloatingPoint in to_fp", line_number);
             return mkUnknown();
         }
 
