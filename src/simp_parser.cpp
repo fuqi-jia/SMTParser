@@ -26,6 +26,7 @@
 */
 
 #include "parser.h"
+#include "timing.h"
 
 namespace SMTParser{
     void precision_warning(const std::string& op){

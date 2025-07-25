@@ -51,7 +51,6 @@ namespace SMTParser{
 
 	
 	bool Parser::parse(const std::string& filename){
-		TIME_FUNC();
 		return parseSmtlib2File(filename);
 	}
 
@@ -682,7 +681,6 @@ namespace SMTParser{
 	}
 
 	CMD_TYPE Parser::parseCommand() {
-		TIME_FUNC();
 
 		size_t command_ln = line_number;
 		std::string command = getSymbol();
@@ -1178,26 +1176,23 @@ namespace SMTParser{
 
 	// sort ::= <identifier> | (<identifier> <sort>+)
 	std::shared_ptr<Sort> Parser::parseSort(){
+		// cache basic sorts
+		static const std::unordered_map<std::string, std::shared_ptr<Sort>> BASIC_SORTS = {
+			{"Bool", BOOL_SORT}, {"Int", INT_SORT}, {"Real", REAL_SORT}, 
+			{"String", STR_SORT}, {"Float64", FLOAT64_SORT}
+		};
+		
 		if (*bufptr != '(') {
 			// <identifier>
 			size_t expr_ln = line_number;
 			std::string s = getSymbol();
 
-			if(s == "Bool"){
-				return BOOL_SORT;
+			// first check the basic type cache
+			auto basic_it = BASIC_SORTS.find(s);
+			if (basic_it != BASIC_SORTS.end()) {
+				return basic_it->second;
 			}
-			else if(s == "Int"){
-				return INT_SORT;
-			}
-			else if(s == "Real"){
-				return REAL_SORT;
-			}
-			else if(s == "String"){
-				return STR_SORT;
-			}
-			else if(s == "Float64"){
-				return FLOAT64_SORT;
-			}
+			// then check the user-defined type
 					else if(s == "RoundingMode"){
 			return std::make_shared<Sort>(SORT_KIND::SK_ROUNDING_MODE, "RoundingMode", 0);
 		}
@@ -1317,7 +1312,6 @@ namespace SMTParser{
 	// LET_BIND_VAR_LIST: [(<symbol> expr)]
 	// Body: expr
 	std::shared_ptr<DAGNode> Parser::parsePreservingLet(){
-		TIME_FUNC();
 		// This function uses an iterative approach instead of recursion to handle nested let expressions
 		// and constructs let-chain to avoid deep nesting issues
 		
@@ -1439,7 +1433,6 @@ namespace SMTParser{
 	(let (<keybinding>+) expr), return expr
 	*/
 	std::shared_ptr<DAGNode> Parser::parseLet() {
-		TIME_FUNC();
 		// This function uses an iterative approach instead of recursion to handle nested let expressions
 		
 		// Create a stack to store parsing states and contexts

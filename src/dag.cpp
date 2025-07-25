@@ -26,6 +26,7 @@
  */
 
 #include "dag.h"
+#include "timing.h"
 #include <stack>
 #include <sstream>
 
@@ -537,7 +538,7 @@ namespace SMTParser{
                 node_buckets[i].reserve(1);
             }
             else{
-                node_buckets[i].reserve(2048);
+                node_buckets[i].reserve(8192);
             }
         }
         // 2. Initialize static constant nodes and insert them into buckets
@@ -553,9 +554,17 @@ namespace SMTParser{
     }
     size_t NodeManager::getIndex(const std::shared_ptr<DAGNode>& node) const{
         auto bucket_index = static_cast<size_t>(node->getKind());
-        auto it = node_buckets[bucket_index].find(node);
-        if(it != node_buckets[bucket_index].end()){
-            return it->second;
+        auto& kind_bucket = node_buckets[bucket_index];
+        size_t node_hash = node->hashCode();
+        
+        auto hash_it = kind_bucket.find(node_hash);
+        if(hash_it != kind_bucket.end()) {
+            for(const auto& pair : hash_it->second) {
+                if(pair.first.get() == node.get() ||
+                   pair.first->isEquivalentTo(*node)) {
+                    return pair.second;
+                }
+            }
         }
         return -1;
     }
@@ -574,12 +583,39 @@ namespace SMTParser{
     }
     
     std::shared_ptr<DAGNode> NodeManager::insertNodeToBucket(const std::shared_ptr<DAGNode>& node) {
+        TIME_FUNC();
         auto bucket_index = static_cast<size_t>(node->getKind());
-        auto it = node_buckets[bucket_index].find(node);
-        if(it != node_buckets[bucket_index].end()){
-            return nodes[it->second];
+        auto& kind_bucket = node_buckets[bucket_index];
+        
+        // pre-calculate hash code to avoid repeated calculation
+        size_t node_hash = node->hashCode();
+        
+        // secondary hash lookup: first use hash code to locate the small bucket
+        auto hash_it = kind_bucket.find(node_hash);
+        if(hash_it != kind_bucket.end()) {
+            TIME_BLOCK("NodeManager::insertNodeToBucket: hash_it != kind_bucket.end()");
+            // linear search in the small bucket
+            for(const auto& pair : hash_it->second) {
+                // optimize comparison order: the most likely different ones are in front, to avoid the expensive isEquivalentTo
+                if(pair.first.get() == node.get()) {
+                    // completely the same pointer, return directly
+                    return nodes[pair.second];
+                }
+                // fast structure comparison (avoid the expensive isEquivalentTo call)
+                if(pair.first->getKind() == node->getKind() &&
+                   pair.first->getChildrenSize() == node->getChildrenSize() &&
+                   pair.first->getName() == node->getName()) {
+                    // only call the expensive isEquivalentTo when the structure matches completely
+                    if(pair.first->isEquivalentTo(*node)) {
+                        return nodes[pair.second];
+                    }
+                }
+            }
         }
-        node_buckets[bucket_index].insert(std::pair<std::shared_ptr<DAGNode>, size_t>(node, nodes.size()));
+        
+        // node does not exist, insert new node
+        size_t new_index = nodes.size();
+        kind_bucket[node_hash].emplace_back(node, new_index);
         nodes.emplace_back(node);
         return node;
     }
@@ -610,66 +646,79 @@ namespace SMTParser{
     }
 
     std::shared_ptr<DAGNode> NodeManager::createNode(std::shared_ptr<Sort> sort, NODE_KIND kind, std::string name, std::vector<std::shared_ptr<DAGNode>> children) {
+        TIME_FUNC();
         auto node = std::make_shared<DAGNode>(sort, kind, name, children);
         return insertNodeToBucket(node);
     }
 
     std::shared_ptr<DAGNode> NodeManager::createNode(std::shared_ptr<Sort> sort, NODE_KIND kind, std::string name) {
+        TIME_FUNC();
         auto node = std::make_shared<DAGNode>(sort, kind, name);
         return insertNodeToBucket(node);
     }
 
     std::shared_ptr<DAGNode> NodeManager::createNode(std::shared_ptr<Sort> sort, NODE_KIND kind) {
+        TIME_FUNC();
         auto node = std::make_shared<DAGNode>(sort, kind);
         return insertNodeToBucket(node);
     }
 
     std::shared_ptr<DAGNode> NodeManager::createNode(std::shared_ptr<Sort> sort) {
+        TIME_FUNC();
         auto node = std::make_shared<DAGNode>(sort);
         return insertNodeToBucket(node);
     }
 
     std::shared_ptr<DAGNode> NodeManager::createNode() {
+        TIME_FUNC();
         auto node = std::make_shared<DAGNode>();
         return insertNodeToBucket(node);
     }
 
     std::shared_ptr<DAGNode> NodeManager::createNode(NODE_KIND kind, std::string name) {
+        TIME_FUNC();
         auto node = std::make_shared<DAGNode>(kind, name);
         return insertNodeToBucket(node);
     }
 
     std::shared_ptr<DAGNode> NodeManager::createNode(NODE_KIND kind) {
+        TIME_FUNC();
         auto node = std::make_shared<DAGNode>(kind);
         return insertNodeToBucket(node);
     }
 
     std::shared_ptr<DAGNode> NodeManager::createNode(std::shared_ptr<Sort> sort, const Integer& v) {
+        TIME_FUNC();
         auto node = std::make_shared<DAGNode>(sort, v);
         return insertNodeToBucket(node);
     }
 
     std::shared_ptr<DAGNode> NodeManager::createNode(std::shared_ptr<Sort> sort, const Real& v) {
+        TIME_FUNC();
         auto node = std::make_shared<DAGNode>(sort, v);
         return insertNodeToBucket(node);
     }
 
     std::shared_ptr<DAGNode> NodeManager::createNode(std::shared_ptr<Sort> sort, const double& v) {
+        TIME_FUNC();
         auto node = std::make_shared<DAGNode>(sort, v);
         return insertNodeToBucket(node);
     }
 
     std::shared_ptr<DAGNode> NodeManager::createNode(std::shared_ptr<Sort> sort, const int& v) {
+        TIME_FUNC();
         auto node = std::make_shared<DAGNode>(sort, v);
         return insertNodeToBucket(node);
     }
 
     std::shared_ptr<DAGNode> NodeManager::createNode(std::shared_ptr<Sort> sort, const bool& v) {
+        TIME_FUNC();
         auto node = std::make_shared<DAGNode>(sort, v);
         return insertNodeToBucket(node);
     }
 
     std::shared_ptr<DAGNode> NodeManager::createNode(const std::string& n) {
+        TIME_FUNC();
         auto node = std::make_shared<DAGNode>(n);
         return insertNodeToBucket(node);
     }
