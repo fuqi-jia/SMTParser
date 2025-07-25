@@ -34,11 +34,6 @@
 #include <string>
 namespace SMTParser{
 
-    // SHA-256 hash function
-    std::string HashUtils::sha256(const std::string& input) {
-        return SHA256::hash(input);
-    }
-
     bool TypeChecker::isNumber(const std::string& str){
         return isInt(str) || isReal(str);
     }
