@@ -503,7 +503,9 @@ namespace SMTParser{
         bool isFPToSBV() 			const { return (kind == NODE_KIND::NT_FP_TO_SBV); };
         bool isFPToReal() 			const { return (kind == NODE_KIND::NT_FP_TO_REAL); };
         bool isToFP()     		    const { return (kind == NODE_KIND::NT_FP_TO_FP); };
-        bool isFPConv() 			const { return (isFPToUBV() || isFPToSBV() || isFPToReal() || isToFP()); };
+        bool isToFPUnsigned()       const { return (kind == NODE_KIND::NT_FP_TO_FP_UNSIGNED); };
+        bool isFPConst()            const { return (kind == NODE_KIND::NT_FP_CONST); };
+        bool isFPConv() 			const { return (isFPToUBV() || isFPToSBV() || isFPToReal() || isToFP() || isToFPUnsigned()); };
 
         // check floating point properties
         bool isFPIsNormal() 		const { return (kind == NODE_KIND::NT_FP_IS_NORMAL); };

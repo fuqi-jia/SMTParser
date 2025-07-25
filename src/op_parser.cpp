@@ -550,8 +550,17 @@ namespace SMTParser{
         }
         return node_manager->createNode(sort, NODE_KIND::NT_CONST, v);
     }
+    std::shared_ptr<DAGNode> Parser::mkConstFP(const std::string &fp_expr){
+        return node_manager->createNode(nullptr, NODE_KIND::NT_CONST, fp_expr);
+    }
     std::shared_ptr<DAGNode> Parser::mkConstReg(const std::string &v){
         return node_manager->createNode(REG_SORT, NODE_KIND::NT_CONST, v);
+    }
+    
+    std::shared_ptr<DAGNode> Parser::mkRoundingMode(const std::string &mode){
+        // Create a special sort for rounding mode
+        std::shared_ptr<Sort> rounding_mode_sort = std::make_shared<Sort>(SORT_KIND::SK_ROUNDING_MODE, "RoundingMode", 0);
+        return node_manager->createNode(rounding_mode_sort, NODE_KIND::NT_CONST, mode);
     }
     
     // VAR
@@ -2723,120 +2732,128 @@ namespace SMTParser{
 
     // FLOATING POINT COMMON OPERATORS
     /*
-    (fp.add Fp Fp+), return Fp
+    (fp.add RoundingMode FloatingPoint FloatingPoint), return FloatingPoint
     */
     std::shared_ptr<DAGNode> Parser::mkFpAdd(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() == 0){
-            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for fp_add", line_number);
+        if(params.size() != 3){
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "fp.add requires exactly 3 parameters: RoundingMode, FloatingPoint, FloatingPoint", line_number);
             return mkUnknown();
         }
-        else if(params.size() == 1){
-            return params[0];
+        
+        if(params[0]->isErr() || params[1]->isErr() || params[2]->isErr()) {
+            return params[0]->isErr() ? params[0] : (params[1]->isErr() ? params[1] : params[2]);
         }
-        std::shared_ptr<Sort> sort = getSort(params);
-        std::vector<std::shared_ptr<DAGNode>> new_params;
-
-        for(size_t i=0;i<params.size();i++){
-            if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !isFpParam(params[i])) {
-                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_add", line_number);
-                return mkUnknown();
-            }
-            new_params.emplace_back(params[i]);
+        
+        if(!params[0]->getSort()->isRoundingMode()) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "First parameter of fp.add must be a rounding mode", line_number);
+            return mkUnknown();
         }
-
-        if(sort == nullptr){
-            sort = new_params[0]->getSort();
+        
+        if(!isFpParam(params[1]) || !isFpParam(params[2])) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Second and third parameters of fp.add must be floating point numbers", line_number);
+            return mkUnknown();
         }
-
-        return mkOper(sort, NODE_KIND::NT_FP_ADD, new_params);
+        
+        std::shared_ptr<Sort> result_sort = params[1]->getSort();
+        if(!(*result_sort == *params[2]->getSort())) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Floating point operands must have the same sort", line_number);
+            return mkUnknown();
+        }
+        
+        return mkOper(result_sort, NODE_KIND::NT_FP_ADD, params);
     }
     /*
-    (fp.sub Fp Fp+), return Fp
+    (fp.sub RoundingMode FloatingPoint FloatingPoint), return FloatingPoint
     */
     std::shared_ptr<DAGNode> Parser::mkFpSub(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() == 0){
-            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for fp_sub", line_number);
+        if(params.size() != 3){
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "fp.sub requires exactly 3 parameters: RoundingMode, FloatingPoint, FloatingPoint", line_number);
             return mkUnknown();
         }
-        else if(params.size() == 1){
-            return params[0];
+        
+        if(params[0]->isErr() || params[1]->isErr() || params[2]->isErr()) {
+            return params[0]->isErr() ? params[0] : (params[1]->isErr() ? params[1] : params[2]);
         }
-        std::shared_ptr<Sort> sort = getSort(params);
-        std::vector<std::shared_ptr<DAGNode>> new_params;
-
-        for(size_t i=0;i<params.size();i++){
-            if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !isFpParam(params[i])) {
-                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_sub", line_number);
-                return mkUnknown();
-            }
-            new_params.emplace_back(params[i]);
+        
+        if(!params[0]->getSort()->isRoundingMode()) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "First parameter of fp.sub must be a rounding mode", line_number);
+            return mkUnknown();
         }
-
-        if(sort == nullptr){
-            sort = new_params[0]->getSort();
+        
+        if(!isFpParam(params[1]) || !isFpParam(params[2])) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Second and third parameters of fp.sub must be floating point numbers", line_number);
+            return mkUnknown();
         }
-
-        return mkOper(sort, NODE_KIND::NT_FP_SUB, new_params);
+        
+        std::shared_ptr<Sort> result_sort = params[1]->getSort();
+        if(!(*result_sort == *params[2]->getSort())) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Floating point operands must have the same sort", line_number);
+            return mkUnknown();
+        }
+        
+        return mkOper(result_sort, NODE_KIND::NT_FP_SUB, params);
     }
     /*
-    (fp.mul Fp Fp+), return Fp
+    (fp.mul RoundingMode FloatingPoint FloatingPoint), return FloatingPoint
     */
     std::shared_ptr<DAGNode> Parser::mkFpMul(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() == 0){
-            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for fp_mul", line_number);
+        if(params.size() != 3){
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "fp.mul requires exactly 3 parameters: RoundingMode, FloatingPoint, FloatingPoint", line_number);
             return mkUnknown();
         }
-        else if(params.size() == 1){
-            return params[0];
+        
+        if(params[0]->isErr() || params[1]->isErr() || params[2]->isErr()) {
+            return params[0]->isErr() ? params[0] : (params[1]->isErr() ? params[1] : params[2]);
         }
-        std::shared_ptr<Sort> sort = getSort(params);
-        std::vector<std::shared_ptr<DAGNode>> new_params;
-
-        for(size_t i=0;i<params.size();i++){
-            if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !isFpParam(params[i])) {
-                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_mul", line_number);
-                return mkUnknown();
-            }
-            new_params.emplace_back(params[i]);
+        
+        if(!params[0]->getSort()->isRoundingMode()) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "First parameter of fp.mul must be a rounding mode", line_number);
+            return mkUnknown();
         }
-
-        if(sort == nullptr){
-            sort = new_params[0]->getSort();
+        
+        if(!isFpParam(params[1]) || !isFpParam(params[2])) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Second and third parameters of fp.mul must be floating point numbers", line_number);
+            return mkUnknown();
         }
-
-        return mkOper(sort, NODE_KIND::NT_FP_MUL, new_params);
+        
+        std::shared_ptr<Sort> result_sort = params[1]->getSort();
+        if(!(*result_sort == *params[2]->getSort())) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Floating point operands must have the same sort", line_number);
+            return mkUnknown();
+        }
+        
+        return mkOper(result_sort, NODE_KIND::NT_FP_MUL, params);
     }
     /*
-    (fp.div Fp Fp), return Fp
+    (fp.div RoundingMode FloatingPoint FloatingPoint), return FloatingPoint
     */
     std::shared_ptr<DAGNode> Parser::mkFpDiv(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() == 0){
-            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for fp_div", line_number);
+        if(params.size() != 3){
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "fp.div requires exactly 3 parameters: RoundingMode, FloatingPoint, FloatingPoint", line_number);
             return mkUnknown();
         }
-        else if(params.size() == 1){
-            return params[0];
+        
+        if(params[0]->isErr() || params[1]->isErr() || params[2]->isErr()) {
+            return params[0]->isErr() ? params[0] : (params[1]->isErr() ? params[1] : params[2]);
         }
-        std::shared_ptr<Sort> sort = getSort(params);
-        std::vector<std::shared_ptr<DAGNode>> new_params;
-
-        for(size_t i=0;i<params.size();i++){
-            if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !isFpParam(params[i])) {
-                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_div", line_number);
-                return mkUnknown();
-            }
-            new_params.emplace_back(params[i]);
+        
+        if(!params[0]->getSort()->isRoundingMode()) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "First parameter of fp.div must be a rounding mode", line_number);
+            return mkUnknown();
         }
-
-        if(sort == nullptr){
-            sort = new_params[0]->getSort();
+        
+        if(!isFpParam(params[1]) || !isFpParam(params[2])) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Second and third parameters of fp.div must be floating point numbers", line_number);
+            return mkUnknown();
         }
-
-        return mkOper(sort, NODE_KIND::NT_FP_DIV, new_params);
+        
+        std::shared_ptr<Sort> result_sort = params[1]->getSort();
+        if(!(*result_sort == *params[2]->getSort())) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Floating point operands must have the same sort", line_number);
+            return mkUnknown();
+        }
+        
+        return mkOper(result_sort, NODE_KIND::NT_FP_DIV, params);
     }
     /*
     (fp.abs Fp), return Fp
@@ -2875,30 +2892,52 @@ namespace SMTParser{
         return mkOper(l->getSort(), NODE_KIND::NT_FP_REM, l, r);
     }
     /*
-    (fp.fma Fp Fp Fp), return Fp
+    (fp.fma RoundingMode Fp Fp Fp), return Fp
     */
     std::shared_ptr<DAGNode> Parser::mkFpFma(const std::vector<std::shared_ptr<DAGNode>> &params){
-        if(params.size() < 3) {
-            err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for fp_fma", line_number);
+        if(params.size() != 4) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "fp.fma requires exactly 4 parameters: RoundingMode Fp Fp Fp", line_number);
             return mkUnknown();
         }
-        std::shared_ptr<Sort> sort = getSort(params);
-        std::vector<std::shared_ptr<DAGNode>> new_params;
-
-        for(size_t i=0;i<params.size() - 2;i++){
+        
+        // Check if first parameter is rounding mode
+        if(!params[0]->getSort()->isRoundingMode()) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "First parameter must be a rounding mode in fp.fma", line_number);
+            return mkUnknown();
+        }
+        
+        // Check if other parameters are floating point
+        for(size_t i = 1; i < params.size(); i++) {
             if(params[i]->isErr()) return params[i];
-            if(sort != nullptr && !isFpParam(params[i])) {
-                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_fma", line_number);
+            if(!isFpParam(params[i])) {
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Parameters 2-4 must be floating point in fp.fma", line_number);
                 return mkUnknown();
             }
-            new_params.emplace_back(params[i]);
+        }
+        
+        // All floating point parameters should have the same sort
+        std::shared_ptr<Sort> sort = params[1]->getSort();
+        for(size_t i = 2; i < params.size(); i++) {
+            if(!(*params[i]->getSort() == *sort)) {
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "All floating point parameters must have the same sort in fp.fma", line_number);
+                return mkUnknown();
+            }
         }
 
-        if(sort == nullptr){
-            sort = new_params[0]->getSort();
+        return mkOper(sort, NODE_KIND::NT_FP_FMA, params);
+    }
+    /*
+    (fp.sqrt RoundingMode Fp), return Fp
+    */
+    std::shared_ptr<DAGNode> Parser::mkFpSqrt(std::shared_ptr<DAGNode> rm, std::shared_ptr<DAGNode> param){
+        if(rm->isErr() || param->isErr()) return rm->isErr()?rm:param;
+        
+        if(!isFpParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_sqrt", line_number);
+            return mkUnknown();
         }
 
-        return mkOper(sort, NODE_KIND::NT_FP_FMA, new_params);
+        return mkOper(param->getSort(), NODE_KIND::NT_FP_SQRT, rm, param);
     }
     /*
     (fp.sqrt Fp), return Fp
@@ -2911,6 +2950,19 @@ namespace SMTParser{
         }
 
         return mkOper(param->getSort(), NODE_KIND::NT_FP_SQRT, param);
+    }
+    /*
+    (fp.roundToIntegral RoundingMode Fp), return Fp
+    */
+    std::shared_ptr<DAGNode> Parser::mkFpRoundToIntegral(std::shared_ptr<DAGNode> rm, std::shared_ptr<DAGNode> param){
+        if(rm->isErr() || param->isErr()) return rm->isErr()?rm:param;
+        
+        if(!isFpParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_roundToIntegral", line_number);
+            return mkUnknown();
+        }
+
+        return mkOper(param->getSort(), NODE_KIND::NT_FP_ROUND_TO_INTEGRAL, rm, param);
     }
     /*
     (fp.roundToIntegral Fp), return Fp
@@ -3076,9 +3128,9 @@ namespace SMTParser{
     /*
     (fp.to_ubv Fp), return Bv
     */
-    std::shared_ptr<DAGNode> Parser::mkFpToUbv(std::shared_ptr<DAGNode> param, std::shared_ptr<DAGNode> size){
+    std::shared_ptr<DAGNode> Parser::mkFpToUbv(std::shared_ptr<DAGNode> rm, std::shared_ptr<DAGNode> param, std::shared_ptr<DAGNode> size){
         
-        if(!isFpParam(param) || !isIntParam(size)) {
+        if(!rm->getSort()->isRoundingMode() || !isFpParam(param) || !isIntParam(size)) {
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_to_ubv", line_number);
             return mkUnknown();
         }
@@ -3089,11 +3141,11 @@ namespace SMTParser{
 
         std::shared_ptr<Sort> new_sort = mkBVSort(toInt(size).toULong());
 
-        return mkOper(new_sort, NODE_KIND::NT_FP_TO_UBV, param, size);
+        return mkOper(new_sort, NODE_KIND::NT_FP_TO_UBV, rm, param, size);
     }
-    std::shared_ptr<DAGNode> Parser::mkFpToSbv(std::shared_ptr<DAGNode> param, std::shared_ptr<DAGNode> size){
+    std::shared_ptr<DAGNode> Parser::mkFpToSbv(std::shared_ptr<DAGNode> rm, std::shared_ptr<DAGNode> param, std::shared_ptr<DAGNode> size){
         
-        if(!isFpParam(param) || !isIntParam(size)) {
+        if(!rm->getSort()->isRoundingMode() || !isFpParam(param) || !isIntParam(size)) {
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_to_sbv", line_number);
             return mkUnknown();
         }
@@ -3104,7 +3156,7 @@ namespace SMTParser{
 
         std::shared_ptr<Sort> new_sort = mkBVSort(toInt(size).toULong());
 
-        return mkOper(new_sort, NODE_KIND::NT_FP_TO_SBV, param, size);
+        return mkOper(new_sort, NODE_KIND::NT_FP_TO_SBV, rm, param, size);
     }
     std::shared_ptr<DAGNode> Parser::mkFpToReal(std::shared_ptr<DAGNode> param){
         
@@ -3116,16 +3168,129 @@ namespace SMTParser{
         return mkOper(REAL_SORT, NODE_KIND::NT_FP_TO_REAL, param);
     }
     /*
-    (to_fp Bv Bv Bv), return Fp
-    (to_fp Real Real Real), return Fp
-    ...
+    (to_fp eb sb param), return Fp
+    Supports:
+    1. ((_ to_fp eb sb) RoundingMode Real) -> params: [eb, sb], args: [RoundingMode, Real]
+    2. ((_ to_fp eb sb) RoundingMode (_ BitVec m)) -> params: [eb, sb], args: [RoundingMode, BitVec]
+    3. ((_ to_fp eb sb) (_ BitVec m)) -> params: [eb, sb], args: [BitVec]
     */
+    std::shared_ptr<DAGNode> Parser::mkToFp(std::shared_ptr<DAGNode> eb, std::shared_ptr<DAGNode> sb, std::shared_ptr<DAGNode> rm, std::shared_ptr<DAGNode> param){
+        if(eb->isErr() || sb->isErr() || rm->isErr() || param->isErr()) return eb->isErr()?eb:(sb->isErr()?sb:(rm->isErr()?rm:param));
+
+        // Validate eb and sb are integers
+        if(!eb->isCInt() && !eb->isConst()) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Exponent width must be an integer in to_fp", line_number);
+            return mkUnknown();
+        }
+        if(!sb->isCInt() && !sb->isConst()) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Significand width must be an integer in to_fp", line_number);
+            return mkUnknown();
+        }
+
+        // Validate rounding mode
+        std::cout << "DEBUG: rm->getSort()->isRoundingMode() = " << (rm->getSort()->isRoundingMode() ? "true" : "false") << std::endl;
+        std::cout << "DEBUG: rm->getSort()->toString() = " << rm->getSort()->toString() << std::endl;
+        std::cout << "DEBUG: rm->toString() = " << rm->toString() << std::endl;
+        if(!rm->getSort()->isRoundingMode()) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Third parameter must be a rounding mode in to_fp", line_number);
+            return mkUnknown();
+        }
+
+        // Get floating point sort
+        size_t exponent_width = toInt(eb).toULong();
+        size_t significand_width = toInt(sb).toULong();
+        std::shared_ptr<Sort> sort = mkFPSort(exponent_width, significand_width);
+
+        // Validate param type
+        if(!isRealParam(param) && !isBvParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Fourth parameter must be Real or BitVec in to_fp", line_number);
+            return mkUnknown();
+        }
+
+        std::vector<std::shared_ptr<DAGNode>> params = {eb, sb, rm, param};
+        return mkOper(sort, NODE_KIND::NT_FP_TO_FP, params);
+    }
+
     std::shared_ptr<DAGNode> Parser::mkToFp(std::shared_ptr<DAGNode> eb, std::shared_ptr<DAGNode> sb, std::shared_ptr<DAGNode> param){
         if(eb->isErr() || sb->isErr() || param->isErr()) return eb->isErr()?eb:(sb->isErr()?sb:param);
 
-        std::shared_ptr<Sort> sort = mkFPSort(toInt(eb).toULong(), toInt(sb).toULong());
+        // Validate eb and sb are integers
+        if(!eb->isCInt() && !eb->isConst()) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Exponent width must be an integer in to_fp", line_number);
+            return mkUnknown();
+        }
+        if(!sb->isCInt() && !sb->isConst()) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Significand width must be an integer in to_fp", line_number);
+            return mkUnknown();
+        }
+
+        // Get floating point sort
+        size_t exponent_width = toInt(eb).toULong();
+        size_t significand_width = toInt(sb).toULong();
+        std::shared_ptr<Sort> sort = mkFPSort(exponent_width, significand_width);
+
+        // Validate param type (must be BitVec for this overload)
+        if(!isBvParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Parameter must be BitVec in to_fp", line_number);
+            return mkUnknown();
+        }
 
         return mkOper(sort, NODE_KIND::NT_FP_TO_FP, eb, sb, param);
+    }
+    /*
+    ((_ to_fp_unsigned eb sb) RoundingMode (_ BitVec m)), return Fp
+    */
+    std::shared_ptr<DAGNode> Parser::mkToFpUnsigned(std::shared_ptr<DAGNode> eb, std::shared_ptr<DAGNode> sb, std::shared_ptr<DAGNode> rm, std::shared_ptr<DAGNode> param){
+        if(eb->isErr() || sb->isErr() || rm->isErr() || param->isErr()) return eb->isErr()?eb:(sb->isErr()?sb:(rm->isErr()?rm:param));
+
+        if(!eb->isCInt() && !eb->isConst()) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Exponent width must be an integer in to_fp_unsigned", line_number);
+            return mkUnknown();
+        }
+        if(!sb->isCInt() && !sb->isConst()) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Significand width must be an integer in to_fp_unsigned", line_number);
+            return mkUnknown();
+        }
+
+        size_t exponent_width = toInt(eb).toULong();
+        size_t significand_width = toInt(sb).toULong();
+        std::shared_ptr<Sort> sort = mkFPSort(exponent_width, significand_width);
+
+        if(!rm->getSort()->isRoundingMode()) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Third parameter must be a rounding mode in to_fp_unsigned", line_number);
+            return mkUnknown();
+        }
+
+        if(!isBvParam(param)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Fourth parameter must be BitVec in to_fp_unsigned", line_number);
+            return mkUnknown();
+        }
+
+        std::vector<std::shared_ptr<DAGNode>> params = {eb, sb, rm, param};
+        return mkOper(sort, NODE_KIND::NT_FP_TO_FP_UNSIGNED, params);
+    }
+    /*
+    (fp sign exp mant), return Fp
+    */
+    std::shared_ptr<DAGNode> Parser::mkFpConst(std::shared_ptr<DAGNode> sign, std::shared_ptr<DAGNode> exp, std::shared_ptr<DAGNode> mant){
+        if(sign->isErr() || exp->isErr() || mant->isErr()) return sign->isErr()?sign:(exp->isErr()?exp:mant);
+
+        if(!isBvParam(sign) || !isBvParam(exp) || !isBvParam(mant)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "All parameters must be BitVec in fp constant", line_number);
+            return mkUnknown();
+        }
+
+        size_t sign_width = sign->getSort()->getBitWidth();
+        size_t exp_width = exp->getSort()->getBitWidth();
+        size_t mant_width = mant->getSort()->getBitWidth();
+
+        if(sign_width != 1) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Sign bit must be 1 bit wide", line_number);
+            return mkUnknown();
+        }
+
+        std::shared_ptr<Sort> sort = mkFPSort(exp_width, mant_width + 1);
+        return mkOper(sort, NODE_KIND::NT_FP_CONST, sign, exp, mant);
     }
     // FLOATING POINT PROPERTIES
     /*
@@ -4144,7 +4309,6 @@ namespace SMTParser{
             case NODE_KIND::NT_FP_TO_UBV:
             case NODE_KIND::NT_FP_TO_SBV:
             case NODE_KIND::NT_FP_TO_REAL:
-            case NODE_KIND::NT_FP_TO_FP:
             case NODE_KIND::NT_STR_LEN:
             case NODE_KIND::NT_STR_TO_LOWER:
             case NODE_KIND::NT_STR_TO_UPPER:
@@ -4249,6 +4413,10 @@ namespace SMTParser{
             case NODE_KIND::NT_REG_LOOP:
             case NODE_KIND::NT_BV_EXTRACT:
                 return 3;
+
+            // 4-ary
+            case NODE_KIND::NT_FP_TO_FP:
+                return 4;
 
             // n-ary
             case NODE_KIND::NT_EQ:

@@ -1198,10 +1198,13 @@ namespace SMTParser{
 			else if(s == "Float64"){
 				return FLOAT64_SORT;
 			}
-			else if(sort_key_map.find(s) != sort_key_map.end()){
-				return sort_key_map[s];
-			}
-			else err_unkwn_sym(s, expr_ln);
+					else if(s == "RoundingMode"){
+			return std::make_shared<Sort>(SORT_KIND::SK_ROUNDING_MODE, "RoundingMode", 0);
+		}
+		else if(sort_key_map.find(s) != sort_key_map.end()){
+			return sort_key_map[s];
+		}
+		else err_unkwn_sym(s, expr_ln);
 		}
 		// (<identifier> <sort>+)
 		// (_ <identifier> <param>+)

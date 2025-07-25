@@ -49,7 +49,8 @@ namespace SMTParser{
         SK_RAND, // random number
         SK_INTOREAL, // int or real, for constant
         SK_DEC, // declare-sort 
-        SK_DEF  // define-sort
+        SK_DEF, // define-sort
+        SK_ROUNDING_MODE // rounding mode for floating point operations
     };
 
     class Sort{
@@ -93,6 +94,7 @@ namespace SMTParser{
         bool isRand() const { return kind == SORT_KIND::SK_RAND; }
         bool isDec() const { return kind == SORT_KIND::SK_DEC; }
         bool isDef() const { return kind == SORT_KIND::SK_DEF; }
+        bool isRoundingMode() const { return kind == SORT_KIND::SK_ROUNDING_MODE; }
 
         // compare two sorts
         bool operator==(const Sort& other) const {
@@ -142,6 +144,7 @@ namespace SMTParser{
                 case SORT_KIND::SK_TRANSCENDENTAL: return "Transcendental";
                 case SORT_KIND::SK_DEC: return name;
                 case SORT_KIND::SK_DEF: return name;
+                case SORT_KIND::SK_ROUNDING_MODE: return "RoundingMode";
                 default: return "Unknown";
             }
         }

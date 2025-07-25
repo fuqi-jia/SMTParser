@@ -39,6 +39,8 @@ endif()
 
 # Collect all test source files
 file(GLOB TEST_SOURCES "*.cpp")
+file(GLOB FP_TEST_SOURCES "FP/*.cpp")
+list(APPEND TEST_SOURCES ${FP_TEST_SOURCES})
 
 # Create an executable for each test file
 set(TEST_TARGETS)
