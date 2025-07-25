@@ -45,4 +45,8 @@ namespace SMTParser{
 
     // Float64 type definition using IEEE 754 double precision
     const std::shared_ptr<Sort> FLOAT64_SORT = std::make_shared<Sort>(SORT_KIND::SK_FP, "Float64", 0, std::vector<std::shared_ptr<Sort>>{std::make_shared<Sort>(SORT_KIND::SK_NULL, "Exp", 11), std::make_shared<Sort>(SORT_KIND::SK_NULL, "Sig", 53)});
+    // Float32 type definition using IEEE 754 single precision
+    const std::shared_ptr<Sort> FLOAT32_SORT = std::make_shared<Sort>(SORT_KIND::SK_FP, "Float32", 0, std::vector<std::shared_ptr<Sort>>{std::make_shared<Sort>(SORT_KIND::SK_NULL, "Exp", 8), std::make_shared<Sort>(SORT_KIND::SK_NULL, "Sig", 24)});
+    // Float16 type definition using IEEE 754 half precision
+    const std::shared_ptr<Sort> FLOAT16_SORT = std::make_shared<Sort>(SORT_KIND::SK_FP, "Float16", 0, std::vector<std::shared_ptr<Sort>>{std::make_shared<Sort>(SORT_KIND::SK_NULL, "Exp", 5), std::make_shared<Sort>(SORT_KIND::SK_NULL, "Sig", 11)});
 }

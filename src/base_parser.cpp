@@ -1179,7 +1179,7 @@ namespace SMTParser{
 		// cache basic sorts
 		static const std::unordered_map<std::string, std::shared_ptr<Sort>> BASIC_SORTS = {
 			{"Bool", BOOL_SORT}, {"Int", INT_SORT}, {"Real", REAL_SORT}, 
-			{"String", STR_SORT}, {"Float64", FLOAT64_SORT}
+			{"String", STR_SORT}, {"Float16", FLOAT16_SORT}, {"Float32", FLOAT32_SORT}, {"Float64", FLOAT64_SORT}
 		};
 		
 		if (*bufptr != '(') {

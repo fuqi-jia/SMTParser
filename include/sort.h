@@ -199,6 +199,10 @@ namespace SMTParser{
 
     // Float64 type - declared in sort.cpp
     extern const std::shared_ptr<Sort> FLOAT64_SORT;
+    // Float32 type - declared in sort.cpp
+    extern const std::shared_ptr<Sort> FLOAT32_SORT;
+    // Float16 type - declared in sort.cpp
+    extern const std::shared_ptr<Sort> FLOAT16_SORT;
 
     std::shared_ptr<Sort> mkBVSort(size_t width);
     std::shared_ptr<Sort> mkFPSort(size_t exp, size_t sig);
