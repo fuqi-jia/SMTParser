@@ -1161,7 +1161,8 @@ namespace SMTParser{
                 }
                 return mkUnknown();
             }
-            case NODE_KIND::NT_STR_SPLIT:{
+            case NODE_KIND::NT_STR_SPLIT:
+            case NODE_KIND::NT_STR_NUM_SPLITS_RE:{
                 return mkUnknown();
             }
             case NODE_KIND::NT_STR_LT:{
@@ -1481,7 +1482,9 @@ namespace SMTParser{
             case NODE_KIND::NT_REG_LOOP:
             case NODE_KIND::NT_STR_REPLACE_REG:
             case NODE_KIND::NT_STR_REPLACE_REG_ALL:
-            case NODE_KIND::NT_STR_INDEXOF_REG:{
+            case NODE_KIND::NT_STR_INDEXOF_REG:
+            case NODE_KIND::NT_STR_SPLIT_AT_RE:
+            case NODE_KIND::NT_STR_SPLIT_REST_RE:{
                 return mkUnknown();
             }
             // Special processing operation

@@ -485,6 +485,15 @@ namespace SMTParser{
         else if(expr->isStrSplitRest()){
             return evaluateStrSplitRest(expr, model, result);
         }
+        else if(expr->isStrSplitAtRe()){
+            return evaluateStrSplitAtRe(expr, model, result);
+        }
+        else if(expr->isStrSplitRestRe()){
+            return evaluateStrSplitRestRe(expr, model, result);
+        }
+        else if(expr->isStrNumSplitsRe()){
+            return evaluateStrNumSplitsRe(expr, model, result);
+        }
         else if(expr->isStrLt()){
             return evaluateStrLt(expr, model, result);
         }
@@ -1940,6 +1949,15 @@ namespace SMTParser{
     }
     bool Parser::evaluateMin(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
         return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_MIN);
+    }
+    bool Parser::evaluateStrSplitAtRe(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_STR_SPLIT_AT_RE);
+    }
+    bool Parser::evaluateStrSplitRestRe(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_STR_SPLIT_REST_RE);
+    }
+    bool Parser::evaluateStrNumSplitsRe(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+        return evaluateSimpleOp(expr, model, result, NODE_KIND::NT_STR_NUM_SPLITS_RE);
     }
     
 }

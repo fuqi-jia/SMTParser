@@ -573,7 +573,10 @@ namespace SMTParser{
         bool isStrSplitAt() 		const { return (kind == NODE_KIND::NT_STR_SPLIT_AT); };
         bool isStrSplitRest() 		const { return (kind == NODE_KIND::NT_STR_SPLIT_REST); };
         bool isStrNumSplits() 		const { return (kind == NODE_KIND::NT_STR_NUM_SPLITS); };
-        bool isStrOp() 				const { return (isStrLen() || isStrConcat() || isStrSubstr() || isStrPrefixof() || isStrSuffixof() || isStrIndexof() || isStrCharat() || isStrUpdate() || isStrReplace() || isStrReplaceAll() || isStrToLower() || isStrToUpper() || isStrRev() || isStrSplit() || isStrSplitAt() || isStrSplitRest() || isStrNumSplits() || (isApplyUF() && sort->isStr())); };
+        bool isStrSplitAtRe() 		const { return (kind == NODE_KIND::NT_STR_SPLIT_AT_RE); };
+        bool isStrSplitRestRe() 		const { return (kind == NODE_KIND::NT_STR_SPLIT_REST_RE); };
+        bool isStrNumSplitsRe() 		const { return (kind == NODE_KIND::NT_STR_NUM_SPLITS_RE); };
+        bool isStrOp() 				const { return (isStrLen() || isStrConcat() || isStrSubstr() || isStrPrefixof() || isStrSuffixof() || isStrIndexof() || isStrCharat() || isStrUpdate() || isStrReplace() || isStrReplaceAll() || isStrToLower() || isStrToUpper() || isStrRev() || isStrSplit() || isStrSplitAt() || isStrSplitRest() || isStrNumSplits() || isStrSplitAtRe() || isStrSplitRestRe() || isStrNumSplitsRe() || (isApplyUF() && sort->isStr())); };
 
         // check strings comparison
         bool isStrLt() 				const { return (kind == NODE_KIND::NT_STR_LT); };
