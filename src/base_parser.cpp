@@ -1179,7 +1179,7 @@ namespace SMTParser{
 		// cache basic sorts
 		static const std::unordered_map<std::string, std::shared_ptr<Sort>> BASIC_SORTS = {
 			{"Bool", BOOL_SORT}, {"Int", INT_SORT}, {"Real", REAL_SORT}, 
-			{"String", STR_SORT}, {"Float64", FLOAT64_SORT}
+			{"String", STR_SORT}, {"Float16", FLOAT16_SORT}, {"Float32", FLOAT32_SORT}, {"Float64", FLOAT64_SORT}
 		};
 		
 		if (*bufptr != '(') {
@@ -1193,10 +1193,13 @@ namespace SMTParser{
 				return basic_it->second;
 			}
 			// then check the user-defined type
-			else if(sort_key_map.find(s) != sort_key_map.end()){
-				return sort_key_map[s];
-			}
-			else err_unkwn_sym(s, expr_ln);
+					else if(s == "RoundingMode"){
+			return std::make_shared<Sort>(SORT_KIND::SK_ROUNDING_MODE, "RoundingMode", 0);
+		}
+		else if(sort_key_map.find(s) != sort_key_map.end()){
+			return sort_key_map[s];
+		}
+		else err_unkwn_sym(s, expr_ln);
 		}
 		// (<identifier> <sort>+)
 		// (_ <identifier> <param>+)

@@ -1,37 +1,41 @@
 #!/bin/bash
 
-# Script to run SMT parser on all instances and collect statistics
-# Usage: ./run_instances.sh [executable_path] [options]
+# Script to run SMT parser on instances and delete successful ones
+# Usage: ./run_and_del.sh [folder_path] [options]
 # Options:
 #   -v, --verbose     Show detailed error information
 #   -d, --detailed    Show detailed results table
 #   -f, --force       Force recompilation
+#   -n, --dry-run     Show what would be deleted without actually deleting
 #   -h, --help        Show help message
 
 # Function to show help
 show_help() {
-    echo "Usage: $0 [executable_path] [options]"
+    echo "Usage: $0 [folder_path] [options]"
+    echo ""
+    echo "Arguments:"
+    echo "  folder_path        Directory containing .smt2 files to test and delete"
     echo ""
     echo "Options:"
     echo "  -v, --verbose     Show detailed error information"
     echo "  -d, --detailed    Show detailed results table"
     echo "  -f, --force       Force recompilation"
+    echo "  -n, --dry-run     Show what would be deleted without actually deleting"
     echo "  -h, --help        Show this help message"
     echo ""
     echo "Examples:"
-    echo "  $0                                    # Use default executable, compile if needed"
-    echo "  $0 -f                                 # Force recompile and run"
-    echo "  $0 /path/to/executable                # Use custom executable"
-    echo "  $0 -d                                 # Show detailed results"
-    echo "  $0 -v                                 # Show verbose errors"
-    echo "  $0 -fdv                               # Force recompile with detailed and verbose output"
+    echo "  $0 test/instances/schanda/spark     # Test and delete successful files in folder"
+    echo "  $0 -n test/instances/schanda/spark  # Dry run - show what would be deleted"
+    echo "  $0 -v test/instances/schanda/spark  # Verbose mode with detailed errors"
+    echo "  $0 -d test/instances/schanda/spark  # Show detailed results table"
 }
 
 # Parse command line arguments
 FORCE_COMPILE=false
 VERBOSE=false
 DETAILED=false
-CUSTOM_EXECUTABLE=""
+DRY_RUN=false
+FOLDER_PATH=""
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -51,16 +55,20 @@ while [[ $# -gt 0 ]]; do
             DETAILED=true
             shift
             ;;
+        -n|--dry-run)
+            DRY_RUN=true
+            shift
+            ;;
         -*)
             echo "Unknown option: $1"
             show_help
             exit 1
             ;;
         *)
-            if [[ -z "$CUSTOM_EXECUTABLE" ]]; then
-                CUSTOM_EXECUTABLE="$1"
+            if [[ -z "$FOLDER_PATH" ]]; then
+                FOLDER_PATH="$1"
             else
-                echo "Too many arguments. Only one executable path is allowed."
+                echo "Too many arguments. Only one folder path is allowed."
                 show_help
                 exit 1
             fi
@@ -69,11 +77,25 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# Check if folder path is provided
+if [[ -z "$FOLDER_PATH" ]]; then
+    echo "Error: Folder path is required."
+    show_help
+    exit 1
+fi
+
+# Check if folder exists
+if [[ ! -d "$FOLDER_PATH" ]]; then
+    echo "Error: Folder '$FOLDER_PATH' does not exist."
+    exit 1
+fi
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Function to find project root directory
@@ -178,22 +200,9 @@ if [[ -z "$PROJECT_ROOT" ]]; then
     exit 1
 fi
 
-# Show a brief message about where we're operating
-current_dir=$(basename "$(pwd)")
-if [[ "$current_dir" == "test" ]]; then
-    echo -e "${BLUE}Running from test directory, using project root: $(basename "$PROJECT_ROOT")${NC}"
-fi
-
 # Default executable path (relative to project root)
 DEFAULT_EXECUTABLE="$PROJECT_ROOT/build/test/test_smtparser_exe"
-EXECUTABLE="${CUSTOM_EXECUTABLE:-$DEFAULT_EXECUTABLE}"
-
-# Instances directory (relative to project root)
-INSTANCES_DIR="$PROJECT_ROOT/test/instances"
-
-# Source files to check for changes (relative to project root)
-SOURCE_FILE="$PROJECT_ROOT/test/test_smtparser_exe.cpp"
-INCLUDE_DIR="$PROJECT_ROOT/include"
+EXECUTABLE="$DEFAULT_EXECUTABLE"
 
 # Check if we need to compile
 need_compile=false
@@ -208,52 +217,16 @@ fi
 if [[ ! -f "$EXECUTABLE" ]]; then
     echo -e "${YELLOW}Executable '$EXECUTABLE' not found.${NC}"
     need_compile=true
-elif [[ "$EXECUTABLE" == "$DEFAULT_EXECUTABLE" && "$FORCE_COMPILE" == false ]]; then
-    # Only check for source changes if using default executable and not forcing
-    if [[ -f "$SOURCE_FILE" ]]; then
-        # Check if source file is newer than executable
-        if [[ "$SOURCE_FILE" -nt "$EXECUTABLE" ]]; then
-            echo -e "${YELLOW}Source file is newer than executable.${NC}"
-            need_compile=true
-        fi
-        
-        # Check if any header files are newer than executable
-        if [[ -d "$INCLUDE_DIR" ]]; then
-            for header_file in "$INCLUDE_DIR"/*.h; do
-                if [[ -f "$header_file" && "$header_file" -nt "$EXECUTABLE" ]]; then
-                    echo -e "${YELLOW}Header file $header_file is newer than executable.${NC}"
-                    need_compile=true
-                    break
-                fi
-            done
-        fi
-    fi
 fi
 
 # Compile if needed
 if [[ "$need_compile" == true ]]; then
-    # Only compile if using default executable
-    if [[ "$EXECUTABLE" == "$DEFAULT_EXECUTABLE" ]]; then
-        compile_executable
-    else
-        echo -e "${RED}Cannot compile custom executable: $EXECUTABLE${NC}"
-        echo "Please compile manually or use the default executable."
-        exit 1
-    fi
+    compile_executable
 fi
 
 # Final check if executable exists
 if [[ ! -f "$EXECUTABLE" ]]; then
     echo -e "${RED}Error: Executable '$EXECUTABLE' still not found after compilation.${NC}"
-    echo "Usage: $0 [executable_path]"
-    echo "Default executable path: $DEFAULT_EXECUTABLE"
-    exit 1
-fi
-
-# Check if instances directory exists
-if [[ ! -d "$INSTANCES_DIR" ]]; then
-    echo -e "${RED}Error: Instances directory '$INSTANCES_DIR' not found.${NC}"
-    echo "Expected directory: $INSTANCES_DIR"
     exit 1
 fi
 
@@ -261,34 +234,35 @@ fi
 chmod +x "$EXECUTABLE"
 
 echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}SMT Parser Instance Runner${NC}"
+echo -e "${BLUE}SMT Parser Test and Delete Runner${NC}"
 echo -e "${BLUE}========================================${NC}"
 if [[ "$VERBOSE" == true ]]; then
     echo "Project root: $PROJECT_ROOT"
 fi
 echo "Executable: $EXECUTABLE"
-echo "Instances directory: $INSTANCES_DIR"
+echo "Target folder: $FOLDER_PATH"
+if [[ "$DRY_RUN" == true ]]; then
+    echo -e "${CYAN}DRY RUN MODE - No files will be deleted${NC}"
+fi
 echo ""
 
 # Initialize counters
 total_files=0
 success_count=0
 failure_count=0
+deleted_count=0
 total_time=0
-total_assertions=0
-total_variables=0
-total_functions=0
 
 # Arrays to store detailed results
 declare -a file_results
 declare -a file_times
-declare -a file_stats
+declare -a file_paths
 
 # Create temporary files to store results
 temp_results=$(mktemp)
 temp_stats=$(mktemp)
 
-# Process each file in the instances directory (recursively)
+# Process each file in the target directory (recursively)
 while IFS= read -r file; do
     # Skip if file is empty
     if [[ ! -s "$file" ]]; then
@@ -303,9 +277,6 @@ while IFS= read -r file; do
     
     # Run the executable and capture output (stdout+stderr)
     output=$("$EXECUTABLE" "$file" 2>&1)
-
-    # 若包含 Timing 结果块，提前截取方便后续输出
-    timing_block=$(echo "$output" | sed -n '/========= Timing Result =========/,/=================================/p')
     exit_code=$?
     
     # Parse the output
@@ -314,27 +285,26 @@ while IFS= read -r file; do
         success_count=$((success_count + 1))
         
         # Extract statistics
-        assertions=$(echo "$output" | grep "ASSERTIONS:" | cut -d':' -f2)
-        variables=$(echo "$output" | grep "VARIABLES:" | cut -d':' -f2)
-        functions=$(echo "$output" | grep "FUNCTIONS:" | cut -d':' -f2)
         time_ms=$(echo "$output" | grep "TIME:" | cut -d':' -f2)
-        
-        # Add to totals
-        total_assertions=$((total_assertions + assertions))
-        total_variables=$((total_variables + variables))
-        total_functions=$((total_functions + functions))
         total_time=$((total_time + time_ms))
         
         # Store results
         file_results[total_files]="SUCCESS"
         file_times[total_files]="$time_ms"
-        file_stats[total_files]="A:$assertions V:$variables F:$functions"
+        file_paths[total_files]="$file"
         
-        echo "    Time: ${time_ms}ms, Assertions: $assertions, Variables: $variables, Functions: $functions"
-        # 显示计时分析块（若存在且用户启用了详细或 verbose 模式）
-        if [[ -n "$timing_block" && ( "$VERBOSE" == true || "$DETAILED" == true ) ]]; then
-            echo -e "${BLUE}    Timing profile:${NC}"
-            echo "$timing_block" | sed 's/^/        /'
+        echo "    Time: ${time_ms}ms"
+        
+        # Delete the file if not in dry-run mode
+        if [[ "$DRY_RUN" == true ]]; then
+            echo -e "${CYAN}    [DRY RUN] Would delete: $file${NC}"
+        else
+            if rm "$file"; then
+                echo -e "${GREEN}    Deleted: $file${NC}"
+                deleted_count=$((deleted_count + 1))
+            else
+                echo -e "${RED}    Failed to delete: $file${NC}"
+            fi
         fi
     else
         echo -e "${RED}FAILURE${NC}"
@@ -351,28 +321,23 @@ while IFS= read -r file; do
         fi
         
         file_results[total_files]="FAILURE"
-        file_stats[total_files]="N/A"
+        file_paths[total_files]="$file"
         
         # Show error details if verbose mode
         if [[ "$VERBOSE" == true ]]; then
             echo "    Error details:"
             echo "$output" | sed 's/^/        /'
         fi
-        # If timing block present but verbose not enabled, optionally show
-        if [[ -n "$timing_block" && "$VERBOSE" == true ]]; then
-            echo -e "${BLUE}    Timing profile:${NC}"
-            echo "$timing_block" | sed 's/^/        /'
-        fi
     fi
     
     # Write current stats to temp file
-    echo "$total_files $success_count $failure_count $total_time $total_assertions $total_variables $total_functions" > "$temp_stats"
+    echo "$total_files $success_count $failure_count $deleted_count $total_time" > "$temp_stats"
     
-done < <(find "$INSTANCES_DIR" -type f -name "*.smt2")
+done < <(find "$FOLDER_PATH" -type f -name "*.smt2")
 
 # Read final stats from temp file
 if [[ -f "$temp_stats" ]]; then
-    read -r total_files success_count failure_count total_time total_assertions total_variables total_functions < "$temp_stats"
+    read -r total_files success_count failure_count deleted_count total_time < "$temp_stats"
     rm -f "$temp_stats"
 fi
 
@@ -383,7 +348,7 @@ echo -e "${BLUE}SUMMARY${NC}"
 echo -e "${BLUE}========================================${NC}"
 
 if [[ $total_files -eq 0 ]]; then
-    echo -e "${YELLOW}No files found in instances directory.${NC}"
+    echo -e "${YELLOW}No .smt2 files found in directory.${NC}"
     rm -f "$temp_results"
     exit 0
 fi
@@ -391,6 +356,12 @@ fi
 echo "Total files processed: $total_files"
 echo -e "Successful parses: ${GREEN}$success_count${NC}"
 echo -e "Failed parses: ${RED}$failure_count${NC}"
+
+if [[ "$DRY_RUN" == true ]]; then
+    echo -e "Files that would be deleted: ${CYAN}$success_count${NC}"
+else
+    echo -e "Files actually deleted: ${GREEN}$deleted_count${NC}"
+fi
 
 # Calculate success rate
 if [[ $total_files -gt 0 ]]; then
@@ -405,33 +376,16 @@ if [[ $total_time -gt 0 ]]; then
     echo "Average time: ${avg_time}ms"
 fi
 
-# Content statistics (only for successful parses)
-if [[ $success_count -gt 0 ]]; then
-    echo ""
-    echo -e "${BLUE}Content Statistics (successful parses only):${NC}"
-    echo "Total assertions: $total_assertions"
-    echo "Total variables: $total_variables"
-    echo "Total functions: $total_functions"
-    
-    avg_assertions=$(echo "scale=2; $total_assertions / $success_count" | bc -l 2>/dev/null || echo "$(($total_assertions / $success_count))")
-    avg_variables=$(echo "scale=2; $total_variables / $success_count" | bc -l 2>/dev/null || echo "$(($total_variables / $success_count))")
-    avg_functions=$(echo "scale=2; $total_functions / $success_count" | bc -l 2>/dev/null || echo "$(($total_functions / $success_count))")
-    
-    echo "Average assertions per file: $avg_assertions"
-    echo "Average variables per file: $avg_variables"
-    echo "Average functions per file: $avg_functions"
-fi
-
 # Detailed results table (if requested)
 if [[ "$DETAILED" == true ]]; then
     echo ""
     echo -e "${BLUE}Detailed Results:${NC}"
     echo "----------------------------------------"
-    printf "%-30s %-10s %-10s %-20s\n" "File" "Result" "Time(ms)" "Stats"
+    printf "%-30s %-10s %-10s %-10s\n" "File" "Result" "Time(ms)" "Action"
     echo "----------------------------------------"
     
     file_count=0
-    find "$INSTANCES_DIR" -type f -name "*.smt2" | while read -r file; do
+    find "$FOLDER_PATH" -type f -name "*.smt2" | while read -r file; do
         if [[ -s "$file" ]]; then
             file_count=$((file_count + 1))
             filename=$(basename "$file")
@@ -442,20 +396,30 @@ if [[ "$DETAILED" == true ]]; then
             
             result=${file_results[file_count]}
             time_val=${file_times[file_count]}
-            stats=${file_stats[file_count]}
             
-            # Color coding for result
+            # Determine action
             if [[ $result == "SUCCESS" ]]; then
+                if [[ "$DRY_RUN" == true ]]; then
+                    action="${CYAN}Would Delete${NC}"
+                else
+                    action="${GREEN}Deleted${NC}"
+                fi
                 result_colored="${GREEN}$result${NC}"
             else
+                action="${YELLOW}Kept${NC}"
                 result_colored="${RED}$result${NC}"
             fi
             
-            printf "%-30s %-20s %-10s %-20s\n" "$filename" "$result_colored" "$time_val" "$stats"
+            printf "%-30s %-20s %-10s %-20s\n" "$filename" "$result_colored" "$time_val" "$action"
         fi
     done
     echo "----------------------------------------"
 fi
+
+# Show remaining files count
+remaining_files=$(find "$FOLDER_PATH" -type f -name "*.smt2" | wc -l)
+echo ""
+echo -e "${BLUE}Remaining .smt2 files in directory: ${YELLOW}$remaining_files${NC}"
 
 # Clean up temporary files
 rm -f "$temp_results"

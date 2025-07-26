@@ -137,10 +137,46 @@ namespace SMTParser{
                             frame.result = mkConstBv(num, width);
                             parseRpar();
                             frame.state = FrameState::Finish;
-                        }else{
+                        }
+                        // Handle floating point special constants: (_ +zero eb sb), (_ -zero eb sb), (_ +oo eb sb), (_ -oo eb sb), (_ NaN eb sb)
+                        else if(second == "+zero" || second == "-zero" || second == "+oo" || second == "-oo" || second == "NaN"){
+                            std::string eb_str = getSymbol();
+                            std::string sb_str = getSymbol();
+                            size_t eb = std::stoul(eb_str);
+                            size_t sb = std::stoul(sb_str);
+                            
+                            std::shared_ptr<Sort> fp_sort = mkFPSort(eb, sb);
+                            std::string const_name = "(_ " + second + " " + eb_str + " " + sb_str + ")";
+                            frame.result = node_manager->createNode(fp_sort, NODE_KIND::NT_CONST, const_name);
+                            parseRpar();
+                            frame.state = FrameState::Finish;
+                        }
+                        else{
                             frame.second_symbol = second;
                             frame.state = FrameState::ProcessingParams;
                         }
+                    }
+                    // Handle floating point bit representation: (fp sign exp mant)
+                    else if(head == "fp"){
+                        // Parse (fp sign exp mant) where sign, exp, mant are bit vectors
+                        std::vector<std::shared_ptr<DAGNode>> fp_args;
+                        
+                        // Parse sign bit
+                        std::shared_ptr<DAGNode> sign = parseExpr();
+                        fp_args.push_back(sign);
+                        
+                        // Parse exponent
+                        std::shared_ptr<DAGNode> exp = parseExpr();
+                        fp_args.push_back(exp);
+                        
+                        // Parse mantissa
+                        std::shared_ptr<DAGNode> mant = parseExpr();
+                        fp_args.push_back(mant);
+                        
+                        // Create fp constant using the new mkFpConst function
+                        frame.result = mkFpConst(sign, exp, mant);
+                        parseRpar();
+                        frame.state = FrameState::Finish;
                     }
                     else if(head == "let"){
                         if(let_nesting_depth == 0){
@@ -239,9 +275,9 @@ namespace SMTParser{
                         } else if(opName == "bvsle"){   
                             condAssert(frame.oper_params.size() == 2, "Invalid number of parameters for bvsle");
                             res = mkBvSle(frame.oper_params[0], frame.oper_params[1]);
-                        } else if(opName == "bvsle"){
-                            condAssert(frame.oper_params.size() == 2, "Invalid number of parameters for bvsle");
-                            res = mkBvSle(frame.oper_params[0], frame.oper_params[1]);
+                        } else if(opName == "bvslt"){
+                            condAssert(frame.oper_params.size() == 2, "Invalid number of parameters for bvslt");
+                            res = mkBvSlt(frame.oper_params[0], frame.oper_params[1]);
                         } else if(opName == "bvsge"){
                             condAssert(frame.oper_params.size() == 2, "Invalid number of parameters for bvsge");
                             res = mkBvSge(frame.oper_params[0], frame.oper_params[1]);
@@ -414,11 +450,28 @@ namespace SMTParser{
 			return mkConstReal(parsed);
 		}
 		else if(TypeChecker::isBV(s)){
-			return mkConstBv(s, s.size() - 2);
+			size_t width;
+			if (s[1] == 'b' || s[1] == 'B') {
+				// Binary: each character is 1 bit
+				width = s.size() - 2;
+			} else if (s[1] == 'x' || s[1] == 'X') {
+				// Hexadecimal: each character is 4 bits
+				width = (s.size() - 2) * 4;
+			} else if (s[1] == 'd' || s[1] == 'D') {
+				// Decimal: convert to binary to determine width
+				std::string decimal_part = s.substr(2);
+				Integer value(decimal_part);
+				std::string binary = value.toString(2);
+				width = binary.size();
+			} else {
+				// Fallback to original behavior
+				width = s.size() - 2;
+			}
+			return mkConstBv(s, width);
 		}
-		// else if(TypeChecker::isFP(s)){
-		// 	return mkConstFP(s);
-		// }
+		else if(TypeChecker::isFP(s)){
+			return mkConstFP(s);
+		}
 		else if(TypeChecker::isString(s)){
 			return mkConstStr(s);
 		}
@@ -431,6 +484,22 @@ namespace SMTParser{
 		}
 		else if (s == "re.allchar"){
 			return mkRegAllChar();
+		}
+		// Rounding mode constants for floating point operations
+		else if (s == "RNE" || s == "roundNearestTiesToEven"){
+			return mkRoundingMode("RNE");
+		}
+		else if (s == "RNA" || s == "roundNearestTiesToAway"){
+			return mkRoundingMode("RNA");
+		}
+		else if (s == "RTP" || s == "roundTowardPositive"){
+			return mkRoundingMode("RTP");
+		}
+		else if (s == "RTN" || s == "roundTowardNegative"){
+			return mkRoundingMode("RTN");
+		}
+		else if (s == "RTZ" || s == "roundTowardZero"){
+			return mkRoundingMode("RTZ");
 		}
 		else {
 			err_unkwn_sym(s, line_number);
@@ -783,14 +852,26 @@ namespace SMTParser{
                 condAssert(oper_params.size() == 3, "Invalid number of parameters for fp.fma");
                 return mkFpFma(oper_params);
             case NODE_KIND::NT_FP_SQRT:
-                condAssert(oper_params.size() == 1, "Invalid number of parameters for fp.sqrt");
-                return mkFpSqrt(oper_params[0]);
+                if(oper_params.size() == 1) {
+                    return mkFpSqrt(oper_params[0]);
+                } else if(oper_params.size() == 2) {
+                    return mkFpSqrt(oper_params[0], oper_params[1]);
+                } else {
+                    err_param_mis("fp.sqrt", line_number);
+                    return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+                }
             case NODE_KIND::NT_FP_REM:
                 condAssert(oper_params.size() == 2, "Invalid number of parameters for fp.rem");
                 return mkFpRem(oper_params[0], oper_params[1]);
             case NODE_KIND::NT_FP_ROUND_TO_INTEGRAL:
-                condAssert(oper_params.size() == 1, "Invalid number of parameters for fp.roundToIntegral");
-                return mkFpRoundToIntegral(oper_params[0]);
+                if(oper_params.size() == 1) {
+                    return mkFpRoundToIntegral(oper_params[0]);
+                } else if(oper_params.size() == 2) {
+                    return mkFpRoundToIntegral(oper_params[0], oper_params[1]);
+                } else {
+                    err_param_mis("fp.roundToIntegral", line_number);
+                    return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+                }
             case NODE_KIND::NT_FP_MIN:
                 condAssert(oper_params.size() == 2, "Invalid number of parameters for fp.min");
                 return mkFpMin(oper_params);
@@ -816,17 +897,55 @@ namespace SMTParser{
                 condAssert(oper_params.size() == 2, "Invalid number of parameters for fp.ne");
                 return mkFpNe(oper_params[0], oper_params[1]);
             case NODE_KIND::NT_FP_TO_UBV:
-                condAssert(oper_params.size() == 2, "Invalid number of parameters for fp.to_ubv");
-                return mkFpToUbv(oper_params[0], oper_params[1]);
+                condAssert(func_args.size() == 1 && oper_params.size() == 2, "Invalid number of parameters for fp.to_ubv");
+                return mkFpToUbv(oper_params[0], oper_params[1], func_args[0]);
             case NODE_KIND::NT_FP_TO_SBV:
-                condAssert(oper_params.size() == 2, "Invalid number of parameters for fp.to_sbv");
-                return mkFpToSbv(oper_params[0], oper_params[1]);
+                condAssert(func_args.size() == 1 && oper_params.size() == 2, "Invalid number of parameters for fp.to_sbv");
+                return mkFpToSbv(oper_params[0], oper_params[1], func_args[0]);
             case NODE_KIND::NT_FP_TO_REAL:
                 condAssert(oper_params.size() == 1, "Invalid number of parameters for fp.to_real");
                 return mkFpToReal(oper_params[0]);
             case NODE_KIND::NT_FP_TO_FP:
-                condAssert(oper_params.size() == 3, "Invalid number of parameters for to_fp");
-                return mkToFp(oper_params[0], oper_params[1], oper_params[2]);
+                // Handle different to_fp syntax:
+                // 1. ((_ to_fp eb sb) RoundingMode Real) -> func_args: [eb, sb], oper_params: [RoundingMode, Real]
+                // 2. ((_ to_fp eb sb) RoundingMode (_ BitVec m)) -> func_args: [eb, sb], oper_params: [RoundingMode, BitVec]
+                // 3. ((_ to_fp eb sb) (_ BitVec m)) -> func_args: [eb, sb], oper_params: [BitVec]
+                if(func_args.size() == 2) {
+                    if(oper_params.size() == 2) {
+                        // Case 1 and 2: RoundingMode + Real/BitVec
+                        return mkToFp(func_args[0], func_args[1], oper_params[0], oper_params[1]);
+                    } else if(oper_params.size() == 1) {
+                        // Case 3: BitVec only
+                        return mkToFp(func_args[0], func_args[1], oper_params[0]);
+                    } else {
+                        err_param_mis("to_fp", line_number);
+                        return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+                    }
+                } else if(oper_params.size() == 3) {
+                    // Direct to_fp call with 3 parameters: eb, sb, value/rm+value
+                    return mkToFp(oper_params[0], oper_params[1], oper_params[2]);
+                } else {
+                    err_param_mis("to_fp", line_number);
+                    return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+                }
+            case NODE_KIND::NT_FP_TO_FP_UNSIGNED:
+                // Handle to_fp_unsigned syntax:
+                // ((_ to_fp_unsigned eb sb) RoundingMode (_ BitVec m)) -> func_args: [eb, sb], oper_params: [RoundingMode, BitVec]
+                if(func_args.size() == 2 && oper_params.size() == 2) {
+                    return mkToFpUnsigned(oper_params[0], oper_params[1], func_args[0], func_args[1]);
+                } else {
+                    err_param_mis("to_fp_unsigned", line_number);
+                    return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+                }
+            case NODE_KIND::NT_FP_CONST:
+                // Handle fp constant syntax:
+                // (fp sign exp mant) -> 3 oper_params: sign, exp, mant
+                if(oper_params.size() == 3) {
+                    return mkFpConst(oper_params[0], oper_params[1], oper_params[2]);
+                } else {
+                    err_param_mis("fp", line_number);
+                    return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
+                }
             case NODE_KIND::NT_FP_IS_NORMAL:
                 condAssert(oper_params.size() == 1, "Invalid number of parameters for fp.isNormal");
                 return mkFpIsNormal(oper_params[0]);

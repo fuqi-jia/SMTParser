@@ -756,12 +756,28 @@ namespace SMTParser{
         std::shared_ptr<DAGNode> mkConstFp(const std::string &v, const size_t& e, const size_t& s); // CONST_FP
         
         /**
+         * @brief Create a floating-point constant from expression
+         *
+         * @param fp_expr Floating-point expression string
+         * @return Floating-point constant node
+         */
+        std::shared_ptr<DAGNode> mkConstFP(const std::string &fp_expr); // CONST_FP from expression
+        
+        /**
          * @brief Create a regular expression constant
          *
          * @param v Value (string)
          * @return Regular expression constant node
          */
         std::shared_ptr<DAGNode> mkConstReg(const std::string &v); // CONST_REG
+        
+        /**
+         * @brief Create a rounding mode constant
+         *
+         * @param mode Rounding mode string (RNE, RNA, RTP, RTN, RTZ)
+         * @return Rounding mode constant node
+         */
+        std::shared_ptr<DAGNode> mkRoundingMode(const std::string &mode); // ROUNDING_MODE
         
         // VAR
         /**
@@ -2266,6 +2282,7 @@ namespace SMTParser{
          * @param param Parameter
          * @return Floating-point square root node (fp.sqrt(param))
          */
+        std::shared_ptr<DAGNode> mkFpSqrt(std::shared_ptr<DAGNode> rm, std::shared_ptr<DAGNode> param); // sqrt(rm, param)
         std::shared_ptr<DAGNode> mkFpSqrt(std::shared_ptr<DAGNode> param); // sqrt(param)
         
         /**
@@ -2274,6 +2291,7 @@ namespace SMTParser{
          * @param param Parameter
          * @return Floating-point round to integral node (fp.roundToIntegral(param))
          */
+        std::shared_ptr<DAGNode> mkFpRoundToIntegral(std::shared_ptr<DAGNode> rm, std::shared_ptr<DAGNode> param); // round_to_integral(rm, param)
         std::shared_ptr<DAGNode> mkFpRoundToIntegral(std::shared_ptr<DAGNode> param); // round_to_integral(param)
         
         /**
@@ -2359,7 +2377,7 @@ namespace SMTParser{
          * @param size Size of resulting bitvector
          * @return Floating-point to unsigned bitvector conversion node (fp.to_ubv(param, size))
          */
-        std::shared_ptr<DAGNode> mkFpToUbv(std::shared_ptr<DAGNode> param, std::shared_ptr<DAGNode> size); // to_ubv(param, size)
+        std::shared_ptr<DAGNode> mkFpToUbv(std::shared_ptr<DAGNode> rm, std::shared_ptr<DAGNode> param, std::shared_ptr<DAGNode> size); // to_ubv(rm, param, size)
         
         /**
          * @brief Create a floating-point to signed bitvector conversion node
@@ -2370,7 +2388,7 @@ namespace SMTParser{
          * @param size Size of resulting bitvector
          * @return Floating-point to signed bitvector conversion node (fp.to_sbv(param, size))
          */
-        std::shared_ptr<DAGNode> mkFpToSbv(std::shared_ptr<DAGNode> param, std::shared_ptr<DAGNode> size); // to_sbv(param, size)
+        std::shared_ptr<DAGNode> mkFpToSbv(std::shared_ptr<DAGNode> rm, std::shared_ptr<DAGNode> param, std::shared_ptr<DAGNode> size); // to_sbv(rm, param, size)
         
         /**
          * @brief Create a floating-point to real conversion node
@@ -2390,7 +2408,10 @@ namespace SMTParser{
          * @param param Value to convert
          * @return Value to floating-point conversion node (to_fp(eb, sb, param))
          */
+        std::shared_ptr<DAGNode> mkToFp(std::shared_ptr<DAGNode> eb, std::shared_ptr<DAGNode> sb, std::shared_ptr<DAGNode> rm, std::shared_ptr<DAGNode> param); // to_fp(eb, sb, rm, param)
         std::shared_ptr<DAGNode> mkToFp(std::shared_ptr<DAGNode> eb, std::shared_ptr<DAGNode> sb, std::shared_ptr<DAGNode> param); // to_fp(eb, sb, param)
+        std::shared_ptr<DAGNode> mkToFpUnsigned(std::shared_ptr<DAGNode> eb, std::shared_ptr<DAGNode> sb, std::shared_ptr<DAGNode> rm, std::shared_ptr<DAGNode> param); // to_fp_unsigned(eb, sb, rm, param)
+        std::shared_ptr<DAGNode> mkFpConst(std::shared_ptr<DAGNode> sign, std::shared_ptr<DAGNode> exp, std::shared_ptr<DAGNode> mant); // fp(sign, exp, mant)
         
         // FLOATING POINT PROPERTIES
         /**

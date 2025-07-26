@@ -65,10 +65,10 @@ void test_fp_comparisons(SMTParser::ParserPtr& parser) {
         "(fp.leq ((_ to_fp 8 24) RNE 3.0) ((_ to_fp 8 24) RNE 3.0))",          // 小于等于
         "(fp.geq ((_ to_fp 8 24) RNE 3.0) ((_ to_fp 8 24) RNE 3.0))",          // 大于等于
         "(fp.isNormal ((_ to_fp 8 24) RNE 1.0))",                               // 是否为规格化数
-        "(fp.isSubnormal ((_ to_fp 11 53) RNE 1.0e-308))",                      // 是否为次规格化数
+        "(fp.isSubnormal ((_ to_fp 11 53) RNE 0.0001))",                      // 是否为次规格化数
         "(fp.isZero ((_ to_fp 8 24) RNE 0.0))",                                 // 是否为零
-        "(fp.isInfinite ((_ +oo 8 24)))",                                       // 是否为无穷大
-        "(fp.isNaN ((_ NaN 8 24)))",                                            // 是否为NaN
+        "(fp.isInfinite (_ +oo 8 24))",                                       // 是否为无穷大
+        "(fp.isNaN (_ NaN 8 24))",                                            // 是否为NaN
         "(fp.isNegative ((_ to_fp 8 24) RNE -1.0))",                            // 是否为负数
         "(fp.isPositive ((_ to_fp 8 24) RNE 1.0))"                              // 是否为正数
     };
@@ -97,15 +97,18 @@ void test_fp_conversions(SMTParser::ParserPtr& parser) {
         "((_ to_fp 8 24) #b01000001001000000000000000000000)",
         // 从浮点数到实数
         "(fp.to_real ((_ to_fp 8 24) RNE 3.14))",
-        // 从浮点数到有符号整数（向零舍入）
-        "(fp.to_sbv RTZ 32 ((_ to_fp 8 24) RNE 3.14))",
-        // 从浮点数到无符号整数（向零舍入）
-        "(fp.to_ubv RTZ 32 ((_ to_fp 8 24) RNE 3.14))",
+        // 从浮点数到有符号位向量（向零舍入）
+        "((_ fp.to_sbv 32) RTZ ((_ to_fp 8 24) RNE 3.14))",
+        // 从浮点数到无符号位向量（向零舍入）
+        "((_ fp.to_ubv 32) RTZ ((_ to_fp 8 24) RNE 3.14))",
+        // 从实数到不同精度浮点数
+        "((_ to_fp 11 53) RNE 3.14)",  // 实数到双精度
+        "((_ to_fp 5 11) RNE 3.14)",   // 实数到半精度
         // 不同精度浮点数之间的转换
         "((_ to_fp 11 53) RNE ((_ to_fp 8 24) RNE 3.14))",  // 单精度到双精度
         "((_ to_fp 5 11) RNE ((_ to_fp 8 24) RNE 3.14))"    // 单精度到半精度
     };
-    
+
     std::cout << "=== 测试浮点数转换操作 ===" << std::endl;
     for (const auto& expr : expressions) {
         std::cout << "表达式: " << expr << std::endl;

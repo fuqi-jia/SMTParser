@@ -243,11 +243,9 @@ namespace SMTParser{
     }
     bool TypeChecker::isFP(const std::string& str){
         if (str.empty()) return false;
-        if (str.size() < 3) return false;
-        if (str[0] != '#' || str[1] != 'x') return false;
-        for (size_t i = 2; i < str.size(); i++){
-            if (!isxdigit(str[i])) return false;
-        }
+        if (str.size() < 4) return false;
+        if (str.substr(0, 3) != "(fp") return false;
+        if (str[str.size()-1] != ')') return false;
         return true;
     }
     bool TypeChecker::isString(const std::string& str){
