@@ -150,7 +150,7 @@ compile_executable() {
     echo -e "${YELLOW}Building SMTParser project with tests...${NC}"
     
     # Build everything (this will build the library and all tests)
-    make || {
+    make -j30 || {
         echo -e "${RED}Error: Build failed.${NC}"
         echo -e "${YELLOW}Trying to build specific targets...${NC}"
         
