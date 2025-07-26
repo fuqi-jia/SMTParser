@@ -436,6 +436,12 @@ namespace SMTParser{
             return "str.split_rest";
         case NODE_KIND::NT_STR_NUM_SPLITS:
             return "str.num_splits";
+        case NODE_KIND::NT_STR_SPLIT_AT_RE:
+            return "str.split_at_re";
+        case NODE_KIND::NT_STR_SPLIT_REST_RE:
+            return "str.split_rest_re";
+        case NODE_KIND::NT_STR_NUM_SPLITS_RE:
+            return "str.num_splits_re";
         // STRINGS COMP
         case NODE_KIND::NT_STR_LT:
             return "str.<";

@@ -1032,6 +1032,15 @@ namespace SMTParser{
             case NODE_KIND::NT_STR_NUM_SPLITS:
                 condAssert(oper_params.size() == 2, "Invalid number of parameters for str.num_splits");
                 return mkStrNumSplits(oper_params[0], oper_params[1]);
+            case NODE_KIND::NT_STR_SPLIT_AT_RE:
+                condAssert(oper_params.size() == 3, "Invalid number of parameters for str.split_at_re");
+                return mkStrSplitAtRe(oper_params[0], oper_params[1], oper_params[2]);
+            case NODE_KIND::NT_STR_SPLIT_REST_RE:
+                condAssert(oper_params.size() == 3, "Invalid number of parameters for str.split_rest_re");
+                return mkStrSplitRestRe(oper_params[0], oper_params[1], oper_params[2]);
+            case NODE_KIND::NT_STR_NUM_SPLITS_RE:
+                condAssert(oper_params.size() == 2, "Invalid number of parameters for str.num_splits_re");
+                return mkStrNumSplitsRe(oper_params[0], oper_params[1]);
             case NODE_KIND::NT_STR_LT:
                 condAssert(oper_params.size() == 2, "Invalid number of parameters for str.<");
                 return mkStrLt(oper_params[0], oper_params[1]);

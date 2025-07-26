@@ -7,6 +7,8 @@
 #   -d, --detailed    Show detailed results table
 #   -f, --force       Force recompilation
 #   -n, --dry-run     Show what would be deleted without actually deleting
+#   -s, --silent      Silent mode - no output during processing (enables parallel execution)
+#   -p, --parallel    Number of parallel processes (default: 30, only in silent mode)
 #   -h, --help        Show help message
 
 # Function to show help
@@ -21,6 +23,7 @@ show_help() {
     echo "  -d, --detailed    Show detailed results table"
     echo "  -f, --force       Force recompilation"
     echo "  -n, --dry-run     Show what would be deleted without actually deleting"
+    echo "  -s, --silent      Silent mode - no output during processing"
     echo "  -h, --help        Show this help message"
     echo ""
     echo "Examples:"
@@ -28,6 +31,7 @@ show_help() {
     echo "  $0 -n test/instances/schanda/spark  # Dry run - show what would be deleted"
     echo "  $0 -v test/instances/schanda/spark  # Verbose mode with detailed errors"
     echo "  $0 -d test/instances/schanda/spark  # Show detailed results table"
+    echo "  $0 -s test/instances/schanda/spark  # Silent mode for large datasets"
 }
 
 # Parse command line arguments
@@ -35,6 +39,7 @@ FORCE_COMPILE=false
 VERBOSE=false
 DETAILED=false
 DRY_RUN=false
+SILENT=false
 FOLDER_PATH=""
 
 while [[ $# -gt 0 ]]; do
@@ -57,6 +62,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         -n|--dry-run)
             DRY_RUN=true
+            shift
+            ;;
+        -s|--silent)
+            SILENT=true
             shift
             ;;
         -*)
@@ -123,7 +132,9 @@ find_project_root() {
 
 # Function to compile the executable
 compile_executable() {
-    echo -e "${YELLOW}Compiling executable...${NC}"
+    if [[ "$SILENT" != true ]]; then
+        echo -e "${YELLOW}Compiling executable...${NC}"
+    fi
     
     # Find project root
     local project_root
@@ -143,7 +154,9 @@ compile_executable() {
     
     # Check if build directory exists
     if [[ ! -d "build" ]]; then
-        echo -e "${YELLOW}Creating build directory...${NC}"
+        if [[ "$SILENT" != true ]]; then
+            echo -e "${YELLOW}Creating build directory...${NC}"
+        fi
         mkdir -p build
     fi
     
@@ -152,7 +165,9 @@ compile_executable() {
     
     # Check if CMakeCache.txt exists and if tests are enabled
     if [[ ! -f "CMakeCache.txt" ]]; then
-        echo -e "${YELLOW}Running CMake configuration...${NC}"
+        if [[ "$SILENT" != true ]]; then
+            echo -e "${YELLOW}Running CMake configuration...${NC}"
+        fi
         cmake .. -DBUILD_TESTS=ON -DENABLE_TIMING=ON || {
             echo -e "${RED}Error: CMake configuration failed.${NC}"
             exit 1
@@ -160,7 +175,9 @@ compile_executable() {
     else
         # Check if BUILD_TESTS is enabled in the existing configuration
         if ! grep -q "BUILD_TESTS:BOOL=ON" CMakeCache.txt 2>/dev/null; then
-            echo -e "${YELLOW}Reconfiguring CMake with tests enabled...${NC}"
+            if [[ "$SILENT" != true ]]; then
+                echo -e "${YELLOW}Reconfiguring CMake with tests enabled...${NC}"
+            fi
             cmake .. -DBUILD_TESTS=ON -DENABLE_TIMING=ON || {
                 echo -e "${RED}Error: CMake reconfiguration failed.${NC}"
                 exit 1
@@ -169,25 +186,35 @@ compile_executable() {
     fi
     
     # Build the entire project with tests enabled
-    echo -e "${YELLOW}Building SMTParser project with tests...${NC}"
+    if [[ "$SILENT" != true ]]; then
+        echo -e "${YELLOW}Building SMTParser project with tests...${NC}"
+    fi
     
     # Build everything (this will build the library and all tests)
     make || {
         echo -e "${RED}Error: Build failed.${NC}"
-        echo -e "${YELLOW}Trying to build specific targets...${NC}"
+        if [[ "$SILENT" != true ]]; then
+            echo -e "${YELLOW}Trying to build specific targets...${NC}"
+        fi
         
         # Try to build just what we need
         if make smtparser_static 2>/dev/null && make test_smtparser_exe 2>/dev/null; then
-            echo -e "${GREEN}Successfully built required targets.${NC}"
+            if [[ "$SILENT" != true ]]; then
+                echo -e "${GREEN}Successfully built required targets.${NC}"
+            fi
         else
             echo -e "${RED}Failed to build required targets.${NC}"
-            echo -e "${YELLOW}Available targets:${NC}"
-            make help | grep -E "(smtparser|test_)" || echo "No matching targets found"
+            if [[ "$SILENT" != true ]]; then
+                echo -e "${YELLOW}Available targets:${NC}"
+                make help | grep -E "(smtparser|test_)" || echo "No matching targets found"
+            fi
             exit 1
         fi
     }
     
-    echo -e "${GREEN}Compilation successful!${NC}"
+    if [[ "$SILENT" != true ]]; then
+        echo -e "${GREEN}Compilation successful!${NC}"
+    fi
 }
 
 # Initialize paths after function definitions
@@ -209,13 +236,17 @@ need_compile=false
 
 # Force compilation if requested
 if [[ "$FORCE_COMPILE" == true ]]; then
-    echo -e "${YELLOW}Force compilation requested.${NC}"
+    if [[ "$SILENT" != true ]]; then
+        echo -e "${YELLOW}Force compilation requested.${NC}"
+    fi
     need_compile=true
 fi
 
 # Check if executable exists
 if [[ ! -f "$EXECUTABLE" ]]; then
-    echo -e "${YELLOW}Executable '$EXECUTABLE' not found.${NC}"
+    if [[ "$SILENT" != true ]]; then
+        echo -e "${YELLOW}Executable '$EXECUTABLE' not found.${NC}"
+    fi
     need_compile=true
 fi
 
@@ -233,18 +264,23 @@ fi
 # Make executable if it's not already
 chmod +x "$EXECUTABLE"
 
-echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}SMT Parser Test and Delete Runner${NC}"
-echo -e "${BLUE}========================================${NC}"
-if [[ "$VERBOSE" == true ]]; then
-    echo "Project root: $PROJECT_ROOT"
+if [[ "$SILENT" != true ]]; then
+    echo -e "${BLUE}========================================${NC}"
+    echo -e "${BLUE}SMT Parser Test and Delete Runner${NC}"
+    echo -e "${BLUE}========================================${NC}"
+    if [[ "$VERBOSE" == true ]]; then
+        echo "Project root: $PROJECT_ROOT"
+    fi
+    echo "Executable: $EXECUTABLE"
+    echo "Target folder: $FOLDER_PATH"
+    if [[ "$DRY_RUN" == true ]]; then
+        echo -e "${CYAN}DRY RUN MODE - No files will be deleted${NC}"
+    fi
+    if [[ "$SILENT" == true ]]; then
+        echo -e "${CYAN}SILENT MODE - No output during processing${NC}"
+    fi
+    echo ""
 fi
-echo "Executable: $EXECUTABLE"
-echo "Target folder: $FOLDER_PATH"
-if [[ "$DRY_RUN" == true ]]; then
-    echo -e "${CYAN}DRY RUN MODE - No files will be deleted${NC}"
-fi
-echo ""
 
 # Initialize counters
 total_files=0
@@ -266,14 +302,18 @@ temp_stats=$(mktemp)
 while IFS= read -r file; do
     # Skip if file is empty
     if [[ ! -s "$file" ]]; then
-        echo -e "${YELLOW}Skipping empty file: $file${NC}"
+        if [[ "$SILENT" != true ]]; then
+            echo -e "${YELLOW}Skipping empty file: $file${NC}"
+        fi
         continue
     fi
     
     total_files=$((total_files + 1))
     filename=$(basename "$file")
     
-    echo -n "Processing $file... "
+    if [[ "$SILENT" != true ]]; then
+        echo -n "Processing $file... "
+    fi
     
     # Run the executable and capture output (stdout+stderr)
     output=$("$EXECUTABLE" "$file" 2>&1)
@@ -281,7 +321,9 @@ while IFS= read -r file; do
     
     # Parse the output
     if [[ $exit_code -eq 0 && $output == *"PARSE_SUCCESS"* ]]; then
-        echo -e "${GREEN}SUCCESS${NC}"
+        if [[ "$SILENT" != true ]]; then
+            echo -e "${GREEN}SUCCESS${NC}"
+        fi
         success_count=$((success_count + 1))
         
         # Extract statistics
@@ -293,21 +335,31 @@ while IFS= read -r file; do
         file_times[total_files]="$time_ms"
         file_paths[total_files]="$file"
         
-        echo "    Time: ${time_ms}ms"
+        if [[ "$SILENT" != true ]]; then
+            echo "    Time: ${time_ms}ms"
+        fi
         
         # Delete the file if not in dry-run mode
         if [[ "$DRY_RUN" == true ]]; then
-            echo -e "${CYAN}    [DRY RUN] Would delete: $file${NC}"
+            if [[ "$SILENT" != true ]]; then
+                echo -e "${CYAN}    [DRY RUN] Would delete: $file${NC}"
+            fi
         else
             if rm "$file"; then
-                echo -e "${GREEN}    Deleted: $file${NC}"
+                if [[ "$SILENT" != true ]]; then
+                    echo -e "${GREEN}    Deleted: $file${NC}"
+                fi
                 deleted_count=$((deleted_count + 1))
             else
-                echo -e "${RED}    Failed to delete: $file${NC}"
+                if [[ "$SILENT" != true ]]; then
+                    echo -e "${RED}    Failed to delete: $file${NC}"
+                fi
             fi
         fi
     else
-        echo -e "${RED}FAILURE${NC}"
+        if [[ "$SILENT" != true ]]; then
+            echo -e "${RED}FAILURE${NC}"
+        fi
         failure_count=$((failure_count + 1))
         
         # Extract time if available
@@ -315,7 +367,9 @@ while IFS= read -r file; do
         if [[ -n "$time_ms" ]]; then
             total_time=$((total_time + time_ms))
             file_times[total_files]="$time_ms"
-            echo "    Time: ${time_ms}ms"
+            if [[ "$SILENT" != true ]]; then
+                echo "    Time: ${time_ms}ms"
+            fi
         else
             file_times[total_files]="N/A"
         fi
@@ -324,7 +378,7 @@ while IFS= read -r file; do
         file_paths[total_files]="$file"
         
         # Show error details if verbose mode
-        if [[ "$VERBOSE" == true ]]; then
+        if [[ "$VERBOSE" == true && "$SILENT" != true ]]; then
             echo "    Error details:"
             echo "$output" | sed 's/^/        /'
         fi
@@ -342,42 +396,48 @@ if [[ -f "$temp_stats" ]]; then
 fi
 
 # Print summary
-echo ""
-echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}SUMMARY${NC}"
-echo -e "${BLUE}========================================${NC}"
+if [[ "$SILENT" != true ]]; then
+    echo ""
+    echo -e "${BLUE}========================================${NC}"
+    echo -e "${BLUE}SUMMARY${NC}"
+    echo -e "${BLUE}========================================${NC}"
+fi
 
 if [[ $total_files -eq 0 ]]; then
-    echo -e "${YELLOW}No .smt2 files found in directory.${NC}"
+    if [[ "$SILENT" != true ]]; then
+        echo -e "${YELLOW}No .smt2 files found in directory.${NC}"
+    fi
     rm -f "$temp_results"
     exit 0
 fi
 
-echo "Total files processed: $total_files"
-echo -e "Successful parses: ${GREEN}$success_count${NC}"
-echo -e "Failed parses: ${RED}$failure_count${NC}"
+if [[ "$SILENT" != true ]]; then
+    echo "Total files processed: $total_files"
+    echo -e "Successful parses: ${GREEN}$success_count${NC}"
+    echo -e "Failed parses: ${RED}$failure_count${NC}"
 
-if [[ "$DRY_RUN" == true ]]; then
-    echo -e "Files that would be deleted: ${CYAN}$success_count${NC}"
-else
-    echo -e "Files actually deleted: ${GREEN}$deleted_count${NC}"
-fi
+    if [[ "$DRY_RUN" == true ]]; then
+        echo -e "Files that would be deleted: ${CYAN}$success_count${NC}"
+    else
+        echo -e "Files actually deleted: ${GREEN}$deleted_count${NC}"
+    fi
 
-# Calculate success rate
-if [[ $total_files -gt 0 ]]; then
-    success_rate=$(echo "scale=2; $success_count * 100 / $total_files" | bc -l 2>/dev/null || echo "$(($success_count * 100 / $total_files))")
-    echo "Success rate: ${success_rate}%"
-fi
+    # Calculate success rate
+    if [[ $total_files -gt 0 ]]; then
+        success_rate=$(echo "scale=2; $success_count * 100 / $total_files" | bc -l 2>/dev/null || echo "$(($success_count * 100 / $total_files))")
+        echo "Success rate: ${success_rate}%"
+    fi
 
-# Time statistics
-if [[ $total_time -gt 0 ]]; then
-    avg_time=$(echo "scale=2; $total_time / $total_files" | bc -l 2>/dev/null || echo "$(($total_time / $total_files))")
-    echo "Total time: ${total_time}ms"
-    echo "Average time: ${avg_time}ms"
+    # Time statistics
+    if [[ $total_time -gt 0 ]]; then
+        avg_time=$(echo "scale=2; $total_time / $total_files" | bc -l 2>/dev/null || echo "$(($total_time / $total_files))")
+        echo "Total time: ${total_time}ms"
+        echo "Average time: ${avg_time}ms"
+    fi
 fi
 
 # Detailed results table (if requested)
-if [[ "$DETAILED" == true ]]; then
+if [[ "$DETAILED" == true && "$SILENT" != true ]]; then
     echo ""
     echo -e "${BLUE}Detailed Results:${NC}"
     echo "----------------------------------------"
@@ -418,8 +478,10 @@ fi
 
 # Show remaining files count
 remaining_files=$(find "$FOLDER_PATH" -type f -name "*.smt2" | wc -l)
-echo ""
-echo -e "${BLUE}Remaining .smt2 files in directory: ${YELLOW}$remaining_files${NC}"
+if [[ "$SILENT" != true ]]; then
+    echo ""
+    echo -e "${BLUE}Remaining .smt2 files in directory: ${YELLOW}$remaining_files${NC}"
+fi
 
 # Clean up temporary files
 rm -f "$temp_results"

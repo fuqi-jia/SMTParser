@@ -3704,6 +3704,36 @@ namespace SMTParser{
         }
         return mkOper(INT_SORT, NODE_KIND::NT_STR_NUM_SPLITS, l, r);
     }
+    /*
+    (str.split_at_re Str Reg Int), return Str
+    */
+    std::shared_ptr<DAGNode> Parser::mkStrSplitAtRe(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> s){
+        if(!isStrParam(l) || !isRegParam(r) || !isIntParam(s)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_split_at_re", line_number);
+            return mkUnknown();
+        }
+        return mkOper(STR_SORT, NODE_KIND::NT_STR_SPLIT_AT_RE, l, r, s);
+    }
+    /*
+    (str.split_rest_re Str Reg Int), return Str
+    */
+    std::shared_ptr<DAGNode> Parser::mkStrSplitRestRe(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> s){
+        if(!isStrParam(l) || !isRegParam(r) || !isIntParam(s)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_split_rest_re", line_number);
+            return mkUnknown();
+        }
+        return mkOper(STR_SORT, NODE_KIND::NT_STR_SPLIT_REST_RE, l, r, s);
+    }
+    /*
+    (str.num_splits_re Str Reg), return Int
+    */
+    std::shared_ptr<DAGNode> Parser::mkStrNumSplitsRe(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
+        if(!isStrParam(l) || !isRegParam(r)) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_num_splits_re", line_number);
+            return mkUnknown();
+        }
+        return mkOper(INT_SORT, NODE_KIND::NT_STR_NUM_SPLITS_RE, l, r);
+    }
     // STRINGS COMP
     /*
     (str.< Str Str), return Bool
@@ -4459,6 +4489,7 @@ namespace SMTParser{
             case NODE_KIND::NT_STR_GE:
             case NODE_KIND::NT_STR_IN_REG:
             case NODE_KIND::NT_STR_CONTAINS:
+            case NODE_KIND::NT_STR_NUM_SPLITS_RE:
             case NODE_KIND::NT_REG_RANGE:
             case NODE_KIND::NT_REG_REPEAT:
             case NODE_KIND::NT_BV_REPEAT:
@@ -4479,6 +4510,8 @@ namespace SMTParser{
             case NODE_KIND::NT_STR_REPLACE_ALL:
             case NODE_KIND::NT_STR_SPLIT_AT:
             case NODE_KIND::NT_STR_SPLIT_REST:
+            case NODE_KIND::NT_STR_SPLIT_AT_RE:
+            case NODE_KIND::NT_STR_SPLIT_REST_RE:
             case NODE_KIND::NT_STR_REPLACE_REG:
             case NODE_KIND::NT_STR_REPLACE_REG_ALL:
             case NODE_KIND::NT_STR_INDEXOF_REG:
