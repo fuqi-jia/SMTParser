@@ -450,7 +450,24 @@ namespace SMTParser{
 			return mkConstReal(parsed);
 		}
 		else if(TypeChecker::isBV(s)){
-			return mkConstBv(s, s.size() - 2);
+			size_t width;
+			if (s[1] == 'b' || s[1] == 'B') {
+				// Binary: each character is 1 bit
+				width = s.size() - 2;
+			} else if (s[1] == 'x' || s[1] == 'X') {
+				// Hexadecimal: each character is 4 bits
+				width = (s.size() - 2) * 4;
+			} else if (s[1] == 'd' || s[1] == 'D') {
+				// Decimal: convert to binary to determine width
+				std::string decimal_part = s.substr(2);
+				Integer value(decimal_part);
+				std::string binary = value.toString(2);
+				width = binary.size();
+			} else {
+				// Fallback to original behavior
+				width = s.size() - 2;
+			}
+			return mkConstBv(s, width);
 		}
 		else if(TypeChecker::isFP(s)){
 			return mkConstFP(s);
