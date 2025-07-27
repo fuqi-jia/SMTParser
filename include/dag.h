@@ -833,15 +833,6 @@ namespace SMTParser{
         }
 
         /**
-         * @brief Get the hash string of the node
-         * 
-         * @return The hash string of the node
-         */
-        std::string hashString() const {
-            return HashUtils::sha256(sort->toString() + "__" + kindToString(kind) + "__" + name + "__" + std::to_string(children.size()) + "__" + children_hash);
-        }
-
-        /**
          * @brief Update the function definition
          * 
          * @note This function is only used to update the function definition.
