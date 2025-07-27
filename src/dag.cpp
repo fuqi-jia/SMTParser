@@ -72,11 +72,21 @@ namespace SMTParser{
                 return name;
             }
         }
-        else if(sort->isBool()){}
-        else if(sort->isBv()){}
-        else if(sort->isFp()){}
-        else if(sort->isStr()){}
-        else if(sort->isArray()){}
+        else if(sort->isBool()){
+            return name;
+        }
+        else if(sort->isBv()){
+            return name;
+        }
+        else if(sort->isFp()){
+            return name;
+        }
+        else if(sort->isStr()){
+            return name;
+        }
+        else if(sort->isArray()){
+            return name;
+        }
         return name;
     }
 
@@ -108,6 +118,19 @@ namespace SMTParser{
             kind_cache[NODE_KIND::NT_DIV_REAL] = "/";
             kind_cache[NODE_KIND::NT_NEG] = "-";
             kind_cache[NODE_KIND::NT_DISTINCT] = "distinct";
+            kind_cache[NODE_KIND::NT_FP_ADD] = "fp.add";
+            kind_cache[NODE_KIND::NT_FP_SUB] = "fp.sub";
+            kind_cache[NODE_KIND::NT_FP_MUL] = "fp.mul";
+            kind_cache[NODE_KIND::NT_FP_DIV] = "fp.div";
+            kind_cache[NODE_KIND::NT_FP_ABS] = "fp.abs";
+            kind_cache[NODE_KIND::NT_FP_NEG] = "fp.neg";
+            kind_cache[NODE_KIND::NT_FP_SQRT] = "fp.sqrt";
+            kind_cache[NODE_KIND::NT_FP_LE] = "fp.le";
+            kind_cache[NODE_KIND::NT_FP_LT] = "fp.lt";
+            kind_cache[NODE_KIND::NT_FP_GE] = "fp.ge";
+            kind_cache[NODE_KIND::NT_FP_GT] = "fp.gt";
+            kind_cache[NODE_KIND::NT_FP_EQ] = "fp.eq";
+            kind_cache[NODE_KIND::NT_FP_NE] = "fp.ne";
             cache_initialized = true;
         }
 
@@ -436,6 +459,138 @@ namespace SMTParser{
                     work_stack.emplace_back(current_child, 0);
                     work_stack.emplace_back(nullptr, 1);  // space
                 }
+                break;
+            }
+
+            // FLOATING POINT OPERATIONS
+            case NODE_KIND::NT_FP_ADD:
+            case NODE_KIND::NT_FP_SUB:
+            case NODE_KIND::NT_FP_MUL:
+            case NODE_KIND::NT_FP_DIV:
+            case NODE_KIND::NT_FP_FMA:
+            case NODE_KIND::NT_FP_MIN:
+            case NODE_KIND::NT_FP_MAX: {
+                std::string kind_str = kindToString(kind);
+                out << "(" << kind_str;
+                work_stack.emplace_back(nullptr, 2);  // )
+                const auto& children = node->getChildren();
+                for (int i = children.size() - 1; i >= 0; i--) {
+                    auto current_child = children[i].get();
+                    work_stack.emplace_back(current_child, 0);
+                    work_stack.emplace_back(nullptr, 1);  // space
+                }
+                break;
+            }
+
+            case NODE_KIND::NT_FP_ABS:
+            case NODE_KIND::NT_FP_NEG:
+            case NODE_KIND::NT_FP_SQRT:
+            case NODE_KIND::NT_FP_ROUND_TO_INTEGRAL:
+            case NODE_KIND::NT_FP_IS_NORMAL:
+            case NODE_KIND::NT_FP_IS_SUBNORMAL:
+            case NODE_KIND::NT_FP_IS_ZERO:
+            case NODE_KIND::NT_FP_IS_INF:
+            case NODE_KIND::NT_FP_IS_NAN:
+            case NODE_KIND::NT_FP_IS_NEG:
+            case NODE_KIND::NT_FP_IS_POS:
+            case NODE_KIND::NT_FP_TO_REAL: {
+                std::string kind_str = kindToString(kind);
+                auto child = node->getChild(0).get();
+                out << "(" << kind_str << " ";
+                work_stack.emplace_back(nullptr, 2);  // )
+                work_stack.emplace_back(child, 0);    // child
+                break;
+            }
+
+            case NODE_KIND::NT_FP_REM: {
+                auto child0 = node->getChild(0).get();
+                auto child1 = node->getChild(1).get();
+                out << "(fp.rem ";
+                work_stack.emplace_back(nullptr, 2);  // )
+                work_stack.emplace_back(child1, 0);   // child1
+                work_stack.emplace_back(nullptr, 1);  // space
+                work_stack.emplace_back(child0, 0);   // child0
+                break;
+            }
+
+            case NODE_KIND::NT_FP_LE:
+            case NODE_KIND::NT_FP_LT:
+            case NODE_KIND::NT_FP_GE:
+            case NODE_KIND::NT_FP_GT:
+            case NODE_KIND::NT_FP_EQ:
+            case NODE_KIND::NT_FP_NE: {
+                std::string kind_str = kindToString(kind);
+                auto child0 = node->getChild(0).get();
+                auto child1 = node->getChild(1).get();
+                out << "(" << kind_str << " ";
+                work_stack.emplace_back(nullptr, 2);  // )
+                work_stack.emplace_back(child1, 0);   // child1
+                work_stack.emplace_back(nullptr, 1);  // space
+                work_stack.emplace_back(child0, 0);   // child0
+                break;
+            }
+
+            case NODE_KIND::NT_FP_TO_UBV:
+            case NODE_KIND::NT_FP_TO_SBV: {
+                std::string kind_str = kindToString(kind);
+                auto rm = node->getChild(0).get();
+                auto fp = node->getChild(1).get();
+                auto size = node->getChild(2).get();
+                out << "(" << kind_str << " ";
+                work_stack.emplace_back(nullptr, 2);  // )
+                work_stack.emplace_back(size, 0);     // size
+                work_stack.emplace_back(nullptr, 1);  // space
+                work_stack.emplace_back(fp, 0);       // fp
+                work_stack.emplace_back(nullptr, 1);  // space
+                work_stack.emplace_back(rm, 0);       // rm
+                break;
+            }
+
+            case NODE_KIND::NT_FP_TO_FP: {
+                auto eb = node->getChild(0).get();
+                auto sb = node->getChild(1).get();
+                auto rm = node->getChild(2).get();
+                auto param = node->getChild(3).get();
+                out << "((_ to_fp ";
+                work_stack.emplace_back(nullptr, 2);  // )
+                work_stack.emplace_back(param, 0);    // param
+                work_stack.emplace_back(nullptr, 1);  // space
+                work_stack.emplace_back(rm, 0);       // rm
+                work_stack.emplace_back(nullptr, 3);  // ") "
+                work_stack.emplace_back(sb, 0);       // sb
+                work_stack.emplace_back(nullptr, 1);  // space
+                work_stack.emplace_back(eb, 0);       // eb
+                break;
+            }
+
+            case NODE_KIND::NT_FP_TO_FP_UNSIGNED: {
+                auto eb = node->getChild(0).get();
+                auto sb = node->getChild(1).get();
+                auto rm = node->getChild(2).get();
+                auto param = node->getChild(3).get();
+                out << "((_ to_fp_unsigned ";
+                work_stack.emplace_back(nullptr, 2);  // )
+                work_stack.emplace_back(param, 0);    // param
+                work_stack.emplace_back(nullptr, 1);  // space
+                work_stack.emplace_back(rm, 0);       // rm
+                work_stack.emplace_back(nullptr, 3);  // ") "
+                work_stack.emplace_back(sb, 0);       // sb
+                work_stack.emplace_back(nullptr, 1);  // space
+                work_stack.emplace_back(eb, 0);       // eb
+                break;
+            }
+
+            case NODE_KIND::NT_FP_CONST: {
+                auto sign = node->getChild(0).get();
+                auto exp = node->getChild(1).get();
+                auto mant = node->getChild(2).get();
+                out << "(fp ";
+                work_stack.emplace_back(nullptr, 2);  // )
+                work_stack.emplace_back(mant, 0);     // mant
+                work_stack.emplace_back(nullptr, 1);  // space
+                work_stack.emplace_back(exp, 0);      // exp
+                work_stack.emplace_back(nullptr, 1);  // space
+                work_stack.emplace_back(sign, 0);     // sign
                 break;
             }
 

@@ -537,7 +537,7 @@ namespace SMTParser{
         bool isFPToReal() 			const { return (kind == NODE_KIND::NT_FP_TO_REAL); };
         bool isToFP()     		    const { return (kind == NODE_KIND::NT_FP_TO_FP); };
         bool isToFPUnsigned()       const { return (kind == NODE_KIND::NT_FP_TO_FP_UNSIGNED); };
-        bool isFPConst()            const { return (kind == NODE_KIND::NT_FP_CONST); };
+
         bool isFPConv() 			const { return (isFPToUBV() || isFPToSBV() || isFPToReal() || isToFP() || isToFPUnsigned()); };
 
         // check floating point properties

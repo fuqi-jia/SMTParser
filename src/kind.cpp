@@ -374,7 +374,7 @@ namespace SMTParser{
         case NODE_KIND::NT_FP_TO_SBV:
             return "fp.toSbv";
         case NODE_KIND::NT_FP_TO_REAL:
-            return "fp.toReal";
+            return "fp.to_real";
         case NODE_KIND::NT_FP_TO_FP:
             return "to_fp";
         case NODE_KIND::NT_FP_TO_FP_UNSIGNED:
