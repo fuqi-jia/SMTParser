@@ -379,8 +379,7 @@ namespace SMTParser{
             return "to_fp";
         case NODE_KIND::NT_FP_TO_FP_UNSIGNED:
             return "to_fp_unsigned";
-        case NODE_KIND::NT_FP_CONST:
-            return "fp";
+
         // FLOATING POINT PROPERTIES
         case NODE_KIND::NT_FP_IS_NORMAL:
             return "fp.isNormal";

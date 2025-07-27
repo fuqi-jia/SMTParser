@@ -3350,7 +3350,8 @@ namespace SMTParser{
         }
 
         std::shared_ptr<Sort> sort = mkFPSort(exp_width, mant_width + 1);
-        return mkOper(sort, NODE_KIND::NT_FP_CONST, sign, exp, mant);
+        std::vector<std::shared_ptr<DAGNode>> children = {sign, exp, mant};
+        return node_manager->createNode(sort, NODE_KIND::NT_CONST, "(fp_bit_representation)", children);
     }
     // FLOATING POINT PROPERTIES
     /*

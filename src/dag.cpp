@@ -177,7 +177,20 @@ namespace SMTParser{
                 out << "false";
                 break;
             case NODE_KIND::NT_CONST:
-                out << dumpConst(node->getName(), node->getSort());
+                if (node->getName() == "(fp_bit_representation)" && node->getChildrenSize() == 3) {
+                    auto sign = node->getChild(0).get();
+                    auto exp = node->getChild(1).get();
+                    auto mant = node->getChild(2).get();
+                    out << "(fp ";
+                    work_stack.emplace_back(nullptr, 2);  // )
+                    work_stack.emplace_back(mant, 0);     // mant
+                    work_stack.emplace_back(nullptr, 1);  // space
+                    work_stack.emplace_back(exp, 0);      // exp
+                    work_stack.emplace_back(nullptr, 1);  // space
+                    work_stack.emplace_back(sign, 0);     // sign
+                } else {
+                    out << dumpConst(node->getName(), node->getSort());
+                }
                 break;
             case NODE_KIND::NT_VAR:
             case NODE_KIND::NT_TEMP_VAR:
@@ -580,19 +593,7 @@ namespace SMTParser{
                 break;
             }
 
-            case NODE_KIND::NT_FP_CONST: {
-                auto sign = node->getChild(0).get();
-                auto exp = node->getChild(1).get();
-                auto mant = node->getChild(2).get();
-                out << "(fp ";
-                work_stack.emplace_back(nullptr, 2);  // )
-                work_stack.emplace_back(mant, 0);     // mant
-                work_stack.emplace_back(nullptr, 1);  // space
-                work_stack.emplace_back(exp, 0);      // exp
-                work_stack.emplace_back(nullptr, 1);  // space
-                work_stack.emplace_back(sign, 0);     // sign
-                break;
-            }
+
 
             default: {
                 // Fallback for other cases - iterative version
