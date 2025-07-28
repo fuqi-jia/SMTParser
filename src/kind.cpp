@@ -374,13 +374,12 @@ namespace SMTParser{
         case NODE_KIND::NT_FP_TO_SBV:
             return "fp.toSbv";
         case NODE_KIND::NT_FP_TO_REAL:
-            return "fp.toReal";
+            return "fp.to_real";
         case NODE_KIND::NT_FP_TO_FP:
             return "to_fp";
         case NODE_KIND::NT_FP_TO_FP_UNSIGNED:
             return "to_fp_unsigned";
-        case NODE_KIND::NT_FP_CONST:
-            return "fp";
+
         // FLOATING POINT PROPERTIES
         case NODE_KIND::NT_FP_IS_NORMAL:
             return "fp.isNormal";
@@ -436,6 +435,12 @@ namespace SMTParser{
             return "str.split_rest";
         case NODE_KIND::NT_STR_NUM_SPLITS:
             return "str.num_splits";
+        case NODE_KIND::NT_STR_SPLIT_AT_RE:
+            return "str.split_at_re";
+        case NODE_KIND::NT_STR_SPLIT_REST_RE:
+            return "str.split_rest_re";
+        case NODE_KIND::NT_STR_NUM_SPLITS_RE:
+            return "str.num_splits_re";
         // STRINGS COMP
         case NODE_KIND::NT_STR_LT:
             return "str.<";

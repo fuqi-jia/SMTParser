@@ -81,7 +81,7 @@ namespace SMTParser{
         NT_FP_LE,NT_FP_LT,NT_FP_GE,NT_FP_GT,NT_FP_EQ,NT_FP_NE,
         NT_FP_TO_UBV,NT_FP_TO_SBV,NT_FP_TO_REAL,NT_FP_TO_FP,NT_FP_TO_FP_UNSIGNED,
         NT_FP_IS_NORMAL,NT_FP_IS_SUBNORMAL,NT_FP_IS_ZERO,NT_FP_IS_INF,NT_FP_IS_NAN,NT_FP_IS_NEG,NT_FP_IS_POS,
-        NT_FP_CONST,
+
         
         // ARRAY OPERATORS (in parseOper)
         NT_SELECT,NT_STORE,
@@ -90,6 +90,7 @@ namespace SMTParser{
         NT_STR_LEN,NT_STR_CONCAT,NT_STR_SUBSTR,NT_STR_INDEXOF,NT_STR_CHARAT,NT_STR_UPDATE,NT_STR_REPLACE,NT_STR_REPLACE_ALL,
         NT_STR_REPLACE_REG,NT_STR_REPLACE_REG_ALL,NT_STR_INDEXOF_REG,
         NT_STR_TO_LOWER,NT_STR_TO_UPPER,NT_STR_REV,NT_STR_SPLIT,NT_STR_SPLIT_AT,NT_STR_SPLIT_REST,NT_STR_NUM_SPLITS,
+        NT_STR_SPLIT_AT_RE,NT_STR_SPLIT_REST_RE,NT_STR_NUM_SPLITS_RE,
         NT_STR_LT,NT_STR_LE,NT_STR_GT,NT_STR_GE,
         NT_STR_IN_REG,NT_STR_CONTAINS,NT_STR_IS_DIGIT,NT_STR_PREFIXOF,NT_STR_SUFFIXOF,
         NT_STR_FROM_INT,NT_STR_TO_INT,NT_STR_TO_REG,NT_STR_TO_CODE,NT_STR_FROM_CODE,
@@ -328,7 +329,7 @@ namespace SMTParser{
         {"fp.to_real", NODE_KIND::NT_FP_TO_REAL},
         {"to_fp", NODE_KIND::NT_FP_TO_FP},
         {"to_fp_unsigned", NODE_KIND::NT_FP_TO_FP_UNSIGNED},
-        {"fp", NODE_KIND::NT_FP_CONST},
+
         {"fp.isNormal", NODE_KIND::NT_FP_IS_NORMAL},
         {"fp.isSubnormal", NODE_KIND::NT_FP_IS_SUBNORMAL},
         {"fp.isZero", NODE_KIND::NT_FP_IS_ZERO},
@@ -358,6 +359,9 @@ namespace SMTParser{
         {"str.split_at", NODE_KIND::NT_STR_SPLIT_AT},
         {"str.split_rest", NODE_KIND::NT_STR_SPLIT_REST},
         {"str.num_splits", NODE_KIND::NT_STR_NUM_SPLITS},
+        {"str.split_at_re", NODE_KIND::NT_STR_SPLIT_AT_RE},
+        {"str.split_rest_re", NODE_KIND::NT_STR_SPLIT_REST_RE},
+        {"str.num_splits_re", NODE_KIND::NT_STR_NUM_SPLITS_RE},
         {"str.<", NODE_KIND::NT_STR_LT},
         {"str.<=", NODE_KIND::NT_STR_LE},
         {"str.>", NODE_KIND::NT_STR_GT},
