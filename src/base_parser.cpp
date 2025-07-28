@@ -47,6 +47,18 @@ namespace SMTParser{
 
 		node_manager = std::make_shared<NodeManager>();
 		options = std::make_shared<GlobalOptions>();
+
+		// reverse
+		let_key_map.reserve(1024);
+		preserving_let_key_map.reserve(1024);
+		fun_key_map.reserve(1024);
+		fun_var_map.reserve(1024);
+		sort_key_map.reserve(1024);
+		quant_var_map.reserve(1024);
+		static_functions.reserve(1024);
+		var_names.reserve(1024);
+		temp_var_names.reserve(1024);
+		function_names.reserve(1024);
 	}
 
 	
@@ -68,6 +80,18 @@ namespace SMTParser{
 
 		node_manager = std::make_shared<NodeManager>();
 		options = std::make_shared<GlobalOptions>();
+
+		// reverse
+		let_key_map.reserve(1024);
+		preserving_let_key_map.reserve(1024);
+		fun_key_map.reserve(1024);
+		fun_var_map.reserve(1024);
+		sort_key_map.reserve(1024);
+		quant_var_map.reserve(1024);
+		static_functions.reserve(1024);
+		var_names.reserve(1024);
+		temp_var_names.reserve(1024);
+		function_names.reserve(1024);
 
 		parseSmtlib2File(filename);
 	}

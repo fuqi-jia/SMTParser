@@ -83,7 +83,6 @@ namespace SMTParser{
     public:
         DAGNode(std::shared_ptr<Sort> sort, NODE_KIND kind, std::string name, std::vector<std::shared_ptr<DAGNode>> children): sort(sort), kind(kind), name(name), value(nullptr), children(children){
             // value is not used for hash
-            // 使用更快的子节点哈希计算
             if(children.empty()) {
                 children_hash = "";
             } else {
@@ -232,14 +231,6 @@ namespace SMTParser{
                 kind = NODE_KIND::NT_CONST;
                 value = newValue(Number(n, false));
             } 
-            // else if(TypeChecker::isBV(n)){
-            //     sort = BV_SORT;
-            //     kind = NODE_KIND::NT_CONST;
-            // } 
-            // else if(TypeChecker::isFP(n)){
-            //     sort = FP_SORT;
-            //     kind = NODE_KIND::NT_CONST;
-            // } // not support
             else if(TypeChecker::isString(n)){
                 sort = STR_SORT;
                 kind = NODE_KIND::NT_CONST;
@@ -248,14 +239,13 @@ namespace SMTParser{
                 kind = NODE_KIND::NT_ERROR;
             }
             name = n;
-            children_hash = "";
-            cached_hash_code = 0;
-            hash_computed = false;
         }
         
         void clear(){
             children.clear();
             children_hash = "";
+            cached_hash_code = 0;
+            hash_computed = false;
             name = "";
             kind = NODE_KIND::NT_ERROR;
         }

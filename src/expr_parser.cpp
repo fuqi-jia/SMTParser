@@ -374,9 +374,6 @@ namespace SMTParser{
 		else if(!options->parsing_preserve_let && current_let_mode != LET_MODE::LM_NON_LET && let_key_map.find(s) != let_key_map.end()){
 			return let_key_map[s];
 		}
-		else if(let_key_map.find(s) != let_key_map.end()){
-			return let_key_map[s];
-		}
 		else if(fun_key_map.find(s) != fun_key_map.end()){
 			// function name
 			return fun_key_map[s];
