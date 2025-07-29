@@ -1470,6 +1470,7 @@ namespace SMTParser{
 		
 		// Main loop to handle all nested let expressions
 		while (!stateStack.empty()) {
+
 			auto &currentState = stateStack.back();
 			auto &params = currentState.params;
 			auto &key_list = currentState.key_list;

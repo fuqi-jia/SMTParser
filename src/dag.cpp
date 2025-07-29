@@ -29,6 +29,7 @@
 #include "timing.h"
 #include <stack>
 #include <sstream>
+#include <unordered_set>
 
 namespace SMTParser{
 
@@ -137,9 +138,13 @@ namespace SMTParser{
         // Optimized iterative implementation using minimal WorkItem structure
         struct WorkItem {
             DAGNode* node;
-            uint8_t action; // 0=process, 1=space, 2=close_paren
+            uint8_t action; // 0=process, 1=space, 2=close_paren, 3=close_paren_space, 4=text_output
 
             WorkItem(DAGNode* n, uint8_t a = 0) : node(n), action(a) {}
+            
+            // For text output
+            std::string text;
+            WorkItem(const std::string& t, uint8_t a = 4) : node(nullptr), action(a), text(t) {}
         };
 
         // Pre-allocate stack with reasonable capacity to avoid frequent reallocations
@@ -163,6 +168,11 @@ namespace SMTParser{
                 out << ") ";
                 continue;
             }
+            if (item.action == 4) { // Write text
+                out << item.text;
+                continue;
+            }
+            
 
             // Process node (action == 0)
             DAGNode* node = item.node;
@@ -403,47 +413,65 @@ namespace SMTParser{
 
             case NODE_KIND::NT_LET: {
                 condAssert(node->getChildrenSize() > 0, "NT_LET should have at least one child");
-                out << "(let (";  // add (
-                for(size_t i=1;i<node->getChildrenSize();i++){
-                    if (i > 1) out << " ";  // add space for multiple bindings
-                    out << "(" << node->getChild(i)->getPureName() << " ";
-                    auto child_0 = node->getChild(i)->getChild(0).get();
-                    work_stack.emplace_back(child_0, 0);
-                    work_stack.emplace_back(nullptr, 2);  // close each binding's right parenthesis
-                }
-                out << ") ";  // close binding list and add space
                 
-                // add body and final right parenthesis
-                work_stack.emplace_back(nullptr, 2);  // the right parenthesis of the whole let expression
+                // Output: (let ((var1 value1) (var2 value2) ...) body)
+                // Stack order (reverse): ) + body + ") " + bindings + "(let ("
+                
+                work_stack.emplace_back(")", 4);  // final )
                 work_stack.emplace_back(node->getChild(0).get(), 0);  // body
+                work_stack.emplace_back(") ", 4);  // close binding list and add space
+                
+                // Process bindings in reverse order for stack
+                for(int i = node->getChildrenSize() - 1; i >= 1; i--){
+                    work_stack.emplace_back(")", 4);  // ) for this binding
+                    work_stack.emplace_back(node->getChild(i)->getChild(0).get(), 0);  // binding value
+                    work_stack.emplace_back(" ", 4);  // space before value
+                    work_stack.emplace_back(node->getChild(i)->getPureName(), 4);  // variable name
+                    work_stack.emplace_back("(", 4);  // ( for this binding
+                    if (i > 1) {
+                        work_stack.emplace_back(" ", 4);  // space between bindings
+                    }
+                }
+                
+                work_stack.emplace_back("(let (", 4);  // opening
                 break;
             }
             case NODE_KIND::NT_LET_CHAIN: {
-                // let-chain:
-                // children: [LET_BIND_VAR_LIST, LET_BIND_VAR_LIST, ..., Body]
-                // output the let-binding list
-                for(size_t i=0;i<node->getChildrenSize();i++){
-                    if(i < node->getChildrenSize() - 1){ // LET_BIND_VAR_LIST
-                        condAssert(node->getChild(i)->isLetBindVarList(), "NT_LET_CHAIN: child is not LET_BIND_VAR_LIST");
-                        auto var_list = node->getChild(i);
-                        // output let + binding list
-                        out << "(let (";
-                        for(size_t j=0;j<var_list->getChildrenSize();j++){
-                            if(j==0) out << "(" << var_list->getChild(j)->getPureName() << " ";
-                            else out << " (" << var_list->getChild(j)->getPureName() << " ";
-                            auto child_0 = var_list->getChild(j)->getChild(0).get();
-                            work_stack.emplace_back(child_0, 0);
-                            out << ")"; // close each binding's right parenthesis and add space
+                // For let-chain: (let ((var1 val1)) (let ((var2 val2)) body))
+                // This creates nested let expressions
+                
+                size_t num_bindings = node->getChildrenSize() - 1;
+                
+                // Add closing parentheses for all let expressions (in reverse order)
+                for(size_t i = 0; i < num_bindings; i++){
+                    work_stack.emplace_back(")", 4);  // ) for each let
+                }
+                
+                // Add body
+                work_stack.emplace_back(node->getChild(node->getChildrenSize() - 1).get(), 0);
+                
+                // Process let bindings in reverse order
+                for(int i = num_bindings - 1; i >= 0; i--){
+                    condAssert(node->getChild(i)->isLetBindVarList(), "NT_LET_CHAIN: child is not LET_BIND_VAR_LIST");
+                    auto var_list = node->getChild(i);
+                    
+                    work_stack.emplace_back(") ", 4);  // close binding list and add space
+                    
+                    // Process variables in this binding list (reverse order)
+                    for(int j = var_list->getChildrenSize() - 1; j >= 0; j--){
+                        work_stack.emplace_back(")", 4);  // ) for binding
+                        work_stack.emplace_back(var_list->getChild(j)->getChild(0).get(), 0);  // binding value
+                        work_stack.emplace_back(" ", 4);  // space before value
+                        work_stack.emplace_back(var_list->getChild(j)->getPureName(), 4);  // variable name
+                        work_stack.emplace_back("(", 4);  // ( for binding
+                        if(j > 0) {
+                            work_stack.emplace_back(" ", 4);  // space between bindings
                         }
-                        out << ") ";
                     }
-                    else{ // Body
-                        work_stack.emplace_back(node->getChild(i).get(), 0);
-                    }
+                    
+                    work_stack.emplace_back("(let (", 4);  // let opening
                 }
-                for(size_t i=0;i<node->getChildrenSize() - 1;i++){
-                    out << ")";
-                }
+                
                 break;
             }
             case NODE_KIND::NT_LET_BIND_VAR: {
@@ -451,15 +479,24 @@ namespace SMTParser{
                 break;
             }
             case NODE_KIND::NT_LET_BIND_VAR_LIST: {
-                out <<"( ";
-                for(size_t i=1;i<node->getChildrenSize();i++){
-                    if(i==1) out << "(" << node->getChild(i)->getPureName() << " ";
-                    else out << " (" << node->getChild(i)->getPureName() << " ";
-                    auto child_0 = node->getChild(i)->getChild(0).get();
-                    work_stack.emplace_back(child_0, 0);
-                    out << ")"; // close each binding's right parenthesis
+                // Output: ( (var1 value1) (var2 value2) ... )
+                // Stack order (reverse): ) + bindings + "( "
+                
+                work_stack.emplace_back(")", 4);  // final )
+                
+                // Process bindings in reverse order for stack
+                for(int i = node->getChildrenSize() - 1; i >= 1; i--){
+                    work_stack.emplace_back(")", 4);  // ) for this binding
+                    work_stack.emplace_back(node->getChild(i)->getChild(0).get(), 0);  // binding value
+                    work_stack.emplace_back(" ", 4);  // space before value
+                    work_stack.emplace_back(node->getChild(i)->getPureName(), 4);  // variable name
+                    work_stack.emplace_back("(", 4);  // ( for this binding
+                    if (i > 1) {
+                        work_stack.emplace_back(" ", 4);  // space between bindings
+                    }
                 }
-                out << ")";
+                
+                work_stack.emplace_back("( ", 4);  // opening "( "
                 break;
             }
 
@@ -625,7 +662,7 @@ namespace SMTParser{
     // Wrapper function that returns string for compatibility
     std::string dumpSMTLIB2(const std::shared_ptr<DAGNode>& root) {
         std::ostringstream oss;
-        dumpSMTLIB2_streaming(root, oss);
+        dumpSMTLIB2_streaming(root, oss);  // enable cache by default
         return oss.str();
     }
 
@@ -647,13 +684,6 @@ namespace SMTParser{
             else res += " " + node->getChild(i)->getSort()->toString();
         }
         res += ") " + node->getChild(0)->getSort()->toString() + ")";
-        return res;
-    }
-    std::string dumpSMTLIB2(const std::vector<std::shared_ptr<DAGNode>>& assertions){
-        std::string res = "";
-        for(size_t i=0;i<assertions.size();i++){
-            res += "(assert " + dumpSMTLIB2(assertions[i]) + ")\n";
-        }
         return res;
     }
 
@@ -755,7 +785,9 @@ namespace SMTParser{
                 // optimize comparison order: the most likely different ones are in front, to avoid the expensive isEquivalentTo
                 if(pair.first.get() == node.get()) {
                     // completely the same pointer, return directly
-                    return nodes[pair.second];
+                    auto node_ptr = nodes[pair.second];
+                    node_ptr->incUseCount();
+                    return node_ptr;
                 }
                 // fast structure comparison (avoid the expensive isEquivalentTo call)
                 if(pair.first->getKind() == node->getKind() &&
@@ -763,7 +795,9 @@ namespace SMTParser{
                    pair.first->getName() == node->getName()) {
                     // only call the expensive isEquivalentTo when the structure matches completely
                     if(pair.first->isEquivalentTo(*node)) {
-                        return nodes[pair.second];
+                        auto node_ptr = nodes[pair.second];
+                        node_ptr->incUseCount();
+                        return node_ptr;
                     }
                 }
             }
@@ -773,6 +807,7 @@ namespace SMTParser{
         size_t new_index = nodes.size();
         kind_bucket[node_hash].emplace_back(node, new_index);
         nodes.emplace_back(node);
+        node->incUseCount();
         return node;
     }
 

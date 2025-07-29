@@ -79,6 +79,7 @@ namespace SMTParser{
         std::string                             children_hash;
         mutable size_t                          cached_hash_code;
         mutable bool                            hash_computed;
+        mutable size_t                          _use_count;
 
     public:
         DAGNode(std::shared_ptr<Sort> sort, NODE_KIND kind, std::string name, std::vector<std::shared_ptr<DAGNode>> children): sort(sort), kind(kind), name(name), value(nullptr), children(children){
@@ -95,6 +96,7 @@ namespace SMTParser{
             }
             cached_hash_code = 0;
             hash_computed = false;
+            _use_count = 0;
 
             if(kind == NODE_KIND::NT_CONST){
                 if(TypeChecker::isInt(name)){
@@ -109,6 +111,7 @@ namespace SMTParser{
             children_hash = "";
             cached_hash_code = 0;
             hash_computed = false;
+            _use_count = 0;
 
             if(kind == NODE_KIND::NT_CONST){
                 if(TypeChecker::isInt(name)){
@@ -123,7 +126,8 @@ namespace SMTParser{
             children_hash = "";
             cached_hash_code = 0;
             hash_computed = false;
-
+            _use_count = 0;
+            
             if(kind == NODE_KIND::NT_CONST){
                 value = newValue(Number());
             }
@@ -132,21 +136,23 @@ namespace SMTParser{
             children_hash = "";
             cached_hash_code = 0;
             hash_computed = false;
+            _use_count = 0;
 
             if(kind == NODE_KIND::NT_CONST){
                 value = newValue(Number());
             }
         }
-        DAGNode(): sort(NULL_SORT), kind(NODE_KIND::NT_UNKNOWN), name(""), value(nullptr), children_hash(""), cached_hash_code(0), hash_computed(false) {
+        DAGNode(): sort(NULL_SORT), kind(NODE_KIND::NT_UNKNOWN), name(""), value(nullptr), children_hash(""), cached_hash_code(0), hash_computed(false), _use_count(1) {
             children_hash = "";
         }
-        DAGNode(const DAGNode& other): sort(other.sort), kind(other.kind), name(other.name), value(other.value), children(other.children), children_hash(other.children_hash), cached_hash_code(0), hash_computed(false) {}
+        DAGNode(const DAGNode& other): sort(other.sort), kind(other.kind), name(other.name), value(other.value), children(other.children), children_hash(other.children_hash), cached_hash_code(0), hash_computed(false), _use_count(1) {}
 
         // other initialization
         DAGNode(NODE_KIND kind, std::string name): sort(NULL_SORT), kind(kind), name(name), value(nullptr) {
             children_hash = "";
             cached_hash_code = 0;
             hash_computed = false;
+            _use_count = 0;
 
             if(kind == NODE_KIND::NT_CONST){
                 if(TypeChecker::isInt(name)){
@@ -160,6 +166,7 @@ namespace SMTParser{
             children_hash = "";
             cached_hash_code = 0;
             hash_computed = false;
+            _use_count = 0;
 
             if(kind == NODE_KIND::NT_CONST){
                 value = newValue(Number());
@@ -169,35 +176,44 @@ namespace SMTParser{
             children_hash = "";
             cached_hash_code = 0;
             hash_computed = false;
+            _use_count = 0;
             name = v.toString();
         }
         DAGNode(std::shared_ptr<Sort> sort, const Real& v): sort(sort), kind(NODE_KIND::NT_CONST), name(""), value(newValue(v)) {
             children_hash = "";
             cached_hash_code = 0;
             hash_computed = false;
+            _use_count = 0;
             name = v.toString();
         }
         DAGNode(std::shared_ptr<Sort> sort, const double& v): sort(sort), kind(NODE_KIND::NT_CONST), name(""), value(newValue(v)) {
             children_hash = "";
             cached_hash_code = 0;
             hash_computed = false;
+            _use_count = 0;
             name = std::to_string(v);
         }
         DAGNode(std::shared_ptr<Sort> sort, const int& v): sort(sort), kind(NODE_KIND::NT_CONST), name(""), value(newValue(v)) {
             children_hash = "";
             cached_hash_code = 0;
             hash_computed = false;
+            _use_count = 0;
             name = std::to_string(v);
         }
         DAGNode(std::shared_ptr<Sort> sort, const bool& v): sort(sort), kind(NODE_KIND::NT_CONST), name(""), value(newValue(v)) {
             children_hash = "";
             cached_hash_code = 0;
             hash_computed = false;
+            _use_count = 0;
             name = v ? "true" : "false";
         }
         
         // only constant
         DAGNode(const std::string& n) {
+            children_hash = "";
+            cached_hash_code = 0;
+            hash_computed = false;
+            _use_count = 0;
             if (n == "true") {
                 sort = BOOL_SORT;
                 kind = NODE_KIND::NT_CONST_TRUE;
@@ -242,12 +258,13 @@ namespace SMTParser{
         }
         
         void clear(){
+            kind = NODE_KIND::NT_ERROR;
             children.clear();
             children_hash = "";
             cached_hash_code = 0;
             hash_computed = false;
             name = "";
-            kind = NODE_KIND::NT_ERROR;
+            _use_count = 0;
         }
 
         bool operator==(const DAGNode elem)
@@ -385,10 +402,7 @@ namespace SMTParser{
         bool isArithTerm() 			const { return (isArithOp() || isArithConv() || isRealNonlinearOp() || isTranscendentalOp() || 
                                                     (isVar() && (isVInt() || isVReal())) ||
                                                     (isConst() && (isCInt() || isCReal())) ||
-                                                    (isIte() && getChild(1)->isArithTerm() && getChild(2)->isArithTerm()) ||
-                                                    (isMax() && getChild(0)->isArithTerm() && getChild(1)->isArithTerm()) ||
-                                                    (isMin() && getChild(0)->isArithTerm() && getChild(1)->isArithTerm()) ||
-                                                    (isApplyUF() && (sort->isInt() || sort->isReal()))); };
+                                                    ((isIte() || isMax() || isMin() || isApplyUF()) && (sort->isInt() || sort->isReal()))); };
         bool isArithComp() 			const { return ((isEq() && getChild(0)->isArithTerm())|| 
                                                     (isDistinct() && getChild(0)->isArithTerm()) || 
                                                     isLe() || isLt() || isGe() || isGt()); };
@@ -624,6 +638,11 @@ namespace SMTParser{
         bool isFuncDef()			const { return (kind == NODE_KIND::NT_FUNC_DEF); };
         bool isFuncParam()			const { return (kind == NODE_KIND::NT_FUNC_PARAM); };
         bool isFuncApply()          const { return (kind == NODE_KIND::NT_FUNC_APPLY); };
+
+        // count the use of the node
+        size_t getUseCount() const { return _use_count; };
+        void incUseCount() { _use_count++; };
+        void decUseCount() { _use_count--; };
 
         // get pure variable name for let bind var
         std::string getPureName()   const {
@@ -907,7 +926,6 @@ namespace SMTParser{
     std::string dumpSMTLIB2(const std::shared_ptr<DAGNode>& node);
     std::string dumpFuncDef(const std::shared_ptr<DAGNode>& node);
     std::string dumpFuncDec(const std::shared_ptr<DAGNode>& node);
-    std::string dumpSMTLIB2(const std::vector<std::shared_ptr<DAGNode>>& assertions);
     
     // smart pointer
     typedef std::shared_ptr<DAGNode> NodePtr;

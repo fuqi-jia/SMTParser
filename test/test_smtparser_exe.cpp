@@ -34,10 +34,12 @@ int main(int argc, char* argv[]){
         auto assertions = parser->getAssertions();
         auto variables = parser->getVariables();
         auto functions = parser->getFunctions();
+        auto nodes = parser->getNodeCount();    
         
         std::cout << "ASSERTIONS:" << assertions.size() << std::endl;
         std::cout << "VARIABLES:" << variables.size() << std::endl;
         std::cout << "FUNCTIONS:" << functions.size() << std::endl;
+        std::cout << "NODES:" << nodes << std::endl;
         std::cout << "TIME:" << duration.count() << std::endl;
 
         std::ofstream ofs("./tmp.smt2");

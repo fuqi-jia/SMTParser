@@ -369,26 +369,38 @@ namespace SMTParser{
 		// these have the highest priority
 		std::string preserving_let_name = s + PRESERVING_LET_BIND_VAR_SUFFIX + std::to_string(preserving_let_counter);
 		if(options->parsing_preserve_let && current_let_mode != LET_MODE::LM_NON_LET && preserving_let_key_map.find(preserving_let_name) != preserving_let_key_map.end()){
-			return preserving_let_key_map[preserving_let_name];
+			auto key_var = preserving_let_key_map[preserving_let_name];
+            key_var->incUseCount();
+            return key_var;
 		}
 		else if(!options->parsing_preserve_let && current_let_mode != LET_MODE::LM_NON_LET && let_key_map.find(s) != let_key_map.end()){
-			return let_key_map[s];
+			auto key_var = let_key_map[s];
+            key_var->incUseCount();
+            return key_var;
 		}
 		else if(fun_key_map.find(s) != fun_key_map.end()){
 			// function name
-			return fun_key_map[s];
+            auto fun_var = fun_key_map[s];
+            fun_var->incUseCount();
+            return fun_var;
 		}
 		else if(fun_var_map.find(s) != fun_var_map.end()){
 			// function variable name
-			return fun_var_map[s];
+            auto fun_var = fun_var_map[s];
+            fun_var->incUseCount();
+            return fun_var;
 		}
 		else if(var_names.find(s) != var_names.end()){
 			// variable name
-			return node_manager->getNode(var_names[s]);
+            auto var = node_manager->getNode(var_names[s]);
+            var->incUseCount();
+            return var;
 		}
 		else if(quant_var_map.find(s) != quant_var_map.end()){
 			// quantifier variable name
-			return quant_var_map[s];
+            auto quant_var = quant_var_map[s];
+            quant_var->incUseCount();
+            return quant_var;
 		}
 		// following Common Lisp's conventions, enclosing
 		// a simple symbol in vertical bars does not produce a new symbol.
@@ -397,12 +409,16 @@ namespace SMTParser{
 				s[s.size() - 1] == '|' &&
 				var_names.find(s.substr(1, s.size() - 2)) != var_names.end()){
 			// string
-			return node_manager->getNode(var_names[s.substr(1, s.size() - 2)]);
+			auto var = node_manager->getNode(var_names[s.substr(1, s.size() - 2)]);
+            var->incUseCount();
+            return var;
 		}
 		else if(!TypeChecker::isNumber(s) && 
 				var_names.find('|' + s + '|') != var_names.end()){
 			// string
-			return node_manager->getNode(var_names['|' + s + '|']);
+			auto var = node_manager->getNode(var_names['|' + s + '|']);
+            var->incUseCount();
+            return var;
 		}
 		// otherwise, it is a constant
 		else if(s == "pi"){
