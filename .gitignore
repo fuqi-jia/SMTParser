@@ -1,9 +1,9 @@
-# CMake 构建目录
+# CMake build files
 build/
 out/
 cmake-build-*/
 
-# IDE 配置文件
+# IDE files
 .idea/
 .vscode/
 *.sln
@@ -18,7 +18,7 @@ cmake-build-*/
 *.VC.db
 *.VC.VC.opendb
 
-# 编译产物
+# build files
 *.o
 *.obj
 *.exe
@@ -30,13 +30,13 @@ cmake-build-*/
 *.lib
 *.a
 
-# 调试文件
+# debug files
 *.pdb
 *.ilk
 *.idb
 *.ipch
 
-# 临时文件
+# temporary files
 *.swp
 *.swo
 *~
@@ -44,30 +44,39 @@ cmake-build-*/
 *.tmp
 *.temp
 
-# 系统文件
+# system files
 .DS_Store
 Thumbs.db
 
-# 日志文件
+# log 
 *.log
 logs/
 log/
 
-# 依赖目录
+# dependencies
 vcpkg_installed/
 conan.lock
 conanbuildinfo.txt
 conaninfo.txt
 
-# 其他
+# CMake
 *.cache
 *.cmake
 !CMakeLists.txt
 !cmake/*.cmake 
 
-# Doxygen 文档
+# Doxygen
 docs/
 
+# vscode
+.vscode/
+
+# conan
+conan.lock
+conanbuildinfo.txt
+conaninfo.txt
+
 # test
-test/instances
+test/instances/*
 test/FP
+test/tmp.*
