@@ -286,25 +286,26 @@ namespace SMTParser{
             std::shared_ptr<Sort> getOutSort(const std::shared_ptr<Sort> &sort);
             
         public:
-            // static constant sorts
-            static const std::shared_ptr<Sort> NULL_SORT;
-            static const std::shared_ptr<Sort> UNKNOWN_SORT;
-            static const std::shared_ptr<Sort> BOOL_SORT;
-            static const std::shared_ptr<Sort> INT_SORT;
-            static const std::shared_ptr<Sort> REAL_SORT;
-            static const std::shared_ptr<Sort> ALGEBRAIC_SORT;
-            static const std::shared_ptr<Sort> TRANSCENDENTAL_SORT;
-            static const std::shared_ptr<Sort> STR_SORT;
-            static const std::shared_ptr<Sort> REG_SORT;
-            static const std::shared_ptr<Sort> EXT_SORT;
-            static const std::shared_ptr<Sort> NAT_SORT;
-            static const std::shared_ptr<Sort> RAND_SORT;
-            static const std::shared_ptr<Sort> INTOREAL_SORT;
-            static const std::shared_ptr<Sort> FLOAT64_SORT;
-            static const std::shared_ptr<Sort> FLOAT32_SORT;
-            static const std::shared_ptr<Sort> FLOAT16_SORT;
-            static const std::shared_ptr<Sort> ROUNDING_MODE_SORT;
+            // static constant sorts (inline for guaranteed initialization order)
+            inline static const std::shared_ptr<Sort> NULL_SORT = std::make_shared<Sort>(SORT_KIND::SK_NULL, "Null", 0);
+            inline static const std::shared_ptr<Sort> UNKNOWN_SORT = std::make_shared<Sort>(SORT_KIND::SK_UNKNOWN, "Unknown", 0);
+            inline static const std::shared_ptr<Sort> BOOL_SORT = std::make_shared<Sort>(SORT_KIND::SK_BOOL, "Bool", 0);
+            inline static const std::shared_ptr<Sort> INT_SORT = std::make_shared<Sort>(SORT_KIND::SK_INT, "Int", 0);
+            inline static const std::shared_ptr<Sort> REAL_SORT = std::make_shared<Sort>(SORT_KIND::SK_REAL, "Real", 0);
+            inline static const std::shared_ptr<Sort> ALGEBRAIC_SORT = std::make_shared<Sort>(SORT_KIND::SK_ALGEBRAIC, "Algebraic", 0);
+            inline static const std::shared_ptr<Sort> TRANSCENDENTAL_SORT = std::make_shared<Sort>(SORT_KIND::SK_TRANSCENDENTAL, "Transcendental", 0);
+            inline static const std::shared_ptr<Sort> STR_SORT = std::make_shared<Sort>(SORT_KIND::SK_STR, "String", 0);
+            inline static const std::shared_ptr<Sort> REG_SORT = std::make_shared<Sort>(SORT_KIND::SK_REG, "Reg", 0);
+            inline static const std::shared_ptr<Sort> EXT_SORT = std::make_shared<Sort>(SORT_KIND::SK_EXT, "ExtReal", 0);
+            inline static const std::shared_ptr<Sort> NAT_SORT = std::make_shared<Sort>(SORT_KIND::SK_NAT, "Natural", 0);
+            inline static const std::shared_ptr<Sort> RAND_SORT = std::make_shared<Sort>(SORT_KIND::SK_RAND, "Random", 0);
+            inline static const std::shared_ptr<Sort> INTOREAL_SORT = std::make_shared<Sort>(SORT_KIND::SK_INTOREAL, "IntOrReal", 0);
+            inline static const std::shared_ptr<Sort> FLOAT64_SORT = std::make_shared<Sort>(SORT_KIND::SK_FP, "Float64", 0, std::vector<std::shared_ptr<Sort>>{std::make_shared<Sort>(SORT_KIND::SK_NULL, "Exp", 11), std::make_shared<Sort>(SORT_KIND::SK_NULL, "Sig", 53)});
+            inline static const std::shared_ptr<Sort> FLOAT32_SORT = std::make_shared<Sort>(SORT_KIND::SK_FP, "Float32", 0, std::vector<std::shared_ptr<Sort>>{std::make_shared<Sort>(SORT_KIND::SK_NULL, "Exp", 8), std::make_shared<Sort>(SORT_KIND::SK_NULL, "Sig", 24)});
+            inline static const std::shared_ptr<Sort> FLOAT16_SORT = std::make_shared<Sort>(SORT_KIND::SK_FP, "Float16", 0, std::vector<std::shared_ptr<Sort>>{std::make_shared<Sort>(SORT_KIND::SK_NULL, "Exp", 5), std::make_shared<Sort>(SORT_KIND::SK_NULL, "Sig", 11)});
+            inline static const std::shared_ptr<Sort> ROUNDING_MODE_SORT = std::make_shared<Sort>(SORT_KIND::SK_ROUNDING_MODE, "RoundingMode", 0);
             
+
         private:
             void initializeStaticSorts();
             std::shared_ptr<Sort> insertSortToBucket(const std::shared_ptr<Sort>& sort);

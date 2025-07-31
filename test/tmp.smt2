@@ -1,8 +1,0 @@
-(set-logic QF_FP)
-(declare-fun r () (_ FloatingPoint 11 53))
-(declare-fun x () (_ FloatingPoint 11 53))
-(assert (= (fp #b0 #b11110100101 #b1101110100011010101010110100010100010100010101100110) x))
-(assert (= (fp #b0 #b11110100101 #b1101110100011010101010110100010100010100010101100110) r))
-(assert (not (= (fp.abs x) r)))
-(check-sat)
-(exit)

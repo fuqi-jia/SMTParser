@@ -29,24 +29,7 @@
 
 namespace SMTParser{
 
-    // Static constant sorts for SortManager
-    const std::shared_ptr<Sort> SortManager::NULL_SORT = std::make_shared<Sort>(SORT_KIND::SK_NULL, "Null", 0);
-    const std::shared_ptr<Sort> SortManager::UNKNOWN_SORT = std::make_shared<Sort>(SORT_KIND::SK_UNKNOWN, "Unknown", 0);
-    const std::shared_ptr<Sort> SortManager::BOOL_SORT = std::make_shared<Sort>(SORT_KIND::SK_BOOL, "Bool", 0);
-    const std::shared_ptr<Sort> SortManager::INT_SORT = std::make_shared<Sort>(SORT_KIND::SK_INT, "Int", 0);
-    const std::shared_ptr<Sort> SortManager::REAL_SORT = std::make_shared<Sort>(SORT_KIND::SK_REAL, "Real", 0);
-    const std::shared_ptr<Sort> SortManager::ALGEBRAIC_SORT = std::make_shared<Sort>(SORT_KIND::SK_ALGEBRAIC, "Algebraic", 0);
-    const std::shared_ptr<Sort> SortManager::TRANSCENDENTAL_SORT = std::make_shared<Sort>(SORT_KIND::SK_TRANSCENDENTAL, "Transcendental", 0);
-    const std::shared_ptr<Sort> SortManager::STR_SORT = std::make_shared<Sort>(SORT_KIND::SK_STR, "String", 0);
-    const std::shared_ptr<Sort> SortManager::REG_SORT = std::make_shared<Sort>(SORT_KIND::SK_REG, "Reg", 0);
-    const std::shared_ptr<Sort> SortManager::EXT_SORT = std::make_shared<Sort>(SORT_KIND::SK_EXT, "ExtReal", 0);
-    const std::shared_ptr<Sort> SortManager::NAT_SORT = std::make_shared<Sort>(SORT_KIND::SK_NAT, "Natural", 0);
-    const std::shared_ptr<Sort> SortManager::RAND_SORT = std::make_shared<Sort>(SORT_KIND::SK_RAND, "Random", 0);
-    const std::shared_ptr<Sort> SortManager::INTOREAL_SORT = std::make_shared<Sort>(SORT_KIND::SK_INTOREAL, "IntOrReal", 0);
-    const std::shared_ptr<Sort> SortManager::FLOAT64_SORT = std::make_shared<Sort>(SORT_KIND::SK_FP, "Float64", 0, std::vector<std::shared_ptr<Sort>>{std::make_shared<Sort>(SORT_KIND::SK_NULL, "Exp", 11), std::make_shared<Sort>(SORT_KIND::SK_NULL, "Sig", 53)});
-    const std::shared_ptr<Sort> SortManager::FLOAT32_SORT = std::make_shared<Sort>(SORT_KIND::SK_FP, "Float32", 0, std::vector<std::shared_ptr<Sort>>{std::make_shared<Sort>(SORT_KIND::SK_NULL, "Exp", 8), std::make_shared<Sort>(SORT_KIND::SK_NULL, "Sig", 24)});
-    const std::shared_ptr<Sort> SortManager::FLOAT16_SORT = std::make_shared<Sort>(SORT_KIND::SK_FP, "Float16", 0, std::vector<std::shared_ptr<Sort>>{std::make_shared<Sort>(SORT_KIND::SK_NULL, "Exp", 5), std::make_shared<Sort>(SORT_KIND::SK_NULL, "Sig", 11)});
-    const std::shared_ptr<Sort> SortManager::ROUNDING_MODE_SORT = std::make_shared<Sort>(SORT_KIND::SK_ROUNDING_MODE, "RoundingMode", 0);
+    // Static constant sorts are now defined inline in the header file
 
     // SortManager implementation
     SortManager::SortManager() {

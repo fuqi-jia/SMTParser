@@ -33,14 +33,14 @@
 
 namespace SMTParser{
 
-    bool isIntParam(std::shared_ptr<DAGNode> param){return param->getSort()->isInt() || param->getSort()->isIntOrReal();}
-    bool isRealParam(std::shared_ptr<DAGNode> param){return param->getSort()->isReal() || param->getSort()->isIntOrReal();}
-    bool isBoolParam(std::shared_ptr<DAGNode> param){return param->getSort()->isBool();}
-    bool isBvParam(std::shared_ptr<DAGNode> param){return param->getSort()->isBv();}
-    bool isFpParam(std::shared_ptr<DAGNode> param){return param->getSort()->isFp();}
-    bool isStrParam(std::shared_ptr<DAGNode> param){return param->getSort()->isStr();}
-    bool isRegParam(std::shared_ptr<DAGNode> param){return param->getSort()->isReg();}
-    bool isArrayParam(std::shared_ptr<DAGNode> param){return param->getSort()->isArray();}
+    bool isIntParam(std::shared_ptr<DAGNode> param){auto sort = param->getSort(); return sort && (sort->isInt() || sort->isIntOrReal());}
+    bool isRealParam(std::shared_ptr<DAGNode> param){auto sort = param->getSort(); return sort && (sort->isReal() || sort->isIntOrReal());}
+    bool isBoolParam(std::shared_ptr<DAGNode> param){auto sort = param->getSort(); return sort && sort->isBool();}
+    bool isBvParam(std::shared_ptr<DAGNode> param){auto sort = param->getSort(); return sort && sort->isBv();}
+    bool isFpParam(std::shared_ptr<DAGNode> param){auto sort = param->getSort(); return sort && sort->isFp();}
+    bool isStrParam(std::shared_ptr<DAGNode> param){auto sort = param->getSort(); return sort && sort->isStr();}
+    bool isRegParam(std::shared_ptr<DAGNode> param){auto sort = param->getSort(); return sort && sort->isReg();}
+    bool isArrayParam(std::shared_ptr<DAGNode> param){auto sort = param->getSort(); return sort && sort->isArray();}
 
     // mk operations
     std::shared_ptr<DAGNode> Parser::mkTrue() { return NodeManager::TRUE_NODE; }
@@ -777,7 +777,9 @@ namespace SMTParser{
 
         for(size_t i=0;i<params.size();i++){
             if(!isBoolParam(params[i])) {
-                err_all(params[i], "AND on non-boolean", line_number);
+                std::cout<<toString(params[i])<<std::endl;
+                std::cout<<params[i]->getSort()->toString()<<std::endl;
+                err_type_mis("AND on non-boolean", line_number);
                 return mkUnknown();
             }
             if (params[i]->isErr()) {
@@ -832,7 +834,7 @@ namespace SMTParser{
 
         for(size_t i=0;i<params.size();i++){
             if(!isBoolParam(params[i])) {
-                err_all(params[i], "OR on non-boolean", line_number);
+                err_type_mis("OR on non-boolean", line_number);
                 return mkUnknown();
             }
             if (params[i]->isErr()) {
