@@ -57,7 +57,7 @@ namespace timing_detail {
 
     struct Reporter {
         Reporter() {
-            // 确保 data() 在 Reporter 之前构造，避免析构顺序问题
+            // make sure data() is constructed before Reporter, avoid destructor order problem
             (void)timing_detail::data();
         }
         ~Reporter();
@@ -77,18 +77,18 @@ inline timing_detail::Reporter::~Reporter() {
 
 inline timing_detail::Reporter __global_timing_reporter;
 
-// 线程局部计时栈，用于计算独占时间
+// thread-local timer stack, for calculating exclusive time
 inline thread_local std::vector<class ScopedTimer*> __timer_stack;
-// 记录各函数当前递归深度
+// record current recursion depth of each function
 inline thread_local std::unordered_map<std::string, size_t> __rec_depth;
 
 class ScopedTimer {
     std::string name_;
-    std::string report_name_;        // 可能带 [R] 标记
+    std::string report_name_;        // may have [R] tag
     std::chrono::high_resolution_clock::time_point start_;
-    uint64_t child_ns_ = 0;          // 汇总子计时器耗时
-    ScopedTimer* parent_ = nullptr;  // 指向父计时器
-    bool record_ = true;             // 是否写入全局统计
+    uint64_t child_ns_ = 0;          // sum of child timer time
+    ScopedTimer* parent_ = nullptr;  // pointer to parent timer
+    bool record_ = true;             // whether to write to global statistics
 public:
     explicit ScopedTimer(const std::string &n, bool top_only = false) : name_(n) {
         size_t &depth_ref = __rec_depth[name_];
@@ -98,7 +98,7 @@ public:
         bool is_top_call = (cur_depth == 0);
         record_ = !top_only || (top_only && is_top_call);
 
-        // 报告名称加标签
+        // add tag to report name
         report_name_ = name_;
         if(top_only) report_name_ += "[R]"; // Recursive top-only
         start_ = std::chrono::high_resolution_clock::now();
@@ -110,18 +110,18 @@ public:
         auto end = std::chrono::high_resolution_clock::now();
         uint64_t total_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start_).count();
 
-        // 将本计时器总耗时计入父计时器的子耗时
+        // add total time of this timer to child time of parent timer
         if (parent_) parent_->child_ns_ += total_ns;
 
-        // 计算独占时间（排除所有子计时器）
+        // calculate exclusive time (excluding all child timers)
         uint64_t exclusive_ns = total_ns > child_ns_ ? total_ns - child_ns_ : 0;
         if (exclusive_ns > 0 && record_)
             timing_detail::add(report_name_, exclusive_ns);
 
-        // 出栈
+        // pop from stack
         __timer_stack.pop_back();
 
-        // 递减递归深度
+        // decrement recursion depth
         __rec_depth[name_]--;
     }
 };
