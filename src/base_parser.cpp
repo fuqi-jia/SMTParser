@@ -40,11 +40,11 @@ namespace SMTParser{
 		line_number = 0;
 		scan_mode = SCAN_MODE::SM_COMMON;
 		preserving_let_counter = 0;
-		current_let_mode = LET_MODE::LM_NON_LET;
 		let_nesting_depth = 0;
 		temp_var_counter = 0;
 		parsing_file = false;
-
+		in_quantifier_scope = false;
+		quant_nesting_depth = 0;
 		node_manager = std::make_shared<NodeManager>();
 		sort_manager = std::make_shared<SortManager>();
 		options = std::make_shared<GlobalOptions>();
@@ -74,11 +74,11 @@ namespace SMTParser{
 		line_number = 0;
 		scan_mode = SCAN_MODE::SM_COMMON;
 		preserving_let_counter = 0;
-		current_let_mode = LET_MODE::LM_NON_LET;
 		let_nesting_depth = 0;
 		temp_var_counter = 0;
 		parsing_file = true;
-
+		in_quantifier_scope = false;
+		quant_nesting_depth = 0;
 		node_manager = std::make_shared<NodeManager>();
 		sort_manager = std::make_shared<SortManager>();
 		options = std::make_shared<GlobalOptions>();
@@ -935,15 +935,158 @@ namespace SMTParser{
 		// (define-fun-rec <symbol> ((<symbol> <sort>)*) <sort> <expr>)
 		// recursive function definition
 		if (command == "define-fun-rec") {
-			//ignore
-			warn_cmd_nsup(command, command_ln);
+			// get name
+			size_t name_ln = line_number;
+			std::string name = getSymbol();
+
+			if(fun_key_map.find(name) != fun_key_map.end()){
+				std::shared_ptr<DAGNode> check_fun = fun_key_map[name];
+				if(check_fun->getKind() == NODE_KIND::NT_FUNC_DEF){
+					err_mul_def(name, name_ln);
+				}
+				return CMD_TYPE::CT_DEFINE_FUN_REC;
+			}
+			// keep the function name with the same order
+			function_names.emplace_back(name);
+
+			// parse ((x Int))
+			//       ^
+			parseLpar();
+			std::vector<std::shared_ptr<DAGNode>> params;
+			std::vector<std::string> key_list;
+			std::vector<std::shared_ptr<Sort>> param_sorts;
+			while(*bufptr!=')'){ // there are still (x Int) left.
+				// (x Int)
+				// ^
+				parseLpar();
+				std::string pname = getSymbol();
+				std::shared_ptr<Sort> ptype = parseSort();
+				key_list.emplace_back(pname);
+				param_sorts.emplace_back(ptype);
+				std::shared_ptr<DAGNode> expr = nullptr;
+				expr = mkFunParamVar(ptype, pname);
+				// multiple declarations
+				if(fun_var_map.find(pname) != fun_var_map.end()){
+					err_mul_decl(pname, line_number);
+				}
+				else{
+					fun_var_map.insert(std::pair<std::string, std::shared_ptr<DAGNode>>(pname, expr));
+					params.emplace_back(expr);
+				}
+				// (x Int)
+				//		 ^
+				parseRpar();
+			}
+			
+			//(define-fun-rec <symbol> ((<symbol> <sort>)*) <sort> <expr>)
+			//					                        ^
+			parseRpar();
+
+			//get returned type
+			std::shared_ptr<Sort> out_sort = parseSort();
+			
+			// For recursive functions, we need to create a function declaration first
+			// so it can be referenced in its own body
+			std::shared_ptr<DAGNode> func_dec = mkFuncDec(name, param_sorts, out_sort);
+			
+			// Now parse the function body (which can reference the function itself)
+			std::shared_ptr<DAGNode> func_body = parseExpr();
+			std::shared_ptr<DAGNode> res = mkFuncDef(name, params, out_sort, func_body);
 			skipToRpar();
+
+			//remove key bindings: for let uses local variables. 
+			while (key_list.size() > 0) {
+				fun_var_map.erase(key_list.back());
+				key_list.pop_back();
+			}
+			
 			return CMD_TYPE::CT_DEFINE_FUN_REC;
 		}
 
 		if (command == "define-funs-rec") {
-			//ignore
-			warn_cmd_nsup(command, command_ln);
+			// (define-funs-rec ((name1 ((param1 type1)...) ret_type1)...) (body1 body2...))
+			
+			// Parse function declarations first
+			parseLpar(); // for function declarations list
+			std::vector<std::string> func_names;
+			std::vector<std::vector<std::shared_ptr<DAGNode>>> all_params;
+			std::vector<std::vector<std::string>> all_key_lists;
+			std::vector<std::vector<std::shared_ptr<Sort>>> all_param_sorts;
+			std::vector<std::shared_ptr<Sort>> return_sorts;
+			
+			while(*bufptr != ')') {
+				// Parse each function declaration: (name ((param1 type1)...) ret_type)
+				parseLpar();
+				std::string name = getSymbol();
+				
+				if(fun_key_map.find(name) != fun_key_map.end()){
+					std::shared_ptr<DAGNode> check_fun = fun_key_map[name];
+					if(check_fun->getKind() == NODE_KIND::NT_FUNC_DEF){
+						err_mul_def(name, line_number);
+					}
+					skipToRpar();
+					continue;
+				}
+				
+				func_names.emplace_back(name);
+				function_names.emplace_back(name);
+				
+				// Parse parameters: ((param1 type1)...)
+				parseLpar();
+				std::vector<std::shared_ptr<DAGNode>> params;
+				std::vector<std::string> key_list;
+				std::vector<std::shared_ptr<Sort>> param_sorts;
+				
+				while(*bufptr != ')') {
+					parseLpar();
+					std::string pname = getSymbol();
+					std::shared_ptr<Sort> ptype = parseSort();
+					key_list.emplace_back(pname);
+					param_sorts.emplace_back(ptype);
+					std::shared_ptr<DAGNode> expr = mkFunParamVar(ptype, pname);
+					params.emplace_back(expr);
+					parseRpar();
+				}
+				parseRpar(); // end of parameters
+				
+				// Parse return type
+				std::shared_ptr<Sort> out_sort = parseSort();
+				return_sorts.emplace_back(out_sort);
+				
+				all_params.emplace_back(params);
+				all_key_lists.emplace_back(key_list);
+				all_param_sorts.emplace_back(param_sorts);
+				
+				parseRpar(); // end of function declaration
+			}
+			parseRpar(); // end of function declarations list
+			
+			// Create function declarations for all functions first
+			// so they can be referenced in each other's bodies
+			for(size_t i = 0; i < func_names.size(); i++) {
+				mkFuncDec(func_names[i], all_param_sorts[i], return_sorts[i]);
+			}
+			
+			// Parse function bodies
+			parseLpar(); // for function bodies list
+			for(size_t i = 0; i < func_names.size(); i++) {
+				// Add parameter bindings for this function
+				for(size_t j = 0; j < all_key_lists[i].size(); j++) {
+					fun_var_map.insert(std::pair<std::string, std::shared_ptr<DAGNode>>(
+						all_key_lists[i][j], all_params[i][j]));
+				}
+				
+				// Parse function body
+				std::shared_ptr<DAGNode> func_body = parseExpr();
+				std::shared_ptr<DAGNode> res = mkFuncDef(func_names[i], all_params[i], return_sorts[i], func_body);
+				
+				// Remove parameter bindings for this function
+				for(const auto& key : all_key_lists[i]) {
+					fun_var_map.erase(key);
+				}
+			}
+			parseRpar(); // end of function bodies list
+			
 			skipToRpar();
 			return CMD_TYPE::CT_DEFINE_FUNS_REC;
 		}
@@ -1127,12 +1270,24 @@ namespace SMTParser{
 		// quantifier
 		// (quantifier ((<symbol> <sort>)+) <expr>)
 		if(command == "exists") {
+			in_quantifier_scope = true;
+			quant_nesting_depth++;
 			parseQuant("exists");
+			quant_nesting_depth--;
+			if(quant_nesting_depth == 0){
+				in_quantifier_scope = false;
+			}
 			skipToRpar();
 			return CMD_TYPE::CT_EXISTS;
 		}
 		if(command == "forall") {
+			in_quantifier_scope = true;
+			quant_nesting_depth++;
 			parseQuant("forall");
+			quant_nesting_depth--;
+			if(quant_nesting_depth == 0){
+				in_quantifier_scope = false;
+			}
 			skipToRpar();
 			return CMD_TYPE::CT_FORALL;
 		}
@@ -1745,6 +1900,7 @@ namespace SMTParser{
 		//             ^
 		parseLpar();
 		std::vector<std::shared_ptr<DAGNode>> params;
+		std::vector<std::string> quant_var_names;
 		while (*bufptr != ')') {
 			// (quantifier ((<identifier> <sort>)+） <expr>)
 			//              ^
@@ -1753,6 +1909,7 @@ namespace SMTParser{
 			std::shared_ptr<Sort> var_sort = parseSort();
 			std::shared_ptr<DAGNode> var = mkQuantVar(var_name, var_sort);
 			params.emplace_back(var);
+			quant_var_names.emplace_back(var_name);
 			parseRpar();
 		}
 		// (quantifier ((<identifier> <sort>)+） <expr>)
@@ -1763,14 +1920,15 @@ namespace SMTParser{
 		std::shared_ptr<DAGNode> res = NodeManager::NULL_NODE;
 		if (type == "forall") {
 			res = mkForall(params);
-			quant_var_map.clear(); // local variable map
 		}
 		else if (type == "exists") {
 			res = mkExists(params);
-			quant_var_map.clear(); // local variable map
 		}
 		else{
 			condAssert(false, "Invalid quantifier");
+		}
+		for(auto& name : quant_var_names){
+			quant_var_map.erase(name);
 		}
 		return res;
 	}

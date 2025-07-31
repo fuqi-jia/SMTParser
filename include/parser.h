@@ -123,6 +123,8 @@ namespace SMTParser{
         size_t                                  preserving_let_counter; // only used in preserving let mode
         LET_MODE 		                        current_let_mode; // only used in preserving let mode
         size_t                                  let_nesting_depth; // track let nesting depth
+        size_t                                  quant_nesting_depth; // track quantifier nesting depth
+        bool                                    in_quantifier_scope;
 
         bool                                    parsing_file;
 

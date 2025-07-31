@@ -607,17 +607,34 @@ namespace SMTParser{
             case NODE_KIND::NT_FP_TO_FP: {
                 auto eb = node->getChild(0).get();
                 auto sb = node->getChild(1).get();
-                auto rm = node->getChild(2).get();
-                auto param = node->getChild(3).get();
-                out << "((_ to_fp ";
-                work_stack.emplace_back(nullptr, 2);  // )
-                work_stack.emplace_back(param, 0);    // param
-                work_stack.emplace_back(nullptr, 1);  // space
-                work_stack.emplace_back(rm, 0);       // rm
-                work_stack.emplace_back(nullptr, 3);  // ") "
-                work_stack.emplace_back(sb, 0);       // sb
-                work_stack.emplace_back(nullptr, 1);  // space
-                work_stack.emplace_back(eb, 0);       // eb
+                
+                if(node->getChildrenSize() == 4) {
+                    // 4-parameter version: ((_ to_fp eb sb) rm param)
+                    auto rm = node->getChild(2).get();
+                    auto param = node->getChild(3).get();
+                    out << "((_ to_fp ";
+                    work_stack.emplace_back(nullptr, 2);  // )
+                    work_stack.emplace_back(param, 0);    // param
+                    work_stack.emplace_back(nullptr, 1);  // space
+                    work_stack.emplace_back(rm, 0);       // rm
+                    work_stack.emplace_back(nullptr, 3);  // ") "
+                    work_stack.emplace_back(sb, 0);       // sb
+                    work_stack.emplace_back(nullptr, 1);  // space
+                    work_stack.emplace_back(eb, 0);       // eb
+                } else if(node->getChildrenSize() == 3) {
+                    // 3-parameter version: ((_ to_fp eb sb) param)
+                    auto param = node->getChild(2).get();
+                    out << "((_ to_fp ";
+                    work_stack.emplace_back(nullptr, 2);  // )
+                    work_stack.emplace_back(param, 0);    // param
+                    work_stack.emplace_back(nullptr, 3);  // ") "
+                    work_stack.emplace_back(sb, 0);       // sb
+                    work_stack.emplace_back(nullptr, 1);  // space
+                    work_stack.emplace_back(eb, 0);       // eb
+                } else {
+                    // Invalid number of children
+                    out << "INVALID_FP_TO_FP_NODE";
+                }
                 break;
             }
 
@@ -743,10 +760,13 @@ namespace SMTParser{
     }
 
     void NodeManager::clear() {
-        for (auto& node : nodes) {
-            node->clear();
+        // Clear non-static nodes only (preserve static constants)
+        for (size_t i = static_node_count; i < nodes.size(); i++) {
+            nodes[i]->clear();
         }
         nodes.clear();
+        
+        // Clear hash buckets and re-insert static nodes
         for (auto& bucket : node_buckets) {
             bucket.clear();
         }
@@ -799,6 +819,7 @@ namespace SMTParser{
         // Basic constants
         insertNodeToBucket(NULL_NODE);
         insertNodeToBucket(UNKNOWN_NODE);
+        insertNodeToBucket(ERROR_NODE);
         insertNodeToBucket(TRUE_NODE);
         insertNodeToBucket(FALSE_NODE);
         insertNodeToBucket(E_NODE);
@@ -818,6 +839,9 @@ namespace SMTParser{
         insertNodeToBucket(REAL_INF_NODE);
         insertNodeToBucket(REAL_POS_INF_NODE);
         insertNodeToBucket(REAL_NEG_INF_NODE);
+        
+        // Mark how many nodes are static constants so we can preserve them during clear()
+        static_node_count = nodes.size();
     }
 
     std::shared_ptr<DAGNode> NodeManager::createNode(std::shared_ptr<Sort> sort, NODE_KIND kind, std::string name, std::vector<std::shared_ptr<DAGNode>> children) {

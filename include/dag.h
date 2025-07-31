@@ -230,7 +230,7 @@ namespace SMTParser{
                 sort = SortManager::REAL_SORT;
                 kind = NODE_KIND::NT_INFINITY;
             } else if (n == "NaN") {
-                sort = SortManager::REAL_SORT;
+                sort = SortManager::EXT_SORT;
                 kind = NODE_KIND::NT_NAN;
             } else if (n == "epsilon") {
                 sort = SortManager::REAL_SORT;
@@ -821,7 +821,7 @@ namespace SMTParser{
             }
             
             // high quality hash algorithm, reduce conflicts
-            size_t h1 = reinterpret_cast<size_t>(sort.get()); // Sort pointer, avoid string hash
+            size_t h1 = std::hash<std::string>{}(sort->toString());
             size_t h2 = static_cast<size_t>(kind);
             size_t h3 = name.empty() ? 0 : std::hash<std::string>{}(name);
             size_t h4 = children.size();
@@ -936,6 +936,8 @@ namespace SMTParser{
             std::vector<std::shared_ptr<DAGNode>> nodes;
             // use secondary hash: Kind -> Hash -> NodeIndex
             std::array<std::unordered_map<size_t, std::vector<std::pair<std::shared_ptr<DAGNode>, size_t>>>, NUM_KINDS> node_buckets;
+            // Track the number of static constant nodes to preserve them during clear()
+            size_t static_node_count = 0;
         public:
             NodeManager();
             ~NodeManager();
@@ -984,17 +986,18 @@ namespace SMTParser{
             static std::shared_ptr<DAGNode> getRealNegInf() { return REAL_NEG_INF_NODE; }
         public:
             // static constant nodes (inline for guaranteed initialization order)
-            inline static const std::shared_ptr<DAGNode> NULL_NODE = std::make_shared<DAGNode>(SortManager::NULL_SORT, NODE_KIND::NT_NULL, "null");
+            inline static const std::shared_ptr<DAGNode> NULL_NODE = std::make_shared<DAGNode>("NULL");
             inline static const std::shared_ptr<DAGNode> UNKNOWN_NODE = std::make_shared<DAGNode>(SortManager::UNKNOWN_SORT, NODE_KIND::NT_UNKNOWN, "unknown");
-            inline static const std::shared_ptr<DAGNode> TRUE_NODE = std::make_shared<DAGNode>(SortManager::BOOL_SORT, NODE_KIND::NT_CONST_TRUE, "true");
-            inline static const std::shared_ptr<DAGNode> FALSE_NODE = std::make_shared<DAGNode>(SortManager::BOOL_SORT, NODE_KIND::NT_CONST_FALSE, "false");
-            inline static const std::shared_ptr<DAGNode> E_NODE = std::make_shared<DAGNode>(SortManager::REAL_SORT, NODE_KIND::NT_CONST_E, "e");
-            inline static const std::shared_ptr<DAGNode> PI_NODE = std::make_shared<DAGNode>(SortManager::REAL_SORT, NODE_KIND::NT_CONST_PI, "pi");
+            inline static const std::shared_ptr<DAGNode> ERROR_NODE = std::make_shared<DAGNode>(SortManager::NULL_SORT, NODE_KIND::NT_ERROR, "error");
+            inline static const std::shared_ptr<DAGNode> TRUE_NODE = std::make_shared<DAGNode>("true");
+            inline static const std::shared_ptr<DAGNode> FALSE_NODE = std::make_shared<DAGNode>("false");
+            inline static const std::shared_ptr<DAGNode> E_NODE = std::make_shared<DAGNode>("e");
+            inline static const std::shared_ptr<DAGNode> PI_NODE = std::make_shared<DAGNode>("pi");
             // inline static const std::shared_ptr<DAGNode> INF_NODE = std::make_shared<DAGNode>(SortManager::EXT_SORT, NODE_KIND::NT_INFINITY, "INF");
             // inline static const std::shared_ptr<DAGNode> POS_INF_NODE = std::make_shared<DAGNode>(SortManager::EXT_SORT, NODE_KIND::NT_POS_INFINITY, "+INF");
             // inline static const std::shared_ptr<DAGNode> NEG_INF_NODE = std::make_shared<DAGNode>(SortManager::EXT_SORT, NODE_KIND::NT_NEG_INFINITY, "-INF");
-            inline static const std::shared_ptr<DAGNode> NAN_NODE = std::make_shared<DAGNode>(SortManager::EXT_SORT, NODE_KIND::NT_NAN, "NaN");
-            inline static const std::shared_ptr<DAGNode> EPSILON_NODE = std::make_shared<DAGNode>(SortManager::EXT_SORT, NODE_KIND::NT_EPSILON, "EPSILON");
+            inline static const std::shared_ptr<DAGNode> NAN_NODE = std::make_shared<DAGNode>("NaN");
+            inline static const std::shared_ptr<DAGNode> EPSILON_NODE = std::make_shared<DAGNode>("EPSILON");
             inline static const std::shared_ptr<DAGNode> POS_EPSILON_NODE = std::make_shared<DAGNode>(SortManager::EXT_SORT, NODE_KIND::NT_POS_EPSILON, "+EPSILON");
             inline static const std::shared_ptr<DAGNode> NEG_EPSILON_NODE = std::make_shared<DAGNode>(SortManager::EXT_SORT, NODE_KIND::NT_NEG_EPSILON, "-EPSILON");
             

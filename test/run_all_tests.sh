@@ -43,18 +43,18 @@ if [ -z "$TEST_EXES" ]; then
     
     # List all potential test executables
     POTENTIAL_TESTS=(
-        "./test_parser"
-        "./test_string_handling"
-        "./test_arithmetic"
-        "./test_boolean_logic"
-        "./test_bitvector"
-        "./test_string_operations"
         "./test_array_theory"
-        "./test_quantifiers"
-        "./test_functions"
+        "./test_arithmetic"
+        "./test_bitvector"
+        "./test_boolean_logic"
         "./test_expressions"
-        "./test_theory_combination"
         "./test_floating_point"
+        "./test_parser"
+        "./test_quantifiers"
+        "./test_smtparser_exe"
+        "./test_string_handling"
+        "./test_string_operations"
+        "./test_theory_combination"
     )
     
     # Check each potential test

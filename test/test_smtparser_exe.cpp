@@ -4,58 +4,104 @@
 #include <chrono>
 #include "../include/parser.h"
 #include <fstream>
+#include <filesystem>
+#include <algorithm>
 
 int main(int argc, char* argv[]){
-    if (argc != 2) {
-        std::cerr << "Usage: " << argv[0] << " <smt2_file>" << std::endl;
+    std::string instances_dir;
+    
+    if (argc == 2) {
+        instances_dir = argv[1];
+    } else if (argc == 1) {
+        if (std::filesystem::exists("test/instances")) {
+            instances_dir = "test/instances";
+        } else if (std::filesystem::exists("../test/instances")) {
+            instances_dir = "../test/instances";
+        } else if (std::filesystem::exists("../../test/instances")) {
+            instances_dir = "../../test/instances";
+        } else if (std::filesystem::exists("instances")) {
+            instances_dir = "instances";
+        } else if (std::filesystem::exists("./instances")) {
+            instances_dir = "./instances";
+        } else {
+            std::cerr << "Error: Cannot find instances directory. Try running from project root or test directory." << std::endl;
+            std::cerr << "Or specify the path: " << argv[0] << " <instances_directory>" << std::endl;
+            return 1;
+        }
+    } else {
+        std::cerr << "Usage: " << argv[0] << " [instances_directory]" << std::endl;
+        std::cerr << "If no directory is specified, will look for instances in common locations." << std::endl;
         return 1;
     }
+    
+    if (!std::filesystem::exists(instances_dir) || !std::filesystem::is_directory(instances_dir)) {
+        std::cerr << "Error: " << instances_dir << " is not a valid directory" << std::endl;
+        return 1;
+    }
+
+    std::vector<std::string> smt2_files;
+    for (const auto& entry : std::filesystem::directory_iterator(instances_dir)) {
+        if (entry.is_regular_file() && entry.path().extension() == ".smt2") {
+            smt2_files.push_back(entry.path().string());
+        }
+    }
+
+    std::sort(smt2_files.begin(), smt2_files.end());
+
+    if (smt2_files.empty()) {
+        std::cout << "No .smt2 files found in " << instances_dir << std::endl;
+        return 0;
+    }
+
+    std::cout << "Found " << smt2_files.size() << " .smt2 files to test" << std::endl;
 
     std::shared_ptr<SMTParser::Parser> parser = 
         std::make_shared<SMTParser::Parser>();
-        parser->setOption("keep_let", false);
-    // the input file
-    std::string input_file = argv[1];
+    parser->setOption("keep_let", false);
 
-    // Record start time
-    auto start_time = std::chrono::high_resolution_clock::now();
+    int successful_parses = 0;
+    int failed_parses = 0;
+    
+    for (const auto& input_file : smt2_files) {
+        std::cout << "\n=== Testing file: " << std::filesystem::path(input_file).filename() << " ===" << std::endl;
 
-    // parse the input file
-    bool parse_success = parser->parse(input_file);
+        // Record start time
+        auto start_time = std::chrono::high_resolution_clock::now();
 
-    // Record end time
-    auto end_time = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+        // parse the input file
+        bool parse_success = parser->parse(input_file);
 
-    if (parse_success) {
-        std::cout << "PARSE_SUCCESS" << std::endl;
-        
-        // Print statistics
-        auto assertions = parser->getAssertions();
-        auto variables = parser->getVariables();
-        auto functions = parser->getFunctions();
-        auto nodes = parser->getNodeCount();    
-        
-        std::cout << "ASSERTIONS:" << assertions.size() << std::endl;
-        std::cout << "VARIABLES:" << variables.size() << std::endl;
-        std::cout << "FUNCTIONS:" << functions.size() << std::endl;
-        std::cout << "NODES:" << nodes << std::endl;
-        std::cout << "TIME:" << duration.count() << std::endl;
+        // Record end time
+        auto end_time = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
 
-        std::ofstream ofs("./tmp.smt2");
-        if (ofs.is_open()) {
-            std::string smt2_content = parser->dumpSMT2();
-            ofs << smt2_content;
-            ofs.close();
-            std::cout << "OUTPUT_FILE: ./tmp.smt2" << std::endl;
+        if (parse_success) {
+            std::cout << "PARSE_SUCCESS" << std::endl;
+            successful_parses++;
+            
+            // Print statistics
+            auto assertions = parser->getAssertions();
+            auto variables = parser->getVariables();
+            auto functions = parser->getFunctions();
+            auto nodes = parser->getNodeCount();    
+            
+            std::cout << "ASSERTIONS:" << assertions.size() << std::endl;
+            std::cout << "VARIABLES:" << variables.size() << std::endl;
+            std::cout << "FUNCTIONS:" << functions.size() << std::endl;
+            std::cout << "NODES:" << nodes << std::endl;
+            std::cout << "TIME:" << duration.count() << "ms" << std::endl;
+
         } else {
-            std::cout << "ERROR: Failed to open output file ./tmp.smt2" << std::endl;
+            std::cout << "PARSE_FAILURE" << std::endl;
+            std::cout << "TIME:" << duration.count() << "ms" << std::endl;
+            failed_parses++;
         }
-
-        return 0;
-    } else {
-        std::cout << "PARSE_FAILURE" << std::endl;
-        std::cout << "TIME:" << duration.count() << std::endl;
-        return 1;
     }
+
+    std::cout << "\n=== SUMMARY ===" << std::endl;
+    std::cout << "Total files tested: " << smt2_files.size() << std::endl;
+    std::cout << "Successful parses: " << successful_parses << std::endl;
+    std::cout << "Failed parses: " << failed_parses << std::endl;
+    
+    return (failed_parses == 0) ? 0 : 1;
 }

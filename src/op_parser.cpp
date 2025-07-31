@@ -1656,6 +1656,8 @@ namespace SMTParser{
                 std::cerr << "Type mismatch in lt, but now exempt for int/real"<<std::endl;
             }
             else{
+                std::cout<<l->getSort()->toString()<<std::endl;
+                std::cout<<r->getSort()->toString()<<std::endl;
                 err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in lt", line_number);
                 return mkUnknown();
             }
@@ -3479,7 +3481,7 @@ namespace SMTParser{
     */
     std::shared_ptr<DAGNode> Parser::mkSelect(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         
-        if(!isArrayParam(l) || !isIntParam(r)) {
+        if(!isArrayParam(l)) {
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in select", line_number);
             return mkUnknown();
         }

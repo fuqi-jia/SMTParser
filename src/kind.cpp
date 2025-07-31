@@ -42,6 +42,8 @@ namespace SMTParser{
             return "true";
         case NODE_KIND::NT_CONST_FALSE:
             return "false";
+        case NODE_KIND::NT_CONST_ARRAY:
+            return "const_array";
         // CORE OPERATORS
         case NODE_KIND::NT_EQ:
             return "=";
@@ -62,8 +64,6 @@ namespace SMTParser{
             return "VAR";
         case NODE_KIND::NT_TEMP_VAR:
             return "TEMP_VAR";
-        case NODE_KIND::NT_CONST_ARRAY:
-            return "CONST_ARRAY";
         // BOOLEAN
         case NODE_KIND::NT_NOT:
             return "not";

@@ -149,10 +149,16 @@ namespace SMTParser{
                     frame.headSymbol = head;
 
                     if(head == "exists" || head == "forall"){
+                        in_quantifier_scope = true;
+                        quant_nesting_depth++;
                         auto res = parseQuant(head);
                         parseRpar();
                         frame.result = res;
                         frame.state = FrameState::Finish;
+                        quant_nesting_depth--;
+                        if(quant_nesting_depth == 0){
+                            in_quantifier_scope = false;
+                        }
                     }
                     else if(head == "_"){
                         std::string second = getSymbol();
@@ -417,17 +423,18 @@ namespace SMTParser{
             fun_var->incUseCount();
             return fun_var;
 		}
-		else if(var_names.find(s) != var_names.end()){
-			// variable name
-            auto var = node_manager->getNode(var_names[s]);
-            var->incUseCount();
-            return var;
-		}
-		else if(quant_var_map.find(s) != quant_var_map.end()){
+		else if(in_quantifier_scope && quant_var_map.find(s) != quant_var_map.end()){
+            // in quantifier scope, first use quantifier variable name
 			// quantifier variable name
             auto quant_var = quant_var_map[s];
             quant_var->incUseCount();
             return quant_var;
+		}
+		else if(var_names.find(s) != var_names.end()){
+			// the last one, global variable name
+            auto var = node_manager->getNode(var_names[s]);
+            var->incUseCount();
+            return var;
 		}
 		// following Common Lisp's conventions, enclosing
 		// a simple symbol in vertical bars does not produce a new symbol.
