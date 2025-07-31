@@ -102,20 +102,46 @@ namespace SMTParser{
                     parseLpar();
                     frame.line = line_number;
 
-                    // check ((_ f args) ...)
+                    // check ((_ f args) ...) or ((as const T) value)
                     if(*bufptr == '('){
                         parseLpar();
                         std::string s = getSymbol();
-                        if(s != "_"){
+                        if(s == "_"){
+                            frame.special_type = SpecialType::ParamFunc;
+                            frame.second_symbol = getSymbol();
+                            frame.state = FrameState::ProcessingParamFuncArgs;
+                            break;
+                        }
+                        else if(s == "as"){
+                            // Handle ((as const T) value) pattern
+                            std::string second = getSymbol();
+                            if(second == "const"){
+                                // Parse array sort
+                                std::shared_ptr<Sort> array_sort = parseSort();
+                                parseRpar(); // close (as const T)
+                                
+                                // Parse value
+                                std::shared_ptr<DAGNode> value = parseExpr();
+                                
+                                // Create constant array
+                                frame.result = mkConstArray(array_sort, value);
+                                parseRpar(); // close outer parentheses
+                                frame.state = FrameState::Finish;
+                                break;
+                            }
+                            else{
+                                err_unkwn_sym("as " + second, frame.line);
+                                frame.result = mkErr(ERROR_TYPE::ERR_UNKWN_SYM);
+                                frame.state = FrameState::Finish;
+                                break;
+                            }
+                        }
+                        else{
                             err_unkwn_sym(s, frame.line);
                             frame.result = mkErr(ERROR_TYPE::ERR_UNKWN_SYM);
                             frame.state = FrameState::Finish;
                             break;
                         }
-                        frame.special_type = SpecialType::ParamFunc;
-                        frame.second_symbol = getSymbol();
-                        frame.state = FrameState::ProcessingParamFuncArgs;
-                        break;
                     }
 
                     // read the head symbol
@@ -204,6 +230,7 @@ namespace SMTParser{
                         frame.result = res;
                         frame.state = FrameState::Finish;
                     }
+
                     else{
                         frame.state = FrameState::ProcessingParams;
                     }
@@ -1117,6 +1144,7 @@ namespace SMTParser{
             case NODE_KIND::NT_NULL:
             case NODE_KIND::NT_CONST:
             case NODE_KIND::NT_VAR:
+            case NODE_KIND::NT_CONST_ARRAY:
             case NODE_KIND::NT_CONST_TRUE:
             case NODE_KIND::NT_CONST_FALSE:
             case NODE_KIND::NT_TEMP_VAR:

@@ -40,7 +40,7 @@ namespace SMTParser{
         NT_UNKNOWN=0,NT_ERROR,NT_NULL, 
         
         // CONSTANT / VARIABLE (not in parseOper)
-        NT_CONST,NT_VAR,NT_CONST_TRUE,NT_CONST_FALSE,NT_TEMP_VAR,
+        NT_CONST,NT_VAR,NT_CONST_TRUE,NT_CONST_FALSE,NT_TEMP_VAR,NT_CONST_ARRAY,
         
         // === START OF PARSEOPER CONTINUOUS SECTION ===
         // BOOLEAN OPERATORS (in parseOper)

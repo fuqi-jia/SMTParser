@@ -320,7 +320,8 @@ namespace SMTParser{
         bool isMin() 				const { return kind == NODE_KIND::NT_MIN; };
 
         // check array
-        bool isArray() 			    const { return kind == NODE_KIND::NT_VAR && sort->isArray(); };
+        bool isArray() 			    const { return (kind == NODE_KIND::NT_VAR || kind == NODE_KIND::NT_CONST_ARRAY) && sort->isArray(); };
+        bool isConstArray() 		const { return kind == NODE_KIND::NT_CONST_ARRAY; };
         
         // check Boolean operations
         bool isAnd() 				const { return (kind == NODE_KIND::NT_AND); };

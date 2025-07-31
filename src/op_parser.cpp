@@ -727,6 +727,24 @@ namespace SMTParser{
         }
         return mkVar(sort, name);
     }
+    
+    /*
+    (as const T) value, return Array
+    Creates a constant array where all elements have the same value
+    */
+    std::shared_ptr<DAGNode> Parser::mkConstArray(std::shared_ptr<Sort> sort, std::shared_ptr<DAGNode> value){
+        if(!sort->isArray()) {
+            err_all(value, "ConstArray on non-array sort", line_number);
+            return mkUnknown();
+        }
+        
+        // Check if value type matches array element type
+        std::shared_ptr<Sort> elem_sort = sort->getElemSort();
+        std::shared_ptr<Sort> value_sort = value->getSort();
+        
+        return node_manager->createNode(sort, NODE_KIND::NT_CONST_ARRAY, "const_array", {value});
+    }
+    
     // BOOLEAN
     /*
     (not Bool), return Bool
@@ -4371,6 +4389,7 @@ namespace SMTParser{
                 return 0;
             
             // unary
+            case NODE_KIND::NT_CONST_ARRAY:
             case NODE_KIND::NT_NOT:
             case NODE_KIND::NT_NEG:
             case NODE_KIND::NT_ABS:

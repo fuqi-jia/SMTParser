@@ -953,6 +953,15 @@ namespace SMTParser{
          */
         std::shared_ptr<DAGNode> mkArray(const std::string &name, std::shared_ptr<Sort> index, std::shared_ptr<Sort> elem); // ARRAY
         
+        /**
+         * @brief Create a constant array node
+         * 
+         * @param sort Array sort
+         * @param value Constant value for all elements
+         * @return Constant array node
+         */
+        std::shared_ptr<DAGNode> mkConstArray(std::shared_ptr<Sort> sort, std::shared_ptr<DAGNode> value); // CONST ARRAY
+        
         // BOOLEAN
         /**
          * @brief Create a not node

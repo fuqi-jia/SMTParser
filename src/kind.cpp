@@ -62,6 +62,8 @@ namespace SMTParser{
             return "VAR";
         case NODE_KIND::NT_TEMP_VAR:
             return "TEMP_VAR";
+        case NODE_KIND::NT_CONST_ARRAY:
+            return "CONST_ARRAY";
         // BOOLEAN
         case NODE_KIND::NT_NOT:
             return "not";

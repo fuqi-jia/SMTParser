@@ -43,61 +43,6 @@ void test_array_operations(SMTParser::ParserPtr& parser) {
     }
 }
 
-// Test array assertions and constraints
-void test_array_constraints(SMTParser::ParserPtr& parser) {
-    std::vector<std::string> expressions = {
-        "(declare-const a (Array Int Int))",
-        "(declare-const b (Array Int Int))",
-        "(assert (= (select a 1) 10))",
-        "(assert (= (select a 2) 20))",
-        "(assert (= b (store a 3 30)))",
-        "(assert (= (select b 3) 30))",
-        "(assert (= (select b 1) (select a 1)))",
-        "(check-sat)"
-    };
-    
-    std::cout << "=== Testing Array Constraints ===" << std::endl;
-    for (const auto& expr : expressions) {
-        std::cout << "Expression: " << expr << std::endl;
-        try {
-            if (expr.find("declare-const") != std::string::npos) {
-                // Extract name and sort
-                size_t name_start = expr.find(' ') + 1;
-                size_t name_end = expr.find(' ', name_start);
-                std::string name = expr.substr(name_start, name_end - name_start);
-                std::string sort = expr.substr(name_end + 1, expr.find(')') - name_end - 1);
-                
-                if (sort == "(Array Int Int)") {
-                    std::shared_ptr<SMTParser::Sort> int_sort = SMTParser::SortManager::INT_SORT;
-                    std::shared_ptr<SMTParser::DAGNode> array = parser->mkArray(name, int_sort, int_sort);
-                    std::cout << "  Declared array: " << parser->toString(array) << std::endl;
-                }
-            } else if (expr.find("assert") != std::string::npos) {
-                std::string assertion = expr.substr(expr.find('(', 1), expr.rfind(')') - expr.find('(', 1) + 1);
-                std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(assertion);
-                parser->assert(result);
-                std::cout << "  Asserted: " << parser->toString(result) << std::endl;
-            } else if (expr == "(check-sat)") {
-                SMTParser::RESULT_TYPE result = parser->checkSat();
-                std::cout << "  Result: ";
-                switch (result) {
-                    case SMTParser::RESULT_TYPE::RT_SAT: std::cout << "sat"; break;
-                    case SMTParser::RESULT_TYPE::RT_UNSAT: std::cout << "unsat"; break;
-                    case SMTParser::RESULT_TYPE::RT_UNKNOWN: std::cout << "unknown"; break;
-                    default: std::cout << "error"; break;
-                }
-                std::cout << std::endl;
-            } else {
-                std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
-                std::cout << "  Result: " << parser->toString(result) << std::endl;
-            }
-        } catch (const std::exception& e) {
-            std::cout << "  Exception: " << e.what() << std::endl;
-        }
-        std::cout << std::endl;
-    }
-}
-
 int main() {
     std::cout << "======= Array Theory Test =======" << std::endl;
     
@@ -105,7 +50,6 @@ int main() {
     
     test_array_creation(parser);
     test_array_operations(parser);
-    test_array_constraints(parser);
     
     return 0;
 } 

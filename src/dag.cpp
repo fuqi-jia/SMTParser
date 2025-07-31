@@ -206,6 +206,14 @@ namespace SMTParser{
             case NODE_KIND::NT_TEMP_VAR:
                 out << node->getName();
                 break;
+            case NODE_KIND::NT_CONST_ARRAY: {
+                out << "((as const ";
+                out << node->getSort()->toString();
+                out << ") ";
+                work_stack.emplace_back(nullptr, 2);  // )
+                work_stack.emplace_back(node->getChild(0).get(), 0);   // child0
+                break;
+            }
 
             // Binary operations - optimized for common case
             case NODE_KIND::NT_EQ:
