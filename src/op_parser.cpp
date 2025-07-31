@@ -777,8 +777,6 @@ namespace SMTParser{
 
         for(size_t i=0;i<params.size();i++){
             if(!isBoolParam(params[i])) {
-                std::cout<<toString(params[i])<<std::endl;
-                std::cout<<params[i]->getSort()->toString()<<std::endl;
                 err_type_mis("AND on non-boolean", line_number);
                 return mkUnknown();
             }
@@ -1652,8 +1650,6 @@ namespace SMTParser{
     std::shared_ptr<DAGNode> Parser::mkGe(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         
         if(!l->getSort()->isEqTo(r->getSort())) {
-            std::cout<<l->toString()<<" "<<r->toString()<<std::endl;
-            std::cout<<l->getSort()->toString()<<" "<<r->getSort()->toString()<<std::endl;
             if(canExempt(l->getSort(), r->getSort())){
                 std::cerr << "Type mismatch in ge, but now exempt for int/real"<<std::endl;
             }
@@ -3274,9 +3270,6 @@ namespace SMTParser{
         }
 
         // Validate rounding mode
-        std::cout << "DEBUG: rm->getSort()->isRoundingMode() = " << (rm->getSort()->isRoundingMode() ? "true" : "false") << std::endl;
-        std::cout << "DEBUG: rm->getSort()->toString() = " << rm->getSort()->toString() << std::endl;
-        std::cout << "DEBUG: rm->toString() = " << rm->toString() << std::endl;
         if(!rm->getSort()->isRoundingMode()) {
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Third parameter must be a rounding mode in to_fp", line_number);
             return mkUnknown();
