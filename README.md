@@ -397,6 +397,10 @@ Or simply navigate to `SMTParser/docs/html/index.html` in your file browser and 
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+## Contributing
+
+We welcome contributions from the community! Please see our [CONTRIBUTORS.md](CONTRIBUTORS.md) file for detailed information on how to contribute to this project.
+
 ## Development Status
 
 **Active Development** - This project is under continuous improvement and development. New features and optimizations are being added regularly.
