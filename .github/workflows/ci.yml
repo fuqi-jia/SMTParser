@@ -1,0 +1,61 @@
+name: CI Tests
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/apt
+          build/
+        key: ${{ runner.os }}-deps-${{ hashFiles('CMakeLists.txt', 'test/CMakeLists.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-deps-
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          cmake \
+          pkg-config \
+          libgmp-dev \
+          libmpfr-dev \
+          gcc \
+          g++
+    
+    - name: Verify dependencies
+      run: |
+        cmake --version
+        gcc --version
+        g++ --version
+        pkg-config --version
+        pkg-config --exists gmp || echo "GMP not found via pkg-config"
+        pkg-config --exists mpfr || echo "MPFR not found via pkg-config"
+    
+    - name: Make test script executable
+      run: chmod +x test/run_all_tests.sh
+    
+    - name: Run all tests
+      run: |
+        cd test
+        ./run_all_tests.sh
+    
+    - name: Verify test completion
+      run: |
+        echo "✅ All tests completed successfully!"
+        echo "The workflow will only reach this step if run_all_tests.sh exits with code 0"
+        echo "and outputs 'All tests passed!'"
