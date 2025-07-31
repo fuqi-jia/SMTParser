@@ -34,16 +34,21 @@ int main(int argc, char* argv[]){
         return 1;
     }
     
-    if (!std::filesystem::exists(instances_dir) || !std::filesystem::is_directory(instances_dir)) {
+    if (!std::filesystem::exists(instances_dir)) {
         std::cerr << "Error: " << instances_dir << " is not a valid directory" << std::endl;
         return 1;
     }
 
     std::vector<std::string> smt2_files;
+    if(std::filesystem::is_directory(instances_dir)){
     for (const auto& entry : std::filesystem::directory_iterator(instances_dir)) {
         if (entry.is_regular_file() && entry.path().extension() == ".smt2") {
-            smt2_files.push_back(entry.path().string());
+                smt2_files.push_back(entry.path().string());
+            }
         }
+    }
+    else{
+        smt2_files.push_back(instances_dir); // if it is a file, just add it to the list
     }
 
     std::sort(smt2_files.begin(), smt2_files.end());
@@ -55,14 +60,15 @@ int main(int argc, char* argv[]){
 
     std::cout << "Found " << smt2_files.size() << " .smt2 files to test" << std::endl;
 
-    std::shared_ptr<SMTParser::Parser> parser = 
-        std::make_shared<SMTParser::Parser>();
-    parser->setOption("keep_let", false);
 
     int successful_parses = 0;
     int failed_parses = 0;
     
     for (const auto& input_file : smt2_files) {
+        std::shared_ptr<SMTParser::Parser> parser = 
+            std::make_shared<SMTParser::Parser>();
+        parser->setOption("keep_let", false);
+
         std::cout << "\n=== Testing file: " << std::filesystem::path(input_file).filename() << " ===" << std::endl;
 
         // Record start time

@@ -1656,8 +1656,6 @@ namespace SMTParser{
                 std::cerr << "Type mismatch in lt, but now exempt for int/real"<<std::endl;
             }
             else{
-                std::cout<<l->getSort()->toString()<<std::endl;
-                std::cout<<r->getSort()->toString()<<std::endl;
                 err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in lt", line_number);
                 return mkUnknown();
             }
