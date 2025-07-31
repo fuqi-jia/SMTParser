@@ -145,7 +145,7 @@ namespace SMTParser{
                             size_t eb = std::stoul(eb_str);
                             size_t sb = std::stoul(sb_str);
                             
-                            std::shared_ptr<Sort> fp_sort = mkFPSort(eb, sb);
+                            std::shared_ptr<Sort> fp_sort = sort_manager->createFPSort(eb, sb);
                             std::string const_name = "(_ " + second + " " + eb_str + " " + sb_str + ")";
                             frame.result = node_manager->createNode(fp_sort, NODE_KIND::NT_CONST, const_name);
                             parseRpar();
@@ -428,13 +428,13 @@ namespace SMTParser{
 			return mkE();
 		}
 		else if(s == "inf"){
-			return mkInfinity(options->isIntTheory()? INT_SORT : REAL_SORT);
+			return mkInfinity(options->isIntTheory()? SortManager::INT_SORT : SortManager::REAL_SORT);
 		}
 		else if(s == "+inf"){
-			return mkPosInfinity(options->isIntTheory()? INT_SORT : REAL_SORT);
+			return mkPosInfinity(options->isIntTheory()? SortManager::INT_SORT : SortManager::REAL_SORT);
 		}
 		else if(s == "-inf"){
-			return mkNegInfinity(options->isIntTheory()? INT_SORT : REAL_SORT);
+			return mkNegInfinity(options->isIntTheory()? SortManager::INT_SORT : SortManager::REAL_SORT);
 		}
 		else if(s == "epsion"){
 			return mkEpsilon();

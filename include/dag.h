@@ -142,13 +142,13 @@ namespace SMTParser{
                 value = newValue(Number());
             }
         }
-        DAGNode(): sort(NULL_SORT), kind(NODE_KIND::NT_UNKNOWN), name(""), value(nullptr), children_hash(""), cached_hash_code(0), hash_computed(false), _use_count(1) {
+        DAGNode(): sort(SortManager::NULL_SORT), kind(NODE_KIND::NT_UNKNOWN), name(""), value(nullptr), children_hash(""), cached_hash_code(0), hash_computed(false), _use_count(1) {
             children_hash = "";
         }
         DAGNode(const DAGNode& other): sort(other.sort), kind(other.kind), name(other.name), value(other.value), children(other.children), children_hash(other.children_hash), cached_hash_code(0), hash_computed(false), _use_count(1) {}
 
         // other initialization
-        DAGNode(NODE_KIND kind, std::string name): sort(NULL_SORT), kind(kind), name(name), value(nullptr) {
+        DAGNode(NODE_KIND kind, std::string name): sort(SortManager::NULL_SORT), kind(kind), name(name), value(nullptr) {
             children_hash = "";
             cached_hash_code = 0;
             hash_computed = false;
@@ -162,7 +162,7 @@ namespace SMTParser{
                 } 
             }
         }
-        DAGNode(NODE_KIND kind): sort(NULL_SORT), kind(kind), name(""), value(nullptr) {
+        DAGNode(NODE_KIND kind): sort(SortManager::NULL_SORT), kind(kind), name(""), value(nullptr) {
             children_hash = "";
             cached_hash_code = 0;
             hash_computed = false;
@@ -215,43 +215,43 @@ namespace SMTParser{
             hash_computed = false;
             _use_count = 0;
             if (n == "true") {
-                sort = BOOL_SORT;
+                sort = SortManager::BOOL_SORT;
                 kind = NODE_KIND::NT_CONST_TRUE;
             } else if (n == "false") {
-                sort = BOOL_SORT;
+                sort = SortManager::BOOL_SORT;
                 kind = NODE_KIND::NT_CONST_FALSE;
             } else if (n == "pi") {
-                sort = REAL_SORT;
+                sort = SortManager::REAL_SORT;
                 kind = NODE_KIND::NT_CONST_PI;
             } else if (n == "e") {
-                sort = REAL_SORT;
+                sort = SortManager::REAL_SORT;
                 kind = NODE_KIND::NT_CONST_E;
             } else if (n == "inf") {
-                sort = REAL_SORT;
+                sort = SortManager::REAL_SORT;
                 kind = NODE_KIND::NT_INFINITY;
             } else if (n == "NaN") {
-                sort = REAL_SORT;
+                sort = SortManager::REAL_SORT;
                 kind = NODE_KIND::NT_NAN;
             } else if (n == "epsilon") {
-                sort = REAL_SORT;
+                sort = SortManager::REAL_SORT;
                 kind = NODE_KIND::NT_EPSILON;
             } else if(n == "NULL") {
-                sort = NULL_SORT;
+                sort = SortManager::NULL_SORT;
                 kind = NODE_KIND::NT_NULL;
             } else if(TypeChecker::isInt(n)){
-                sort = INT_SORT;
+                sort = SortManager::INT_SORT;
                 kind = NODE_KIND::NT_CONST;
                 value = newValue(Number(n, true));
             } else if(TypeChecker::isReal(n)){
-                sort = REAL_SORT;
+                sort = SortManager::REAL_SORT;
                 kind = NODE_KIND::NT_CONST;
                 value = newValue(Number(n, false));
             } 
             else if(TypeChecker::isString(n)){
-                sort = STR_SORT;
+                sort = SortManager::STR_SORT;
                 kind = NODE_KIND::NT_CONST;
             } else {
-                sort = NULL_SORT;
+                sort = SortManager::NULL_SORT;
                 kind = NODE_KIND::NT_ERROR;
             }
             name = n;

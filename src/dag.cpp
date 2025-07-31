@@ -690,30 +690,30 @@ namespace SMTParser{
     // NodeManager
     
     // Static constant node definitions
-    const std::shared_ptr<DAGNode> NodeManager::NULL_NODE = std::make_shared<DAGNode>(NULL_SORT, NODE_KIND::NT_NULL, "null");
-    const std::shared_ptr<DAGNode> NodeManager::UNKNOWN_NODE = std::make_shared<DAGNode>(UNKNOWN_SORT, NODE_KIND::NT_UNKNOWN, "unknown");
-    const std::shared_ptr<DAGNode> NodeManager::TRUE_NODE = std::make_shared<DAGNode>(BOOL_SORT, NODE_KIND::NT_CONST_TRUE, "true");
-    const std::shared_ptr<DAGNode> NodeManager::FALSE_NODE = std::make_shared<DAGNode>(BOOL_SORT, NODE_KIND::NT_CONST_FALSE, "false");
-    const std::shared_ptr<DAGNode> NodeManager::E_NODE = std::make_shared<DAGNode>(REAL_SORT, NODE_KIND::NT_CONST_E, "e");
-    const std::shared_ptr<DAGNode> NodeManager::PI_NODE = std::make_shared<DAGNode>(REAL_SORT, NODE_KIND::NT_CONST_PI, "pi");
-    // const std::shared_ptr<DAGNode> NodeManager::INF_NODE = std::make_shared<DAGNode>(EXT_SORT, NODE_KIND::NT_INFINITY, "INF");
-    // const std::shared_ptr<DAGNode> NodeManager::POS_INF_NODE = std::make_shared<DAGNode>(EXT_SORT, NODE_KIND::NT_POS_INFINITY, "+INF");
-    // const std::shared_ptr<DAGNode> NodeManager::NEG_INF_NODE = std::make_shared<DAGNode>(EXT_SORT, NODE_KIND::NT_NEG_INFINITY, "-INF");
-    const std::shared_ptr<DAGNode> NodeManager::NAN_NODE = std::make_shared<DAGNode>(EXT_SORT, NODE_KIND::NT_NAN, "NaN");
-    const std::shared_ptr<DAGNode> NodeManager::EPSILON_NODE = std::make_shared<DAGNode>(EXT_SORT, NODE_KIND::NT_EPSILON, "EPSILON");
-    const std::shared_ptr<DAGNode> NodeManager::POS_EPSILON_NODE = std::make_shared<DAGNode>(EXT_SORT, NODE_KIND::NT_POS_EPSILON, "+EPSILON");
-    const std::shared_ptr<DAGNode> NodeManager::NEG_EPSILON_NODE = std::make_shared<DAGNode>(EXT_SORT, NODE_KIND::NT_NEG_EPSILON, "-EPSILON");
+    const std::shared_ptr<DAGNode> NodeManager::NULL_NODE = std::make_shared<DAGNode>(SortManager::NULL_SORT, NODE_KIND::NT_NULL, "null");
+    const std::shared_ptr<DAGNode> NodeManager::UNKNOWN_NODE = std::make_shared<DAGNode>(SortManager::UNKNOWN_SORT, NODE_KIND::NT_UNKNOWN, "unknown");
+    const std::shared_ptr<DAGNode> NodeManager::TRUE_NODE = std::make_shared<DAGNode>(SortManager::BOOL_SORT, NODE_KIND::NT_CONST_TRUE, "true");
+    const std::shared_ptr<DAGNode> NodeManager::FALSE_NODE = std::make_shared<DAGNode>(SortManager::BOOL_SORT, NODE_KIND::NT_CONST_FALSE, "false");
+    const std::shared_ptr<DAGNode> NodeManager::E_NODE = std::make_shared<DAGNode>(SortManager::REAL_SORT, NODE_KIND::NT_CONST_E, "e");
+    const std::shared_ptr<DAGNode> NodeManager::PI_NODE = std::make_shared<DAGNode>(SortManager::REAL_SORT, NODE_KIND::NT_CONST_PI, "pi");
+    // const std::shared_ptr<DAGNode> NodeManager::INF_NODE = std::make_shared<DAGNode>(SortManager::EXT_SORT, NODE_KIND::NT_INFINITY, "INF");
+    // const std::shared_ptr<DAGNode> NodeManager::POS_INF_NODE = std::make_shared<DAGNode>(SortManager::EXT_SORT, NODE_KIND::NT_POS_INFINITY, "+INF");
+    // const std::shared_ptr<DAGNode> NodeManager::NEG_INF_NODE = std::make_shared<DAGNode>(SortManager::EXT_SORT, NODE_KIND::NT_NEG_INFINITY, "-INF");
+    const std::shared_ptr<DAGNode> NodeManager::NAN_NODE = std::make_shared<DAGNode>(SortManager::EXT_SORT, NODE_KIND::NT_NAN, "NaN");
+    const std::shared_ptr<DAGNode> NodeManager::EPSILON_NODE = std::make_shared<DAGNode>(SortManager::EXT_SORT, NODE_KIND::NT_EPSILON, "EPSILON");
+    const std::shared_ptr<DAGNode> NodeManager::POS_EPSILON_NODE = std::make_shared<DAGNode>(SortManager::EXT_SORT, NODE_KIND::NT_POS_EPSILON, "+EPSILON");
+    const std::shared_ptr<DAGNode> NodeManager::NEG_EPSILON_NODE = std::make_shared<DAGNode>(SortManager::EXT_SORT, NODE_KIND::NT_NEG_EPSILON, "-EPSILON");
     
     // infinity
-    const std::shared_ptr<DAGNode> NodeManager::STR_INF_NODE = std::make_shared<DAGNode>(STR_SORT, NODE_KIND::NT_INFINITY, "INF");
-    const std::shared_ptr<DAGNode> NodeManager::STR_POS_INF_NODE = std::make_shared<DAGNode>(STR_SORT, NODE_KIND::NT_POS_INFINITY, "+INF");
-    const std::shared_ptr<DAGNode> NodeManager::STR_NEG_INF_NODE = std::make_shared<DAGNode>(STR_SORT, NODE_KIND::NT_NEG_INFINITY, "-INF");
-    const std::shared_ptr<DAGNode> NodeManager::INT_INF_NODE = std::make_shared<DAGNode>(INT_SORT, NODE_KIND::NT_INFINITY, "INF");
-    const std::shared_ptr<DAGNode> NodeManager::INT_POS_INF_NODE = std::make_shared<DAGNode>(INT_SORT, NODE_KIND::NT_POS_INFINITY, "+INF");
-    const std::shared_ptr<DAGNode> NodeManager::INT_NEG_INF_NODE = std::make_shared<DAGNode>(INT_SORT, NODE_KIND::NT_NEG_INFINITY, "-INF");
-    const std::shared_ptr<DAGNode> NodeManager::REAL_INF_NODE = std::make_shared<DAGNode>(REAL_SORT, NODE_KIND::NT_INFINITY, "INF");
-    const std::shared_ptr<DAGNode> NodeManager::REAL_POS_INF_NODE = std::make_shared<DAGNode>(REAL_SORT, NODE_KIND::NT_POS_INFINITY, "+INF");
-    const std::shared_ptr<DAGNode> NodeManager::REAL_NEG_INF_NODE = std::make_shared<DAGNode>(REAL_SORT, NODE_KIND::NT_NEG_INFINITY, "-INF");
+    const std::shared_ptr<DAGNode> NodeManager::STR_INF_NODE = std::make_shared<DAGNode>(SortManager::STR_SORT, NODE_KIND::NT_INFINITY, "INF");
+    const std::shared_ptr<DAGNode> NodeManager::STR_POS_INF_NODE = std::make_shared<DAGNode>(SortManager::STR_SORT, NODE_KIND::NT_POS_INFINITY, "+INF");
+    const std::shared_ptr<DAGNode> NodeManager::STR_NEG_INF_NODE = std::make_shared<DAGNode>(SortManager::STR_SORT, NODE_KIND::NT_NEG_INFINITY, "-INF");
+    const std::shared_ptr<DAGNode> NodeManager::INT_INF_NODE = std::make_shared<DAGNode>(SortManager::INT_SORT, NODE_KIND::NT_INFINITY, "INF");
+    const std::shared_ptr<DAGNode> NodeManager::INT_POS_INF_NODE = std::make_shared<DAGNode>(SortManager::INT_SORT, NODE_KIND::NT_POS_INFINITY, "+INF");
+    const std::shared_ptr<DAGNode> NodeManager::INT_NEG_INF_NODE = std::make_shared<DAGNode>(SortManager::INT_SORT, NODE_KIND::NT_NEG_INFINITY, "-INF");
+    const std::shared_ptr<DAGNode> NodeManager::REAL_INF_NODE = std::make_shared<DAGNode>(SortManager::REAL_SORT, NODE_KIND::NT_INFINITY, "INF");
+    const std::shared_ptr<DAGNode> NodeManager::REAL_POS_INF_NODE = std::make_shared<DAGNode>(SortManager::REAL_SORT, NODE_KIND::NT_POS_INFINITY, "+INF");
+    const std::shared_ptr<DAGNode> NodeManager::REAL_NEG_INF_NODE = std::make_shared<DAGNode>(SortManager::REAL_SORT, NODE_KIND::NT_NEG_INFINITY, "-INF");
 
     NodeManager::NodeManager() {
         // 1. Reserve before inserting anything

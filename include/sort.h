@@ -34,6 +34,8 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <unordered_map>
+#include <functional>
 
 namespace SMTParser{
     
@@ -98,17 +100,27 @@ namespace SMTParser{
 
         // compare two sorts
         bool operator==(const Sort& other) const {
+            // same sort name and arity
+            if((isDef() || isDec()) && (other.isDef() || other.isDec()) && name == other.name && arity == other.arity){
+                return true;
+            }
+
+            // int or real
             if((isInt() && other.isIntOrReal()) || (isIntOrReal() && other.isInt())){
                 return true;
             }
             else if((isReal() && other.isIntOrReal()) || (isIntOrReal() && other.isReal())){
                 return true;
             }
+
+            // floating point
             else if(isFp() && other.isFp()){
                 // For floating point types, compare exponent and significand widths
                 return getExponentWidth() == other.getExponentWidth() && 
                        getSignificandWidth() == other.getSignificandWidth();
             }
+
+            // other sorts
             else{
                 return kind == other.kind && name == other.name && arity == other.arity;
             }
@@ -174,6 +186,21 @@ namespace SMTParser{
             return children[1];
         }
         
+        std::shared_ptr<Sort> getParamSort(size_t index) const {
+            condAssert(kind == SORT_KIND::SK_DEF, "Cannot get parameter sort of non-define-sort sort");
+            return children[index];
+        }
+        
+        std::vector<std::shared_ptr<Sort>> getParams() const {
+            condAssert(kind == SORT_KIND::SK_DEF, "Cannot get parameters of non-define-sort sort");
+            return std::vector<std::shared_ptr<Sort>>(children.begin(), children.end() - 1);
+        }
+
+        std::shared_ptr<Sort> getOutSort() const {
+            condAssert(kind == SORT_KIND::SK_DEF, "Cannot get output sort of non-define-sort sort");
+            return children[children.size() - 1];
+        }
+        
         bool isEqTo(const Sort& other) const {
             return *this == other;
         }
@@ -181,35 +208,110 @@ namespace SMTParser{
         bool isEqTo(const std::shared_ptr<Sort>& other) const {
             return *this == *other;
         }
+
+        // Hash function for Sort deduplication
+        size_t hash() const {
+            size_t result = std::hash<int>{}(static_cast<int>(kind));
+            result ^= std::hash<std::string>{}(name) + 0x9e3779b9 + (result << 6) + (result >> 2);
+            result ^= std::hash<size_t>{}(arity) + 0x9e3779b9 + (result << 6) + (result >> 2);
+            
+            // Hash children
+            for (const auto& child : children) {
+                if (child) {
+                    result ^= child->hash() + 0x9e3779b9 + (result << 6) + (result >> 2);
+                }
+            }
+            
+            return result;
+        }
+    };
+
+    // Sort Manager for managing and deduplicating Sort instances
+    class SortManager {
+        private:
+            std::vector<std::shared_ptr<Sort>> sorts;
+            std::unordered_map<size_t, std::vector<std::pair<std::shared_ptr<Sort>, size_t>>> sort_buckets;
+            
+        public:
+            SortManager();
+            ~SortManager();
+            
+            std::shared_ptr<Sort> getSort(const size_t index) const;
+            size_t getIndex(const std::shared_ptr<Sort>& sort) const;
+            size_t size() const;
+            
+            // createSort methods corresponding to Sort constructors
+            std::shared_ptr<Sort> createSort(SORT_KIND kind, std::string name, size_t arity, std::vector<std::shared_ptr<Sort>> children);
+            std::shared_ptr<Sort> createSort(SORT_KIND kind, std::string name, size_t arity);
+            std::shared_ptr<Sort> createSort(SORT_KIND kind, std::string name);
+            std::shared_ptr<Sort> createSort(SORT_KIND kind);
+            std::shared_ptr<Sort> createSort(std::string name);
+            std::shared_ptr<Sort> createSort();
+            
+            // Specific sort creation methods (replacing global mk* functions)
+            std::shared_ptr<Sort> createBVSort(size_t width);
+            std::shared_ptr<Sort> createFPSort(size_t exp, size_t sig);
+            std::shared_ptr<Sort> createArraySort(std::shared_ptr<Sort> index, std::shared_ptr<Sort> elem);
+            std::shared_ptr<Sort> createSortDec(const std::string& name, size_t arity);
+            std::shared_ptr<Sort> createSortDef(const std::string& name, const std::vector<std::shared_ptr<Sort>> &params, std::shared_ptr<Sort> out_sort);
+            
+            void clear();
+            
+            // Getter functions for static constant sorts
+            static std::shared_ptr<Sort> getNull() { return NULL_SORT; }
+            static std::shared_ptr<Sort> getUnknown() { return UNKNOWN_SORT; }
+            static std::shared_ptr<Sort> getBool() { return BOOL_SORT; }
+            static std::shared_ptr<Sort> getInt() { return INT_SORT; }
+            static std::shared_ptr<Sort> getReal() { return REAL_SORT; }
+            static std::shared_ptr<Sort> getAlgebraic() { return ALGEBRAIC_SORT; }
+            static std::shared_ptr<Sort> getTranscendental() { return TRANSCENDENTAL_SORT; }
+            static std::shared_ptr<Sort> getStr() { return STR_SORT; }
+            static std::shared_ptr<Sort> getReg() { return REG_SORT; }
+            static std::shared_ptr<Sort> getExt() { return EXT_SORT; }
+            static std::shared_ptr<Sort> getNat() { return NAT_SORT; }
+            static std::shared_ptr<Sort> getRand() { return RAND_SORT; }
+            static std::shared_ptr<Sort> getIntOrReal() { return INTOREAL_SORT; }
+            static std::shared_ptr<Sort> getFloat64() { return FLOAT64_SORT; }
+            static std::shared_ptr<Sort> getFloat32() { return FLOAT32_SORT; }
+            static std::shared_ptr<Sort> getFloat16() { return FLOAT16_SORT; }
+            static std::shared_ptr<Sort> getRoundingMode() { return ROUNDING_MODE_SORT; }
+
+            size_t getBitWidth(const std::shared_ptr<Sort> &sort);
+            size_t getExponentWidth(const std::shared_ptr<Sort> &sort);
+            size_t getSignificandWidth(const std::shared_ptr<Sort> &sort);
+            std::shared_ptr<Sort> getIndexSort(const std::shared_ptr<Sort> &sort);
+            std::shared_ptr<Sort> getElemSort(const std::shared_ptr<Sort> &sort);
+            std::shared_ptr<Sort> getParamSort(const std::shared_ptr<Sort> &sort, size_t index);
+            std::vector<std::shared_ptr<Sort>> getParams(const std::shared_ptr<Sort> &sort);
+            std::shared_ptr<Sort> getOutSort(const std::shared_ptr<Sort> &sort);
+            
+        public:
+            // static constant sorts
+            static const std::shared_ptr<Sort> NULL_SORT;
+            static const std::shared_ptr<Sort> UNKNOWN_SORT;
+            static const std::shared_ptr<Sort> BOOL_SORT;
+            static const std::shared_ptr<Sort> INT_SORT;
+            static const std::shared_ptr<Sort> REAL_SORT;
+            static const std::shared_ptr<Sort> ALGEBRAIC_SORT;
+            static const std::shared_ptr<Sort> TRANSCENDENTAL_SORT;
+            static const std::shared_ptr<Sort> STR_SORT;
+            static const std::shared_ptr<Sort> REG_SORT;
+            static const std::shared_ptr<Sort> EXT_SORT;
+            static const std::shared_ptr<Sort> NAT_SORT;
+            static const std::shared_ptr<Sort> RAND_SORT;
+            static const std::shared_ptr<Sort> INTOREAL_SORT;
+            static const std::shared_ptr<Sort> FLOAT64_SORT;
+            static const std::shared_ptr<Sort> FLOAT32_SORT;
+            static const std::shared_ptr<Sort> FLOAT16_SORT;
+            static const std::shared_ptr<Sort> ROUNDING_MODE_SORT;
+            
+        private:
+            void initializeStaticSorts();
+            std::shared_ptr<Sort> insertSortToBucket(const std::shared_ptr<Sort>& sort);
     };
     
-    inline const std::shared_ptr<Sort> NULL_SORT = std::make_shared<Sort>(SORT_KIND::SK_NULL, "Null", 0);
-    inline const std::shared_ptr<Sort> UNKNOWN_SORT = std::make_shared<Sort>(SORT_KIND::SK_UNKNOWN, "Unknown", 0);
-    inline const std::shared_ptr<Sort> BOOL_SORT = std::make_shared<Sort>(SORT_KIND::SK_BOOL, "Bool", 0);
-    inline const std::shared_ptr<Sort> INT_SORT = std::make_shared<Sort>(SORT_KIND::SK_INT, "Int", 0);
-    inline const std::shared_ptr<Sort> REAL_SORT = std::make_shared<Sort>(SORT_KIND::SK_REAL, "Real", 0);
-    inline const std::shared_ptr<Sort> ALGEBRAIC_SORT = std::make_shared<Sort>(SORT_KIND::SK_ALGEBRAIC, "Algebraic", 0);
-    inline const std::shared_ptr<Sort> TRANSCENDENTAL_SORT = std::make_shared<Sort>(SORT_KIND::SK_TRANSCENDENTAL, "Transcendental", 0);
-    inline const std::shared_ptr<Sort> STR_SORT = std::make_shared<Sort>(SORT_KIND::SK_STR, "String", 0);
-    inline const std::shared_ptr<Sort> REG_SORT = std::make_shared<Sort>(SORT_KIND::SK_REG, "Reg", 0);
-    inline const std::shared_ptr<Sort> EXT_SORT = std::make_shared<Sort>(SORT_KIND::SK_EXT, "ExtReal", 0);
-    inline const std::shared_ptr<Sort> NAT_SORT = std::make_shared<Sort>(SORT_KIND::SK_NAT, "Natural", 0);
-    inline const std::shared_ptr<Sort> RAND_SORT = std::make_shared<Sort>(SORT_KIND::SK_RAND, "Random", 0);
-    inline const std::shared_ptr<Sort> INTOREAL_SORT = std::make_shared<Sort>(SORT_KIND::SK_INTOREAL, "IntOrReal", 0);
-
-    // Float64 type - declared in sort.cpp
-    extern const std::shared_ptr<Sort> FLOAT64_SORT;
-    // Float32 type - declared in sort.cpp
-    extern const std::shared_ptr<Sort> FLOAT32_SORT;
-    // Float16 type - declared in sort.cpp
-    extern const std::shared_ptr<Sort> FLOAT16_SORT;
-
-    std::shared_ptr<Sort> mkBVSort(size_t width);
-    std::shared_ptr<Sort> mkFPSort(size_t exp, size_t sig);
-    std::shared_ptr<Sort> mkArraySort(std::shared_ptr<Sort> index, std::shared_ptr<Sort> elem);
-    std::shared_ptr<Sort> mkSortDec(const std::string& name, size_t arity);
-
     // smart pointer
     typedef std::shared_ptr<Sort> SortPtr;
+    typedef std::shared_ptr<SortManager> SortManagerPtr;
 }
 #endif

@@ -9,9 +9,9 @@ void test_function_declarations(SMTParser::ParserPtr& parser) {
     
     try {
         // Create sorts
-        std::shared_ptr<SMTParser::Sort> int_sort = SMTParser::INT_SORT;
-        std::shared_ptr<SMTParser::Sort> bool_sort = SMTParser::BOOL_SORT;
-        std::shared_ptr<SMTParser::Sort> real_sort = SMTParser::REAL_SORT;
+        std::shared_ptr<SMTParser::Sort> int_sort = SMTParser::SortManager::INT_SORT;
+        std::shared_ptr<SMTParser::Sort> bool_sort = SMTParser::SortManager::BOOL_SORT;
+        std::shared_ptr<SMTParser::Sort> real_sort = SMTParser::SortManager::REAL_SORT;
         
         // Declare a function with no arguments (constant)
         std::vector<std::shared_ptr<SMTParser::Sort>> const_params;
@@ -92,7 +92,7 @@ void test_manual_function_definition(SMTParser::ParserPtr& parser) {
     
     try {
         // Create sorts
-        std::shared_ptr<SMTParser::Sort> int_sort = SMTParser::INT_SORT;
+        std::shared_ptr<SMTParser::Sort> int_sort = SMTParser::SortManager::INT_SORT;
         
         // Create function parameter
         std::shared_ptr<SMTParser::DAGNode> x_param = parser->mkFunParamVar(int_sort, "x");

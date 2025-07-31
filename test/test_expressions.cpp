@@ -226,8 +226,8 @@ void test_collect_atoms_variables(SMTParser::ParserPtr& parser) {
         parser->mkVarInt("y");
         parser->mkVarInt("z");
         
-        std::shared_ptr<SMTParser::Sort> int_sort = SMTParser::INT_SORT;
-        std::shared_ptr<SMTParser::Sort> bool_sort = SMTParser::BOOL_SORT;
+        std::shared_ptr<SMTParser::Sort> int_sort = SMTParser::SortManager::INT_SORT;
+        std::shared_ptr<SMTParser::Sort> bool_sort = SMTParser::SortManager::BOOL_SORT;
         
         std::vector<std::shared_ptr<SMTParser::Sort>> p_params = {int_sort, int_sort};
         parser->mkFuncDec("p", p_params, bool_sort);

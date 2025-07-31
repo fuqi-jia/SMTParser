@@ -9,7 +9,7 @@ void test_array_creation(SMTParser::ParserPtr& parser) {
     
     try {
         // Create an array from Int to Int
-        std::shared_ptr<SMTParser::Sort> int_sort = SMTParser::INT_SORT;
+        std::shared_ptr<SMTParser::Sort> int_sort = SMTParser::SortManager::INT_SORT;
         std::shared_ptr<SMTParser::DAGNode> array = parser->mkArray("testArray", int_sort, int_sort);
         std::cout << "Created array: " << parser->toString(array) << std::endl;
     } catch (const std::exception& e) {
@@ -68,7 +68,7 @@ void test_array_constraints(SMTParser::ParserPtr& parser) {
                 std::string sort = expr.substr(name_end + 1, expr.find(')') - name_end - 1);
                 
                 if (sort == "(Array Int Int)") {
-                    std::shared_ptr<SMTParser::Sort> int_sort = SMTParser::INT_SORT;
+                    std::shared_ptr<SMTParser::Sort> int_sort = SMTParser::SortManager::INT_SORT;
                     std::shared_ptr<SMTParser::DAGNode> array = parser->mkArray(name, int_sort, int_sort);
                     std::cout << "  Declared array: " << parser->toString(array) << std::endl;
                 }

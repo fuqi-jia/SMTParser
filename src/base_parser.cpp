@@ -46,6 +46,7 @@ namespace SMTParser{
 		parsing_file = false;
 
 		node_manager = std::make_shared<NodeManager>();
+		sort_manager = std::make_shared<SortManager>();
 		options = std::make_shared<GlobalOptions>();
 
 		// reverse
@@ -79,6 +80,7 @@ namespace SMTParser{
 		parsing_file = true;
 
 		node_manager = std::make_shared<NodeManager>();
+		sort_manager = std::make_shared<SortManager>();
 		options = std::make_shared<GlobalOptions>();
 
 		// reverse
@@ -951,14 +953,34 @@ namespace SMTParser{
 		// for example, (define-sort List (T) (List T))
 		// T is a template parameter.
 		// then (define-sort IntList () (List Int)) is a valid command.
-		// NOTE: It is in a conflict with the (declare-sort ...) command, because the final parameter is <sort> which is only one sort, it will be conflict when 
-		// (declare-sort <symbol> <numeral>) and <numeral> > 1
-		// so, we changed it to
-		// (define-sort <symbol> (<symbol>*) (<sort>*)) which the number of <sort>* matches <numeral>
-		// but now, not support
 		if (command == "define-sort") {
-			// ignore
-			warn_cmd_nsup(command, command_ln);
+			// get name
+			std::string name = getSymbol();
+
+			// get params (symbols)
+			std::vector<std::string> param_names;
+			parseLpar();
+			while(*bufptr != ')'){
+				param_names.push_back(getSymbol());
+			}
+			parseRpar();
+			
+			// convert param names to Sort parameters
+			std::vector<std::shared_ptr<Sort>> params;
+			for(const auto& name : param_names) {
+				params.push_back(sort_manager->createSort(name));
+			}
+
+			// get out sort
+			std::shared_ptr<Sort> out_sort = parseSort();
+			if(params.size() == 0){
+				// it means an alias of the out sort
+				sort_key_map.insert(std::pair<std::string, std::shared_ptr<Sort>>(name, out_sort));
+			}
+			else{
+				std::shared_ptr<Sort> sort = mkSortDef(name, params, out_sort);
+				sort_key_map.insert(std::pair<std::string, std::shared_ptr<Sort>>(name, sort));
+			}
 			skipToRpar();
 			return CMD_TYPE::CT_DEFINE_SORT;
 		}
@@ -1191,7 +1213,6 @@ namespace SMTParser{
 			skipToRpar();
 			return CMD_TYPE::CT_OPTIMIZE;
 		}
-
 		err_unkwn_sym(command, command_ln);
 
 		return CMD_TYPE::CT_UNKNOWN;
@@ -1200,10 +1221,20 @@ namespace SMTParser{
 
 	// sort ::= <identifier> | (<identifier> <sort>+)
 	std::shared_ptr<Sort> Parser::parseSort(){
+		if(*bufptr == ')'){
+			// all ready to return
+			return SortManager::NULL_SORT;
+		}
 		// cache basic sorts
 		static const std::unordered_map<std::string, std::shared_ptr<Sort>> BASIC_SORTS = {
-			{"Bool", BOOL_SORT}, {"Int", INT_SORT}, {"Real", REAL_SORT}, 
-			{"String", STR_SORT}, {"Float16", FLOAT16_SORT}, {"Float32", FLOAT32_SORT}, {"Float64", FLOAT64_SORT}
+			{"Bool", SortManager::BOOL_SORT}, 
+			{"Int", SortManager::INT_SORT}, 
+			{"Real", SortManager::REAL_SORT}, 
+			{"RoundingMode", SortManager::ROUNDING_MODE_SORT},
+			{"String", SortManager::STR_SORT}, 
+			{"Float16", SortManager::FLOAT16_SORT}, 
+			{"Float32", SortManager::FLOAT32_SORT}, 
+			{"Float64", SortManager::FLOAT64_SORT}
 		};
 		
 		if (*bufptr != '(') {
@@ -1217,13 +1248,10 @@ namespace SMTParser{
 				return basic_it->second;
 			}
 			// then check the user-defined type
-					else if(s == "RoundingMode"){
-			return std::make_shared<Sort>(SORT_KIND::SK_ROUNDING_MODE, "RoundingMode", 0);
-		}
-		else if(sort_key_map.find(s) != sort_key_map.end()){
-			return sort_key_map[s];
-		}
-		else err_unkwn_sym(s, expr_ln);
+			else if(sort_key_map.find(s) != sort_key_map.end()){
+				return sort_key_map[s];
+			}
+			else err_unkwn_sym(s, expr_ln);
 		}
 		// (<identifier> <sort>+)
 		// (_ <identifier> <param>+)
@@ -1232,7 +1260,7 @@ namespace SMTParser{
 		std::string s = getSymbol();
 
 		//parse identifier and get params
-		std::shared_ptr<Sort> sort = NULL_SORT;
+		std::shared_ptr<Sort> sort = SortManager::NULL_SORT;
 		if (s == "Array") {
 			// (Array S T)
 			// S: sort of index
@@ -1244,7 +1272,7 @@ namespace SMTParser{
 				sort = sort_key_map[sort_key_name];
 			}
 			else{
-				sort = mkArraySort(sortS, sortT);
+				sort = sort_manager->createArraySort(sortS, sortT);
 				sort_key_map.insert(std::pair<std::string, std::shared_ptr<Sort>>(sort_key_name, sort));
 			}
 		}
@@ -1274,7 +1302,7 @@ namespace SMTParser{
 					sort = sort_key_map[sort_key_name];
 				}
 				else{
-					sort = mkBVSort(std::stoi(n));
+					sort = sort_manager->createBVSort(std::stoi(n));
 					sort_key_map.insert(std::pair<std::string, std::shared_ptr<Sort>>(sort_key_name, sort));
 				}
 			}
@@ -1289,7 +1317,7 @@ namespace SMTParser{
 					sort = sort_key_map[sort_key_name];
 				}
 				else{
-					sort = mkFPSort(std::stoi(e), std::stoi(s));
+					sort = sort_manager->createFPSort(std::stoi(e), std::stoi(s));
 					sort_key_map.insert(std::pair<std::string, std::shared_ptr<Sort>>(sort_key_name, sort));
 				}
 			}
@@ -1748,10 +1776,10 @@ namespace SMTParser{
 	}
 
 	std::shared_ptr<DAGNode> Parser::mkForall(const std::vector<std::shared_ptr<DAGNode>> &params){
-		return mkOper(BOOL_SORT, NODE_KIND::NT_FORALL, params);
+		return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_FORALL, params);
 	}
 	std::shared_ptr<DAGNode> Parser::mkExists(const std::vector<std::shared_ptr<DAGNode>> &params){
-		return mkOper(BOOL_SORT, NODE_KIND::NT_EXISTS, params);
+		return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_EXISTS, params);
 	}
 
 	
@@ -1883,7 +1911,7 @@ namespace SMTParser{
 						cur_changed = true;
 						auto left_sub = mkOper(leftN->getSort(), NODE_KIND::NT_SUB, {leftN, rightN});
 						auto zero     = getZero(leftN->getSort());
-						new_node      = mkOper(BOOL_SORT, node->getKind(), {left_sub, zero});
+						new_node      = mkOper(SortManager::BOOL_SORT, node->getKind(), {left_sub, zero});
 					}else if(child_changed){
 						new_node = mkOper(node->getSort(), node->getKind(), {leftN, rightN});
 					}
@@ -1947,7 +1975,7 @@ namespace SMTParser{
 
 	// aux functions
 	NODE_KIND Parser::getAddOp(std::shared_ptr<Sort> sort){
-		if(sort == INT_SORT || sort == REAL_SORT){
+		if(sort->isInt() || sort->isReal() || sort->isIntOrReal()){
 			return NODE_KIND::NT_ADD;
 		}
 		else if(sort->isBv()){
