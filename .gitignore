@@ -75,10 +75,3 @@ docs/
 conan.lock
 conanbuildinfo.txt
 conaninfo.txt
-
-# test
-test/instances/*
-test/FP
-# instances
-test/instances/*
-test/tmp.*
