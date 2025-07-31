@@ -51,6 +51,7 @@ if [ -z "$TEST_EXES" ]; then
         "./test_floating_point"
         "./test_parser"
         "./test_quantifiers"
+        "./test_readme"
         "./test_smtparser_exe"
         "./test_string_handling"
         "./test_string_operations"

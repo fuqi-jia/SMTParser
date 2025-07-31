@@ -18,6 +18,9 @@ A C++ library for parsing, manipulating, and processing SMT-LIB (Satisfiability 
 - **Programmatic Expression Builder** - Comprehensive API for constructing and transforming expressions
 - **Optimization Modulo Theories (OMT)** - Extended functionality for handling optimization objectives
 - **Smart Pointer Integration** - All major components use std::shared_ptr for safe memory management
+- **Advanced Formula Evaluation** - Support for partial model evaluation and expression simplification
+- **Formula Format Conversion** - Built-in support for CNF, DNF, NNF transformations with Tseitin encoding
+- **Formula Analysis Tools** - Atom collection, variable substitution, Let expansion, and more
 
 ## System Requirements
 
@@ -173,7 +176,7 @@ cmake -DBUILD_SHARED_LIBS=ON -DBUILD_BOTH_LIBS=OFF ..
 
 ## Usage Examples
 
-### Parsing SMT-LIB2 Files
+### Basic Parsing and Expression Building
 
 ```cpp
 #include "parser.h"
@@ -194,70 +197,89 @@ int main() {
 
     // Output the assertions
     for(auto constraint: assertions){
-        std::cout << parser->toString(constraint) << std::endl;
+        std::cout << parser.toString(constraint) << std::endl;
     }
 
     return 0;
 }
 ```
 
-### Using Smart Pointers and Factory Methods
+### Expression Building and Evaluation
 
 ```cpp
 #include "parser.h"
 #include <iostream>
 
 int main() {
-    // Create a parser using factory method
     auto parser = SMTParser::newParser();
-    
-    // Alternative: create a parser with file in one step
-    auto fileParser = SMTParser::newParser("formula.smt2");
-    
-    // Create a model
     auto model = SMTParser::newModel();
     
-    // Create and manipulate variables
+    // Create variables and expressions
     auto x = parser->mkVarInt("x");
     auto y = parser->mkVarInt("y");
+    auto expr = parser->mkAdd(std::vector<std::shared_ptr<SMTParser::DAGNode>>{x, y});
     
-    // Add assignments to model
+    // Evaluate with model
     model->add(x, parser->mkConstInt(10));
     model->add(y, parser->mkConstInt(20));
-    
-    // Evaluate expressions using the model
-    auto expr = parser->mkAdd({x, y});
     auto result = parser->evaluate(expr, model);
     
-    std::cout << "x + y = " << parser->toString(result) << std::endl;
-    
+    std::cout << "Result: " << parser->toString(result) << std::endl;  // 30
     return 0;
 }
 ```
 
-### Constructing Expressions Programmatically
+### Formula Conversion Example
+
+```cpp
+auto parser = SMTParser::newParser();
+auto a = parser->mkVarBool("a");
+auto b = parser->mkVarBool("b");
+
+auto formula = parser->mkImplies(a, b);
+
+// Convert to different normal forms
+auto nnf = parser->toNNF(formula);
+auto cnf = parser->toCNF(std::vector<std::shared_ptr<SMTParser::DAGNode>>{formula});
+auto dnf = parser->toDNF(formula);
+
+std::cout << "Original: " << parser->toString(formula) << std::endl;
+std::cout << "CNF: " << parser->toString(cnf) << std::endl;
+```
+
+### Advanced Formula Analysis
 
 ```cpp
 #include "parser.h"
 #include <iostream>
+#include <unordered_set>
 
 int main() {
-    // Initialize the parser engine
-    SMTParser::Parser parser;
-
-    // Create integer variables
-    auto x = parser.mkVar(INT_SORT, "x");
-    auto y = parser.mkVarInt("y");
-
-    // Construct the expression: (x + y) > 10
-    auto sum = parser.mkAdd({x, y});
-    auto constant = parser.mkConstInt(10);
-    auto constraint = parser.mkGt(sum, constant);
-
-    // Output SMT-LIB2 representation
-    std::cout << parser->toString(constraint) << std::endl;
-    // Output: (> (+ x y) 10)
-
+    auto parser = SMTParser::newParser();
+    
+    // Create variables and build formula
+    auto x = parser->mkVarInt("x");
+    auto y = parser->mkVarInt("y");
+    auto z = parser->mkVarBool("z");
+    
+    std::vector<std::shared_ptr<SMTParser::DAGNode>> parts = {
+        parser->mkGt(parser->mkAdd(std::vector<std::shared_ptr<SMTParser::DAGNode>>{x, y}), parser->mkConstInt(0)),
+        parser->mkLt(x, parser->mkConstInt(10)),
+        z
+    };
+    auto formula = parser->mkAnd(parts);
+    
+    // Collect atoms and variables
+    std::unordered_set<std::shared_ptr<SMTParser::DAGNode>> atoms, vars;
+    parser->collectAtoms(formula, atoms);
+    parser->collectVars(formula, vars);
+    
+    std::cout << "Formula: " << parser->toString(formula) << std::endl;
+    // Output: (and (< x 10) (> (+ y x) 0) z)
+    
+    std::cout << "Found " << atoms.size() << " atoms and " << vars.size() << " variables" << std::endl;
+    // Output: Found 2 atoms and 3 variables
+    
     return 0;
 }
 ```
@@ -269,44 +291,6 @@ When building applications that use SMTParser, link against the library and its 
 ```bash
 g++ -std=c++17 -o application main.cpp -lsmtparser -lgmp
 ```
-
-### Complete Project Example
-
-For a complete project example, check out [SMTParser-Test](https://github.com/fuqi-jia/SMTParser-Test) which demonstrates how to integrate and use the library as a Git submodule.
-
-#### Project Structure:
-```
-SMTParser-Test/
-├── CMakeLists.txt          # Build configuration
-├── SMTParser/           # Submodule
-├── src/                    # Application source code
-│   └── main.cpp
-└── test/                   # Test SMT-LIB2 files
-    └── 1.smt2
-```
-
-#### Setting Up the Project:
-
-1. Clone the repository and initialize the submodule:
-```bash
-git clone https://github.com/fuqi-jia/SMTParser-Test.git
-cd SMTParser-Test
-git submodule update --init --recursive
-```
-
-2. Build the project:
-```bash
-mkdir build && cd build
-cmake ..
-make -j$(nproc)
-```
-
-3. Run the test application:
-```bash
-./SMTParser_Test ../test/1.smt2
-```
-
-This simple example demonstrates how to parse and process an SMT-LIB2 file. You can use this project as a template for your own applications.
 
 ## API Reference
 
@@ -334,17 +318,95 @@ This simple example demonstrates how to parse and process an SMT-LIB2 file. You 
 
 | Category | Function Examples |
 |----------|------------------|
-| Variable Creation | `mkVar`, `mkVarInt`, `mkVarReal`, `mkVarBool`, `...` |
-| Constant Creation | `mkConstInt`, `mkConstReal`, `mkTrue`, `mkFalse`, `...` |
-| Expression Building | `mkOper`, `mkEq`, `mkDistinct`, `mkNot`, `mkAnd`, `mkOr`, `...` |
-| Arithmetic Operations | `mkAdd`, `mkSub`, `mkMul`, `mkDiv`, `mkPow`, `...` |
-| Comparison Operations | `mkLt`, `mkLe`, `mkGt`, `mkGe`, `...` |
-| Bitvector Operations | `mkBvAnd`, `mkBvOr`, `mkBvXor`, `mkBvAdd`, `mkBvShl`, `...` |
-| String Operations | `mkStrLen`, `mkStrConcat`, `mkStrSubstr`, `mkStrIndexof`, `...` |
-| Regular Expression Operations | `mkStrToReg`, `mkRegUnion`, `mkRegStar`, `...` |
-| Array Operations | `mkSelect`, `mkStore` |
-| Floating Point Operations | `mkFpAdd`, `mkFpMul`, `mkFpDiv`, `mkFpEq`, `...` |
-| Model Operations | `add`, `get`, `...` |
+| **Variable Creation** | `mkVar`, `mkVarInt`, `mkVarReal`, `mkVarBool`, `mkTempVar`, ... |
+| **Constant Creation** | `mkConstInt`, `mkConstReal`, `mkTrue`, `mkFalse`, `mkConstStr`, ... |
+| **Expression Building** | `mkOper`, `mkEq`, `mkDistinct`, `mkNot`, `mkAnd`, `mkOr`, `mkIte`, ... |
+| **Arithmetic Operations** | `mkAdd`, `mkSub`, `mkMul`, `mkDiv`, `mkPow`, `mkAbs`, `mkMod`, ... |
+| **Comparison Operations** | `mkLt`, `mkLe`, `mkGt`, `mkGe`, ... |
+| **Bitvector Operations** | `mkBvAnd`, `mkBvOr`, `mkBvXor`, `mkBvAdd`, `mkBvShl`, `mkBvLshr`, ... |
+| **String Operations** | `mkStrLen`, `mkStrConcat`, `mkStrSubstr`, `mkStrIndexof`, ... |
+| **Regular Expression Operations** | `mkStrToReg`, `mkRegUnion`, `mkRegStar`, `mkRegInter`, ... |
+| **Array Operations** | `mkSelect`, `mkStore`, ... |
+| **Floating Point Operations** | `mkFpAdd`, `mkFpMul`, `mkFpDiv`, `mkFpEq`, `mkFpLt`, ... |
+| **Formula Evaluation** | `evaluate`, `setEvaluatePrecision`, `setEvaluateUseFloating`, ... |
+| **Format Conversion** | `toCNF`, `toDNF`, `toNNF`, `toTseitinCNF`, ... |
+| **Formula Analysis** | `collectAtoms`, `collectVars`, `expandLet`, `replaceAtoms`, ... |
+| **Model Operations** | `add`, `get`, `isEmpty`, `toString`, ... |
+| **Debugging & Output** | `toString`, `getAssertions`, ... |
+
+## Advanced Features
+
+### Formula Evaluation with Models
+
+Evaluate expressions with partial or complete variable assignments:
+
+```cpp
+auto parser = SMTParser::newParser();
+auto model = SMTParser::newModel();
+auto x = parser->mkVarInt("x");
+auto expr = parser->mkAdd(std::vector<std::shared_ptr<SMTParser::DAGNode>>{x, parser->mkConstInt(5)});
+
+model->add(x, parser->mkConstInt(10));
+auto result = parser->evaluate(expr, model);
+std::cout << "Expression: " << parser->toString(expr) << std::endl;         // (+ x 5)
+std::cout << "Evaluated result: " << parser->toString(result) << std::endl; // 15
+```
+
+### Formula Format Conversions
+
+Convert formulas between different normal forms:
+
+```cpp
+auto parser = SMTParser::newParser();
+auto a = parser->mkVarBool("a");
+auto b = parser->mkVarBool("b");
+auto formula = parser->mkImplies(a, b);
+
+// Convert to different normal forms
+auto nnf = parser->toNNF(formula);
+auto cnf = parser->toCNF(std::vector<std::shared_ptr<SMTParser::DAGNode>>{formula});
+auto dnf = parser->toDNF(formula);
+
+std::cout << "Original: " << parser->toString(formula) << std::endl; // (=> a b)
+std::cout << "NNF: " << parser->toString(nnf) << std::endl;           // (or (not a) b)
+std::cout << "CNF: " << parser->toString(cnf) << std::endl;           // (or (not a) b)
+std::cout << "DNF: " << parser->toString(dnf) << std::endl;           // (or (not a) b)
+```
+
+### Let Expression Expansion
+
+```cpp
+auto parser = SMTParser::newParser();
+auto let_expr = parser->mkExpr("(let ((temp (+ x 1))) (> temp y))");
+auto expanded = parser->expandLet(let_expr);
+
+std::cout << "Let expression: " << parser->toString(let_expr) << std::endl; // (let ((temp (+ x 1))) (> temp y))
+std::cout << "Expanded: " << parser->toString(expanded) << std::endl;       // (> (+ x 1) y)
+```
+
+### Optimization Modulo Theories (OMT)
+
+```cpp
+auto parser = SMTParser::newParser();
+
+// Parse OMT commands
+parser->parseStr("(declare-const x Int)");
+parser->parseStr("(assert (> x 0))");
+parser->parseStr("(assert-soft (< x 100) :weight 1.0)");
+
+// Access soft assertions
+auto soft_assertions = parser->getSoftAssertions();
+auto soft_weights = parser->getSoftWeights();
+
+std::cout << "Found " << soft_assertions.size() << " soft assertions" << std::endl; // Found 1 soft assertions
+```
+
+### Key Performance Features
+
+- **DAG Representation**: Automatic sharing of common subexpressions
+- **Incremental Evaluation**: Efficient partial model evaluation  
+- **Tseitin CNF Encoding**: Memory-efficient formula conversion for SAT solvers
+- **High-Precision Arithmetic**: Configurable floating-point precision
 
 ## API Documentation
 
