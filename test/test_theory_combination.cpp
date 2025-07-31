@@ -68,7 +68,7 @@ void test_array_arithmetic_combination(SMTParser::ParserPtr& parser) {
     
     try {
         // Declare variables and array
-        std::shared_ptr<SMTParser::Sort> int_sort = SMTParser::INT_SORT;
+        std::shared_ptr<SMTParser::Sort> int_sort = SMTParser::SortManager::INT_SORT;
         parser->mkArray("a", int_sort, int_sort);
         parser->mkVarInt("i");
         parser->mkVarInt("j");
@@ -112,7 +112,7 @@ void test_bitvector_combination(SMTParser::ParserPtr& parser) {
     
     try {
         // Declare variables
-        std::shared_ptr<SMTParser::Sort> bv4_sort = SMTParser::mkBVSort(4);
+        std::shared_ptr<SMTParser::Sort> bv4_sort = parser->mkBVSort(4);
         parser->mkVarBv("x", 4);
         parser->mkVarBv("y", 4);
         
@@ -157,8 +157,8 @@ void test_string_combination(SMTParser::ParserPtr& parser) {
     
     try {
         // Declare variables
-        std::shared_ptr<SMTParser::Sort> str_sort = SMTParser::STR_SORT;
-        std::shared_ptr<SMTParser::Sort> int_sort = SMTParser::INT_SORT;
+        std::shared_ptr<SMTParser::Sort> str_sort = SMTParser::SortManager::STR_SORT;
+        std::shared_ptr<SMTParser::Sort> int_sort = SMTParser::SortManager::INT_SORT;
         
         parser->mkVarStr("s");
         parser->mkVarInt("i");
@@ -205,9 +205,9 @@ void test_quantifier_combinations(SMTParser::ParserPtr& parser) {
     
     try {
         // Declare variables
-        std::shared_ptr<SMTParser::Sort> int_sort = SMTParser::INT_SORT;
-        std::shared_ptr<SMTParser::Sort> bv4_sort = SMTParser::mkBVSort(4);
-        std::shared_ptr<SMTParser::Sort> str_sort = SMTParser::STR_SORT;
+        std::shared_ptr<SMTParser::Sort> int_sort = parser->mkIntSort();
+        std::shared_ptr<SMTParser::Sort> bv4_sort = parser->mkBVSort(4);
+        std::shared_ptr<SMTParser::Sort> str_sort = parser->mkStrSort();
         
         parser->mkArray("a", int_sort, int_sort);
         parser->mkVarBv("y", 4);
@@ -251,9 +251,9 @@ void test_real_world_examples(SMTParser::ParserPtr& parser) {
     
     try {
         // Declare variables
-        std::shared_ptr<SMTParser::Sort> int_sort = SMTParser::INT_SORT;
-        std::shared_ptr<SMTParser::Sort> bv32_sort = SMTParser::mkBVSort(32);
-        std::shared_ptr<SMTParser::Sort> str_sort = SMTParser::STR_SORT;
+        std::shared_ptr<SMTParser::Sort> int_sort = parser->mkIntSort();
+        std::shared_ptr<SMTParser::Sort> bv32_sort = parser->mkBVSort(32);
+        std::shared_ptr<SMTParser::Sort> str_sort = parser->mkStrSort();
         
         parser->mkVarInt("x");
         parser->mkVarInt("y");

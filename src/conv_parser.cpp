@@ -275,7 +275,7 @@ namespace SMTParser {
         //    => (¬c or ¬a or ¬b) and (¬c or a or b)
         // => a xor b -> c => ¬((¬a and b) or (a and ¬b)) or c => (a or ¬b) and (¬a or b) -> c
         //    => (a or ¬b or c) and (¬a or b or c)
-        std::shared_ptr<DAGNode> c = mkTempVar(BOOL_SORT);
+        std::shared_ptr<DAGNode> c = mkTempVar(SortManager::BOOL_SORT);
         // -a -b -c
         std::vector<std::shared_ptr<DAGNode>> or_children1;
         or_children1.emplace_back(mkNot(c));
@@ -305,7 +305,7 @@ namespace SMTParser {
 
     // auxiliary function: handle the equivalence relation between two boolean variables
     std::shared_ptr<DAGNode> Parser::toTseitinEq(std::shared_ptr<DAGNode> a, std::shared_ptr<DAGNode> b, std::vector<std::shared_ptr<DAGNode>>& clauses) {
-        std::shared_ptr<DAGNode> c = mkTempVar(BOOL_SORT);
+        std::shared_ptr<DAGNode> c = mkTempVar(SortManager::BOOL_SORT);
         
         // c <-> (a <-> b) -> c -> (a <-> b) and (a <-> b) -> c
         // => (¬c or a or ¬b) and (¬c or ¬a or b) and (c or a or b) and (c or ¬a or ¬b)
@@ -327,7 +327,7 @@ namespace SMTParser {
 
     // auxiliary function: handle the inequality relation between two boolean variables
     std::shared_ptr<DAGNode> Parser::toTseitinDistinct(std::shared_ptr<DAGNode> a, std::shared_ptr<DAGNode> b, std::vector<std::shared_ptr<DAGNode>>& clauses) {
-        std::shared_ptr<DAGNode> c = mkTempVar(BOOL_SORT);
+        std::shared_ptr<DAGNode> c = mkTempVar(SortManager::BOOL_SORT);
         
         // c <-> (a != b) -> c -> (a != b)
         // => (¬c or a or b) and (¬c or ¬a or ¬b) and (c or ¬a or b) and (c or a or ¬b)
@@ -372,7 +372,7 @@ namespace SMTParser {
         // => a or c
         if(expr->isNot()){
             // TODO: after NNF
-            std::shared_ptr<DAGNode> c = mkTempVar(BOOL_SORT);
+            std::shared_ptr<DAGNode> c = mkTempVar(SortManager::BOOL_SORT);
             clauses.emplace_back(mkOr({mkNot(c), mkNot(expr->getChild(0))}));
             clauses.emplace_back(mkOr({expr->getChild(0), c}));
             visited[expr] = c;
@@ -392,7 +392,7 @@ namespace SMTParser {
                 condAssert(children[0]->isLiteral(), "toTseitinCNF: children[0] is not a literal");
                 return children[0];
             }
-            std::shared_ptr<DAGNode> c = mkTempVar(BOOL_SORT);
+            std::shared_ptr<DAGNode> c = mkTempVar(SortManager::BOOL_SORT);
             std::vector<std::shared_ptr<DAGNode>> or_children;
             for(auto& child : children) {
                 clauses.emplace_back(mkOr({mkNot(c), child}));
@@ -418,7 +418,7 @@ namespace SMTParser {
                 condAssert(children[0]->isLiteral(), "toTseitinCNF: children[0] is not a literal");
                 return children[0];
             }
-            std::shared_ptr<DAGNode> c = mkTempVar(BOOL_SORT);
+            std::shared_ptr<DAGNode> c = mkTempVar(SortManager::BOOL_SORT);
             std::vector<std::shared_ptr<DAGNode>> or_children;
             for(auto& child : children) {
                 clauses.emplace_back(mkOr({mkNot(child), c}));
@@ -444,7 +444,7 @@ namespace SMTParser {
                 condAssert(children[0]->isLiteral(), "toTseitinCNF: children[0] is not a literal");
                 return children[0];
             }
-            std::shared_ptr<DAGNode> c = mkTempVar(BOOL_SORT);
+            std::shared_ptr<DAGNode> c = mkTempVar(SortManager::BOOL_SORT);
             std::vector<std::shared_ptr<DAGNode>> or_children1;
             std::vector<std::shared_ptr<DAGNode>> or_children2;
             or_children1.emplace_back(mkNot(c));
@@ -521,7 +521,7 @@ namespace SMTParser {
                     }
                     
                     // combine all equalities using AND
-                    std::shared_ptr<DAGNode> result = mkTempVar(BOOL_SORT);
+                    std::shared_ptr<DAGNode> result = mkTempVar(SortManager::BOOL_SORT);
                     
                     // add the equivalence relation clauses
                     // result -> (eq1 ∧ eq2 ∧ ... ∧ eqn)
@@ -586,7 +586,7 @@ namespace SMTParser {
             std::shared_ptr<DAGNode> a = toTseitinCNF(expr->getChild(0), visited, clauses);
             std::shared_ptr<DAGNode> b = toTseitinCNF(expr->getChild(1), visited, clauses);
             std::shared_ptr<DAGNode> c = toTseitinCNF(expr->getChild(2), visited, clauses);
-            std::shared_ptr<DAGNode> d = mkTempVar(BOOL_SORT);
+            std::shared_ptr<DAGNode> d = mkTempVar(SortManager::BOOL_SORT);
             
             // add clause: (¬d ∨ ¬a ∨ b) - when a is true, d must be the same as b
             clauses.emplace_back(mkOr({mkNot(d), mkNot(a), b}));
@@ -805,7 +805,7 @@ namespace SMTParser {
         for(auto& expr : exprs){
             if(expr->isAtom() && !expr->isVBool()){
                 // it is an atom, but not a boolean variable
-                std::shared_ptr<DAGNode> new_var = mkTempVar(BOOL_SORT);
+                std::shared_ptr<DAGNode> new_var = mkTempVar(SortManager::BOOL_SORT);
                 new_children.emplace_back(new_var);
                 // add to cnf_map
                 std::shared_ptr<DAGNode> not_atom = mkNot(expr);
@@ -875,7 +875,7 @@ namespace SMTParser {
         // create a new variable for each atom
         std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> atom_map;
         for (auto& atom : atoms) {
-            std::shared_ptr<DAGNode> new_var = mkTempVar(BOOL_SORT);
+            std::shared_ptr<DAGNode> new_var = mkTempVar(SortManager::BOOL_SORT);
             // add to cnf_map
             std::shared_ptr<DAGNode> not_atom = mkNot(atom);
             std::shared_ptr<DAGNode> not_new_var = mkNot(new_var);

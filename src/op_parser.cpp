@@ -33,14 +33,14 @@
 
 namespace SMTParser{
 
-    bool isIntParam(std::shared_ptr<DAGNode> param){return param->getSort()->isInt() || param->getSort()->isIntOrReal();}
-    bool isRealParam(std::shared_ptr<DAGNode> param){return param->getSort()->isReal() || param->getSort()->isIntOrReal();}
-    bool isBoolParam(std::shared_ptr<DAGNode> param){return param->getSort()->isBool();}
-    bool isBvParam(std::shared_ptr<DAGNode> param){return param->getSort()->isBv();}
-    bool isFpParam(std::shared_ptr<DAGNode> param){return param->getSort()->isFp();}
-    bool isStrParam(std::shared_ptr<DAGNode> param){return param->getSort()->isStr();}
-    bool isRegParam(std::shared_ptr<DAGNode> param){return param->getSort()->isReg();}
-    bool isArrayParam(std::shared_ptr<DAGNode> param){return param->getSort()->isArray();}
+    bool isIntParam(std::shared_ptr<DAGNode> param){auto sort = param->getSort(); return sort && (sort->isInt() || sort->isIntOrReal());}
+    bool isRealParam(std::shared_ptr<DAGNode> param){auto sort = param->getSort(); return sort && (sort->isReal() || sort->isIntOrReal());}
+    bool isBoolParam(std::shared_ptr<DAGNode> param){auto sort = param->getSort(); return sort && sort->isBool();}
+    bool isBvParam(std::shared_ptr<DAGNode> param){auto sort = param->getSort(); return sort && sort->isBv();}
+    bool isFpParam(std::shared_ptr<DAGNode> param){auto sort = param->getSort(); return sort && sort->isFp();}
+    bool isStrParam(std::shared_ptr<DAGNode> param){auto sort = param->getSort(); return sort && sort->isStr();}
+    bool isRegParam(std::shared_ptr<DAGNode> param){auto sort = param->getSort(); return sort && sort->isReg();}
+    bool isArrayParam(std::shared_ptr<DAGNode> param){auto sort = param->getSort(); return sort && sort->isArray();}
 
     // mk operations
     std::shared_ptr<DAGNode> Parser::mkTrue() { return NodeManager::TRUE_NODE; }
@@ -83,12 +83,12 @@ namespace SMTParser{
         if(is_int_real_sort){
             for(size_t i=0;i<params.size();i++){
                 if(params[i]->getSort()->isReal()){
-                    sort = REAL_SORT;
+                    sort = SortManager::REAL_SORT;
                     break;
                 }
             }
             if(sort == nullptr){
-                sort = INT_SORT;
+                sort = SortManager::INT_SORT;
             }
         }
         else{
@@ -279,18 +279,42 @@ namespace SMTParser{
 
 
     std::shared_ptr<Sort> Parser::mkSortDec(const std::string &name, const size_t &arity){
-        if(sort_key_map.find(name)!=sort_key_map.end()){
-            // multiple declarations
-            err_mul_decl(name, line_number);
-            return NULL_SORT;
-        }
-        else{
-            std::shared_ptr<Sort> sort = std::make_shared<Sort>(SORT_KIND::SK_DEC, name, arity);
-            sort_key_map.insert(std::pair<std::string, std::shared_ptr<Sort>>(name, sort));
-            return sort;
-        }
+        return sort_manager->createSortDec(name, arity);
     }
 
+    std::shared_ptr<Sort> Parser::mkSortDef(const std::string &name, const std::vector<std::shared_ptr<Sort>> &params, std::shared_ptr<Sort> out_sort){
+        return sort_manager->createSortDef(name, params, out_sort);
+    }
+    std::shared_ptr<Sort> Parser::mkIntSort(){
+        return SortManager::INT_SORT;
+    }
+    std::shared_ptr<Sort> Parser::mkRealSort(){
+        return SortManager::REAL_SORT;
+    }
+    std::shared_ptr<Sort> Parser::mkBoolSort(){
+        return SortManager::BOOL_SORT;
+    }
+    std::shared_ptr<Sort> Parser::mkStrSort(){
+        return SortManager::STR_SORT;
+    }
+    std::shared_ptr<Sort> Parser::mkRegSort(){
+        return SortManager::REG_SORT;
+    }
+    std::shared_ptr<Sort> Parser::mkRoundingModeSort(){
+        return SortManager::ROUNDING_MODE_SORT;
+    }
+    std::shared_ptr<Sort> Parser::mkNatSort(){
+        return SortManager::NAT_SORT;
+    }
+    std::shared_ptr<Sort> Parser::mkBVSort(const size_t &width){
+        return sort_manager->createBVSort(width);
+    }
+    std::shared_ptr<Sort> Parser::mkFPSort(const size_t &e, const size_t &s){
+        return sort_manager->createFPSort(e, s);
+    }
+    std::shared_ptr<Sort> Parser::mkArraySort(std::shared_ptr<Sort> index, std::shared_ptr<Sort> elem){
+        return sort_manager->createArraySort(index, elem);
+    }
 
     // CORE OPERATORS
     /*
@@ -338,7 +362,7 @@ namespace SMTParser{
             return mkEq(l->getChild(0), r->getChild(0));
         }
         else{
-            return mkOper(BOOL_SORT, NODE_KIND::NT_EQ, l, r);
+            return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_EQ, l, r);
         }
     }
     std::shared_ptr<DAGNode> Parser::mkEq(const std::vector<std::shared_ptr<DAGNode>> &params){
@@ -384,10 +408,10 @@ namespace SMTParser{
         else{
             if(new_params.size() > 100){
                 // [OPTIMIZE] have not use mkOper, because it will sort parameters
-                return node_manager->createNode(BOOL_SORT, NODE_KIND::NT_EQ, "eq", new_params);
+                return node_manager->createNode(SortManager::BOOL_SORT, NODE_KIND::NT_EQ, "eq", new_params);
             }
             else{
-                return mkOper(BOOL_SORT, NODE_KIND::NT_EQ, new_params);
+                return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_EQ, new_params);
             }
         }
     }
@@ -443,7 +467,7 @@ namespace SMTParser{
             return mkDistinct(l, r->getChild(0));
         }
         else{
-            return mkOper(BOOL_SORT, NODE_KIND::NT_DISTINCT, l, r);
+            return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_DISTINCT, l, r);
         }
     }
     std::shared_ptr<DAGNode> Parser::mkDistinct(const std::vector<std::shared_ptr<DAGNode>> &params){
@@ -488,9 +512,9 @@ namespace SMTParser{
             // the semantics of distinct does not depend on the order of parameters, and sorting is too expensive
             if(new_params.size() > 100) {
                 // [OPTIMIZE] have not use mkOper, because it will sort parameters
-                return node_manager->createNode(BOOL_SORT, NODE_KIND::NT_DISTINCT, "distinct", new_params);
+                return node_manager->createNode(SortManager::BOOL_SORT, NODE_KIND::NT_DISTINCT, "distinct", new_params);
             } else {
-                return mkOper(BOOL_SORT, NODE_KIND::NT_DISTINCT, new_params);
+                return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_DISTINCT, new_params);
             }
         }
     }
@@ -543,7 +567,7 @@ namespace SMTParser{
 
     std::shared_ptr<DAGNode> Parser::mkConstInt(const Integer &v){
         std::string v_str = ConversionUtils::toString(v);
-        return node_manager->createNode(INTOREAL_SORT, NODE_KIND::NT_CONST, v_str);
+        return node_manager->createNode(SortManager::INTOREAL_SORT, NODE_KIND::NT_CONST, v_str);
     }
     std::shared_ptr<DAGNode> Parser::mkConstInt(const std::string &v){
         return mkConstInt(Integer(v));
@@ -558,19 +582,19 @@ namespace SMTParser{
         condAssert(TypeChecker::isReal(v) || v == "e" || v == "pi", "mkConstReal: invalid real constant");
         if(v == "e") return NodeManager::E_NODE;
         if(v == "pi") return NodeManager::PI_NODE;
-        return node_manager->createNode(REAL_SORT, NODE_KIND::NT_CONST, v);
+        return node_manager->createNode(SortManager::REAL_SORT, NODE_KIND::NT_CONST, v);
     }
     std::shared_ptr<DAGNode> Parser::mkConstReal(const Real &v){
         std::string v_str = ConversionUtils::toString(v);
-        return node_manager->createNode(REAL_SORT, NODE_KIND::NT_CONST, v_str);
+        return node_manager->createNode(SortManager::REAL_SORT, NODE_KIND::NT_CONST, v_str);
     }
     std::shared_ptr<DAGNode> Parser::mkConstReal(const double &v){
         std::string v_str = std::to_string(v);
-        return node_manager->createNode(REAL_SORT, NODE_KIND::NT_CONST, v_str);
+        return node_manager->createNode(SortManager::REAL_SORT, NODE_KIND::NT_CONST, v_str);
     }
     std::shared_ptr<DAGNode> Parser::mkConstReal(const Integer &v){
         std::string v_str = ConversionUtils::toString(v);
-        return node_manager->createNode(REAL_SORT, NODE_KIND::NT_CONST, v_str);
+        return node_manager->createNode(SortManager::REAL_SORT, NODE_KIND::NT_CONST, v_str);
     }
     std::shared_ptr<DAGNode> Parser::mkConstReal(const Number& v){
         return mkConstReal(v.toReal());
@@ -583,13 +607,13 @@ namespace SMTParser{
             processed_v = ConversionUtils::unescapeString(v.substr(1, v.length()-2));
             processed_v = "\"" + ConversionUtils::escapeString(processed_v) + "\"";
         }
-        return node_manager->createNode(STR_SORT, NODE_KIND::NT_CONST, processed_v);
+        return node_manager->createNode(SortManager::STR_SORT, NODE_KIND::NT_CONST, processed_v);
     }
     std::shared_ptr<DAGNode> Parser::mkConstBv(const std::string &v, const size_t& width){
         std::string sort_key_name = "BV_" + std::to_string(width);
         std::shared_ptr<Sort> sort = nullptr;
         if(sort_key_map.find(sort_key_name) == sort_key_map.end()){
-            sort = mkBVSort(width);
+            sort = sort_manager->createBVSort(width);
             sort_key_map.insert(std::pair<std::string, std::shared_ptr<Sort>>(sort_key_name, sort));
         }
         else{
@@ -602,7 +626,7 @@ namespace SMTParser{
         std::string sort_key_name = "FP_" + std::to_string(e) + "_" + std::to_string(s);
         std::shared_ptr<Sort> sort = nullptr;
         if(sort_key_map.find(sort_key_name) == sort_key_map.end()){
-            sort = mkFPSort(e, s);
+            sort = sort_manager->createFPSort(e, s);
             sort_key_map.insert(std::pair<std::string, std::shared_ptr<Sort>>(sort_key_name, sort));
         }
         else{
@@ -614,7 +638,7 @@ namespace SMTParser{
         return node_manager->createNode(nullptr, NODE_KIND::NT_CONST, fp_expr);
     }
     std::shared_ptr<DAGNode> Parser::mkConstReg(const std::string &v){
-        return node_manager->createNode(REG_SORT, NODE_KIND::NT_CONST, v);
+        return node_manager->createNode(SortManager::REG_SORT, NODE_KIND::NT_CONST, v);
     }
     
     std::shared_ptr<DAGNode> Parser::mkRoundingMode(const std::string &mode){
@@ -646,19 +670,19 @@ namespace SMTParser{
         }
     }
     std::shared_ptr<DAGNode> Parser::mkVarBool(const std::string &name){
-        return mkVar(BOOL_SORT, name);
+        return mkVar(SortManager::BOOL_SORT, name);
     }
     std::shared_ptr<DAGNode> Parser::mkVarInt(const std::string &name){
-        return mkVar(INT_SORT, name);
+        return mkVar(SortManager::INT_SORT, name);
     }
     std::shared_ptr<DAGNode> Parser::mkVarReal(const std::string &name){
-        return mkVar(REAL_SORT, name);
+        return mkVar(SortManager::REAL_SORT, name);
     }
     std::shared_ptr<DAGNode> Parser::mkVarBv(const std::string &name, const size_t& width){
         std::string sort_key_name = "BV_" + std::to_string(width);
         std::shared_ptr<Sort> sort = nullptr;
         if(sort_key_map.find(sort_key_name) == sort_key_map.end()){
-            sort = mkBVSort(width);
+            sort = sort_manager->createBVSort(width);
             sort_key_map.insert(std::pair<std::string, std::shared_ptr<Sort>>(sort_key_name, sort));
         }
         else{
@@ -670,7 +694,7 @@ namespace SMTParser{
         std::string sort_key_name = "FP_" + std::to_string(e) + "_" + std::to_string(s);
         std::shared_ptr<Sort> sort = nullptr;
         if(sort_key_map.find(sort_key_name) == sort_key_map.end()){
-            sort = mkFPSort(e, s);
+            sort = sort_manager->createFPSort(e, s);
             sort_key_map.insert(std::pair<std::string, std::shared_ptr<Sort>>(sort_key_name, sort));
         }
         else{
@@ -679,10 +703,10 @@ namespace SMTParser{
         return mkVar(sort, name);
     }
     std::shared_ptr<DAGNode> Parser::mkVarStr(const std::string &name){
-        return mkVar(STR_SORT, name);
+        return mkVar(SortManager::STR_SORT, name);
     }
     std::shared_ptr<DAGNode> Parser::mkVarReg(const std::string &name){
-        return mkVar(REG_SORT, name);
+        return mkVar(SortManager::REG_SORT, name);
     }
     std::shared_ptr<DAGNode> Parser::mkFunParamVar(std::shared_ptr<Sort> sort, const std::string &name){
         std::shared_ptr<DAGNode> newvar = node_manager->createNode(sort, NODE_KIND::NT_FUNC_PARAM, name);
@@ -695,7 +719,7 @@ namespace SMTParser{
         std::string sort_key_name = "ARRAY_" + index->toString() + "_" + elem->toString();
         std::shared_ptr<Sort> sort = nullptr;
         if(sort_key_map.find(sort_key_name) == sort_key_map.end()){
-            sort = mkArraySort(index, elem);
+            sort = sort_manager->createArraySort(index, elem);
             sort_key_map.insert(std::pair<std::string, std::shared_ptr<Sort>>(sort_key_name, sort));
         }
         else{
@@ -727,7 +751,7 @@ namespace SMTParser{
             return negateComp(param);
         }
         else{
-            return mkOper(BOOL_SORT, NODE_KIND::NT_NOT, param);
+            return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_NOT, param);
         }
     }
     /*
@@ -753,7 +777,7 @@ namespace SMTParser{
 
         for(size_t i=0;i<params.size();i++){
             if(!isBoolParam(params[i])) {
-                err_all(params[i], "AND on non-boolean", line_number);
+                err_type_mis("AND on non-boolean", line_number);
                 return mkUnknown();
             }
             if (params[i]->isErr()) {
@@ -783,7 +807,7 @@ namespace SMTParser{
         }
         else {
             // make new AND operator
-            return mkOper(BOOL_SORT, NODE_KIND::NT_AND, new_params);
+            return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_AND, new_params);
         }
     }
     /*
@@ -808,7 +832,7 @@ namespace SMTParser{
 
         for(size_t i=0;i<params.size();i++){
             if(!isBoolParam(params[i])) {
-                err_all(params[i], "OR on non-boolean", line_number);
+                err_type_mis("OR on non-boolean", line_number);
                 return mkUnknown();
             }
             if (params[i]->isErr()) {
@@ -838,7 +862,7 @@ namespace SMTParser{
         }
         else {
             // make new OR operator
-            return mkOper(BOOL_SORT, NODE_KIND::NT_OR, new_params);
+            return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_OR, new_params);
         }
     }
     /*
@@ -880,7 +904,7 @@ namespace SMTParser{
 
         new_params.emplace_back(params.back());
 
-        return mkOper(BOOL_SORT, NODE_KIND::NT_IMPLIES, new_params);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_IMPLIES, new_params);
     }
     /*
     (xor Bool Bool+ :left-assoc), return Bool
@@ -921,7 +945,7 @@ namespace SMTParser{
             return new_params[0];
         }
         else{
-            return mkOper(BOOL_SORT, NODE_KIND::NT_XOR, new_params);
+            return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_XOR, new_params);
         }
     }
     /*
@@ -1004,10 +1028,10 @@ namespace SMTParser{
         else{
             if(sort == nullptr){
                 if(options->isRealTheory()){
-                    sort = REAL_SORT;
+                    sort = SortManager::REAL_SORT;
                 }
                 else if(options->isIntTheory()){
-                    sort = INT_SORT;
+                    sort = SortManager::INT_SORT;
                 }
                 else{
                     err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in add", line_number);
@@ -1082,10 +1106,10 @@ namespace SMTParser{
         else{
             if(sort == nullptr){
                 if(options->isRealTheory()){
-                    sort = REAL_SORT;
+                    sort = SortManager::REAL_SORT;
                 }
                 else if(options->isIntTheory()){
-                    sort = INT_SORT;
+                    sort = SortManager::INT_SORT;
                 }
                 else{
                     err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in mul", line_number);
@@ -1136,10 +1160,10 @@ namespace SMTParser{
 
         if(sort == nullptr){
             if(options->isRealTheory()){
-                sort = REAL_SORT;
+                sort = SortManager::REAL_SORT;
             }
             else if(options->isIntTheory()){
-                sort = INT_SORT;
+                sort = SortManager::INT_SORT;
             }
             else{
                 err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in iand", line_number);
@@ -1199,10 +1223,10 @@ namespace SMTParser{
         }
         if(sort == nullptr){
             if(options->isRealTheory()){
-                sort = REAL_SORT;
+                sort = SortManager::REAL_SORT;
             }
             else if(options->isIntTheory()){
-                sort = INT_SORT;
+                sort = SortManager::INT_SORT;
             }
             else{
                 err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in sub", line_number);
@@ -1250,7 +1274,7 @@ namespace SMTParser{
                 return mkUnknown();
             }
         }
-        return mkOper(INT_SORT, NODE_KIND::NT_DIV_INT, l, r);
+        return mkOper(SortManager::INT_SORT, NODE_KIND::NT_DIV_INT, l, r);
     }
     std::shared_ptr<DAGNode> Parser::mkDivInt(const std::vector<std::shared_ptr<DAGNode>> &params){
         if(params.size() < 2) {
@@ -1263,7 +1287,7 @@ namespace SMTParser{
         if(params.size() == 2){
             return mkDivInt(params[0], params[1]);
         }
-        return mkOper(INT_SORT, NODE_KIND::NT_DIV_INT, params);
+        return mkOper(SortManager::INT_SORT, NODE_KIND::NT_DIV_INT, params);
     }
     /*
     (/ Real Real), return Real
@@ -1285,7 +1309,7 @@ namespace SMTParser{
                 return mkUnknown();
             }
         }
-        return mkOper(REAL_SORT, NODE_KIND::NT_DIV_REAL, l, r);
+        return mkOper(SortManager::REAL_SORT, NODE_KIND::NT_DIV_REAL, l, r);
     }
     std::shared_ptr<DAGNode> Parser::mkDivReal(const std::vector<std::shared_ptr<DAGNode>> &params){
         if(params.size() < 2) {
@@ -1298,7 +1322,7 @@ namespace SMTParser{
         if(params.size() == 2){
             return mkDivReal(params[0], params[1]);
         }
-        return mkOper(REAL_SORT, NODE_KIND::NT_DIV_REAL, params);
+        return mkOper(SortManager::REAL_SORT, NODE_KIND::NT_DIV_REAL, params);
     }
     /*
     (mod Int Int), return Int
@@ -1309,7 +1333,7 @@ namespace SMTParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in mod", line_number);
             return mkUnknown();
         }
-        return mkOper(INT_SORT, NODE_KIND::NT_MOD, l, r);
+        return mkOper(SortManager::INT_SORT, NODE_KIND::NT_MOD, l, r);
     }
     /*
     (abs Int), return Int
@@ -1359,14 +1383,14 @@ namespace SMTParser{
     */
     std::shared_ptr<DAGNode> Parser::mkFloor(std::shared_ptr<DAGNode> param){
         
-        return mkOper(INT_SORT, NODE_KIND::NT_FLOOR, param);
+        return mkOper(SortManager::INT_SORT, NODE_KIND::NT_FLOOR, param);
     }
     /*
     (round Real), return Int
     */
     std::shared_ptr<DAGNode> Parser::mkRound(std::shared_ptr<DAGNode> param){
         
-        return mkOper(INT_SORT, NODE_KIND::NT_ROUND, param);
+        return mkOper(SortManager::INT_SORT, NODE_KIND::NT_ROUND, param);
     }
     // TRANSCENDENTAL ARITHMATIC
     /*
@@ -1374,28 +1398,28 @@ namespace SMTParser{
     */
     std::shared_ptr<DAGNode> Parser::mkExp(std::shared_ptr<DAGNode> param){
         
-        return mkOper(REAL_SORT, NODE_KIND::NT_EXP, param);
+        return mkOper(SortManager::REAL_SORT, NODE_KIND::NT_EXP, param);
     }
     /*
     (ln Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkLn(std::shared_ptr<DAGNode> param){
         
-        return mkOper(REAL_SORT, NODE_KIND::NT_LN, param);
+        return mkOper(SortManager::REAL_SORT, NODE_KIND::NT_LN, param);
     }
     /*
     (lb Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkLb(std::shared_ptr<DAGNode> param){
         
-        return mkOper(REAL_SORT, NODE_KIND::NT_LB, param);
+        return mkOper(SortManager::REAL_SORT, NODE_KIND::NT_LB, param);
     }
     /*
     (lg Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkLg(std::shared_ptr<DAGNode> param){
         
-        return mkOper(REAL_SORT, NODE_KIND::NT_LG, param);
+        return mkOper(SortManager::REAL_SORT, NODE_KIND::NT_LG, param);
     }
     /*
     (log Real Real), return Real
@@ -1410,182 +1434,182 @@ namespace SMTParser{
                 return mkUnknown();
             }
         }
-        return mkOper(REAL_SORT, NODE_KIND::NT_LOG, l, r);
+        return mkOper(SortManager::REAL_SORT, NODE_KIND::NT_LOG, l, r);
     }
     /*
     (sin Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkSin(std::shared_ptr<DAGNode> param){
         
-        return mkOper(REAL_SORT, NODE_KIND::NT_SIN, param);
+        return mkOper(SortManager::REAL_SORT, NODE_KIND::NT_SIN, param);
     }
     /*
     (cos Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkCos(std::shared_ptr<DAGNode> param){
         
-        return mkOper(REAL_SORT, NODE_KIND::NT_COS, param);
+        return mkOper(SortManager::REAL_SORT, NODE_KIND::NT_COS, param);
     }
     /*
     (sec Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkSec(std::shared_ptr<DAGNode> param){
         
-        return mkOper(REAL_SORT, NODE_KIND::NT_SEC, param);
+        return mkOper(SortManager::REAL_SORT, NODE_KIND::NT_SEC, param);
     }
     /*
     (csc Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkCsc(std::shared_ptr<DAGNode> param){
         
-        return mkOper(REAL_SORT, NODE_KIND::NT_CSC, param);
+        return mkOper(SortManager::REAL_SORT, NODE_KIND::NT_CSC, param);
     }
     /*
     (tan Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkTan(std::shared_ptr<DAGNode> param){
         
-        return mkOper(REAL_SORT, NODE_KIND::NT_TAN, param);
+        return mkOper(SortManager::REAL_SORT, NODE_KIND::NT_TAN, param);
     }
     /*
     (cot Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkCot(std::shared_ptr<DAGNode> param){
         
-        return mkOper(REAL_SORT, NODE_KIND::NT_COT, param);
+        return mkOper(SortManager::REAL_SORT, NODE_KIND::NT_COT, param);
     }
     /*
     (asin Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkAsin(std::shared_ptr<DAGNode> param){
         
-        return mkOper(REAL_SORT, NODE_KIND::NT_ASIN, param);
+        return mkOper(SortManager::REAL_SORT, NODE_KIND::NT_ASIN, param);
     }
     /*
     (acos Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkAcos(std::shared_ptr<DAGNode> param){
         
-        return mkOper(REAL_SORT, NODE_KIND::NT_ACOS, param);
+        return mkOper(SortManager::REAL_SORT, NODE_KIND::NT_ACOS, param);
     }
     /*
     (asec Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkAsec(std::shared_ptr<DAGNode> param){
         
-        return mkOper(REAL_SORT, NODE_KIND::NT_ASEC, param);
+        return mkOper(SortManager::REAL_SORT, NODE_KIND::NT_ASEC, param);
     }
     /*
     (acsc Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkAcsc(std::shared_ptr<DAGNode> param){
         
-        return mkOper(REAL_SORT, NODE_KIND::NT_ACSC, param);
+        return mkOper(SortManager::REAL_SORT, NODE_KIND::NT_ACSC, param);
     }
     /*
     (atan Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkAtan(std::shared_ptr<DAGNode> param){
         
-        return mkOper(REAL_SORT, NODE_KIND::NT_ATAN, param);
+        return mkOper(SortManager::REAL_SORT, NODE_KIND::NT_ATAN, param);
     }
     /*
     (acot Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkAcot(std::shared_ptr<DAGNode> param){
         
-        return mkOper(REAL_SORT, NODE_KIND::NT_ACOT, param);
+        return mkOper(SortManager::REAL_SORT, NODE_KIND::NT_ACOT, param);
     }
     /*
     (sinh Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkSinh(std::shared_ptr<DAGNode> param){
         
-        return mkOper(REAL_SORT, NODE_KIND::NT_SINH, param);
+        return mkOper(SortManager::REAL_SORT, NODE_KIND::NT_SINH, param);
     }
     /*
     (cosh Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkCosh(std::shared_ptr<DAGNode> param){
         
-        return mkOper(REAL_SORT, NODE_KIND::NT_COSH, param);
+        return mkOper(SortManager::REAL_SORT, NODE_KIND::NT_COSH, param);
     }
     /*
     (tanh Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkTanh(std::shared_ptr<DAGNode> param){
         
-        return mkOper(REAL_SORT, NODE_KIND::NT_TANH, param);
+        return mkOper(SortManager::REAL_SORT, NODE_KIND::NT_TANH, param);
     }
     /*
     (sech Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkSech(std::shared_ptr<DAGNode> param){
         
-        return mkOper(REAL_SORT, NODE_KIND::NT_SECH, param);
+        return mkOper(SortManager::REAL_SORT, NODE_KIND::NT_SECH, param);
     }
     /*
     (csch Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkCsch(std::shared_ptr<DAGNode> param){
         
-        return mkOper(REAL_SORT, NODE_KIND::NT_CSCH, param);
+        return mkOper(SortManager::REAL_SORT, NODE_KIND::NT_CSCH, param);
     }
     /*
     (coth Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkCoth(std::shared_ptr<DAGNode> param){
         
-        return mkOper(REAL_SORT, NODE_KIND::NT_COTH, param);
+        return mkOper(SortManager::REAL_SORT, NODE_KIND::NT_COTH, param);
     }
     /*
     (asinh Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkAsinh(std::shared_ptr<DAGNode> param){
         
-        return mkOper(REAL_SORT, NODE_KIND::NT_ASINH, param);
+        return mkOper(SortManager::REAL_SORT, NODE_KIND::NT_ASINH, param);
     }
     /*
     (acosh Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkAcosh(std::shared_ptr<DAGNode> param){
         
-        return mkOper(REAL_SORT, NODE_KIND::NT_ACOSH, param);
+        return mkOper(SortManager::REAL_SORT, NODE_KIND::NT_ACOSH, param);
     }
     /*
     (atanh Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkAtanh(std::shared_ptr<DAGNode> param){
         
-        return mkOper(REAL_SORT, NODE_KIND::NT_ATANH, param);
+        return mkOper(SortManager::REAL_SORT, NODE_KIND::NT_ATANH, param);
     }
     /*
     (asech Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkAsech(std::shared_ptr<DAGNode> param){
         
-        return mkOper(REAL_SORT, NODE_KIND::NT_ASECH, param);
+        return mkOper(SortManager::REAL_SORT, NODE_KIND::NT_ASECH, param);
     }
     /*
     (acsch Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkAcsch(std::shared_ptr<DAGNode> param){
         
-        return mkOper(REAL_SORT, NODE_KIND::NT_ACSCH, param);
+        return mkOper(SortManager::REAL_SORT, NODE_KIND::NT_ACSCH, param);
     }
     /*
     (acoth Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkAcoth(std::shared_ptr<DAGNode> param){
         
-        return mkOper(REAL_SORT, NODE_KIND::NT_ACOTH, param);
+        return mkOper(SortManager::REAL_SORT, NODE_KIND::NT_ACOTH, param);
     }
     /*
     (atan2 Real Real), return Real
     */
     std::shared_ptr<DAGNode> Parser::mkAtan2(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         
-        return mkOper(REAL_SORT, NODE_KIND::NT_ATAN2, l, r);
+        return mkOper(SortManager::REAL_SORT, NODE_KIND::NT_ATAN2, l, r);
     }
     // ARITHMATIC COMP
     /*
@@ -1605,7 +1629,7 @@ namespace SMTParser{
         else if(l == r){
             return mkTrue();
         }
-        return mkOper(BOOL_SORT, NODE_KIND::NT_LE, l, r);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_LE, l, r);
     }
     std::shared_ptr<DAGNode> Parser::mkLt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         
@@ -1621,13 +1645,11 @@ namespace SMTParser{
         else if(l == r){
             return mkFalse();
         }
-        return mkOper(BOOL_SORT, NODE_KIND::NT_LT, l, r);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_LT, l, r);
     }
     std::shared_ptr<DAGNode> Parser::mkGe(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         
         if(!l->getSort()->isEqTo(r->getSort())) {
-            std::cout<<l->toString()<<" "<<r->toString()<<std::endl;
-            std::cout<<l->getSort()->toString()<<" "<<r->getSort()->toString()<<std::endl;
             if(canExempt(l->getSort(), r->getSort())){
                 std::cerr << "Type mismatch in ge, but now exempt for int/real"<<std::endl;
             }
@@ -1639,7 +1661,7 @@ namespace SMTParser{
         else if(l == r){
             return mkTrue();
         }
-        return mkOper(BOOL_SORT, NODE_KIND::NT_GE, l, r);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_GE, l, r);
     }
     std::shared_ptr<DAGNode> Parser::mkGt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         
@@ -1655,7 +1677,7 @@ namespace SMTParser{
         else if(l == r){
             return mkFalse();
         }
-        return mkOper(BOOL_SORT, NODE_KIND::NT_GT, l, r);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_GT, l, r);
     }
     std::shared_ptr<DAGNode> Parser::mkLe(const std::vector<std::shared_ptr<DAGNode>>& params){
         if(params.size() < 2) {
@@ -1795,7 +1817,7 @@ namespace SMTParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in to_int", line_number);
             return mkUnknown();
         }
-        return mkOper(INT_SORT, NODE_KIND::NT_TO_INT, param);
+        return mkOper(SortManager::INT_SORT, NODE_KIND::NT_TO_INT, param);
     }
     /*
     (to_real Int), return Real
@@ -1806,7 +1828,7 @@ namespace SMTParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in to_real", line_number);
             return mkUnknown();
         }
-        return mkOper(REAL_SORT, NODE_KIND::NT_TO_REAL, param);
+        return mkOper(SortManager::REAL_SORT, NODE_KIND::NT_TO_REAL, param);
     }
     // ARITHMATIC PROPERTIES
     /*
@@ -1818,7 +1840,7 @@ namespace SMTParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in is_int", line_number);
             return mkUnknown();
         }
-        return mkOper(BOOL_SORT, NODE_KIND::NT_IS_INT, param);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_IS_INT, param);
     }
     /*
     (is_divisible Int Int), return Bool
@@ -1829,7 +1851,7 @@ namespace SMTParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in is_divisible", line_number);
             return mkUnknown();
         }
-        return mkOper(BOOL_SORT, NODE_KIND::NT_IS_DIVISIBLE, l, r);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_IS_DIVISIBLE, l, r);
     }
     /*
     (is_prime Int), return Bool
@@ -1840,7 +1862,7 @@ namespace SMTParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in is_prime", line_number);
             return mkUnknown();
         }
-        return mkOper(BOOL_SORT, NODE_KIND::NT_IS_PRIME, param);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_IS_PRIME, param);
     }
     /*
     (is_even Int), return Bool
@@ -1851,7 +1873,7 @@ namespace SMTParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in is_even", line_number);
             return mkUnknown();
         }
-        return mkOper(BOOL_SORT, NODE_KIND::NT_IS_EVEN, param);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_IS_EVEN, param);
     }
     /*
     (is_odd Int), return Bool
@@ -1862,7 +1884,7 @@ namespace SMTParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in is_odd", line_number);
             return mkUnknown();
         }
-        return mkOper(BOOL_SORT, NODE_KIND::NT_IS_ODD, param);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_IS_ODD, param);
     }
     // ARITHMATIC CONSTANTS
     std::shared_ptr<DAGNode> Parser::mkPi(){
@@ -1872,13 +1894,13 @@ namespace SMTParser{
         return NodeManager::E_NODE;
     }
     std::shared_ptr<DAGNode> Parser::mkInfinity(std::shared_ptr<Sort> sort){
-        if(sort->isEqTo(STR_SORT)){
+        if(sort->isEqTo(SortManager::STR_SORT)){
             return NodeManager::STR_INF_NODE;
         }
-        else if(sort->isEqTo(INT_SORT)){
+        else if(sort->isEqTo(SortManager::INT_SORT)){
             return NodeManager::INT_INF_NODE;
         }
-        else if(sort->isEqTo(REAL_SORT)){
+        else if(sort->isEqTo(SortManager::REAL_SORT)){
             return NodeManager::REAL_INF_NODE;
         }
         else{
@@ -1887,13 +1909,13 @@ namespace SMTParser{
         }
     }
     std::shared_ptr<DAGNode> Parser::mkPosInfinity(std::shared_ptr<Sort> sort){
-        if(sort->isEqTo(STR_SORT)){
+        if(sort->isEqTo(SortManager::STR_SORT)){
             return NodeManager::STR_POS_INF_NODE;
         }
-        else if(sort->isEqTo(INT_SORT)){
+        else if(sort->isEqTo(SortManager::INT_SORT)){
             return NodeManager::INT_POS_INF_NODE;
         }
-        else if(sort->isEqTo(REAL_SORT)){
+        else if(sort->isEqTo(SortManager::REAL_SORT)){
             return NodeManager::REAL_POS_INF_NODE;
         }
         else{
@@ -1902,13 +1924,13 @@ namespace SMTParser{
         }
     }
     std::shared_ptr<DAGNode> Parser::mkNegInfinity(std::shared_ptr<Sort> sort){
-        if(sort->isEqTo(STR_SORT)){
+        if(sort->isEqTo(SortManager::STR_SORT)){
             return NodeManager::STR_NEG_INF_NODE;
         }
-        else if(sort->isEqTo(INT_SORT)){
+        else if(sort->isEqTo(SortManager::INT_SORT)){
             return NodeManager::INT_NEG_INF_NODE;
         }
-        else if(sort->isEqTo(REAL_SORT)){
+        else if(sort->isEqTo(SortManager::REAL_SORT)){
             return NodeManager::REAL_NEG_INF_NODE;
         }
         else{
@@ -1943,7 +1965,7 @@ namespace SMTParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in gcd", line_number);
             return mkUnknown();
         }
-        return mkOper(INT_SORT, NODE_KIND::NT_GCD, l, r);
+        return mkOper(SortManager::INT_SORT, NODE_KIND::NT_GCD, l, r);
     }
     /*
     (lcm Int Int), return Int
@@ -1954,7 +1976,7 @@ namespace SMTParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in lcm", line_number);
             return mkUnknown();
         }
-        return mkOper(INT_SORT, NODE_KIND::NT_LCM, l, r);
+        return mkOper(SortManager::INT_SORT, NODE_KIND::NT_LCM, l, r);
     }
     /*
     (factorial Int), return Int
@@ -1965,7 +1987,7 @@ namespace SMTParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in factorial", line_number);
             return mkUnknown();
         }
-        return mkOper(INT_SORT, NODE_KIND::NT_FACT, param);
+        return mkOper(SortManager::INT_SORT, NODE_KIND::NT_FACT, param);
     }
     // BITVECTOR COMMON OPERATORS
     /*
@@ -2241,7 +2263,7 @@ namespace SMTParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_comp", line_number);
             return mkUnknown();
         }
-        std::shared_ptr<Sort> sort = mkBVSort(1);
+        std::shared_ptr<Sort> sort = sort_manager->createBVSort(1);
 
         return mkOper(sort, NODE_KIND::NT_BV_COMP, l, r);
     }
@@ -2498,7 +2520,7 @@ namespace SMTParser{
             width += params[i]->getSort()->getBitWidth();
             new_params.emplace_back(params[i]);
         }
-        std::shared_ptr<Sort> new_sort = mkBVSort(width);
+        std::shared_ptr<Sort> new_sort = sort_manager->createBVSort(width);
 
         return mkOper(new_sort, NODE_KIND::NT_BV_CONCAT, new_params);
     }
@@ -2512,7 +2534,7 @@ namespace SMTParser{
             return mkUnknown();
         }
         size_t width = toInt(r).toULong() - toInt(s).toULong() + 1;
-        std::shared_ptr<Sort> new_sort = mkBVSort(width);
+        std::shared_ptr<Sort> new_sort = sort_manager->createBVSort(width);
 
         return mkOper(new_sort, NODE_KIND::NT_BV_EXTRACT, l, r, s);
     }
@@ -2526,7 +2548,7 @@ namespace SMTParser{
             return mkUnknown();
         }
         size_t width = l->getSort()->getBitWidth() * toInt(r).toULong();
-        std::shared_ptr<Sort> new_sort = mkBVSort(width);
+        std::shared_ptr<Sort> new_sort = sort_manager->createBVSort(width);
 
         return mkOper(new_sort, NODE_KIND::NT_BV_REPEAT, l, r);
     }
@@ -2540,7 +2562,7 @@ namespace SMTParser{
             return mkUnknown();
         }
         size_t width = toInt(r).toULong();
-        std::shared_ptr<Sort> new_sort = mkBVSort(width);
+        std::shared_ptr<Sort> new_sort = sort_manager->createBVSort(width);
         return mkOper(new_sort, NODE_KIND::NT_BV_ZERO_EXT, l, r);
     }
     /*
@@ -2553,7 +2575,7 @@ namespace SMTParser{
             return mkUnknown();
         }
         size_t width = toInt(r).toULong();
-        std::shared_ptr<Sort> new_sort = mkBVSort(width);
+        std::shared_ptr<Sort> new_sort = sort_manager->createBVSort(width);
 
         return mkOper(new_sort, NODE_KIND::NT_BV_SIGN_EXT, l, r);
     }
@@ -2568,7 +2590,7 @@ namespace SMTParser{
         }
 
         size_t width = l->getSort()->getBitWidth();
-        std::shared_ptr<Sort> new_sort = mkBVSort(width);
+        std::shared_ptr<Sort> new_sort = sort_manager->createBVSort(width);
 
         return mkOper(new_sort, NODE_KIND::NT_BV_ROTATE_LEFT, l, r);
     }
@@ -2582,7 +2604,7 @@ namespace SMTParser{
             return mkUnknown();
         }
         size_t width = l->getSort()->getBitWidth();
-        std::shared_ptr<Sort> new_sort = mkBVSort(width);
+        std::shared_ptr<Sort> new_sort = sort_manager->createBVSort(width);
 
         return mkOper(new_sort, NODE_KIND::NT_BV_ROTATE_RIGHT, l, r);
     }
@@ -2599,7 +2621,7 @@ namespace SMTParser{
         else if(l == r){
             return mkFalse();
         }
-        return mkOper(BOOL_SORT, NODE_KIND::NT_BV_ULT, l, r);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_BV_ULT, l, r);
     }
     /*
     (bvule Bv Bv), return Bool
@@ -2619,7 +2641,7 @@ namespace SMTParser{
         }
 
 
-        return mkOper(BOOL_SORT, NODE_KIND::NT_BV_ULE, l, r);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_BV_ULE, l, r);
     }
     /*
     (bvugt Bv Bv), return Bool
@@ -2639,7 +2661,7 @@ namespace SMTParser{
         }
 
 
-        return mkOper(BOOL_SORT, NODE_KIND::NT_BV_UGT, l, r);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_BV_UGT, l, r);
     }
     /*
     (bvuge Bv Bv), return Bool
@@ -2659,7 +2681,7 @@ namespace SMTParser{
         }
 
 
-        return mkOper(BOOL_SORT, NODE_KIND::NT_BV_UGE, l, r);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_BV_UGE, l, r);
     }
     /*
     (bvslt Bv Bv), return Bool
@@ -2679,7 +2701,7 @@ namespace SMTParser{
         }
 
 
-        return mkOper(BOOL_SORT, NODE_KIND::NT_BV_SLT, l, r);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_BV_SLT, l, r);
     }
     /*
     (bvsle Bv Bv), return Bool
@@ -2699,7 +2721,7 @@ namespace SMTParser{
         }
 
 
-        return mkOper(BOOL_SORT, NODE_KIND::NT_BV_SLE, l, r);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_BV_SLE, l, r);
     }
     /*
     (bvsgt Bv Bv), return Bool
@@ -2719,7 +2741,7 @@ namespace SMTParser{
         }
 
 
-        return mkOper(BOOL_SORT, NODE_KIND::NT_BV_SGT, l, r);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_BV_SGT, l, r);
     }
     /*
     (bvsge Bv Bv), return Bool
@@ -2739,7 +2761,7 @@ namespace SMTParser{
         }
 
 
-        return mkOper(BOOL_SORT, NODE_KIND::NT_BV_SGE, l, r);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_BV_SGE, l, r);
     }
     // BITVECTOR CONVERSION
     /*
@@ -2752,7 +2774,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(INT_SORT, NODE_KIND::NT_BV_TO_NAT, param);
+        return mkOper(SortManager::INT_SORT, NODE_KIND::NT_BV_TO_NAT, param);
     }
     /*
     (nat2bv Nat Int), return Bv
@@ -2763,7 +2785,7 @@ namespace SMTParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in nat_to_bv", line_number);
             return mkUnknown();
         }
-        std::shared_ptr<Sort> new_sort = mkBVSort(toInt(size).toULong());
+        std::shared_ptr<Sort> new_sort = sort_manager->createBVSort(toInt(size).toULong());
         return mkOper(new_sort, NODE_KIND::NT_NAT_TO_BV, param, size);
     }
     /*
@@ -2775,7 +2797,7 @@ namespace SMTParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_to_int", line_number);
             return mkUnknown();
         }
-        return mkOper(INT_SORT, NODE_KIND::NT_BV_TO_INT, param);
+        return mkOper(SortManager::INT_SORT, NODE_KIND::NT_BV_TO_INT, param);
     }
     /*
     (int2bv Int Int), return Bv
@@ -2786,7 +2808,7 @@ namespace SMTParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in int_to_bv", line_number);
             return mkUnknown();
         }
-        std::shared_ptr<Sort> new_sort = mkBVSort(toInt(size).toULong());
+        std::shared_ptr<Sort> new_sort = sort_manager->createBVSort(toInt(size).toULong());
         return mkOper(new_sort, NODE_KIND::NT_INT_TO_BV, param, size);
     }
 
@@ -3108,7 +3130,7 @@ namespace SMTParser{
             return mkTrue();
         }
 
-        return mkOper(BOOL_SORT, NODE_KIND::NT_FP_LE, l, r);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_FP_LE, l, r);
     }
     /*
     (fp.lt Fp Fp), return Bool
@@ -3123,7 +3145,7 @@ namespace SMTParser{
             return mkFalse();
         }
 
-        return mkOper(BOOL_SORT, NODE_KIND::NT_FP_LT, l, r);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_FP_LT, l, r);
     }
     /*
     (fp.geq Fp Fp), return Bool
@@ -3138,7 +3160,7 @@ namespace SMTParser{
             return mkTrue();
         }
 
-        return mkOper(BOOL_SORT, NODE_KIND::NT_FP_GE, l, r);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_FP_GE, l, r);
     }
     /*
     (fp.gt Fp Fp), return Bool
@@ -3153,7 +3175,7 @@ namespace SMTParser{
             return mkFalse();
         }
 
-        return mkOper(BOOL_SORT, NODE_KIND::NT_FP_GT, l, r);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_FP_GT, l, r);
     }
     /*
     (fp.eq Fp Fp), return Bool
@@ -3168,7 +3190,7 @@ namespace SMTParser{
             return mkTrue();
         }
 
-        return mkOper(BOOL_SORT, NODE_KIND::NT_FP_EQ, l, r);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_FP_EQ, l, r);
     }
     /*
     (fp.ne Fp Fp), return Bool
@@ -3182,7 +3204,7 @@ namespace SMTParser{
             return mkFalse();
         }
 
-        return mkOper(BOOL_SORT, NODE_KIND::NT_FP_NE, l, r);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_FP_NE, l, r);
     }
     // FLOATING POINT CONVERSION
     /*
@@ -3199,7 +3221,7 @@ namespace SMTParser{
             return mkConstBv(FloatingPointUtils::fpToUbv(param->toString(), toInt(size)), toInt(size).toULong());
         }
 
-        std::shared_ptr<Sort> new_sort = mkBVSort(toInt(size).toULong());
+        std::shared_ptr<Sort> new_sort = sort_manager->createBVSort(toInt(size).toULong());
 
         return mkOper(new_sort, NODE_KIND::NT_FP_TO_UBV, rm, param, size);
     }
@@ -3214,7 +3236,7 @@ namespace SMTParser{
             return mkConstBv(FloatingPointUtils::fpToSbv(param->toString(), toInt(size)), toInt(size).toULong());
         }
 
-        std::shared_ptr<Sort> new_sort = mkBVSort(toInt(size).toULong());
+        std::shared_ptr<Sort> new_sort = sort_manager->createBVSort(toInt(size).toULong());
 
         return mkOper(new_sort, NODE_KIND::NT_FP_TO_SBV, rm, param, size);
     }
@@ -3225,7 +3247,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(REAL_SORT, NODE_KIND::NT_FP_TO_REAL, param);
+        return mkOper(SortManager::REAL_SORT, NODE_KIND::NT_FP_TO_REAL, param);
     }
     /*
     (to_fp eb sb param), return Fp
@@ -3248,9 +3270,6 @@ namespace SMTParser{
         }
 
         // Validate rounding mode
-        std::cout << "DEBUG: rm->getSort()->isRoundingMode() = " << (rm->getSort()->isRoundingMode() ? "true" : "false") << std::endl;
-        std::cout << "DEBUG: rm->getSort()->toString() = " << rm->getSort()->toString() << std::endl;
-        std::cout << "DEBUG: rm->toString() = " << rm->toString() << std::endl;
         if(!rm->getSort()->isRoundingMode()) {
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Third parameter must be a rounding mode in to_fp", line_number);
             return mkUnknown();
@@ -3259,7 +3278,7 @@ namespace SMTParser{
         // Get floating point sort
         size_t exponent_width = toInt(eb).toULong();
         size_t significand_width = toInt(sb).toULong();
-        std::shared_ptr<Sort> sort = mkFPSort(exponent_width, significand_width);
+        std::shared_ptr<Sort> sort = sort_manager->createFPSort(exponent_width, significand_width);
 
         // Validate param type
         if(!isRealParam(param) && !isBvParam(param) && !isFpParam(param)) {
@@ -3287,7 +3306,7 @@ namespace SMTParser{
         // Get floating point sort
         size_t exponent_width = toInt(eb).toULong();
         size_t significand_width = toInt(sb).toULong();
-        std::shared_ptr<Sort> sort = mkFPSort(exponent_width, significand_width);
+        std::shared_ptr<Sort> sort = sort_manager->createFPSort(exponent_width, significand_width);
 
         // Validate param type (must be BitVec for this overload)
         if(!isBvParam(param)) {
@@ -3314,7 +3333,7 @@ namespace SMTParser{
 
         size_t exponent_width = toInt(eb).toULong();
         size_t significand_width = toInt(sb).toULong();
-        std::shared_ptr<Sort> sort = mkFPSort(exponent_width, significand_width);
+        std::shared_ptr<Sort> sort = sort_manager->createFPSort(exponent_width, significand_width);
 
         if(!rm->getSort()->isRoundingMode()) {
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Third parameter must be a rounding mode in to_fp_unsigned", line_number);
@@ -3349,7 +3368,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        std::shared_ptr<Sort> sort = mkFPSort(exp_width, mant_width + 1);
+        std::shared_ptr<Sort> sort = sort_manager->createFPSort(exp_width, mant_width + 1);
         std::vector<std::shared_ptr<DAGNode>> children = {sign, exp, mant};
         return node_manager->createNode(sort, NODE_KIND::NT_CONST, "(fp_bit_representation)", children);
     }
@@ -3364,7 +3383,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(BOOL_SORT, NODE_KIND::NT_FP_IS_NORMAL, param);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_FP_IS_NORMAL, param);
     }
     /*
     (fp.isSubnormal Fp), return Bool
@@ -3376,7 +3395,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(BOOL_SORT, NODE_KIND::NT_FP_IS_SUBNORMAL, param);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_FP_IS_SUBNORMAL, param);
     }
     /*
     (fp.isZero Fp), return Bool
@@ -3388,7 +3407,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(BOOL_SORT, NODE_KIND::NT_FP_IS_ZERO, param);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_FP_IS_ZERO, param);
     }
     /*
     (fp.isInfinite Fp), return Bool
@@ -3399,7 +3418,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(BOOL_SORT, NODE_KIND::NT_FP_IS_INF, param);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_FP_IS_INF, param);
     }
     /*
     (fp.isNaN Fp), return Bool
@@ -3410,7 +3429,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(BOOL_SORT, NODE_KIND::NT_FP_IS_NAN, param);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_FP_IS_NAN, param);
     }
     /*
     (fp.isNegative Fp), return Bool
@@ -3422,7 +3441,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(BOOL_SORT, NODE_KIND::NT_FP_IS_NEG, param);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_FP_IS_NEG, param);
     }
     /*
     (fp.isPositive Fp), return Bool
@@ -3434,7 +3453,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(BOOL_SORT, NODE_KIND::NT_FP_IS_POS, param);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_FP_IS_POS, param);
     }
     // ARRAY
     /*
@@ -3472,7 +3491,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(INT_SORT, NODE_KIND::NT_STR_LEN, param);
+        return mkOper(SortManager::INT_SORT, NODE_KIND::NT_STR_LEN, param);
     }
     /*
     (str.++ Str Str+), return Str
@@ -3498,7 +3517,7 @@ namespace SMTParser{
 
         if(new_params.size() == 0) return mkConstStr("");
         if(new_params.size() == 1) return new_params[0];
-        return mkOper(STR_SORT, NODE_KIND::NT_STR_CONCAT, new_params);
+        return mkOper(SortManager::STR_SORT, NODE_KIND::NT_STR_CONCAT, new_params);
     }
     /*
     (str.substr Str Int Int), return Str
@@ -3522,7 +3541,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(BOOL_SORT, NODE_KIND::NT_STR_PREFIXOF, l, r);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_STR_PREFIXOF, l, r);
     }
     /*
     (str.suffixof Str Str), return Bool
@@ -3534,7 +3553,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(BOOL_SORT, NODE_KIND::NT_STR_SUFFIXOF, l, r);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_STR_SUFFIXOF, l, r);
     }
     /*
     (str.indexof Str Str Int), return Int
@@ -3546,7 +3565,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(INT_SORT, NODE_KIND::NT_STR_INDEXOF, l, r, s);
+        return mkOper(SortManager::INT_SORT, NODE_KIND::NT_STR_INDEXOF, l, r, s);
     }
     /*
     (str.at Str Int), return Str
@@ -3558,7 +3577,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(STR_SORT, NODE_KIND::NT_STR_CHARAT, l, r);
+        return mkOper(SortManager::STR_SORT, NODE_KIND::NT_STR_CHARAT, l, r);
     }
     /*
     (str.update Str Int Str), return Str
@@ -3635,7 +3654,7 @@ namespace SMTParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_indexof_re", line_number);
             return mkUnknown();
         }
-        return mkOper(INT_SORT, NODE_KIND::NT_STR_INDEXOF_REG, l, r);
+        return mkOper(SortManager::INT_SORT, NODE_KIND::NT_STR_INDEXOF_REG, l, r);
     }
 
     /*
@@ -3648,7 +3667,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(STR_SORT, NODE_KIND::NT_STR_TO_LOWER, param);
+        return mkOper(SortManager::STR_SORT, NODE_KIND::NT_STR_TO_LOWER, param);
     }
     /*
     (str.to_upper Str), return Str
@@ -3660,7 +3679,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(STR_SORT, NODE_KIND::NT_STR_TO_UPPER, param);
+        return mkOper(SortManager::STR_SORT, NODE_KIND::NT_STR_TO_UPPER, param);
     }
     /*
     (str.rev Str), return Str
@@ -3672,7 +3691,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(STR_SORT, NODE_KIND::NT_STR_REV, param);
+        return mkOper(SortManager::STR_SORT, NODE_KIND::NT_STR_REV, param);
     }
     /*
     (str.split Str Str), return (_ Array Int Str)
@@ -3682,28 +3701,28 @@ namespace SMTParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_split", line_number);
             return mkUnknown();
         }
-        return mkOper(mkArraySort(INT_SORT, STR_SORT), NODE_KIND::NT_STR_SPLIT, l, r);
+        return mkOper(sort_manager->createArraySort(SortManager::INT_SORT, SortManager::STR_SORT), NODE_KIND::NT_STR_SPLIT, l, r);
     }
     std::shared_ptr<DAGNode> Parser::mkStrSplitAt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> s){
         if(!isStrParam(l) || !isStrParam(r) || !isIntParam(s)) {
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_split_at", line_number);
             return mkUnknown();
         }
-        return mkOper(STR_SORT, NODE_KIND::NT_STR_SPLIT_AT, l, r, s);
+        return mkOper(SortManager::STR_SORT, NODE_KIND::NT_STR_SPLIT_AT, l, r, s);
     }
     std::shared_ptr<DAGNode> Parser::mkStrSplitRest(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> s){
         if(!isStrParam(l) || !isStrParam(r) || !isIntParam(s)) {
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_split_rest", line_number);
             return mkUnknown();
         }
-        return mkOper(STR_SORT, NODE_KIND::NT_STR_SPLIT_REST, l, r, s);
+        return mkOper(SortManager::STR_SORT, NODE_KIND::NT_STR_SPLIT_REST, l, r, s);
     }
     std::shared_ptr<DAGNode> Parser::mkStrNumSplits(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(!isStrParam(l) || !isStrParam(r)) {
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_num_splits", line_number);
             return mkUnknown();
         }
-        return mkOper(INT_SORT, NODE_KIND::NT_STR_NUM_SPLITS, l, r);
+        return mkOper(SortManager::INT_SORT, NODE_KIND::NT_STR_NUM_SPLITS, l, r);
     }
     /*
     (str.split_at_re Str Reg Int), return Str
@@ -3713,7 +3732,7 @@ namespace SMTParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_split_at_re", line_number);
             return mkUnknown();
         }
-        return mkOper(STR_SORT, NODE_KIND::NT_STR_SPLIT_AT_RE, l, r, s);
+        return mkOper(SortManager::STR_SORT, NODE_KIND::NT_STR_SPLIT_AT_RE, l, r, s);
     }
     /*
     (str.split_rest_re Str Reg Int), return Str
@@ -3723,7 +3742,7 @@ namespace SMTParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_split_rest_re", line_number);
             return mkUnknown();
         }
-        return mkOper(STR_SORT, NODE_KIND::NT_STR_SPLIT_REST_RE, l, r, s);
+        return mkOper(SortManager::STR_SORT, NODE_KIND::NT_STR_SPLIT_REST_RE, l, r, s);
     }
     /*
     (str.num_splits_re Str Reg), return Int
@@ -3733,7 +3752,7 @@ namespace SMTParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_num_splits_re", line_number);
             return mkUnknown();
         }
-        return mkOper(INT_SORT, NODE_KIND::NT_STR_NUM_SPLITS_RE, l, r);
+        return mkOper(SortManager::INT_SORT, NODE_KIND::NT_STR_NUM_SPLITS_RE, l, r);
     }
     // STRINGS COMP
     /*
@@ -3749,7 +3768,7 @@ namespace SMTParser{
             return mkFalse();
         }
 
-        return mkOper(BOOL_SORT, NODE_KIND::NT_STR_LT, l, r);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_STR_LT, l, r);
     }
     /*
     (str.<= Str Str), return Bool
@@ -3764,7 +3783,7 @@ namespace SMTParser{
             return mkTrue();
         }
 
-        return mkOper(BOOL_SORT, NODE_KIND::NT_STR_LE, l, r);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_STR_LE, l, r);
     }
     /*
     (str.> Str Str), return Bool
@@ -3779,7 +3798,7 @@ namespace SMTParser{
             return mkFalse();
         }
 
-        return mkOper(BOOL_SORT, NODE_KIND::NT_STR_GT, l, r);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_STR_GT, l, r);
     }
     /*
     (str.>= Str Str), return Bool
@@ -3794,7 +3813,7 @@ namespace SMTParser{
             return mkTrue();
         }
 
-        return mkOper(BOOL_SORT, NODE_KIND::NT_STR_GE, l, r);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_STR_GE, l, r);
     }
     // STRINGS PROPERTIES
     /*
@@ -3809,7 +3828,7 @@ namespace SMTParser{
             err_all(r, "Expected regex parameter", line_number);
             return mkUnknown();
         }
-        return mkOper(BOOL_SORT, NODE_KIND::NT_STR_IN_REG, l, r);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_STR_IN_REG, l, r);
     }
     /*
     (str.contains Str Str), return Bool
@@ -3821,7 +3840,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(BOOL_SORT, NODE_KIND::NT_STR_CONTAINS, l, r);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_STR_CONTAINS, l, r);
     }
     /*
     (str.is_digit Str), return Bool
@@ -3833,7 +3852,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(BOOL_SORT, NODE_KIND::NT_STR_IS_DIGIT, param);
+        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_STR_IS_DIGIT, param);
     }
     // STRINGS CONVERSION
     std::shared_ptr<DAGNode> Parser::mkStrFromInt(std::shared_ptr<DAGNode> param){
@@ -3843,7 +3862,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(STR_SORT, NODE_KIND::NT_STR_FROM_INT, param);
+        return mkOper(SortManager::STR_SORT, NODE_KIND::NT_STR_FROM_INT, param);
     }
     /*
     (str.to_int Str), return Int
@@ -3855,7 +3874,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(INT_SORT, NODE_KIND::NT_STR_TO_INT, param);
+        return mkOper(SortManager::INT_SORT, NODE_KIND::NT_STR_TO_INT, param);
     }
     /*
     (str.to_re Str), return Reg
@@ -3867,7 +3886,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(REG_SORT, NODE_KIND::NT_STR_TO_REG, param);
+        return mkOper(SortManager::REG_SORT, NODE_KIND::NT_STR_TO_REG, param);
     }
     /*
     (str.to_code Str), return Int
@@ -3879,7 +3898,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(INT_SORT, NODE_KIND::NT_STR_TO_CODE, param);
+        return mkOper(SortManager::INT_SORT, NODE_KIND::NT_STR_TO_CODE, param);
     }
     /*
     (str.from_code Int), return Str
@@ -3891,7 +3910,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(STR_SORT, NODE_KIND::NT_STR_FROM_CODE, param);
+        return mkOper(SortManager::STR_SORT, NODE_KIND::NT_STR_FROM_CODE, param);
     }
     // STRINGS RE CONSTANTS
     std::shared_ptr<DAGNode> Parser::mkRegNone(){
@@ -3926,7 +3945,7 @@ namespace SMTParser{
             new_params.emplace_back(params[i]);
         }
 
-        return mkOper(REG_SORT, NODE_KIND::NT_REG_CONCAT, new_params);
+        return mkOper(SortManager::REG_SORT, NODE_KIND::NT_REG_CONCAT, new_params);
     }
     /*
     (re.union Reg Reg+), return Reg
@@ -3950,7 +3969,7 @@ namespace SMTParser{
             new_params.emplace_back(params[i]);
         }
 
-        return mkOper(REG_SORT, NODE_KIND::NT_REG_UNION, new_params);
+        return mkOper(SortManager::REG_SORT, NODE_KIND::NT_REG_UNION, new_params);
     }
     /*
     (re.inter Reg Reg+), return Reg
@@ -3974,7 +3993,7 @@ namespace SMTParser{
             new_params.emplace_back(params[i]);
         }
 
-        return mkOper(REG_SORT, NODE_KIND::NT_REG_INTER, new_params);
+        return mkOper(SortManager::REG_SORT, NODE_KIND::NT_REG_INTER, new_params);
     }
     /*
     (re.diff Reg Reg), return Reg
@@ -3990,7 +4009,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(REG_SORT, NODE_KIND::NT_REG_DIFF, params[0], params[1]);
+        return mkOper(SortManager::REG_SORT, NODE_KIND::NT_REG_DIFF, params[0], params[1]);
     }
     /*
     (re.* Reg), return Reg
@@ -4002,7 +4021,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(REG_SORT, NODE_KIND::NT_REG_STAR, param);
+        return mkOper(SortManager::REG_SORT, NODE_KIND::NT_REG_STAR, param);
     }
     /*
     (re.+ Reg), return Reg
@@ -4014,7 +4033,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(REG_SORT, NODE_KIND::NT_REG_PLUS, param);
+        return mkOper(SortManager::REG_SORT, NODE_KIND::NT_REG_PLUS, param);
     }
     /*
     (re.opt Reg), return Reg
@@ -4026,7 +4045,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(REG_SORT, NODE_KIND::NT_REG_OPT, param);
+        return mkOper(SortManager::REG_SORT, NODE_KIND::NT_REG_OPT, param);
     }
     /*
     (re.range Str Str), return Reg
@@ -4038,7 +4057,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(REG_SORT, NODE_KIND::NT_REG_RANGE, l, r);
+        return mkOper(SortManager::REG_SORT, NODE_KIND::NT_REG_RANGE, l, r);
     }
     /*
     (reg.^n Reg Int), return Reg
@@ -4051,7 +4070,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(REG_SORT, NODE_KIND::NT_REG_REPEAT, l, r);
+        return mkOper(SortManager::REG_SORT, NODE_KIND::NT_REG_REPEAT, l, r);
     }
     /*
     (re.loop Reg Int Int), return Reg
@@ -4063,7 +4082,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(REG_SORT, NODE_KIND::NT_REG_LOOP, l, r, s);
+        return mkOper(SortManager::REG_SORT, NODE_KIND::NT_REG_LOOP, l, r, s);
     }
     /*
     (re.comp Reg), return Reg
@@ -4075,7 +4094,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(REG_SORT, NODE_KIND::NT_REG_COMPLEMENT, param);
+        return mkOper(SortManager::REG_SORT, NODE_KIND::NT_REG_COMPLEMENT, param);
     }
     // STRINGS RE FUNCTIONS
     /*
@@ -4088,7 +4107,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(STR_SORT, NODE_KIND::NT_STR_REPLACE_REG, l, r, v);
+        return mkOper(SortManager::STR_SORT, NODE_KIND::NT_STR_REPLACE_REG, l, r, v);
     }
     /*
     (str.replace_re_all Str Reg Str), return Str
@@ -4100,7 +4119,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(STR_SORT, NODE_KIND::NT_STR_REPLACE_REG_ALL, l, r, v);
+        return mkOper(SortManager::STR_SORT, NODE_KIND::NT_STR_REPLACE_REG_ALL, l, r, v);
     }
     /*
     (str.indexof_re Str Reg), return Int
@@ -4112,7 +4131,7 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(INT_SORT, NODE_KIND::NT_STR_INDEXOF_REG, l, r);
+        return mkOper(SortManager::INT_SORT, NODE_KIND::NT_STR_INDEXOF_REG, l, r);
     }
 
     // INTERVAL
@@ -4307,20 +4326,20 @@ namespace SMTParser{
 
         // negate an arithmetic atom
         if(atom->isArithComp()){
-            return mkOper(BOOL_SORT, atom->getKind(), {atom->getChild(1), atom->getChild(0)});
+            return mkOper(SortManager::BOOL_SORT, atom->getKind(), {atom->getChild(1), atom->getChild(0)});
         }
 
         // negate a bitvector atom
         if(atom->isBVCompOp()){
-            return mkOper(BOOL_SORT, atom->getKind(), {atom->getChild(1), atom->getChild(0)});
+            return mkOper(SortManager::BOOL_SORT, atom->getKind(), {atom->getChild(1), atom->getChild(0)});
         }
 
         if(atom->isFPComp()){
-            return mkOper(BOOL_SORT, atom->getKind(), {atom->getChild(1), atom->getChild(0)});
+            return mkOper(SortManager::BOOL_SORT, atom->getKind(), {atom->getChild(1), atom->getChild(0)});
         }
 
         if(atom->isStrComp()){
-            return mkOper(BOOL_SORT, atom->getKind(), {atom->getChild(1), atom->getChild(0)});
+            return mkOper(SortManager::BOOL_SORT, atom->getKind(), {atom->getChild(1), atom->getChild(0)});
         }
 
         // for other types of atoms, use the general negation operation

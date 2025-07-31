@@ -64,7 +64,7 @@ void test_quantifiers_with_arrays(SMTParser::ParserPtr& parser) {
     
     try {
         // First declare the array
-        std::shared_ptr<SMTParser::Sort> int_sort = SMTParser::INT_SORT;
+        std::shared_ptr<SMTParser::Sort> int_sort = SMTParser::SortManager::INT_SORT;
         std::shared_ptr<SMTParser::DAGNode> array = parser->mkArray("a", int_sort, int_sort);
         std::cout << "Declared array: " << parser->toString(array) << std::endl;
         
@@ -89,8 +89,8 @@ void test_manual_quantifier_creation(SMTParser::ParserPtr& parser) {
     
     try {
         // Create sorts
-        std::shared_ptr<SMTParser::Sort> int_sort = SMTParser::INT_SORT;
-        std::shared_ptr<SMTParser::Sort> bool_sort = SMTParser::BOOL_SORT;
+        std::shared_ptr<SMTParser::Sort> int_sort = SMTParser::SortManager::INT_SORT;
+        std::shared_ptr<SMTParser::Sort> bool_sort = SMTParser::SortManager::BOOL_SORT;
         
         // Create quantifier variables
         std::shared_ptr<SMTParser::DAGNode> x_var = parser->mkQuantVar("x", int_sort);
@@ -141,14 +141,14 @@ void test_practical_quantifier_examples(SMTParser::ParserPtr& parser) {
     
     try {
         // Declare some necessary symbols for the examples
-        std::shared_ptr<SMTParser::Sort> int_sort = SMTParser::INT_SORT;
+        std::shared_ptr<SMTParser::Sort> int_sort = SMTParser::SortManager::INT_SORT;
         
         // Function f: Int -> Int
         std::vector<std::shared_ptr<SMTParser::Sort>> f_params = {int_sort};
         parser->mkFuncDec("f", f_params, int_sort);
         
         // Relation R: Int, Int -> Bool
-        std::shared_ptr<SMTParser::Sort> bool_sort = SMTParser::BOOL_SORT;
+        std::shared_ptr<SMTParser::Sort> bool_sort = SMTParser::SortManager::BOOL_SORT;
         std::vector<std::shared_ptr<SMTParser::Sort>> r_params = {int_sort, int_sort};
         parser->mkFuncDec("R", r_params, bool_sort);
         

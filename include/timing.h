@@ -56,6 +56,10 @@ namespace timing_detail {
     }
 
     struct Reporter {
+        Reporter() {
+            // 确保 data() 在 Reporter 之前构造，避免析构顺序问题
+            (void)timing_detail::data();
+        }
         ~Reporter();
     };
 }

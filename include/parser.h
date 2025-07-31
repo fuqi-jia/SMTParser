@@ -128,6 +128,8 @@ namespace SMTParser{
 
         // node manager
         std::shared_ptr<NodeManager>            node_manager;
+        // sort manager
+        std::shared_ptr<SortManager>            sort_manager;
 
         std::unordered_map<std::string, std::shared_ptr<DAGNode>> 
                                                 let_key_map; // local variables, no need to hash store
@@ -581,7 +583,83 @@ namespace SMTParser{
          */
         std::shared_ptr<Sort> mkSortDec(const std::string &name, const size_t &arity);
 
-        
+        /**
+         * @brief Create a sort definition
+         * 
+         * @param name Sort name
+         * @param params Parameters
+         * @param out_sort Output sort
+         * @return Sort definition node
+         */
+        std::shared_ptr<Sort> mkSortDef(const std::string &name, const std::vector<std::shared_ptr<Sort>> &params, std::shared_ptr<Sort> out_sort);
+
+        // mk special sort
+        /**
+         * @brief Create an integer sort
+         * 
+         * @return Integer sort
+         */
+        std::shared_ptr<Sort> mkIntSort();
+        /**
+         * @brief Create a real sort
+         * 
+         * @return Real sort
+         */
+        std::shared_ptr<Sort> mkRealSort();
+        /**
+         * @brief Create a boolean sort
+         * 
+         * @return Boolean sort
+         */
+        std::shared_ptr<Sort> mkBoolSort();
+        /**
+         * @brief Create a string sort
+         * 
+         * @return String sort
+         */
+        std::shared_ptr<Sort> mkStrSort();
+        /**
+         * @brief Create a regular expression sort
+         * 
+         * @return Regular expression sort
+         */
+        std::shared_ptr<Sort> mkRegSort();
+        /**
+         * @brief Create a rounding mode sort
+         * 
+         * @return Rounding mode sort
+         */
+        std::shared_ptr<Sort> mkRoundingModeSort();
+        /**
+         * @brief Create a natural sort
+         * 
+         * @return Natural sort
+         */
+        std::shared_ptr<Sort> mkNatSort();
+        /**
+         * @brief Create a bit-vector sort
+         * 
+         * @param width Width of the bit-vector
+         * @return Bit-vector sort
+         */
+        std::shared_ptr<Sort> mkBVSort(const size_t &width);
+        /**
+         * @brief Create a floating-point sort
+         * 
+         * @param e Exponent size
+         * @param s Significand size
+         * @return Floating-point sort
+         */
+        std::shared_ptr<Sort> mkFPSort(const size_t &e, const size_t &s);
+        /**
+         * @brief Create an array sort
+         * 
+         * @param index Index sort
+         * @param elem Element sort
+         * @return Array sort
+         */
+        std::shared_ptr<Sort> mkArraySort(std::shared_ptr<Sort> index, std::shared_ptr<Sort> elem);
+
         // declare var
         /**
          * @brief Declare a variable
