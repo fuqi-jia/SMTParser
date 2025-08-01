@@ -42,101 +42,50 @@ void test_basic_parsing() {
     }
 }
 
-void test_expression_building_and_evaluation() {
-    std::cout << "\n=== Testing Expression Building and Evaluation ===" << std::endl;
+void test_expression_building() {
+    std::cout << "\n=== Testing Expression Building ===" << std::endl;
     
     try {
         auto parser = SMTParser::newParser();
-        auto model = SMTParser::newModel();
         
         // Create variables and expressions
         auto x = parser->mkVarInt("x");
         auto y = parser->mkVarInt("y");
         std::vector<std::shared_ptr<SMTParser::DAGNode>> add_params = {x, y};
-        auto expr = parser->mkAdd(add_params);
+        auto sum = parser->mkAdd(add_params);
+        auto condition = parser->mkGt(sum, parser->mkConstInt(10));
         
-        // Evaluate with model
-        model->add(x, parser->mkConstInt(10));
-        model->add(y, parser->mkConstInt(20));
-        auto result = parser->evaluate(expr, model);
+        std::cout << "Sum expression: " << parser->toString(sum) << std::endl;
+        std::cout << "Condition: " << parser->toString(condition) << std::endl;
         
-        std::cout << "Expression: " << parser->toString(expr) << std::endl;
-        std::cout << "Result: " << parser->toString(result) << std::endl;  // Should be 30
-        
-        std::cout << "✓ Expression building and evaluation test passed" << std::endl;
+        std::cout << "✓ Expression building test passed" << std::endl;
     } catch (const std::exception& e) {
-        std::cerr << "✗ Expression building and evaluation test failed: " << e.what() << std::endl;
+        std::cerr << "✗ Expression building test failed: " << e.what() << std::endl;
     }
 }
 
-void test_formula_conversion() {
-    std::cout << "\n=== Testing Formula Conversion ===" << std::endl;
-    
-    try {
-        auto parser = SMTParser::newParser();
-        auto a = parser->mkVarBool("a");
-        auto b = parser->mkVarBool("b");
-        
-        auto formula = parser->mkImplies(a, b);
-        
-        // Convert to different normal forms
-        auto nnf = parser->toNNF(formula);
-        std::vector<std::shared_ptr<SMTParser::DAGNode>> formulas = {formula};
-        auto cnf = parser->toCNF(formulas);
-        auto dnf = parser->toDNF(formula);
-        
-        std::cout << "Original: " << parser->toString(formula) << std::endl;
-        std::cout << "NNF: " << parser->toString(nnf) << std::endl;
-        std::cout << "CNF: " << parser->toString(cnf) << std::endl;
-        std::cout << "DNF: " << parser->toString(dnf) << std::endl;
-        
-        std::cout << "✓ Formula conversion test passed" << std::endl;
-    } catch (const std::exception& e) {
-        std::cerr << "✗ Formula conversion test failed: " << e.what() << std::endl;
-    }
-}
 
-void test_advanced_formula_evaluation() {
-    std::cout << "\n=== Testing Advanced Formula Evaluation ===" << std::endl;
-    
-    try {
-        auto parser = SMTParser::newParser();
-        auto model = SMTParser::newModel();
-        auto x = parser->mkVarInt("x");
-        std::vector<std::shared_ptr<SMTParser::DAGNode>> add_parts = {x, parser->mkConstInt(5)};
-        auto expr = parser->mkAdd(add_parts);
-        
-        model->add(x, parser->mkConstInt(10));
-        auto result = parser->evaluate(expr, model);  // Result: 15
-        
-        std::cout << "Expression: " << parser->toString(expr) << std::endl;
-        std::cout << "Evaluated result: " << parser->toString(result) << std::endl;
-        
-        std::cout << "✓ Advanced formula evaluation test passed" << std::endl;
-    } catch (const std::exception& e) {
-        std::cerr << "✗ Advanced formula evaluation test failed: " << e.what() << std::endl;
-    }
-}
 
-void test_formula_analysis_tools() {
-    std::cout << "\n=== Testing Formula Analysis Tools ===" << std::endl;
+// Some Useful Features Tests
+
+void test_formula_analysis() {
+    std::cout << "\n=== Testing Formula Analysis ===" << std::endl;
     
     try {
         auto parser = SMTParser::newParser();
         
-        // Create variables first
+        // Create variables and build complex formula
         auto x = parser->mkVarInt("x");
         auto y = parser->mkVarInt("y");
         auto z = parser->mkVarBool("z");
         
-        // Build a complex formula
         std::vector<std::shared_ptr<SMTParser::DAGNode>> xy_parts = {x, y};
-        std::vector<std::shared_ptr<SMTParser::DAGNode>> formula_parts = {
+        std::vector<std::shared_ptr<SMTParser::DAGNode>> parts = {
             parser->mkGt(parser->mkAdd(xy_parts), parser->mkConstInt(0)),
             parser->mkLt(x, parser->mkConstInt(10)),
-            parser->mkEq(z, parser->mkTrue())
+            z
         };
-        auto formula = parser->mkAnd(formula_parts);
+        auto formula = parser->mkAnd(parts);
         
         // Collect atoms and variables
         std::unordered_set<std::shared_ptr<SMTParser::DAGNode>> atoms, vars;
@@ -144,56 +93,134 @@ void test_formula_analysis_tools() {
         parser->collectVars(formula, vars);
         
         std::cout << "Formula: " << parser->toString(formula) << std::endl;
-        std::cout << "Found " << atoms.size() << " atoms:" << std::endl;
-        for (const auto& atom : atoms) {
-            std::cout << "  " << parser->toString(atom) << std::endl;
-        }
+        std::cout << "Found " << atoms.size() << " atoms and " << vars.size() << " variables" << std::endl;
         
-        std::cout << "Found " << vars.size() << " variables:" << std::endl;
-        for (const auto& var : vars) {
-            std::cout << "  " << parser->toString(var) << std::endl;
-        }
-        
-        // Test let expression expansion
-        auto let_expr = parser->mkExpr("(let ((temp (+ x 1))) (> temp y))");
-        auto expanded = parser->expandLet(let_expr);
-        std::cout << "Let expression: " << parser->toString(let_expr) << std::endl;
-        std::cout << "Expanded: " << parser->toString(expanded) << std::endl;
-        
-        std::cout << "✓ Formula analysis tools test passed" << std::endl;
+        std::cout << "✓ Formula analysis test passed" << std::endl;
     } catch (const std::exception& e) {
-        std::cerr << "✗ Formula analysis tools test failed: " << e.what() << std::endl;
+        std::cerr << "✗ Formula analysis test failed: " << e.what() << std::endl;
     }
 }
 
-void test_optimization_modulo_theories() {
-    std::cout << "\n=== Testing Optimization Modulo Theories (OMT) ===" << std::endl;
+void test_formula_conversions() {
+    std::cout << "\n=== Testing Formula Format Conversions ===" << std::endl;
+    
+    try {
+        auto parser = SMTParser::newParser();
+        auto a = parser->mkVarBool("a");
+        auto b = parser->mkVarBool("b");
+        auto c = parser->mkVarBool("c");
+        
+        // Build complex formula
+        std::vector<std::shared_ptr<SMTParser::DAGNode>> or_parts = {b, c};
+        std::vector<std::shared_ptr<SMTParser::DAGNode>> formula_parts = {
+            parser->mkImplies(a, b),
+            parser->mkOr(or_parts)
+        };
+        auto formula = parser->mkAnd(formula_parts);
+        
+        // Convert to different normal forms
+        auto nnf = parser->toNNF(formula);
+        std::vector<std::shared_ptr<SMTParser::DAGNode>> formula_vec = {formula};
+        auto cnf = parser->toCNF(formula_vec);
+        auto dnf = parser->toDNF(formula);
+        
+        std::cout << "Original: " << parser->toString(formula) << std::endl;
+        std::cout << "NNF: " << parser->toString(nnf) << std::endl;
+        std::cout << "CNF: " << parser->toString(cnf) << std::endl;
+        std::cout << "DNF: " << parser->toString(dnf) << std::endl;
+        
+        std::cout << "✓ Formula conversions test passed" << std::endl;
+    } catch (const std::exception& e) {
+        std::cerr << "✗ Formula conversions test failed: " << e.what() << std::endl;
+    }
+}
+
+void test_model_evaluation() {
+    std::cout << "\n=== Testing Model Evaluation ===" << std::endl;
+    
+    try {
+        auto parser = SMTParser::newParser();
+        auto model = SMTParser::newModel();
+        
+        // Create a formula: (sin(x) > 0) ∧ (y > 1) ∧ (z ⟹ (x + y > 3))
+        auto x = parser->mkVarReal("x");
+        auto y = parser->mkVarReal("y");
+        auto z = parser->mkVarBool("z");
+        
+        auto sin_x = parser->mkSin(x);
+        auto cond1 = parser->mkGt(sin_x, parser->mkConstReal(std::string("0")));             // sin(x) > 0
+        
+        auto cond2 = parser->mkGt(y, parser->mkConstReal(std::string("1")));                 // y > 1
+        
+        std::vector<std::shared_ptr<SMTParser::DAGNode>> sum_xy_parts = {x, y};
+        auto sum_xy = parser->mkAdd(sum_xy_parts);
+        auto cond3 = parser->mkImplies(z, parser->mkGt(sum_xy, parser->mkConstReal(std::string("3"))));  // z ⟹ (x + y > 3)
+        
+        std::vector<std::shared_ptr<SMTParser::DAGNode>> formula_parts = {cond1, cond2, cond3};
+        auto formula = parser->mkAnd(formula_parts);
+        
+        // Assign values and evaluate
+        model->add(x, parser->mkConstReal(std::string("1.5")));   // sin(1.5) ≈ 0.997 > 0 ✓
+        model->add(y, parser->mkConstReal(std::string("2.0")));   // 2.0 > 1 ✓
+        model->add(z, parser->mkTrue());                          // x + y = 3.5 > 3 ✓
+        
+        auto result = parser->evaluate(formula, model);
+        std::cout << "Formula: " << parser->toString(formula) << std::endl;
+        std::cout << "Result: " << parser->toString(result) << std::endl;  // true
+        
+        std::cout << "✓ Model evaluation test passed" << std::endl;
+    } catch (const std::exception& e) {
+        std::cerr << "✗ Model evaluation test failed: " << e.what() << std::endl;
+    }
+}
+
+void test_let_expression_expansion() {
+    std::cout << "\n=== Testing Let Expression Expansion ===" << std::endl;
     
     try {
         auto parser = SMTParser::newParser();
         
-        // Test parsing OMT commands
+        auto x = parser->mkVarInt("x");
+        auto y = parser->mkVarInt("y");
+        auto let_expr = parser->mkExpr("(let ((temp (+ x 1))) (> temp y))");
+        auto expanded = parser->expandLet(let_expr);
+        
+        std::cout << "Let expression: " << parser->toString(let_expr) << std::endl;
+        std::cout << "Expanded: " << parser->toString(expanded) << std::endl;
+        
+        std::cout << "✓ Let expression expansion test passed" << std::endl;
+    } catch (const std::exception& e) {
+        std::cerr << "✗ Let expression expansion test failed: " << e.what() << std::endl;
+    }
+}
+
+void test_enhanced_omt() {
+    std::cout << "\n=== Testing Enhanced Optimization Modulo Theories (OMT) ===" << std::endl;
+    
+    try {
+        auto parser = SMTParser::newParser();
+        
+        // Parse OMT commands
         parser->parseStr("(declare-const x Int)");
+        parser->parseStr("(declare-const y Int)");
         parser->parseStr("(assert (> x 0))");
+        parser->parseStr("(assert (> y 0))");
         parser->parseStr("(assert-soft (< x 100) :weight 1.0)");
+        parser->parseStr("(assert-soft (< y 50) :weight 2.0)");
         
-        std::cout << "OMT commands parsed successfully" << std::endl;
-        
-        // Get soft assertions
+        // Access soft assertions and objectives
         auto soft_assertions = parser->getSoftAssertions();
         auto soft_weights = parser->getSoftWeights();
         
         std::cout << "Found " << soft_assertions.size() << " soft assertions" << std::endl;
-        for (size_t i = 0; i < soft_assertions.size(); i++) {
-            std::cout << "  Soft assertion " << i << ": " << parser->toString(soft_assertions[i]) << std::endl;
-            if (i < soft_weights.size()) {
-                std::cout << "    Weight: " << parser->toString(soft_weights[i]) << std::endl;
-            }
+        for (size_t i = 0; i < soft_assertions.size(); ++i) {
+            std::cout << "Soft assertion " << i << " (weight " << parser->toString(soft_weights[i]) << "): " 
+                      << parser->toString(soft_assertions[i]) << std::endl;
         }
         
-        std::cout << "✓ OMT test passed" << std::endl;
+        std::cout << "✓ Enhanced OMT test passed" << std::endl;
     } catch (const std::exception& e) {
-        std::cerr << "✗ OMT test failed: " << e.what() << std::endl;
+        std::cerr << "✗ Enhanced OMT test failed: " << e.what() << std::endl;
     }
 }
 
@@ -253,12 +280,18 @@ int main() {
     std::cout << "Testing README.md C++ Examples" << std::endl;
     std::cout << "===============================" << std::endl;
     
+    // Basic Usage Examples Tests
     test_basic_parsing();
-    test_expression_building_and_evaluation();
-    test_formula_conversion();
-    test_advanced_formula_evaluation();
-    test_formula_analysis_tools();
-    test_optimization_modulo_theories();
+    test_expression_building();
+    
+    // Some Useful Features Tests
+    test_formula_analysis();
+    test_formula_conversions();
+    test_model_evaluation();
+    test_let_expression_expansion();
+    test_enhanced_omt();
+    
+    // Comprehensive Features Test
     test_comprehensive_features();
     
     std::cout << "\n===============================" << std::endl;
