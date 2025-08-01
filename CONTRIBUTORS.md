@@ -49,6 +49,8 @@ All contributors will be recognized in this file. When you make your first contr
 **Kunhang Lv** - *String output functionality improvements*
 - Enhanced string conversion and output mechanisms
 
+**Cunjing Ge & Minghao Liu** - Initial prototype developers (~2k lines)
+
 <!-- Add your name here when you make your first contribution -->
 <!-- Format: **Your Name** - *Brief description of contribution* -->
 <!-- Example: **John Doe** - *Bug fixes in expression parser* -->
