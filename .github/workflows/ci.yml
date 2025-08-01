@@ -3,8 +3,36 @@ name: CI Tests
 on:
   push:
     branches: [ main, master, develop ]
+    paths:
+      - '**.h'
+      - '**.hpp'
+      - '**.cpp'
+      - '**.c'
+      - '**/CMakeLists.txt'
+      - '**.cmake'
+      - '**.py'
+      - '**.pyx'
+      - '**.pxd'
+      - '**.pyi'
+      - 'setup.py'
+      - 'requirements.txt'
+      - '.github/workflows/**'
   pull_request:
     branches: [ main, master, develop ]
+    paths:
+      - '**.h'
+      - '**.hpp'
+      - '**.cpp'
+      - '**.c'
+      - '**/CMakeLists.txt'
+      - '**.cmake'
+      - '**.py'
+      - '**.pyx'
+      - '**.pxd'
+      - '**.pyi'
+      - 'setup.py'
+      - 'requirements.txt'
+      - '.github/workflows/**'
 
 jobs:
   test:
