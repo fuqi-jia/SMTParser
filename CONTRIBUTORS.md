@@ -1,6 +1,6 @@
 # Contributors
 
-This document recognizes the people who have contributed to the SMTLIBParser project.
+This document recognizes the people who have contributed to the SMTParser project.
 
 ## Project Creator & Lead Maintainer
 
@@ -62,4 +62,4 @@ All contributors will be recognized in this file. When you make your first contr
 For questions about contributing, please contact:
 - **Fuqi Jia**: jiafq@ios.ac.cn
 
-Thank you to everyone who has contributed to making SMTLIBParser better!
+Thank you to everyone who has contributed to making SMTParser better!
