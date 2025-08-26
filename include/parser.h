@@ -52,7 +52,7 @@ namespace SMTParser{
     };
 
     enum class KEYWORD{
-        KW_ID, KW_WEIGHT, KW_COMP, KW_EPSILON, KW_M, KW_OPT_KIND, KW_NULL
+        KW_ID, KW_WEIGHT, KW_COMP, KW_EPSILON, KW_M, KW_OPT_KIND, KW_NAMED , KW_NULL
     };
 
     enum class CMD_TYPE {
@@ -182,6 +182,8 @@ namespace SMTParser{
         std::vector<std::shared_ptr<DAGNode>>               assertions;
         std::unordered_map<std::string, std::unordered_set<size_t>> 
                                                             assertion_groups;
+        //:named
+        std::unordered_map<std::string, std::shared_ptr<DAGNode>> named_assertions;
         std::vector<std::vector<std::shared_ptr<DAGNode>>>  assumptions;
         std::vector<std::shared_ptr<DAGNode>>               soft_assertions;
         std::vector<std::shared_ptr<DAGNode>>               soft_weights;

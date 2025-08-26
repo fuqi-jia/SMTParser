@@ -79,7 +79,8 @@ namespace SMTParser{
     std::shared_ptr<Sort> Parser::getSort(const std::vector<std::shared_ptr<DAGNode>>& params){
         std::shared_ptr<Sort> sort = nullptr;
         // use the maximum sort only for int/real
-        bool is_int_real_sort = params[0]->getSort()->isInt() || params[0]->getSort()->isReal();
+        bool is_int_real_sort = params[0]->getSort()->isInt() || params[0]->getSort()->isReal() 
+        ||params[0]->getSort()->isIntOrReal();
         if(is_int_real_sort){
             for(size_t i=0;i<params.size();i++){
                 if(params[i]->getSort()->isReal()){
@@ -1222,7 +1223,20 @@ namespace SMTParser{
         if(params.size() == 1){
             return mkNeg(params[0]);
         }
+
+        // std::cout << "=========== test : print params ===========" << std::endl;
+        // std::printf("params.size() = %ld\n", params.size());
+        // for (size_t i = 0; i < params.size(); i++) {
+        //     std::cout << "params[i] Sort = " << params[i]->getSort()->toString() << std::endl;
+        //     std::printf("params[%ld] = %s\n", i, params[i]->toString().c_str());
+        // }
+
         std::shared_ptr<Sort> sort = getSort(params);
+
+        // std::cout << "=========== test : print sort ===========" << std::endl;
+        // std::cout << (sort == nullptr) << std::endl;
+        // std::cout << "sort arity = " << sort->arity << std::endl;
+        // std::cout << "sort = " << sort->toString() << std::endl;
 
         std::vector<std::shared_ptr<DAGNode>> new_params;
         // (- a b c)

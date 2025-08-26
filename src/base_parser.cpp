@@ -684,7 +684,9 @@ namespace SMTParser{
 	KEYWORD Parser::parseKeyword(){
 		
 		size_t key_ln = line_number;
+		//std::cout << "line_number = " << key_ln << std::endl;
 		std::string key = getSymbol();
+		//std::cout << "key = " << key << std::endl;
 		if(key == ":id"){
 			return KEYWORD::KW_ID;
 		}
@@ -699,6 +701,8 @@ namespace SMTParser{
 		}
 		else if(key == ":M"){
 			return KEYWORD::KW_M;
+		}else if (key == ":named"){
+			return KEYWORD::KW_NAMED;
 		}
 		else{
 			err_unkwn_sym(key, key_ln);
@@ -714,6 +718,8 @@ namespace SMTParser{
 		// (assert <expr>) or (assert <expr> [:id <symbol>])
 		if (command == "assert") {
 			std::string grp_id = "";
+			std::string named_name = "";
+
 			KEYWORD key = attemptParseKeywords();
 			if(key == KEYWORD::KW_ID){
 				// (assert [:id <symbol>] <expr>)
@@ -730,6 +736,13 @@ namespace SMTParser{
 					grp_id = getSymbol();
 				}
 			}
+			if (named_name == ""){
+				KEYWORD key_ = attemptParseKeywords();
+				if(key_ == KEYWORD::KW_NAMED){
+					// (assert <expr> (! expr :named <symbol>))
+					named_name = getSymbol();
+				}
+			}
 			// if grp_id is not empty, insert to assertion_groups
 			if(grp_id != ""){
 				if(assertion_groups.find(grp_id) == assertion_groups.end()){
@@ -738,6 +751,10 @@ namespace SMTParser{
 				else{
 					assertion_groups[grp_id].insert(index);
 				}
+			}
+			//if named_name is not empty, insert to named_assertions
+			if (named_name != ""){
+				named_assertions[named_name] = assert_expr;
 			}
 			skipToRpar();
 			return CMD_TYPE::CT_ASSERT;
@@ -1478,7 +1495,27 @@ namespace SMTParser{
 			}
 			else err_unkwn_sym(s, expr_ln);
 		}
-		else err_unkwn_sym(s, expr_ln);
+		else {
+			// first check the basic type cache
+			auto basic_it = BASIC_SORTS.find(s);
+			if (basic_it != BASIC_SORTS.end()) {
+				sort = basic_it->second;
+			}
+			// then check the user-defined type
+			else if(sort_key_map.find(s) != sort_key_map.end()){
+				sort = sort_key_map[s];
+			}
+			else err_unkwn_sym(s, expr_ln);
+
+			if (sort->arity > 0 ){
+				for (size_t i = 0; i < sort->arity; i++){
+					std::shared_ptr<Sort> sort_child = parseSort();
+					if (sort_child->arity != sort_child->children.size())
+						sort->children.push_back(sort_child);
+				}
+			}
+		}
+		//err_unkwn_sym(s, expr_ln);
 		parseRpar();
 
 		return sort;
