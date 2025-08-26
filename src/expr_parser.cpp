@@ -235,6 +235,21 @@ namespace SMTParser{
                         parseRpar();
                         frame.result = res;
                         frame.state = FrameState::Finish;
+                    }else if (head == "!"){
+                        // Handle (! <formula> :named <name>) syntax
+                        std::shared_ptr<DAGNode> formula = parseExpr();
+                        // Check for :named annotation
+                        KEYWORD key = attemptParseKeywords();
+                        if(key == KEYWORD::KW_NAMED){
+                             std::string name = getSymbol();
+                            // Store the named formula for unsat core functionality
+                            // This could be stored in a separate map for named assertions
+                            named_assertions[name] = formula;
+                        }
+    
+                        frame.result = formula;
+                        parseRpar();
+                        frame.state = FrameState::Finish;
                     }
 
                     else{
