@@ -3148,7 +3148,7 @@ namespace SMTParser{
          * @param kind Node kind
          * @return Opposite kind of the node kind
          */
-        NODE_KIND                getOppositeKind(NODE_KIND kind);
+        NODE_KIND                getNegatedKind(NODE_KIND kind);
 
         /**
          * @brief Get the zero for a sort

@@ -46,7 +46,8 @@ namespace SMTParser{
 
     COMP_KIND getDefaultCompareOperator(const std::string& logic, OPT_KIND opt_type = OPT_KIND::OPT_MINIMIZE);
     COMP_KIND getCompareOperator(const std::string& symbol);
-    COMP_KIND getOppositeOperator(COMP_KIND comp);
+    COMP_KIND getNegatedOperator(COMP_KIND comp);
+    COMP_KIND getFlipOperator(COMP_KIND comp);
     COMP_KIND getStrictOperator(COMP_KIND comp);
     NODE_KIND getCompareNodeKind(COMP_KIND comp);
 

@@ -96,44 +96,84 @@ namespace SMTParser{
     }
 
     
-    COMP_KIND getOppositeOperator(COMP_KIND comp){
+    COMP_KIND getNegatedOperator(COMP_KIND comp){
         // get the opposite operator
         switch (comp)
         {
         case COMP_KIND::COMP_LT:
-            return COMP_KIND::COMP_GT;
-        case COMP_KIND::COMP_LE:
             return COMP_KIND::COMP_GE;
+        case COMP_KIND::COMP_LE:
+            return COMP_KIND::COMP_GT;
         case COMP_KIND::COMP_GT:
-            return COMP_KIND::COMP_LT;
-        case COMP_KIND::COMP_GE:
             return COMP_KIND::COMP_LE;
+        case COMP_KIND::COMP_GE:
+            return COMP_KIND::COMP_LT;
         case COMP_KIND::COMP_BV_ULT:
-            return COMP_KIND::COMP_BV_UGT;
-        case COMP_KIND::COMP_BV_ULE:
             return COMP_KIND::COMP_BV_UGE;
+        case COMP_KIND::COMP_BV_ULE:
+            return COMP_KIND::COMP_BV_UGT;
         case COMP_KIND::COMP_BV_UGT:
-            return COMP_KIND::COMP_BV_ULT;
-        case COMP_KIND::COMP_BV_UGE:
             return COMP_KIND::COMP_BV_ULE;
+        case COMP_KIND::COMP_BV_UGE:
+            return COMP_KIND::COMP_BV_ULT;
         case COMP_KIND::COMP_BV_SLT:
-            return COMP_KIND::COMP_BV_SGT;
-        case COMP_KIND::COMP_BV_SLE:
             return COMP_KIND::COMP_BV_SGE;
+        case COMP_KIND::COMP_BV_SLE:
+            return COMP_KIND::COMP_BV_SGT;
         case COMP_KIND::COMP_BV_SGT:
-            return COMP_KIND::COMP_BV_SLT;
-        case COMP_KIND::COMP_BV_SGE:
             return COMP_KIND::COMP_BV_SLE;
+        case COMP_KIND::COMP_BV_SGE:
+            return COMP_KIND::COMP_BV_SLT;
         case COMP_KIND::COMP_FP_LT:
-            return COMP_KIND::COMP_FP_GT;
-        case COMP_KIND::COMP_FP_LE:
             return COMP_KIND::COMP_FP_GE;
+        case COMP_KIND::COMP_FP_LE:
+            return COMP_KIND::COMP_FP_GT;
         case COMP_KIND::COMP_FP_GT:
-            return COMP_KIND::COMP_FP_LT;
-        case COMP_KIND::COMP_FP_GE:
             return COMP_KIND::COMP_FP_LE;
+        case COMP_KIND::COMP_FP_GE:
+            return COMP_KIND::COMP_FP_LT;
         default:
             return COMP_KIND::COMP_LT;
+        }
+    }
+
+    COMP_KIND getFlipOperator(COMP_KIND comp){
+        switch (comp)
+        {
+            case COMP_KIND::COMP_LT:
+                return COMP_KIND::COMP_GT;
+            case COMP_KIND::COMP_LE:
+                return COMP_KIND::COMP_GE;
+            case COMP_KIND::COMP_GT:
+                return COMP_KIND::COMP_LT;
+            case COMP_KIND::COMP_GE:
+                return COMP_KIND::COMP_LE;
+            case COMP_KIND::COMP_BV_ULT:
+                return COMP_KIND::COMP_BV_UGT;
+            case COMP_KIND::COMP_BV_ULE:
+                return COMP_KIND::COMP_BV_UGE;
+            case COMP_KIND::COMP_BV_UGT:
+                return COMP_KIND::COMP_BV_ULT;
+            case COMP_KIND::COMP_BV_UGE:
+                return COMP_KIND::COMP_BV_ULE;
+            case COMP_KIND::COMP_BV_SLT:
+                return COMP_KIND::COMP_BV_SGT;
+            case COMP_KIND::COMP_BV_SLE:
+                return COMP_KIND::COMP_BV_SGE;
+            case COMP_KIND::COMP_BV_SGT:
+                return COMP_KIND::COMP_BV_SLT;
+            case COMP_KIND::COMP_BV_SGE:
+                return COMP_KIND::COMP_BV_SLE;
+            case COMP_KIND::COMP_FP_LT:
+                return COMP_KIND::COMP_FP_GT;
+            case COMP_KIND::COMP_FP_LE:
+                return COMP_KIND::COMP_FP_GE;
+            case COMP_KIND::COMP_FP_GT:
+                return COMP_KIND::COMP_FP_LT;
+            case COMP_KIND::COMP_FP_GE:
+                return COMP_KIND::COMP_FP_LE;
+            default:
+                return COMP_KIND::COMP_LT;
         }
     }
 

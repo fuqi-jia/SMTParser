@@ -2187,8 +2187,8 @@ namespace SMTParser{
 			return NODE_KIND::NT_ERROR;
 		}
 	}
-	NODE_KIND Parser::getOppositeKind(NODE_KIND kind){
-		return SMTParser::getOppositeKind(kind);
+	NODE_KIND Parser::getNegatedKind(NODE_KIND kind){
+		return SMTParser::getNegatedKind(kind);
 	}
 	std::shared_ptr<DAGNode> Parser::getZero(std::shared_ptr<Sort> sort){
 		if(sort->isInt() || sort->isIntOrReal()){

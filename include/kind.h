@@ -392,7 +392,8 @@ namespace SMTParser{
     };
 
     std::string kindToString(const NODE_KIND& nk);
-    NODE_KIND getOppositeKind(const NODE_KIND& nk);
+    NODE_KIND getFlipKind(const NODE_KIND& nk); // > -> <, < -> >, etc.
+    NODE_KIND getNegatedKind(const NODE_KIND& nk); // > -> <=, < -> >=, etc.
     NODE_KIND getOperKind(const std::string& s);
 }
 

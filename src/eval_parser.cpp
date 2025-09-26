@@ -837,7 +837,7 @@ namespace SMTParser{
                         }
                     }
                     else{
-                        auto opposite_op = getOppositeKind(op);
+                        auto opposite_op = getFlipKind(op);
                         result = const_children[0];
                         for(size_t i = 1; i < const_children.size(); ++i){
                             result = mkOper(expr->getSort(), opposite_op, result, const_children[i]);
