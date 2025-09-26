@@ -4625,4 +4625,19 @@ namespace SMTParser{
                 return -1;
         }
     }
+
+    // ROOT OBJECT
+    std::shared_ptr<DAGNode> Parser::mkRootObj(std::shared_ptr<DAGNode> expr, int index) {
+        if(expr->isErr()) return expr;
+        
+        // Create index as integer constant
+        std::shared_ptr<DAGNode> index_node = mkConstInt(index);
+        
+        // Create root-obj node with real sort
+        std::shared_ptr<Sort> sort = SortManager::REAL_SORT;
+        std::string name = "root-obj(" + toString(expr) + "," + std::to_string(index) + ")";
+        std::vector<std::shared_ptr<DAGNode>> children = {expr, index_node};
+        
+        return node_manager->createNode(sort, NODE_KIND::NT_ROOT_OBJ, name, children);
+    }
 }

@@ -136,6 +136,21 @@ namespace SMTParser{
                                 break;
                             }
                         }
+                        else if(s == "root-obj"){
+                            // (root-obj (+ (^ x 2) (- 3)) 1)
+                            // (root-obj <expr> <index>)
+                            std::shared_ptr<DAGNode> expr = parseExpr();
+                            std::string index_str = getSymbol();
+                            parseRpar(); // close (root-obj ...)
+                            
+                            // Parse index as integer
+                            int index = std::stoi(index_str);
+                            
+                            // Create root-obj node
+                            frame.result = mkRootObj(expr, index);
+                            frame.state = FrameState::Finish;
+                            break;
+                        }
                         else{
                             err_unkwn_sym(s, frame.line);
                             frame.result = mkErr(ERROR_TYPE::ERR_UNKWN_SYM);

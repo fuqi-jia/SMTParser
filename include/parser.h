@@ -2504,6 +2504,9 @@ namespace SMTParser{
         std::shared_ptr<DAGNode> mkToFpUnsigned(std::shared_ptr<DAGNode> eb, std::shared_ptr<DAGNode> sb, std::shared_ptr<DAGNode> rm, std::shared_ptr<DAGNode> param); // to_fp_unsigned(eb, sb, rm, param)
         std::shared_ptr<DAGNode> mkFpConst(std::shared_ptr<DAGNode> sign, std::shared_ptr<DAGNode> exp, std::shared_ptr<DAGNode> mant); // fp(sign, exp, mant)
         
+        // ROOT OBJECT
+        std::shared_ptr<DAGNode> mkRootObj(std::shared_ptr<DAGNode> expr, int index); // root-obj(expr, index)
+        
         // FLOATING POINT PROPERTIES
         /**
          * @brief Create a floating-point is-normal check node

@@ -655,6 +655,17 @@ namespace SMTParser{
                 break;
             }
 
+            case NODE_KIND::NT_ROOT_OBJ: {
+                auto expr = node->getChild(0).get();
+                auto index = node->getChild(1).get();
+                out << "(root-obj ";
+                work_stack.emplace_back(nullptr, 2);  // )
+                work_stack.emplace_back(index, 0);    // index
+                work_stack.emplace_back(nullptr, 1);  // space
+                work_stack.emplace_back(expr, 0);     // expr
+                break;
+            }
+
 
 
             default: {
