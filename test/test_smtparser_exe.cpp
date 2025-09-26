@@ -39,10 +39,11 @@ int main(int argc, char* argv[]){
         return 1;
     }
 
+    bool is_directory = std::filesystem::is_directory(instances_dir);
     std::vector<std::string> smt2_files;
-    if(std::filesystem::is_directory(instances_dir)){
-    for (const auto& entry : std::filesystem::directory_iterator(instances_dir)) {
-        if (entry.is_regular_file() && entry.path().extension() == ".smt2") {
+    if(is_directory){
+        for (const auto& entry : std::filesystem::directory_iterator(instances_dir)) {
+            if (entry.is_regular_file() && entry.path().extension() == ".smt2") {
                 smt2_files.push_back(entry.path().string());
             }
         }
@@ -96,6 +97,12 @@ int main(int argc, char* argv[]){
             std::cout << "FUNCTIONS:" << functions.size() << std::endl;
             std::cout << "NODES:" << nodes << std::endl;
             std::cout << "TIME:" << duration.count() << "ms" << std::endl;
+            
+            if(!is_directory){
+                for(auto a:assertions){
+                    std::cout<<parser->toString(a)<<std::endl;
+                }
+            }
 
         } else {
             std::cout << "PARSE_FAILURE" << std::endl;

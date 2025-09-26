@@ -44,6 +44,8 @@ namespace SMTParser{
 		temp_var_counter = 0;
 		parsing_file = false;
 		in_quantifier_scope = false;
+		allow_placeholder_vars = false;
+		placeholder_var_sort = nullptr;
 		quant_nesting_depth = 0;
 		node_manager = std::make_shared<NodeManager>();
 		sort_manager = std::make_shared<SortManager>();
@@ -78,6 +80,8 @@ namespace SMTParser{
 		temp_var_counter = 0;
 		parsing_file = true;
 		in_quantifier_scope = false;
+		allow_placeholder_vars = false;
+		placeholder_var_sort = nullptr;
 		quant_nesting_depth = 0;
 		node_manager = std::make_shared<NodeManager>();
 		sort_manager = std::make_shared<SortManager>();
@@ -2471,4 +2475,5 @@ namespace SMTParser{
 	ParserPtr newParser(const std::string& filename){
 		return std::make_shared<Parser>(filename);
 	}
+
 }

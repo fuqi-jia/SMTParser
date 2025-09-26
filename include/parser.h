@@ -125,6 +125,8 @@ namespace SMTParser{
         size_t                                  let_nesting_depth; // track let nesting depth
         size_t                                  quant_nesting_depth; // track quantifier nesting depth
         bool                                    in_quantifier_scope;
+        bool                                    allow_placeholder_vars; // allow creating placeholder variables
+        std::shared_ptr<Sort>                   placeholder_var_sort; // sort for placeholder variables
 
         bool                                    parsing_file;
 
@@ -152,6 +154,8 @@ namespace SMTParser{
         // temp var
         size_t temp_var_counter;
         std::unordered_map<std::string, size_t>       temp_var_names;
+        // placeholder variables
+        std::unordered_map<std::string, size_t>       placeholder_var_names;
 
         // temp var name list
         // function name list
@@ -870,6 +874,7 @@ namespace SMTParser{
          * @return Variable node 
          */
         std::shared_ptr<DAGNode> mkVar(const std::shared_ptr<Sort>& sort, const std::string &name); // VAR
+        std::shared_ptr<DAGNode> mkPlaceholderVar(const std::string &name); // PLACEHOLDER_VAR
         
         /**
          * @brief Create a temporary variable

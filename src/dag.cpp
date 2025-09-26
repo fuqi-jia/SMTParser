@@ -204,6 +204,7 @@ namespace SMTParser{
                 break;
             case NODE_KIND::NT_VAR:
             case NODE_KIND::NT_TEMP_VAR:
+            case NODE_KIND::NT_PLACEHOLDER_VAR:
                 out << node->getName();
                 break;
             case NODE_KIND::NT_CONST_ARRAY: {

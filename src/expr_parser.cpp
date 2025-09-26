@@ -83,7 +83,6 @@ namespace SMTParser{
 
         while(!st.empty()){
             ExprFrame &frame = st.top();
-
             switch(frame.state){
                 case FrameState::Start:{
                     TIME_BLOCK("parseExpr FrameState::Start");
@@ -139,9 +138,19 @@ namespace SMTParser{
                         else if(s == "root-obj"){
                             // (root-obj (+ (^ x 2) (- 3)) 1)
                             // (root-obj <expr> <index>)
+                            // Enable placeholder variables for polynomial expressions
+                            bool old_allow_placeholder = allow_placeholder_vars;
+                            std::shared_ptr<Sort> old_placeholder_sort = placeholder_var_sort;
+                            allow_placeholder_vars = true;
+                            placeholder_var_sort = SortManager::REAL_SORT; // Default to Real sort for polynomials
+                            
                             std::shared_ptr<DAGNode> expr = parseExpr();
                             std::string index_str = getSymbol();
                             parseRpar(); // close (root-obj ...)
+                            
+                            // Restore original settings
+                            allow_placeholder_vars = old_allow_placeholder;
+                            placeholder_var_sort = old_placeholder_sort;
                             
                             // Parse index as integer
                             int index = std::stoi(index_str);
@@ -275,6 +284,16 @@ namespace SMTParser{
 
                 case FrameState::ProcessingParams:{
                     TIME_BLOCK("parseExpr FrameState::ProcessingParams");
+                    
+                    // Special handling for root-obj: enable placeholder variables
+                    bool old_allow_placeholder = allow_placeholder_vars;
+                    std::shared_ptr<Sort> old_placeholder_sort = placeholder_var_sort;
+                    const std::string& opName = (frame.headSymbol == "_") ? frame.second_symbol : frame.headSymbol;
+                    if(opName == "root-obj"){
+                        allow_placeholder_vars = true;
+                        placeholder_var_sort = SortManager::REAL_SORT;
+                    }
+                    
                     // escape the space and comment
                     scanToNextSymbol();
                     if(*bufptr == ')'){
@@ -352,6 +371,12 @@ namespace SMTParser{
                         if(res->isErr()) err_all(res, frame.headSymbol, frame.line);
                         frame.result = res;
                         frame.state = FrameState::Finish;
+                        
+                        // Restore placeholder settings
+                        if(opName == "root-obj"){
+                            allow_placeholder_vars = old_allow_placeholder;
+                            placeholder_var_sort = old_placeholder_sort;
+                        }
                         break;
                     }
                     st.push(ExprFrame());
@@ -421,12 +446,19 @@ namespace SMTParser{
 
 	
 	std::shared_ptr<DAGNode> Parser::parseConstFunc(const std::string& s){
+        
 		// first handle the special symbols
 		if (s == "true") {
 			return mkTrue();
 		}
 		else if (s == "false") {
 			return mkFalse();
+		}
+		else if(allow_placeholder_vars && placeholder_var_names.find(s) != placeholder_var_names.end()){
+			// placeholder variable name (only when placeholder mode is enabled)
+            auto var = node_manager->getNode(placeholder_var_names[s]);
+            var->incUseCount();
+            return var;
 		}
 		
 		// these have the highest priority
@@ -579,6 +611,10 @@ namespace SMTParser{
 			return mkRoundingMode("RTZ");
 		}
 		else {
+			// If allow_placeholder_vars is true, create a placeholder variable
+			if(allow_placeholder_vars && !TypeChecker::isNumber(s)){
+				return mkPlaceholderVar(s);
+			}
 			err_unkwn_sym(s, line_number);
 		}
 		return mkErr(ERROR_TYPE::ERR_UNKWN_SYM);
@@ -597,6 +633,17 @@ namespace SMTParser{
         if(fun_key_map.find(s) != fun_key_map.end()){
             return fun_key_map[s];
         }
+        
+        // Special handling for root-obj
+        if(s == "root-obj"){
+            condAssert(oper_params.size() == 2, "root-obj requires exactly 2 parameters");
+            auto expr = oper_params[0];
+            auto index_node = oper_params[1];
+            condAssert(index_node->isConst() && index_node->sort->isInt(), "root-obj index must be integer constant");
+            int index = std::stoi(index_node->getName());
+            return mkRootObj(expr, index);
+        }
+        
 		NODE_KIND kind = SMTParser::getOperKind(s);
 		switch(kind){
 			case NODE_KIND::NT_AND:

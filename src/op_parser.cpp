@@ -670,6 +670,21 @@ namespace SMTParser{
             return newvar;
         }
     }
+
+    std::shared_ptr<DAGNode> Parser::mkPlaceholderVar(const std::string &name){
+        if(placeholder_var_names.find(name) != placeholder_var_names.end()){
+            // placeholder variable already exists
+            return node_manager->getNode(placeholder_var_names[name]);
+        }
+        else{
+            // Create new placeholder variable with the specified sort
+            std::shared_ptr<Sort> sort = placeholder_var_sort ? placeholder_var_sort : SortManager::REAL_SORT;
+            std::shared_ptr<DAGNode> newvar = node_manager->createNode(sort, NODE_KIND::NT_PLACEHOLDER_VAR, name);
+            condAssert(newvar->isPlaceholderVar(), "Created placeholder variable is not a placeholder variable");
+            placeholder_var_names.insert(std::pair<std::string, size_t>(name, node_manager->getIndex(newvar)));
+            return newvar;
+        }
+    }
     std::shared_ptr<DAGNode> Parser::mkVarBool(const std::string &name){
         return mkVar(SortManager::BOOL_SORT, name);
     }
@@ -1224,20 +1239,7 @@ namespace SMTParser{
             return mkNeg(params[0]);
         }
 
-        // std::cout << "=========== test : print params ===========" << std::endl;
-        // std::printf("params.size() = %ld\n", params.size());
-        // for (size_t i = 0; i < params.size(); i++) {
-        //     std::cout << "params[i] Sort = " << params[i]->getSort()->toString() << std::endl;
-        //     std::printf("params[%ld] = %s\n", i, params[i]->toString().c_str());
-        // }
-
         std::shared_ptr<Sort> sort = getSort(params);
-
-        // std::cout << "=========== test : print sort ===========" << std::endl;
-        // std::cout << (sort == nullptr) << std::endl;
-        // std::cout << "sort arity = " << sort->arity << std::endl;
-        // std::cout << "sort = " << sort->toString() << std::endl;
-
         std::vector<std::shared_ptr<DAGNode>> new_params;
         // (- a b c)
         for(size_t i=0;i<params.size();i++){

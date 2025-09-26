@@ -44,6 +44,8 @@ namespace SMTParser{
             return "false";
         case NODE_KIND::NT_CONST_ARRAY:
             return "const_array";
+        case NODE_KIND::NT_PLACEHOLDER_VAR:
+            return "placeholder_var";
         // CORE OPERATORS
         case NODE_KIND::NT_EQ:
             return "=";
@@ -88,7 +90,7 @@ namespace SMTParser{
         case NODE_KIND::NT_POW2:
             return "pow2";
         case NODE_KIND::NT_POW:
-            return "pow";
+            return "^";
         case NODE_KIND::NT_SUB:
             return "-";
         case NODE_KIND::NT_NEG:

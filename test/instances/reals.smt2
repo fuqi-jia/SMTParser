@@ -61,5 +61,7 @@
 (assert (= neg_same (- 5.5)))
 (assert (< neg_same pos))
 
+(assert (< close1 (root-obj (+ (^ x 2) (- 3)) 1)))
+
 (check-sat)
 (exit)
