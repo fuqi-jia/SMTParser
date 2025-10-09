@@ -2267,7 +2267,7 @@ namespace SMTParser{
 
 	// Parse each define-fun definition
 	bool Parser::parseEachModel(const std::string& define_fun, ModelPtr model_ptr, bool only_declared) {
-		// Format: (define-fun name () type value)
+		// Format: (define-fun name (params) type value) or (define-fun name () type value)
 		// Remove outer parentheses
 		std::string content = define_fun;
 		if (content.front() == '(' && content.back() == ')') {
@@ -2317,9 +2317,17 @@ namespace SMTParser{
 		}
 		
 		std::string var_name = tokens[1];
-		std::string param_list = tokens[2]; // Should be ()
+		std::string param_list = tokens[2]; // Could be () or ((x!0 Real) (x!1 Real))
 		std::string type_str = tokens[3];
 		std::string value_str = tokens[4];
+		
+		// Check if this is a function definition with parameters
+		if (param_list != "()") {
+			// TODO
+			// This is a function definition, not a simple variable assignment
+			// We should skip function definitions in model parsing as they are not variable assignments
+			return true; // Skip function definitions silently
+		}
 		
 		// Parse type - use existing parseSort function
 		// Need to temporarily set parser state to parse type string
