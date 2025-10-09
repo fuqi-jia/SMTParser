@@ -2212,7 +2212,7 @@ namespace SMTParser{
 	}
 
 	// parse model
-	ModelPtr Parser::parseModel(const std::string& model){
+	ModelPtr Parser::parseModel(const std::string& model, bool only_declared){
 		std::shared_ptr<Model> model_ptr = std::make_shared<Model>();
 		
 		// Parse model string
@@ -2255,7 +2255,7 @@ namespace SMTParser{
 			std::string define_fun = model_content.substr(start, end - start + 1);
 			
 			// Parse each define-fun definition
-			if (parseEachModel(define_fun, model_ptr)) {
+			if (parseEachModel(define_fun, model_ptr, only_declared)) {
 				// Parsing successful
 			}
 			
@@ -2266,7 +2266,7 @@ namespace SMTParser{
 	}
 
 	// Parse each define-fun definition
-	bool Parser::parseEachModel(const std::string& define_fun, ModelPtr model_ptr) {
+	bool Parser::parseEachModel(const std::string& define_fun, ModelPtr model_ptr, bool only_declared) {
 		// Format: (define-fun name () type value)
 		// Remove outer parentheses
 		std::string content = define_fun;
@@ -2351,6 +2351,10 @@ namespace SMTParser{
 		if (!var_sort) {
 			return false;
 		}
+
+		if(only_declared && !isDeclaredVariable(var_name)){
+			return true;
+		}
 		
 		// Define variable first (so it exists when parsing the value)
 		std::shared_ptr<DAGNode> var_node = mkVar(var_sort, var_name);
@@ -2370,11 +2374,18 @@ namespace SMTParser{
 		// new empty model
 		std::shared_ptr<Model> model = std::make_shared<Model>();
 		// get all variables
-		std::vector<std::shared_ptr<DAGNode>> vars = getVariables();
+		std::vector<std::shared_ptr<DAGNode>> vars = getDeclaredVariables();
 		for(auto& var : vars){
 			model->addVar(var);
 		}
 		return model;
+	}
+
+	bool Parser::isDeclaredVariable(const std::string& var_name) const{
+		return var_names.find(var_name) != var_names.end();
+	}
+	bool Parser::isDeclaredFunction(const std::string& func_name) const{
+		return fun_key_map.find(func_name) != fun_key_map.end();
 	}
 
 

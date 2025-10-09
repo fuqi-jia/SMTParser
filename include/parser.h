@@ -365,6 +365,14 @@ namespace SMTParser{
         std::vector<std::shared_ptr<DAGNode>> getDeclaredVariables() const;
         
         /**
+         * @brief Check if a variable is declared
+         * 
+         * @param var_name Variable name
+         * @return True if the variable is declared, false otherwise
+         */
+        bool isDeclaredVariable(const std::string& var_name) const;
+        
+        /**
          * @brief Get variable
          * 
          * @param var_name Variable name
@@ -380,6 +388,14 @@ namespace SMTParser{
          * @return Vector of all functions
          */
         std::vector<std::shared_ptr<DAGNode>> getFunctions() const;
+
+        /**
+         * @brief Check if a function is declared
+         * 
+         * @param func_name Function name
+         * @return True if the function is declared, false otherwise
+         */
+        bool isDeclaredFunction(const std::string& func_name) const;
 
         // get sort
         /**
@@ -3669,7 +3685,7 @@ namespace SMTParser{
          * @param model Model to parse
          * @return Model
          */
-        ModelPtr                                parseModel(const std::string& model);
+        ModelPtr                                parseModel(const std::string& model, bool only_declared = false);
 
         /**
          * @brief Create a new empty model with declared variables
@@ -3788,7 +3804,7 @@ namespace SMTParser{
         std::shared_ptr<DAGNode>                remove(std::shared_ptr<DAGNode> expr, const std::unordered_set<std::shared_ptr<DAGNode>>& nodes, std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited);
         
         // Helper function: parse each define-fun definition
-        bool                                    parseEachModel(const std::string& define_fun, ModelPtr model_ptr);
+        bool                                    parseEachModel(const std::string& define_fun, ModelPtr model_ptr, bool only_declared = false);
         
         //errors & warnings
         // mk errror node
