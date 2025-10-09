@@ -135,6 +135,7 @@ namespace SMTParser{
         
         // ROOT OBJECT
         NT_ROOT_OBJ,
+        NT_ROOT_OF_WITH_INTERVAL,
         
         // NUM_KINDS
         NUM_KINDS
@@ -388,7 +389,8 @@ namespace SMTParser{
         {"re.range", NODE_KIND::NT_REG_RANGE},
         {"re.repeat", NODE_KIND::NT_REG_REPEAT},
         {"re.comp", NODE_KIND::NT_REG_COMPLEMENT},
-        {"root-obj", NODE_KIND::NT_ROOT_OBJ}
+        {"root-obj", NODE_KIND::NT_ROOT_OBJ},
+        {"root-of-with-interval", NODE_KIND::NT_ROOT_OF_WITH_INTERVAL}
     };
 
     std::string kindToString(const NODE_KIND& nk);

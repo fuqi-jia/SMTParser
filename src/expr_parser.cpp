@@ -160,6 +160,36 @@ namespace SMTParser{
                             frame.state = FrameState::Finish;
                             break;
                         }
+                        else if(s == "root-of-with-interval"){
+                            // ((root-of-with-interval (coeffs 1 (- 2)) 1 2))
+                            // Parse (coeffs ...) as a whole
+                            parseLpar(); // for (coeffs ...)
+                            std::string coeffs_tag = getSymbol(); // read "coeffs"
+                            // We don't validate coeffs_tag, just skip it
+                            
+                            // Parse coefficients
+                            std::vector<std::shared_ptr<DAGNode>> coeffs_list;
+                            scanToNextSymbol(); // Skip whitespace before checking for ')'
+                            while(*bufptr != ')'){
+                                std::shared_ptr<DAGNode> coeff = parseExpr();
+                                coeffs_list.push_back(coeff);
+                                scanToNextSymbol(); // Skip whitespace before checking for ')' again
+                            }
+                            parseRpar(); // close (coeffs ...)
+                            
+                            // Parse lower bound
+                            std::shared_ptr<DAGNode> lower_bound = parseExpr();
+                            
+                            // Parse upper bound
+                            std::shared_ptr<DAGNode> upper_bound = parseExpr();
+                            
+                            parseRpar(); // close (root-of-with-interval ...)
+                            
+                            // Create root-of-with-interval node
+                            frame.result = mkRootOfWithInterval(coeffs_list, lower_bound, upper_bound);
+                            frame.state = FrameState::Finish;
+                            break;
+                        }
                         else{
                             err_unkwn_sym(s, frame.line);
                             frame.result = mkErr(ERROR_TYPE::ERR_UNKWN_SYM);
@@ -275,6 +305,35 @@ namespace SMTParser{
                         parseRpar();
                         frame.state = FrameState::Finish;
                     }
+                    else if(head == "root-of-with-interval"){
+                        // (root-of-with-interval (coeffs 1 (- 2)) 1 2)
+                        // Parse (coeffs ...) as a whole
+                        parseLpar(); // for (coeffs ...)
+                        std::string coeffs_tag = getSymbol(); // read "coeffs"
+                        // We don't validate coeffs_tag, just skip it
+                        
+                        // Parse coefficients
+                        std::vector<std::shared_ptr<DAGNode>> coeffs_list;
+                        scanToNextSymbol(); // Skip whitespace before checking for ')'
+                        while(*bufptr != ')'){
+                            std::shared_ptr<DAGNode> coeff = parseExpr();
+                            coeffs_list.push_back(coeff);
+                            scanToNextSymbol(); // Skip whitespace before checking for ')' again
+                        }
+                        parseRpar(); // close (coeffs ...)
+                        
+                        // Parse lower bound
+                        std::shared_ptr<DAGNode> lower_bound = parseExpr();
+                        
+                        // Parse upper bound
+                        std::shared_ptr<DAGNode> upper_bound = parseExpr();
+                        
+                        parseRpar(); // close (root-of-with-interval ...)
+                        
+                        // Create root-of-with-interval node
+                        frame.result = mkRootOfWithInterval(coeffs_list, lower_bound, upper_bound);
+                        frame.state = FrameState::Finish;
+                    }
 
                     else{
                         frame.state = FrameState::ProcessingParams;
@@ -285,11 +344,11 @@ namespace SMTParser{
                 case FrameState::ProcessingParams:{
                     TIME_BLOCK("parseExpr FrameState::ProcessingParams");
                     
-                    // Special handling for root-obj: enable placeholder variables
+                    // Special handling for root-obj and root-of-with-interval: enable placeholder variables
                     bool old_allow_placeholder = allow_placeholder_vars;
                     std::shared_ptr<Sort> old_placeholder_sort = placeholder_var_sort;
                     const std::string& opName = (frame.headSymbol == "_") ? frame.second_symbol : frame.headSymbol;
-                    if(opName == "root-obj"){
+                    if(opName == "root-obj" || opName == "root-of-with-interval"){
                         allow_placeholder_vars = true;
                         placeholder_var_sort = SortManager::REAL_SORT;
                     }
@@ -373,7 +432,7 @@ namespace SMTParser{
                         frame.state = FrameState::Finish;
                         
                         // Restore placeholder settings
-                        if(opName == "root-obj"){
+                        if(opName == "root-obj" || opName == "root-of-with-interval"){
                             allow_placeholder_vars = old_allow_placeholder;
                             placeholder_var_sort = old_placeholder_sort;
                         }

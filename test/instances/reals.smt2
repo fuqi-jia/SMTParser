@@ -62,6 +62,7 @@
 (assert (< neg_same pos))
 
 (assert (< close1 (root-obj (+ (^ x 2) (- 3)) 1)))
+(assert (< close2 (root-of-with-interval (coeffs 1 (- 2)) 1 2)))
 
 (check-sat)
 (exit)

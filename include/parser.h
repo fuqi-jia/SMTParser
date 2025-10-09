@@ -2527,6 +2527,7 @@ namespace SMTParser{
         
         // ROOT OBJECT
         std::shared_ptr<DAGNode> mkRootObj(std::shared_ptr<DAGNode> expr, int index); // root-obj(expr, index)
+        std::shared_ptr<DAGNode> mkRootOfWithInterval(const std::vector<std::shared_ptr<DAGNode>>& coeffs, std::shared_ptr<DAGNode> lower_bound, std::shared_ptr<DAGNode> upper_bound); // root-of-with-interval(coeffs, lower_bound, upper_bound)
         
         // FLOATING POINT PROPERTIES
         /**

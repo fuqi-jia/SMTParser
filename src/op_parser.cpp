@@ -4642,4 +4642,35 @@ namespace SMTParser{
         
         return node_manager->createNode(sort, NODE_KIND::NT_ROOT_OBJ, name, children);
     }
+
+
+
+    std::shared_ptr<DAGNode> Parser::mkRootOfWithInterval(const std::vector<std::shared_ptr<DAGNode>>& coeffs, std::shared_ptr<DAGNode> lower_bound, std::shared_ptr<DAGNode> upper_bound) {
+        if(lower_bound->isErr()) return lower_bound;
+        if(upper_bound->isErr()) return upper_bound;
+        
+        // Check if any coefficient has error
+        for(const auto& coeff : coeffs) {
+            if(coeff->isErr()) return coeff;
+        }
+        
+        // Create root-of-with-interval node with real sort
+        std::shared_ptr<Sort> sort = SortManager::REAL_SORT;
+        
+        // Build name string
+        std::string name = "root-of-with-interval(coeffs:";
+        for(size_t i = 0; i < coeffs.size(); i++) {
+            if(i > 0) name += ",";
+            name += toString(coeffs[i]);
+        }
+        name += ",lb:" + toString(lower_bound) + ",ub:" + toString(upper_bound) + ")";
+        
+        // Create children vector: coefficients + bounds
+        std::vector<std::shared_ptr<DAGNode>> children;
+        children.insert(children.end(), coeffs.begin(), coeffs.end());
+        children.push_back(lower_bound);
+        children.push_back(upper_bound);
+        
+        return node_manager->createNode(sort, NODE_KIND::NT_ROOT_OF_WITH_INTERVAL, name, children);
+    }
 }

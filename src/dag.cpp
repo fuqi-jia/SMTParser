@@ -667,6 +667,36 @@ namespace SMTParser{
                 break;
             }
 
+            case NODE_KIND::NT_ROOT_OF_WITH_INTERVAL: {
+                out << "(root-of-with-interval (coeffs ";
+                
+                // Stack order (LIFO - Last In First Out):
+                // We want output: (root-of-with-interval (coeffs c1 c2 ...) lower upper)
+                // So we push in reverse order:
+                
+                // 1. Push closing parenthesis for root-of-with-interval (will be printed last)
+                work_stack.emplace_back(nullptr, 2);  // )
+                
+                // 2. Push upper bound
+                work_stack.emplace_back(node->getChild(node->getChildrenSize() - 1).get(), 0);
+                work_stack.emplace_back(nullptr, 1);  // space
+                
+                // 3. Push lower bound
+                work_stack.emplace_back(node->getChild(node->getChildrenSize() - 2).get(), 0);
+                work_stack.emplace_back(nullptr, 1);  // space
+                
+                // 4. Push closing parenthesis for coeffs list
+                work_stack.emplace_back(nullptr, 2);  // )
+                
+                // 5. Push coefficients in reverse order (so they print in correct order)
+                for(int i = node->getChildrenSize() - 3; i >= 0; i--) {
+                    work_stack.emplace_back(node->getChild(i).get(), 0);
+                    work_stack.emplace_back(nullptr, 1);  // space
+                }
+                
+                break;
+            }
+
 
 
             default: {
