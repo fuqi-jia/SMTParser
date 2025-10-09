@@ -56,6 +56,7 @@ if [ -z "$TEST_EXES" ]; then
         "./test_string_handling"
         "./test_string_operations"
         "./test_theory_combination"
+        "./test_parse_model"
     )
     
     # Check each potential test

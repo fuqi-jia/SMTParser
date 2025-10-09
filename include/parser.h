@@ -3661,7 +3661,16 @@ namespace SMTParser{
          * 
          * @param expr Expression to ensure
          */
-        void ensureNumberValue(std::shared_ptr<DAGNode> expr);
+        void                                    ensureNumberValue(std::shared_ptr<DAGNode> expr);
+
+        /**
+         * @brief Parse a model
+         * 
+         * @param model Model to parse
+         * @return Model
+         */
+        ModelPtr                                parseModel(const std::string& model);
+        
     private:
         // parse smt-lib2 file
         std::string	                            getSymbol();
@@ -3770,6 +3779,9 @@ namespace SMTParser{
                                                         std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited);
         
         std::shared_ptr<DAGNode>                remove(std::shared_ptr<DAGNode> expr, const std::unordered_set<std::shared_ptr<DAGNode>>& nodes, std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited);
+        
+        // Helper function: parse each define-fun definition
+        bool                                    parseEachModel(const std::string& define_fun, ModelPtr model_ptr);
         
         //errors & warnings
         // mk errror node

@@ -2210,6 +2210,164 @@ namespace SMTParser{
 			return mkErr(ERROR_TYPE::ERR_UNKWN_SYM);
 		}
 	}
+
+	// parse model
+	ModelPtr Parser::parseModel(const std::string& model){
+		std::shared_ptr<Model> model_ptr = std::make_shared<Model>();
+		
+		// Parse model string
+		std::string model_content = model;
+		
+		// Find all define-fun definitions
+		size_t pos = 0;
+		while (pos < model_content.length()) {
+			// Find next define-fun
+			size_t define_pos = model_content.find("(define-fun", pos);
+			if (define_pos == std::string::npos) {
+				break;
+			}
+			
+			// Find matching right parenthesis
+			size_t start = define_pos;
+			if (start >= model_content.length() || model_content[start] != '(') {
+				break;
+			}
+			
+			int count = 1;
+			size_t end_pos = start + 1;
+			
+			while (end_pos < model_content.length() && count > 0) {
+				if (model_content[end_pos] == '(') {
+					count++;
+				} else if (model_content[end_pos] == ')') {
+					count--;
+				}
+				end_pos++;
+			}
+			
+			if (count != 0) {
+				break; // No matching right parenthesis found
+			}
+			
+			size_t end = end_pos - 1;
+			
+			// Extract define-fun definition
+			std::string define_fun = model_content.substr(start, end - start + 1);
+			
+			// Parse each define-fun definition
+			if (parseEachModel(define_fun, model_ptr)) {
+				// Parsing successful
+			}
+			
+			pos = end + 1;
+		}
+		
+		return model_ptr;
+	}
+
+	// Parse each define-fun definition
+	bool Parser::parseEachModel(const std::string& define_fun, ModelPtr model_ptr) {
+		// Format: (define-fun name () type value)
+		// Remove outer parentheses
+		std::string content = define_fun;
+		if (content.front() == '(' && content.back() == ')') {
+			content = content.substr(1, content.length() - 2);
+		}
+		
+		// Split content into tokens
+		std::vector<std::string> tokens;
+		size_t pos = 0;
+		while (pos < content.length()) {
+			// Skip whitespace
+			while (pos < content.length() && std::isspace(content[pos])) {
+				pos++;
+			}
+			if (pos >= content.length()) break;
+			
+			// Extract next token
+			if (content[pos] == '(') {
+				// Find matching right parenthesis
+				int count = 1;
+				size_t start = pos;
+				pos++;
+				while (pos < content.length() && count > 0) {
+					if (content[pos] == '(') count++;
+					else if (content[pos] == ')') count--;
+					pos++;
+				}
+				tokens.push_back(content.substr(start, pos - start));
+			} else {
+				// Extract regular token
+				size_t start = pos;
+				while (pos < content.length() && !std::isspace(content[pos]) && content[pos] != '(' && content[pos] != ')') {
+					pos++;
+				}
+				tokens.push_back(content.substr(start, pos - start));
+			}
+		}
+		
+		// Validate token count
+		if (tokens.size() < 4) {
+			return false; // At least need: define-fun, name, (), type, value
+		}
+		
+		// Parse each part
+		if (tokens[0] != "define-fun") {
+			return false;
+		}
+		
+		std::string var_name = tokens[1];
+		std::string param_list = tokens[2]; // Should be ()
+		std::string type_str = tokens[3];
+		std::string value_str = tokens[4];
+		
+		// Parse type - use existing parseSort function
+		// Need to temporarily set parser state to parse type string
+		char* original_buffer = buffer;
+		char* original_bufptr = bufptr;
+		size_t original_buflen = buflen;
+		bool original_parsing_file = parsing_file;
+		
+		// Set temporary parsing state
+		parsing_file = false;
+		buffer = safe_strdup(type_str);
+		if (!buffer) {
+			return false;
+		}
+		buflen = type_str.length();
+		bufptr = buffer;
+		scanToNextSymbol();
+		
+		std::shared_ptr<Sort> var_sort = parseSort();
+		
+		// Restore original state
+		bufptr = nullptr;
+		delete[] buffer;
+		buffer = original_buffer;
+		bufptr = original_bufptr;
+		buflen = original_buflen;
+		parsing_file = original_parsing_file;
+		
+		if (!var_sort) {
+			return false;
+		}
+		
+		// Define variable first (so it exists when parsing the value)
+		std::shared_ptr<DAGNode> var_node = mkVar(var_sort, var_name);
+		
+		// Parse value (now variable is defined, can parse correctly)
+		std::shared_ptr<DAGNode> value = mkExpr(value_str);
+		if (!value || value->isErr()) {
+			return false;
+		}
+		
+		// Add to model
+		model_ptr->add(var_node, value);
+		
+		return true;
+	}
+
+
 	// error operations
 	std::shared_ptr<DAGNode> Parser::mkErr(const ERROR_TYPE t){
 		return node_manager->createNode(NODE_KIND::NT_ERROR);
