@@ -2366,6 +2366,16 @@ namespace SMTParser{
 		
 		return true;
 	}
+	ModelPtr Parser::newEmptyModel(){
+		// new empty model
+		std::shared_ptr<Model> model = std::make_shared<Model>();
+		// get all variables
+		std::vector<std::shared_ptr<DAGNode>> vars = getVariables();
+		for(auto& var : vars){
+			model->addVar(var);
+		}
+		return model;
+	}
 
 
 	// error operations

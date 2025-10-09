@@ -3670,6 +3670,13 @@ namespace SMTParser{
          * @return Model
          */
         ModelPtr                                parseModel(const std::string& model);
+
+        /**
+         * @brief Create a new empty model with declared variables
+         * 
+         * @return New empty model
+         */
+        ModelPtr                                newEmptyModel();
         
     private:
         // parse smt-lib2 file
