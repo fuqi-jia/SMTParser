@@ -411,12 +411,18 @@ namespace SMTParser{
 
             // Function applications
             case NODE_KIND::NT_FUNC_APPLY: {
-                out << "(" << node->getName();
-                work_stack.emplace_back(nullptr, 2);  // )
-                for (int i = node->getChildrenSize() - 1; i >= 1; i--) {
-                    auto current_child = node->getChild(i).get();
-                    work_stack.emplace_back(current_child, 0);
-                    work_stack.emplace_back(nullptr, 1);  // space
+                // For NT_FUNC_APPLY, children[0] is function, children[1..] are parameters
+                // If no parameters (size <= 1), output just the name without parentheses
+                if (node->getChildrenSize() <= 1) {
+                    out << node->getName();
+                } else {
+                    out << "(" << node->getName();
+                    work_stack.emplace_back(nullptr, 2);  // )
+                    for (int i = node->getChildrenSize() - 1; i >= 1; i--) {
+                        auto current_child = node->getChild(i).get();
+                        work_stack.emplace_back(current_child, 0);
+                        work_stack.emplace_back(nullptr, 1);  // space
+                    }
                 }
                 break;
             }
@@ -512,13 +518,18 @@ namespace SMTParser{
 
             case NODE_KIND::NT_UF_APPLY: {
                 // For UF applications, all children are parameters (no function definition in children)
-                out << "(" << node->getName();
-                work_stack.emplace_back(nullptr, 2);  // )
+                // If no parameters (size == 0), output just the name without parentheses
                 const auto& children = node->getChildren();
-                for (int i = children.size() - 1; i >= 0; i--) {  // Start from 0
-                    auto current_child = children[i].get();
-                    work_stack.emplace_back(current_child, 0);
-                    work_stack.emplace_back(nullptr, 1);  // space
+                if (children.empty()) {
+                    out << node->getName();
+                } else {
+                    out << "(" << node->getName();
+                    work_stack.emplace_back(nullptr, 2);  // )
+                    for (int i = children.size() - 1; i >= 0; i--) {  // Start from 0
+                        auto current_child = children[i].get();
+                        work_stack.emplace_back(current_child, 0);
+                        work_stack.emplace_back(nullptr, 1);  // space
+                    }
                 }
                 break;
             }
@@ -526,13 +537,18 @@ namespace SMTParser{
             case NODE_KIND::NT_FUNC_REC_APPLY: {
                 // For recursive function applications, children[0] is the function definition, children[1..] are parameters
                 // Only output the parameters, not the function definition
-                out << "(" << node->getName();
-                work_stack.emplace_back(nullptr, 2);  // )
+                // If no parameters (size <= 1), output just the name without parentheses
                 const auto& children = node->getChildren();
-                for (int i = children.size() - 1; i >= 1; i--) {  // Start from 1, not 0
-                    auto current_child = children[i].get();
-                    work_stack.emplace_back(current_child, 0);
-                    work_stack.emplace_back(nullptr, 1);  // space
+                if (children.size() <= 1) {
+                    out << node->getName();
+                } else {
+                    out << "(" << node->getName();
+                    work_stack.emplace_back(nullptr, 2);  // )
+                    for (int i = children.size() - 1; i >= 1; i--) {  // Start from 1, not 0
+                        auto current_child = children[i].get();
+                        work_stack.emplace_back(current_child, 0);
+                        work_stack.emplace_back(nullptr, 1);  // space
+                    }
                 }
                 break;
             }
