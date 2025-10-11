@@ -69,6 +69,7 @@ int main(int argc, char* argv[]){
         std::shared_ptr<SMTParser::Parser> parser = 
             std::make_shared<SMTParser::Parser>();
         parser->setOption("keep_let", false);
+        parser->setOption("expand_recursive_functions", true);
 
         std::cout << "\n=== Testing file: " << std::filesystem::path(input_file).filename() << " ===" << std::endl;
 

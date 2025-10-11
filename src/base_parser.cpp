@@ -1836,10 +1836,15 @@ namespace SMTParser{
 			return result;
 		}
 
-		// For recursive functions (define-fun-rec), create a recursive function application node
-		// Recursive functions should not be expanded to avoid infinite recursion
+		// For recursive functions (define-fun-rec), behavior depends on expand_recursive_functions option
+		// If expand_recursive_functions is true, expand it like define-fun
+		// If false (default), create a recursive function application node to avoid infinite recursion
 		if(fun->isFuncRec()){
-			return applyRecFunc(fun->getSort(), fun->getName(), params);
+			if(!options->getExpandRecursiveFunctions()){
+				// Don't expand recursive functions (default behavior)
+				return applyRecFunc(fun, params);
+			}
+			// Otherwise, fall through to expand it like define-fun
 		}
 		else if(fun->isFuncDec()){
 			// a only declared function, i.e., uninterpreted function
@@ -1893,19 +1898,23 @@ namespace SMTParser{
 				for (size_t i = 0; i < current->getChildrenSize(); i++) {
 					childResults.emplace_back(results[current->getChild(i)]);
 				}
-				
-			// Create a new node with processed children
-			std::shared_ptr<DAGNode> result;
-			if (current->isUFApplication()) {
-				// NT_UF_APPLY: Must preserve function name when recreating node
-				result = applyUF(current->getSort(), current->getName(), childResults);
-			} else if (current->isFuncRecApplication()) {
-				// NT_FUNC_REC_APPLY: Must preserve function name when recreating node
-				result = applyRecFunc(current->getSort(), current->getName(), childResults);
-			} else {
-				result = mkOper(current->getSort(), current->getKind(), childResults);
-			}
-			results[current] = result;
+					
+				// Create a new node with processed children
+				std::shared_ptr<DAGNode> result;
+				if (current->isUFApplication()) {
+					// NT_UF_APPLY: Must preserve function name when recreating node
+					result = applyUF(current->getSort(), current->getName(), childResults);
+				} else if (current->isFuncRecApplication() && !options->getExpandRecursiveFunctions()) {
+					// NT_FUNC_REC_APPLY: Recursive function call when not expanding
+					// Must preserve function name when recreating node
+					result = applyRecFunc(current, childResults);
+				} else {
+					// For all other cases, including:
+					// - Regular operators
+					// - Recursive functions when expand_recursive_functions is true (shouldn't reach here)
+					result = mkOper(current->getSort(), current->getKind(), childResults);
+				}
+				results[current] = result;
 			} else {
 				// First visit to this node
 				if (current->isFuncParam()) {
@@ -1920,8 +1929,9 @@ namespace SMTParser{
 				} else if (current->isConst()) {
 					// Constants remain unchanged
 					results[current] = current;
-				} else if (current->isFuncApplication()) {
+				} else if (current->isFuncApplication() || (current->isFuncRecApplication() && options->getExpandRecursiveFunctions())) {
 					// NT_FUNC_APPLY: Internal temporary node for function application
+					// NT_FUNC_REC_APPLY: Recursive function when expand_recursive_functions is true
 					// Needs to be expanded by calling applyFun with its body and parameters
 					std::vector<std::shared_ptr<DAGNode>> funcParams;
 					
@@ -1936,19 +1946,9 @@ namespace SMTParser{
 					
 					// Apply the function to its parameters
 					results[current] = applyFun(current->getFuncBody(), funcParams);
-				} else if (current->isUFApplication() || current->isFuncRecApplication()) {
-					// NT_UF_APPLY: Uninterpreted function call (from declare-fun)
-					// NT_FUNC_REC_APPLY: Recursive function call (from define-fun-rec)
-					// Already in final form (f x), cannot be expanded further
-					// Just need to recursively process parameters
-					todo.push(std::make_pair(current, true));
-					
-					// Process all children (parameters)
-					for (int i = current->getChildrenSize() - 1; i >= 0; i--) {
-						todo.push(std::make_pair(current->getChild(i), false));
-					}
 				} else {
-					// Operator node - process all children first
+					// All other cases: UF, non-expanded recursive functions, regular operators
+					// Just need to recursively process all children
 					todo.push(std::make_pair(current, true));
 					
 					// Push all children onto the stack in reverse order
@@ -2606,6 +2606,10 @@ namespace SMTParser{
 
 	std::string Parser::toString(const NODE_KIND& kind){
 		return kindToString(kind);
+	}
+
+	std::string Parser::optionToString(){
+		return options->toString();
 	}
 
 	std::string Parser::dumpSMT2(){

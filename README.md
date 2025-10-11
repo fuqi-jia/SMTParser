@@ -221,6 +221,62 @@ target_include_directories(your_application PRIVATE
 # Note: SMTParser headers are automatically included when using add_subdirectory
 ```
 
+## Configuration Options
+
+SMTParser provides various configuration options through the `GlobalOptions` class to control parsing behavior, evaluation settings, and other aspects.
+
+### Quick Start
+
+```cpp
+auto parser = SMTParser::newParser();
+
+// Set options via direct methods
+parser->getOptions()->setLogic("QF_LIA");
+parser->getOptions()->setKeepLet(false);
+parser->getOptions()->setEvaluatePrecision(256);
+
+// Or via string interface
+parser->getOptions()->setOption("keep_let", "false");
+parser->getOptions()->setOption("precision", "256");
+
+// Print detailed configuration report
+std::cout << parser->optionToString() << std::endl;
+```
+
+### Available Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| **logic** | string | `UNKNOWN_LOGIC` | SMT-LIB2 logic (e.g., `QF_LIA`, `QF_BV`, `ALL`) |
+| **precision** | uint | `128` | MPFR floating-point precision in bits |
+| **float_evaluate** | bool | `true` | Use floating-point (true) or exact rational (false) arithmetic |
+| **keep_division** | bool | `true` | Preserve division if not exact (e.g., `(/ 5 2)` stays as-is) |
+| **keep_let** | bool | `true` | Preserve let-bindings instead of expanding inline |
+| **expand_recursive_functions** | bool | `false` | Expand `define-fun-rec` like regular functions |
+| **Command Flags** | bool | `false` | Tracks encountered SMT-LIB2 commands: `check_sat`, `get_model`, `get_assertions`, `get_proof`, `get_unsat_core`, `get_objectives`, etc. |
+
+### Setting Options
+
+```cpp
+// Method 1: Direct setters (recommended)
+parser->getOptions()->setLogic("QF_LIA");
+parser->getOptions()->setEvaluatePrecision(256);
+parser->getOptions()->setKeepLet(false);
+
+// Method 2: String interface (useful for SMT-LIB2 compatibility)
+parser->getOptions()->setOption("precision", "256");
+parser->getOptions()->setOption("keep_let", "false");
+```
+
+### Configuration Report
+
+The `toString()` method generates a comprehensive report with all settings, defaults, and descriptions:
+
+```cpp
+std::cout << parser->options.toString() << std::endl;
+// Outputs: Logic, precision, all options with current/default values, and descriptions
+```
+
 ## API Reference
 
 ### Core Components and Smart Pointer Types

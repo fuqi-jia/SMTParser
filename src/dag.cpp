@@ -45,7 +45,7 @@ namespace SMTParser{
     }
 
     
-    void DAGNode::updateApplyFunc(std::shared_ptr<Sort> out_sort, std::shared_ptr<DAGNode> body, const std::vector<std::shared_ptr<DAGNode>> &params){
+    void DAGNode::updateApplyFunc(std::shared_ptr<Sort> out_sort, std::shared_ptr<DAGNode> body, const std::vector<std::shared_ptr<DAGNode>> &params, bool is_rec){
         condAssert(out_sort == sort, "updateApplyFunc: out_sort != sort");
         (void)out_sort;
         children.clear();
@@ -53,7 +53,7 @@ namespace SMTParser{
         for(auto& p : params){
             children.emplace_back(p);
         }
-        kind = NODE_KIND::NT_FUNC_APPLY;
+        kind = is_rec ? NODE_KIND::NT_FUNC_REC_APPLY : NODE_KIND::NT_FUNC_APPLY;
     }
 
     std::string dumpConst(const std::string& name, const std::shared_ptr<Sort>& sort){

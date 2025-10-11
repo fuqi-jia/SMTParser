@@ -324,10 +324,13 @@ namespace SMTParser{
         }
     }
 
-    std::shared_ptr<DAGNode> Parser::applyRecFunc(const std::shared_ptr<Sort>& sort, const std::string &name, const std::vector<std::shared_ptr<DAGNode>> &params){
-        // Create a recursive function application node (similar to UF_APPLY)
-        // This node preserves the function name and is not expanded
-        return node_manager->createNode(sort, NODE_KIND::NT_FUNC_REC_APPLY, name, params);
+    std::shared_ptr<DAGNode> Parser::applyRecFunc(std::shared_ptr<DAGNode> fun, const std::vector<std::shared_ptr<DAGNode>> &params){
+        // Create a recursive function application node (similar to mkApplyFunc)
+        // Store function definition in children[0] and params in children[1..]
+        std::shared_ptr<DAGNode> res = std::shared_ptr<DAGNode>(new DAGNode(fun->getSort(), NODE_KIND::NT_FUNC_REC_APPLY, fun->getName()));
+        res->updateApplyFunc(fun->getSort(), fun, params, true);
+        static_functions.emplace_back(res);
+        return res;
     }
 
     std::shared_ptr<DAGNode> Parser::applyUF(const std::shared_ptr<Sort>& sort, const std::string &name, const std::vector<std::shared_ptr<DAGNode>> &params){

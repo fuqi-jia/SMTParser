@@ -66,6 +66,11 @@ namespace SMTParser{
         // whether perserve let-binding
         bool parsing_preserve_let = true;
 
+        // whether to expand recursive functions (define-fun-rec)
+        // if true, recursive functions will be expanded like define-fun
+        // if false (default), recursive functions will not be expanded
+        bool expand_recursive_functions = false;
+
     public:
         GlobalOptions() = default;
         ~GlobalOptions() = default;
@@ -142,6 +147,9 @@ namespace SMTParser{
             else if(key == "float_evaluate"){
                 setEvaluateUseFloating(value == "true");
             }
+            else if(key == "expand_recursive_functions"){
+                setExpandRecursiveFunctions(value == "true");
+            }
         }
 
         void setInfo(const std::string& key, const std::string& value) {
@@ -196,6 +204,133 @@ namespace SMTParser{
         void setKeepLet(bool keep){ parsing_preserve_let = keep; }
         bool getKeepDivision() const { return keep_division_if_not_divisible; }
         bool getKeepLet() const { return parsing_preserve_let; }
+        
+        void setExpandRecursiveFunctions(bool expand){ expand_recursive_functions = expand; }
+        bool getExpandRecursiveFunctions() const { return expand_recursive_functions; }
+        
+        /**
+         * @brief Generate a detailed configuration report
+         * 
+         * This method generates a formatted string containing detailed information about
+         * all configuration options including: option name, default value, current value,
+         * and description.
+         * 
+         * @return std::string A formatted string with complete configuration information
+         */
+        std::string toString() const {
+            std::string result;
+            result += "=================================================================\n";
+            result += "                SMTParser Configuration Report\n";
+            result += "=================================================================\n\n";
+            
+            // Logic setting
+            result += "1. Logic\n";
+            result += "   Option: logic\n";
+            result += "   Default: UNKNOWN_LOGIC\n";
+            result += "   Current: " + logic + "\n";
+            result += "   Description: The SMT-LIB2 logic to use for parsing and reasoning.\n";
+            result += "                Determines which theories and quantifiers are allowed.\n\n";
+            
+            // Evaluation precision
+            result += "2. Evaluation Precision\n";
+            result += "   Option: precision (set via setOption or setEvaluatePrecision)\n";
+            result += "   Default: 128\n";
+            result += "   Current: " + std::to_string(evaluate_precision) + "\n";
+            result += "   Description: The precision (in bits) for MPFR floating-point evaluation.\n";
+            result += "                Higher values provide more accurate results but slower computation.\n\n";
+            
+            // Floating point evaluation
+            result += "3. Floating-Point Evaluation Mode\n";
+            result += "   Option: float_evaluate (set via setOption or setEvaluateUseFloating)\n";
+            result += "   Default: true\n";
+            result += "   Current: " + std::string(evaluate_use_floating ? "true" : "false") + "\n";
+            result += "   Description: When enabled, uses floating-point arithmetic for evaluation.\n";
+            result += "                When disabled, uses exact rational arithmetic where possible.\n\n";
+            
+            // Keep division
+            result += "4. Keep Division If Not Divisible\n";
+            result += "   Option: keep_division (set via setOption or setKeepDivision)\n";
+            result += "   Default: true\n";
+            result += "   Current: " + std::string(keep_division_if_not_divisible ? "true" : "false") + "\n";
+            result += "   Description: When enabled, preserves division operations in their original form\n";
+            result += "                if the division is not exact. When disabled, always computes the result.\n\n";
+            
+            // Preserve let bindings
+            result += "5. Preserve Let Bindings\n";
+            result += "   Option: keep_let (set via setOption or setKeepLet)\n";
+            result += "   Default: true\n";
+            result += "   Current: " + std::string(parsing_preserve_let ? "true" : "false") + "\n";
+            result += "   Description: When enabled, preserves let-binding structures during parsing.\n";
+            result += "                When disabled, automatically expands let-bindings inline.\n\n";
+            
+            // Expand recursive functions
+            result += "6. Expand Recursive Functions\n";
+            result += "   Option: expand_recursive_functions (set via setOption or setExpandRecursiveFunctions)\n";
+            result += "   Default: false\n";
+            result += "   Current: " + std::string(expand_recursive_functions ? "true" : "false") + "\n";
+            result += "   Description: When enabled, recursive functions (define-fun-rec) are expanded\n";
+            result += "                like regular function definitions. When disabled, they are kept as is.\n\n";
+            
+            // Command flags
+            result += "7. Command Flags\n";
+            result += "   check_sat: " + std::string(check_sat ? "true" : "false") + "\n";
+            result += "   get_assertions: " + std::string(get_assertions ? "true" : "false") + "\n";
+            result += "   get_assignment: " + std::string(get_assignment ? "true" : "false") + "\n";
+            result += "   get_model: " + std::string(get_model ? "true" : "false") + "\n";
+            result += "   get_proof: " + std::string(get_proof ? "true" : "false") + "\n";
+            result += "   get_unsat_assumptions: " + std::string(get_unsat_assumptions ? "true" : "false") + "\n";
+            result += "   get_unsat_core: " + std::string(get_unsat_core ? "true" : "false") + "\n";
+            result += "   get_objectives: " + std::string(get_objectives ? "true" : "false") + "\n";
+            result += "   Description: Flags indicating which SMT-LIB2 commands have been encountered.\n\n";
+            
+            // Set-info
+            if (!info.empty()) {
+                result += "8. Set-Info Attributes\n";
+                for (const auto& kv : info) {
+                    result += "   " + kv.first + " = " + kv.second + "\n";
+                }
+                result += "\n";
+            }
+            
+            // Set-option
+            if (!options.empty()) {
+                result += "9. Set-Option Values\n";
+                for (const auto& kv : options) {
+                    result += "   " + kv.first + " = " + kv.second + "\n";
+                }
+                result += "\n";
+            }
+            
+            // Get-info
+            if (!get_info.empty()) {
+                result += "10. Get-Info Queries\n";
+                for (const auto& kv : get_info) {
+                    result += "   " + kv.first + " = " + kv.second + "\n";
+                }
+                result += "\n";
+            }
+            
+            // Get-option
+            if (!get_options.empty()) {
+                result += "11. Get-Option Queries\n";
+                for (const auto& kv : get_options) {
+                    result += "   " + kv.first + " = " + kv.second + "\n";
+                }
+                result += "\n";
+            }
+            
+            // Get-value
+            if (!values.empty()) {
+                result += "12. Get-Value Queries\n";
+                for (const auto& kv : values) {
+                    result += "   " + kv.first + " = " + kv.second + "\n";
+                }
+                result += "\n";
+            }
+            
+            result += "=================================================================\n";
+            return result;
+        }
     };
 }
 #endif // _OPTIONS_H

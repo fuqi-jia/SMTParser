@@ -616,7 +616,7 @@ namespace SMTParser{
          * @param params Parameters
          * @return Recursive function application node
          */
-        std::shared_ptr<DAGNode> applyRecFunc(const std::shared_ptr<Sort>& sort, const std::string &name, const std::vector<std::shared_ptr<DAGNode>> &params);
+        std::shared_ptr<DAGNode> applyRecFunc(std::shared_ptr<DAGNode> fun, const std::vector<std::shared_ptr<DAGNode>> &params);
 
 
         /**
@@ -3681,6 +3681,13 @@ namespace SMTParser{
          * @return String representation of the sort
          */
         std::string                             toString(std::shared_ptr<Sort> sort);
+
+        /**
+         * @brief Print the options
+         * 
+         * @return String representation of the options
+         */
+        std::string                             optionToString();
 
         /**
          * @brief Dump the SMT2 representation of the parsed expressions
