@@ -33,7 +33,7 @@
 
 namespace SMTParser{
 
-    void DAGNode::updateFuncDef(std::shared_ptr<Sort> out_sort, std::shared_ptr<DAGNode> body, const std::vector<std::shared_ptr<DAGNode>> &params){
+    void DAGNode::updateFuncDef(std::shared_ptr<Sort> out_sort, std::shared_ptr<DAGNode> body, const std::vector<std::shared_ptr<DAGNode>> &params, bool is_rec){
         condAssert(out_sort == sort, "updateFuncDef: out_sort != sort");
         (void)out_sort;
         children.clear();
@@ -41,7 +41,7 @@ namespace SMTParser{
         for(auto& p : params){
             children.emplace_back(p);
         }
-        kind = NODE_KIND::NT_FUNC_DEF;
+        kind = is_rec ? NODE_KIND::NT_FUNC_REC : NODE_KIND::NT_FUNC_DEF;
     }
 
     
@@ -404,6 +404,7 @@ namespace SMTParser{
             // Function related
             case NODE_KIND::NT_FUNC_DEC:
             case NODE_KIND::NT_FUNC_DEF:
+            case NODE_KIND::NT_FUNC_REC:
             case NODE_KIND::NT_FUNC_PARAM:
                 out << node->getName();
                 break;
@@ -509,7 +510,8 @@ namespace SMTParser{
                 break;
             }
 
-            case NODE_KIND::NT_APPLY_UF: {
+            case NODE_KIND::NT_UF_APPLY:
+            case NODE_KIND::NT_FUNC_REC_APPLY: {
                 out << "(" << node->getName();
                 work_stack.emplace_back(nullptr, 2);  // )
                 const auto& children = node->getChildren();
@@ -736,6 +738,16 @@ namespace SMTParser{
     
     std::string dumpFuncDef(const std::shared_ptr<DAGNode>& node){
         std::string res = "(define-fun " + node->getName() + " (";
+        for(size_t i=1;i<node->getChildrenSize();i++){
+            if(i==1) res += "(" + node->getChild(i)->getName() +" " + node->getChild(i)->getSort()->toString() +")";
+            else res += " (" + node->getChild(i)->getName() +" " + node->getChild(i)->getSort()->toString() +")";
+        }
+        res += ") " + node->getChild(0)->getSort()->toString() + " ";
+        res += dumpSMTLIB2(node->getChild(0)) +  ")";
+        return res;
+    }
+    std::string dumpFuncRec(const std::shared_ptr<DAGNode>& node){
+        std::string res = "(define-fun-rec " + node->getName() + " (";
         for(size_t i=1;i<node->getChildrenSize();i++){
             if(i==1) res += "(" + node->getChild(i)->getName() +" " + node->getChild(i)->getSort()->toString() +")";
             else res += " (" + node->getChild(i)->getName() +" " + node->getChild(i)->getSort()->toString() +")";

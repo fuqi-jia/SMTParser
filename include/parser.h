@@ -597,6 +597,38 @@ namespace SMTParser{
          */
         std::shared_ptr<DAGNode> mkFuncDef(const std::string &name, const std::vector<std::shared_ptr<DAGNode>> &params, std::shared_ptr<Sort> out_sort, std::shared_ptr<DAGNode> body);
 
+        /**
+         * @brief Create a recursive function definition
+         * 
+         * @param name Function name
+         * @param params Parameters
+         * @param out_sort Output sort
+         * @param body Body
+         * @return Recursive function definition node
+         */
+        std::shared_ptr<DAGNode> mkFuncRec(const std::string &name, const std::vector<std::shared_ptr<DAGNode>> &params, std::shared_ptr<Sort> out_sort, std::shared_ptr<DAGNode> body);
+
+        /**
+         * @brief Create a recursive function application
+         * 
+         * @param sort Sort
+         * @param name Function name
+         * @param params Parameters
+         * @return Recursive function application node
+         */
+        std::shared_ptr<DAGNode> applyRecFunc(const std::shared_ptr<Sort>& sort, const std::string &name, const std::vector<std::shared_ptr<DAGNode>> &params);
+
+
+        /**
+         * @brief Apply an uninterpreted function
+         * 
+         * @param sort Sort
+         * @param name Function name
+         * @param params Parameters
+         * @return Uninterpreted function application node
+         */
+        std::shared_ptr<DAGNode> applyUF(const std::shared_ptr<Sort>& sort, const std::string &name, const std::vector<std::shared_ptr<DAGNode>> &params);
+
         // mk sort
         /**
          * @brief Create a sort declaration

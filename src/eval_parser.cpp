@@ -560,7 +560,7 @@ namespace SMTParser{
         else if(expr->isRegComplement()){
             return evaluateRegComplement(expr, model, result);
         }
-        else if(expr->isFuncApplicationy()){
+        else if(expr->isFuncApplication()){
             return evaluateApplyFun(expr, model, result);
         }
         else if(expr->isLet()){

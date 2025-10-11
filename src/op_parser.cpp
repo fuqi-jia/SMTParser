@@ -202,7 +202,19 @@ namespace SMTParser{
             err_all(ERROR_TYPE::ERR_PARAM_MIS, "No parameters for operation", line_number);
             return mkUnknown();
         }
-        auto res = simp_oper(t, p);
+        std::shared_ptr<DAGNode> res = nullptr;
+        if(p.size() == 1){
+            res = simp_oper(t, p[0]);
+        }
+        else if(p.size() == 2){
+            res = simp_oper(t, p[0], p[1]);
+        }
+        else if(p.size() == 3){
+            res = simp_oper(t, p[0], p[1], p[2]);
+        }
+        else{
+            res = simp_oper(t, p);
+        }
         if(!res->isUnknown()){
             return res;
         }
@@ -278,6 +290,49 @@ namespace SMTParser{
         }
     }
 
+    std::shared_ptr<DAGNode> Parser::mkFuncRec(const std::string &name, const std::vector<std::shared_ptr<DAGNode>> &params, std::shared_ptr<Sort> out_sort, std::shared_ptr<DAGNode> body){
+        std::shared_ptr<DAGNode> func = nullptr;
+        if(fun_key_map.find(name)!=fun_key_map.end()){
+            func = fun_key_map[name];
+            condAssert(func->getKind() == NODE_KIND::NT_FUNC_DEC, "mkFuncRec: func is not a function declaration");
+            // NOTE: we still check it, even if it is not necessary.
+            if(func->getKind() == NODE_KIND::NT_FUNC_DEC){
+                // update the function to recursive function
+                func = fun_key_map[name];
+                func->updateFuncDef(out_sort, body, params, true);
+                return func;
+            }
+            else{
+                // multiple definitions
+                err_all(ERROR_TYPE::ERR_MUL_DEF, "Multiple definitions of recursive function", line_number);
+                return mkUnknown();
+            }
+        }
+        else{
+            // create a new recursive function
+            // children: params
+            // out_sort: return sort
+            // body: function body
+            std::vector<std::shared_ptr<DAGNode>> children;
+            children.emplace_back(body);
+            for(auto &param: params){
+                children.emplace_back(param);
+            }
+            std::shared_ptr<DAGNode> func = node_manager->createNode(out_sort, NODE_KIND::NT_FUNC_REC, name, children);
+            fun_key_map.insert(std::pair<std::string, std::shared_ptr<DAGNode>>(name, func));
+            return func;
+        }
+    }
+
+    std::shared_ptr<DAGNode> Parser::applyRecFunc(const std::shared_ptr<Sort>& sort, const std::string &name, const std::vector<std::shared_ptr<DAGNode>> &params){
+        // Create a recursive function application node (similar to UF_APPLY)
+        // This node preserves the function name and is not expanded
+        return node_manager->createNode(sort, NODE_KIND::NT_FUNC_REC_APPLY, name, params);
+    }
+
+    std::shared_ptr<DAGNode> Parser::applyUF(const std::shared_ptr<Sort>& sort, const std::string &name, const std::vector<std::shared_ptr<DAGNode>> &params){
+        return node_manager->createNode(sort, NODE_KIND::NT_UF_APPLY, name, params);
+    }
 
     std::shared_ptr<Sort> Parser::mkSortDec(const std::string &name, const size_t &arity){
         return sort_manager->createSortDec(name, arity);

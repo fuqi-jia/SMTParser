@@ -164,10 +164,6 @@
 (declare-fun uu () String)
 (assert (eq xx uu))
 
-
-; Test with negative numbers where applicable
-; Note: Some functions may not be defined for negative inputs
-
 ; ========================================
 ; Final Check
 ; ========================================

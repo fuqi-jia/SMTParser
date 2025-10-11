@@ -78,8 +78,8 @@ namespace SMTParser{
         case NODE_KIND::NT_XOR:
             return "xor";
         // UF
-        case NODE_KIND::NT_APPLY_UF:
-            return "APPLY_UF";
+        case NODE_KIND::NT_UF_APPLY:
+            return "UF_APPLY";
         // ARITHMATIC COMMON OPERATORS
         case NODE_KIND::NT_ADD:
             return "+";
@@ -540,6 +540,10 @@ namespace SMTParser{
             return "func_param";
         case NODE_KIND::NT_FUNC_APPLY:
             return "func_apply";
+        case NODE_KIND::NT_FUNC_REC:
+            return "func_rec";
+        case NODE_KIND::NT_FUNC_REC_APPLY:
+            return "func_rec_apply";
         default:
             return "UNKNOWN_KIND";
         }

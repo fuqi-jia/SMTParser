@@ -341,7 +341,7 @@ namespace SMTParser{
         bool isNeq() 				const { return isDistinct(); };
 
         // check UF
-        bool isUFApplication() 			const { return (kind == NODE_KIND::NT_APPLY_UF); };
+        bool isUFApplication() 			const { return (kind == NODE_KIND::NT_UF_APPLY); };
 
         // check arithmetic operations
         bool isAdd() 				const { return (kind == NODE_KIND::NT_ADD); };
@@ -638,8 +638,10 @@ namespace SMTParser{
         // check function
         bool isFuncDec()            const { return (kind == NODE_KIND::NT_FUNC_DEC); };
         bool isFuncDef()			const { return (kind == NODE_KIND::NT_FUNC_DEF); };
+        bool isFuncRec()			const { return (kind == NODE_KIND::NT_FUNC_REC); };
         bool isFuncParam()			const { return (kind == NODE_KIND::NT_FUNC_PARAM); };
-        bool isFuncApplicationy()          const { return (kind == NODE_KIND::NT_FUNC_APPLY); };
+        bool isFuncApplication()          const { return (kind == NODE_KIND::NT_FUNC_APPLY); };
+        bool isFuncRecApplication()       const { return (kind == NODE_KIND::NT_FUNC_REC_APPLY); };
 
         // count the use of the node
         size_t getUseCount() const { return _use_count; };
@@ -852,7 +854,7 @@ namespace SMTParser{
          * @param body The body of the function
          * @param params The parameters of the function
          */
-        void updateFuncDef(std::shared_ptr<Sort> out_sort, std::shared_ptr<DAGNode> body, const std::vector<std::shared_ptr<DAGNode>> &params);
+        void updateFuncDef(std::shared_ptr<Sort> out_sort, std::shared_ptr<DAGNode> body, const std::vector<std::shared_ptr<DAGNode>> &params, bool is_rec = false);
 
         /**
          * @brief Update the function application
@@ -927,6 +929,7 @@ namespace SMTParser{
 
     std::string dumpSMTLIB2(const std::shared_ptr<DAGNode>& node);
     std::string dumpFuncDef(const std::shared_ptr<DAGNode>& node);
+    std::string dumpFuncRec(const std::shared_ptr<DAGNode>& node);
     std::string dumpFuncDec(const std::shared_ptr<DAGNode>& node);
     
     // smart pointer
