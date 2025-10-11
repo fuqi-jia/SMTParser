@@ -252,8 +252,16 @@ std::cout << parser->optionToString() << std::endl;
 | **float_evaluate** | bool | `true` | Use floating-point (true) or exact rational (false) arithmetic |
 | **keep_division** | bool | `true` | Preserve division if not exact (e.g., `(/ 5 2)` stays as-is) |
 | **keep_let** | bool | `true` | Preserve let-bindings instead of expanding inline |
-| **expand_recursive_functions** | bool | `false` | Expand `define-fun-rec` like regular functions |
+| **expand_functions** | bool | `true` | Inline function calls with definitions (when false, preserve as function applications) |
 | **Command Flags** | bool | `false` | Tracks encountered SMT-LIB2 commands: `check_sat`, `get_model`, `get_assertions`, `get_proof`, `get_unsat_core`, `get_objectives`, etc. |
+
+<!-- 
+**Planned Feature:**
+| **expand_recursive_functions** | bool | `false` | Expand `define-fun-rec` like regular functions |
+This feature is planned for future implementation. It will use a 'this' placeholder mechanism to handle 
+recursive self-references during function body parsing and expansion. Currently, recursive functions 
+are preserved as-is in their original form.
+-->
 
 ### Setting Options
 
@@ -262,10 +270,12 @@ std::cout << parser->optionToString() << std::endl;
 parser->getOptions()->setLogic("QF_LIA");
 parser->getOptions()->setEvaluatePrecision(256);
 parser->getOptions()->setKeepLet(false);
+parser->getOptions()->setExpandFunctions(false); // Preserve function applications
 
 // Method 2: String interface (useful for SMT-LIB2 compatibility)
-parser->getOptions()->setOption("precision", "256");
-parser->getOptions()->setOption("keep_let", "false");
+parser->setOption("precision", "256");
+parser->setOption("keep_let", "false");
+parser->setOption("expand_functions", "false");
 ```
 
 ### Configuration Report

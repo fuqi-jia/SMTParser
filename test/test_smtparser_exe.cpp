@@ -69,7 +69,7 @@ int main(int argc, char* argv[]){
         std::shared_ptr<SMTParser::Parser> parser = 
             std::make_shared<SMTParser::Parser>();
         parser->setOption("keep_let", false);
-        parser->setOption("expand_recursive_functions", true);
+        // parser->setOption("expand_functions", false);
 
         std::cout << "\n=== Testing file: " << std::filesystem::path(input_file).filename() << " ===" << std::endl;
 
@@ -103,7 +103,10 @@ int main(int argc, char* argv[]){
                 for(auto a:assertions){
                     std::cout<<parser->toString(a)<<std::endl;
                 }
+                std::cout<<"=== SMT2 ==="<<std::endl;
+                std::cout<<parser->dumpSMT2()<<std::endl;
             }
+            
 
         } else {
             std::cout << "PARSE_FAILURE" << std::endl;

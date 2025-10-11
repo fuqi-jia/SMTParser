@@ -616,7 +616,7 @@ namespace SMTParser{
          * @param params Parameters
          * @return Recursive function application node
          */
-        std::shared_ptr<DAGNode> applyRecFunc(std::shared_ptr<DAGNode> fun, const std::vector<std::shared_ptr<DAGNode>> &params);
+        std::shared_ptr<DAGNode> mkApplyRecFunc(std::shared_ptr<DAGNode> fun, const std::vector<std::shared_ptr<DAGNode>> &params);
 
 
         /**
@@ -627,7 +627,7 @@ namespace SMTParser{
          * @param params Parameters
          * @return Uninterpreted function application node
          */
-        std::shared_ptr<DAGNode> applyUF(const std::shared_ptr<Sort>& sort, const std::string &name, const std::vector<std::shared_ptr<DAGNode>> &params);
+        std::shared_ptr<DAGNode> mkApplyUF(const std::shared_ptr<Sort>& sort, const std::string &name, const std::vector<std::shared_ptr<DAGNode>> &params);
 
         // mk sort
         /**

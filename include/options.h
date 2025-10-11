@@ -66,6 +66,11 @@ namespace SMTParser{
         // whether perserve let-binding
         bool parsing_preserve_let = true;
 
+        // whether to expand function applications (define-fun, define-fun-rec)
+        // if true (default), function calls are inlined with their definitions
+        // if false, function calls are preserved as function applications
+        bool expand_functions = true;
+
         // whether to expand recursive functions (define-fun-rec)
         // if true, recursive functions will be expanded like define-fun
         // if false (default), recursive functions will not be expanded
@@ -147,6 +152,9 @@ namespace SMTParser{
             else if(key == "float_evaluate"){
                 setEvaluateUseFloating(value == "true");
             }
+            else if(key == "expand_functions"){
+                setExpandFunctions(value == "true");
+            }
             else if(key == "expand_recursive_functions"){
                 setExpandRecursiveFunctions(value == "true");
             }
@@ -204,6 +212,9 @@ namespace SMTParser{
         void setKeepLet(bool keep){ parsing_preserve_let = keep; }
         bool getKeepDivision() const { return keep_division_if_not_divisible; }
         bool getKeepLet() const { return parsing_preserve_let; }
+        
+        void setExpandFunctions(bool expand){ expand_functions = expand; }
+        bool getExpandFunctions() const { return expand_functions; }
         
         void setExpandRecursiveFunctions(bool expand){ expand_recursive_functions = expand; }
         bool getExpandRecursiveFunctions() const { return expand_recursive_functions; }
@@ -263,16 +274,28 @@ namespace SMTParser{
             result += "   Description: When enabled, preserves let-binding structures during parsing.\n";
             result += "                When disabled, automatically expands let-bindings inline.\n\n";
             
+            // Expand functions
+            result += "6. Expand Function Applications\n";
+            result += "   Option: expand_functions (set via setOption or setExpandFunctions)\n";
+            result += "   Default: true\n";
+            result += "   Current: " + std::string(expand_functions ? "true" : "false") + "\n";
+            result += "   Description: When enabled (default), function calls (define-fun) are inlined with\n";
+            result += "                their definitions. When disabled, function applications are preserved\n";
+            result += "                as-is, keeping the function call structure in the AST.\n\n";
+            
             // Expand recursive functions
-            result += "6. Expand Recursive Functions\n";
+            result += "7. Expand Recursive Functions\n";
             result += "   Option: expand_recursive_functions (set via setOption or setExpandRecursiveFunctions)\n";
             result += "   Default: false\n";
             result += "   Current: " + std::string(expand_recursive_functions ? "true" : "false") + "\n";
-            result += "   Description: When enabled, recursive functions (define-fun-rec) are expanded\n";
-            result += "                like regular function definitions. When disabled, they are kept as is.\n\n";
+            result += "   Status: NOT CURRENTLY SUPPORTED\n";
+            result += "   Description: When enabled, recursive functions (define-fun-rec) would be expanded\n";
+            result += "                like regular function definitions. This feature is planned for future\n";
+            result += "                implementation using a 'this' placeholder mechanism to handle recursive\n";
+            result += "                self-references during function body parsing and expansion.\n\n";
             
             // Command flags
-            result += "7. Command Flags\n";
+            result += "8. Command Flags\n";
             result += "   check_sat: " + std::string(check_sat ? "true" : "false") + "\n";
             result += "   get_assertions: " + std::string(get_assertions ? "true" : "false") + "\n";
             result += "   get_assignment: " + std::string(get_assignment ? "true" : "false") + "\n";

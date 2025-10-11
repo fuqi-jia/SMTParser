@@ -510,12 +510,26 @@ namespace SMTParser{
                 break;
             }
 
-            case NODE_KIND::NT_UF_APPLY:
-            case NODE_KIND::NT_FUNC_REC_APPLY: {
+            case NODE_KIND::NT_UF_APPLY: {
+                // For UF applications, all children are parameters (no function definition in children)
                 out << "(" << node->getName();
                 work_stack.emplace_back(nullptr, 2);  // )
                 const auto& children = node->getChildren();
-                for (int i = children.size() - 1; i >= 0; i--) {
+                for (int i = children.size() - 1; i >= 0; i--) {  // Start from 0
+                    auto current_child = children[i].get();
+                    work_stack.emplace_back(current_child, 0);
+                    work_stack.emplace_back(nullptr, 1);  // space
+                }
+                break;
+            }
+            
+            case NODE_KIND::NT_FUNC_REC_APPLY: {
+                // For recursive function applications, children[0] is the function definition, children[1..] are parameters
+                // Only output the parameters, not the function definition
+                out << "(" << node->getName();
+                work_stack.emplace_back(nullptr, 2);  // )
+                const auto& children = node->getChildren();
+                for (int i = children.size() - 1; i >= 1; i--) {  // Start from 1, not 0
                     auto current_child = children[i].get();
                     work_stack.emplace_back(current_child, 0);
                     work_stack.emplace_back(nullptr, 1);  // space
@@ -738,31 +752,37 @@ namespace SMTParser{
     
     std::string dumpFuncDef(const std::shared_ptr<DAGNode>& node){
         std::string res = "(define-fun " + node->getName() + " (";
+        // For NT_FUNC_DEF, children[0] is body, children[1..n] are parameters
         for(size_t i=1;i<node->getChildrenSize();i++){
             if(i==1) res += "(" + node->getChild(i)->getName() +" " + node->getChild(i)->getSort()->toString() +")";
             else res += " (" + node->getChild(i)->getName() +" " + node->getChild(i)->getSort()->toString() +")";
         }
-        res += ") " + node->getChild(0)->getSort()->toString() + " ";
+        // Use node's declared sort, not body's inferred sort (which may be widened to IntOrReal)
+        res += ") " + node->getSort()->toString() + " ";
         res += dumpSMTLIB2(node->getChild(0)) +  ")";
         return res;
     }
     std::string dumpFuncRec(const std::shared_ptr<DAGNode>& node){
         std::string res = "(define-fun-rec " + node->getName() + " (";
+        // For NT_FUNC_REC, children[0] is body, children[1..n] are parameters
         for(size_t i=1;i<node->getChildrenSize();i++){
             if(i==1) res += "(" + node->getChild(i)->getName() +" " + node->getChild(i)->getSort()->toString() +")";
             else res += " (" + node->getChild(i)->getName() +" " + node->getChild(i)->getSort()->toString() +")";
         }
-        res += ") " + node->getChild(0)->getSort()->toString() + " ";
+        // Use node's declared sort, not body's inferred sort (which may be widened to IntOrReal)
+        res += ") " + node->getSort()->toString() + " ";
         res += dumpSMTLIB2(node->getChild(0)) +  ")";
         return res;
     }
     std::string dumpFuncDec(const std::shared_ptr<DAGNode>& node){
         std::string res = "(declare-fun " + node->getName() + " (";
+        // For NT_FUNC_DEC, children[0] is NULL_NODE, children[1..n] are parameter type nodes
         for(size_t i=1;i<node->getChildrenSize();i++){
             if(i==1) res += node->getChild(i)->getSort()->toString();
             else res += " " + node->getChild(i)->getSort()->toString();
         }
-        res += ") " + node->getChild(0)->getSort()->toString() + ")";
+        // The return type is stored in the node's sort, not in children[0]
+        res += ") " + node->getSort()->toString() + ")";
         return res;
     }
 

@@ -1836,40 +1836,50 @@ namespace SMTParser{
 			return result;
 		}
 
-		// For recursive functions (define-fun-rec), behavior depends on expand_recursive_functions option
-		// If expand_recursive_functions is true, expand it like define-fun
-		// If false (default), create a recursive function application node to avoid infinite recursion
-		if(fun->isFuncRec()){
-			if(!options->getExpandRecursiveFunctions()){
-				// Don't expand recursive functions (default behavior)
-				return applyRecFunc(fun, params);
-			}
-			// Otherwise, fall through to expand it like define-fun
+	// For recursive functions (define-fun-rec), behavior depends on expand_recursive_functions option
+	// If expand_recursive_functions is true, expand it like define-fun
+	// If false (default), create a recursive function application node to avoid infinite recursion
+	if(fun->isFuncRec()){
+		if(!options->getExpandRecursiveFunctions()){
+			// Don't expand recursive functions (default behavior)
+			return mkApplyRecFunc(fun, params);
 		}
-		else if(fun->isFuncDec()){
-			// a only declared function, i.e., uninterpreted function
-			return applyUF(fun->getSort(), fun->getName(), params);
-		}
+		// Otherwise, fall through to expand it like define-fun
+	}
+	else if(fun->isFuncDec()){
+		// a only declared function, i.e., uninterpreted function
+		return mkApplyUF(fun->getSort(), fun->getName(), params);
+	}
 
-		if(fun->getFuncBody()->isErr()){
-			return fun->getFuncBody();
+	// For regular functions (define-fun), check expand_functions option
+	if(fun->isFuncDef()){
+		if(!options->getExpandFunctions()){
+			// Don't expand functions, create a function application node
+			return mkApplyFunc(fun, params);
 		}
-		
-		// variable map for local variables
-		std::unordered_map<std::string, std::shared_ptr<DAGNode>> new_params_map;
-		std::vector<std::shared_ptr<DAGNode>> func_params = fun->getFuncParams();
-		for (size_t i = 0; i < func_params.size(); i++) {
-			if(params[i]->isErr()){
-				return params[i];
-			}
-			new_params_map.insert(std::pair<std::string, std::shared_ptr<DAGNode>>(func_params[i]->getName(), params[i]));
-		}
-		
-		// function content
-		std::shared_ptr<DAGNode> formula = fun->getFuncBody();
+		// Otherwise, fall through to expand the function
+	}
 
-		// Iterative implementation to replace recursive applyFunPostOrder
-		return applyFunPostOrder(formula, new_params_map);
+	if(fun->getFuncBody()->isErr()){
+		return fun->getFuncBody();
+	}
+	
+	// Expand the function: replace parameters with actual arguments
+	// variable map for local variables
+	std::unordered_map<std::string, std::shared_ptr<DAGNode>> new_params_map;
+	std::vector<std::shared_ptr<DAGNode>> func_params = fun->getFuncParams();
+	for (size_t i = 0; i < func_params.size(); i++) {
+		if(params[i]->isErr()){
+			return params[i];
+		}
+		new_params_map.insert(std::pair<std::string, std::shared_ptr<DAGNode>>(func_params[i]->getName(), params[i]));
+	}
+	
+	// function content
+	std::shared_ptr<DAGNode> formula = fun->getFuncBody();
+
+	// Iterative implementation to replace recursive applyFunPostOrder
+	return applyFunPostOrder(formula, new_params_map);
 	}
 
 	// Iterative version of post-order traversal function application
@@ -1903,15 +1913,21 @@ namespace SMTParser{
 				std::shared_ptr<DAGNode> result;
 				if (current->isUFApplication()) {
 					// NT_UF_APPLY: Must preserve function name when recreating node
-					result = applyUF(current->getSort(), current->getName(), childResults);
+					result = mkApplyUF(current->getSort(), current->getName(), childResults);
 				} else if (current->isFuncRecApplication() && !options->getExpandRecursiveFunctions()) {
 					// NT_FUNC_REC_APPLY: Recursive function call when not expanding
 					// Must preserve function name when recreating node
-					result = applyRecFunc(current, childResults);
+					result = mkApplyRecFunc(current, childResults);
+				} else if (current->isFuncApplication() || (current->isFuncRecApplication() && options->getExpandRecursiveFunctions())) {
+					// NT_FUNC_APPLY or NT_FUNC_REC_APPLY (when expanding)
+					// Parameters have been processed, now expand the function
+					std::vector<std::shared_ptr<DAGNode>> funcParams;
+					for (size_t i = 1; i < childResults.size(); i++) {
+						funcParams.emplace_back(childResults[i]);
+					}
+					result = applyFun(current->getFuncBody(), funcParams);
 				} else {
-					// For all other cases, including:
-					// - Regular operators
-					// - Recursive functions when expand_recursive_functions is true (shouldn't reach here)
+					// For all other cases: regular operators
 					result = mkOper(current->getSort(), current->getKind(), childResults);
 				}
 				results[current] = result;
@@ -1929,30 +1945,19 @@ namespace SMTParser{
 				} else if (current->isConst()) {
 					// Constants remain unchanged
 					results[current] = current;
-				} else if (current->isFuncApplication() || (current->isFuncRecApplication() && options->getExpandRecursiveFunctions())) {
-					// NT_FUNC_APPLY: Internal temporary node for function application
-					// NT_FUNC_REC_APPLY: Recursive function when expand_recursive_functions is true
-					// Needs to be expanded by calling applyFun with its body and parameters
-					std::vector<std::shared_ptr<DAGNode>> funcParams;
-					
-					// First, mark the node for revisit after processing children
-					todo.push(std::make_pair(current, true));
-					
-					// Process the function body and parameters
-					for (size_t i = 1; i < current->getChildrenSize(); i++) {
-						todo.push(std::make_pair(current->getChild(i), false));
-						funcParams.emplace_back(current->getChild(i));
-					}
-					
-					// Apply the function to its parameters
-					results[current] = applyFun(current->getFuncBody(), funcParams);
 				} else {
-					// All other cases: UF, non-expanded recursive functions, regular operators
-					// Just need to recursively process all children
+					// All other cases: operators, function applications, UF applications, etc.
+					// Mark the node for revisit after processing children
 					todo.push(std::make_pair(current, true));
+					
+					// For function applications that will be expanded, skip the first child (function definition itself)
+					// For all other nodes, process all children
+					bool isFuncAppToExpand = current->isFuncApplication() || 
+					                        (current->isFuncRecApplication() && options->getExpandRecursiveFunctions());
+					int startIdx = isFuncAppToExpand ? 1 : 0;
 					
 					// Push all children onto the stack in reverse order
-					for (int i = current->getChildrenSize() - 1; i >= 0; i--) {
+					for (int i = current->getChildrenSize() - 1; i >= startIdx; i--) {
 						todo.push(std::make_pair(current->getChild(i), false));
 					}
 				}
@@ -1968,6 +1973,21 @@ namespace SMTParser{
 		static_functions.emplace_back(res);
 		return res;
 	}
+
+	
+    std::shared_ptr<DAGNode> Parser::mkApplyRecFunc(std::shared_ptr<DAGNode> fun, const std::vector<std::shared_ptr<DAGNode>> &params){
+        // Create a recursive function application node (similar to mkApplyFunc)
+        // Store function definition in children[0] and params in children[1..]
+        std::shared_ptr<DAGNode> res = std::shared_ptr<DAGNode>(new DAGNode(fun->getSort(), NODE_KIND::NT_FUNC_REC_APPLY, fun->getName()));
+        res->updateApplyFunc(fun->getSort(), fun, params, true);
+        static_functions.emplace_back(res);
+        return res;
+    }
+
+    std::shared_ptr<DAGNode> Parser::mkApplyUF(const std::shared_ptr<Sort>& sort, const std::string &name, const std::vector<std::shared_ptr<DAGNode>> &params){
+        return node_manager->createNode(sort, NODE_KIND::NT_UF_APPLY, name, params);
+    }
+
 
 	// QUANTIFIERS
 	// (quantifier ((<identifier> <sort>)+） <expr>)
@@ -2626,15 +2646,21 @@ namespace SMTParser{
 		for(auto& var : vars){
 			ss << "(declare-fun " << var->getName() << " () " << var->getSort()->toString() << ")" << std::endl;
 		}
-		std::vector<std::shared_ptr<DAGNode>> functions = getFunctions();
-		for(auto& func : functions){
-			if(func->isFuncRec()){
-				ss << dumpFuncRec(func) << std::endl;
-			}
-			else{
-				ss << dumpFuncDef(func) << std::endl;
-			}
+	std::vector<std::shared_ptr<DAGNode>> functions = getFunctions();
+	for(auto& func : functions){
+		if(func->isFuncDec()){
+			// NT_FUNC_DEC: Uninterpreted function declaration (declare-fun)
+			ss << dumpFuncDec(func) << std::endl;
 		}
+		else if(func->isFuncRec()){
+			// NT_FUNC_REC: Recursive function definition (define-fun-rec)
+			ss << dumpFuncRec(func) << std::endl;
+		}
+		else{
+			// NT_FUNC_DEF: Regular function definition (define-fun)
+			ss << dumpFuncDef(func) << std::endl;
+		}
+	}
 		// constraints
 		for(auto& constraint : assertions){
 			ss << "(assert " << dumpSMTLIB2(constraint) << ")" << std::endl;
