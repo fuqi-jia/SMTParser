@@ -147,7 +147,7 @@ namespace SMTParser{
                 case SORT_KIND::SK_BAG: return "Bag";
                 case SORT_KIND::SK_SEQ: return "Sequence";
                 case SORT_KIND::SK_UF: return "UF";
-                case SORT_KIND::SK_REG: return "RegLan";
+                case SORT_KIND::SK_REG: return "(RegEx String)";
                 case SORT_KIND::SK_EXT: return "ExtReal";
                 case SORT_KIND::SK_NAT: return "Natural";
                 case SORT_KIND::SK_RAND: return "Random";

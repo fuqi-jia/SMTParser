@@ -698,7 +698,7 @@ namespace SMTParser{
             condAssert(oper_params.size() == 2, "root-obj requires exactly 2 parameters");
             auto expr = oper_params[0];
             auto index_node = oper_params[1];
-            condAssert(index_node->isConst() && index_node->sort->isInt(), "root-obj index must be integer constant");
+            condAssert(index_node->isConst() && index_node->getSort()->isInt(), "root-obj index must be integer constant");
             int index = std::stoi(index_node->getName());
             return mkRootObj(expr, index);
         }
