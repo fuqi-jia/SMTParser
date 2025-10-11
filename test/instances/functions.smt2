@@ -2,7 +2,7 @@
 ; This file tests all function-related features from test_functions.cpp
 
 ; Set logic for quantifier-free non-linear integer arithmetic
-(set-logic QF_NIA)
+(set-logic ALL)
 
 ; ========================================
 ; Section 1: Basic Function Declarations
@@ -151,6 +151,19 @@
 
 ; Test edge cases for even/odd
 (assert (= (is-even 0) (not (is-odd 0))))
+
+; Test with negative numbers where applicable
+; Note: Some functions may not be defined for negative inputs
+
+; ========================================
+; Section 9: Defined Functions from https://github.com/fuqi-jia/SMTParser/issues/36
+; ========================================
+
+(define-fun eq ((xx String) (yy String)) Bool (= xx yy))
+(declare-fun xx () String)
+(declare-fun uu () String)
+(assert (eq xx uu))
+
 
 ; Test with negative numbers where applicable
 ; Note: Some functions may not be defined for negative inputs

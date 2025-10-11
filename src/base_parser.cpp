@@ -1885,7 +1885,14 @@ namespace SMTParser{
 				}
 				
 				// Create a new node with processed children
-				std::shared_ptr<DAGNode> result = mkOper(current->getSort(), current->getKind(), childResults);
+				std::shared_ptr<DAGNode> result;
+				if (current->isUFApplication()) {
+					// NT_APPLY_UF: Must preserve function name when recreating node
+					// (e.g., (factorial 4) not (APPLY_UF 4))
+					result = node_manager->createNode(current->getSort(), NODE_KIND::NT_APPLY_UF, current->getName(), childResults);
+				} else {
+					result = mkOper(current->getSort(), current->getKind(), childResults);
+				}
 				results[current] = result;
 			} else {
 				// First visit to this node
@@ -1901,8 +1908,9 @@ namespace SMTParser{
 				} else if (current->isConst()) {
 					// Constants remain unchanged
 					results[current] = current;
-				} else if (current->isFuncApply()) {
-					// Function application node
+				} else if (current->isFuncApplicationy()) {
+					// NT_FUNC_APPLY: Internal temporary node for function application
+					// Needs to be expanded by calling applyFun with its body and parameters
 					std::vector<std::shared_ptr<DAGNode>> funcParams;
 					
 					// First, mark the node for revisit after processing children
@@ -1916,6 +1924,16 @@ namespace SMTParser{
 					
 					// Apply the function to its parameters
 					results[current] = applyFun(current->getFuncBody(), funcParams);
+				} else if (current->isUFApplication()) {
+					// NT_APPLY_UF: Uninterpreted function call (from declare-fun)
+					// Already in final form (f x), cannot be expanded further
+					// Just need to recursively process parameters
+					todo.push(std::make_pair(current, true));
+					
+					// Process all children (parameters)
+					for (int i = current->getChildrenSize() - 1; i >= 0; i--) {
+						todo.push(std::make_pair(current->getChild(i), false));
+					}
 				} else {
 					// Operator node - process all children first
 					todo.push(std::make_pair(current, true));

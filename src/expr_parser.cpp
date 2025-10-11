@@ -690,7 +690,9 @@ namespace SMTParser{
 	std::shared_ptr<DAGNode> Parser::parseOper(const std::string& s, const std::vector<std::shared_ptr<DAGNode>>& func_args, const std::vector<std::shared_ptr<DAGNode>> &oper_params){
 		TIME_FUNC();
         if(fun_key_map.find(s) != fun_key_map.end()){
-            return fun_key_map[s];
+            // Found a function definition or declaration, apply it with parameters
+            auto func = fun_key_map[s];
+            return applyFun(func, oper_params);
         }
         
         // Special handling for root-obj

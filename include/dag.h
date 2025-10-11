@@ -341,7 +341,7 @@ namespace SMTParser{
         bool isNeq() 				const { return isDistinct(); };
 
         // check UF
-        bool isApplyUF() 			const { return (kind == NODE_KIND::NT_APPLY_UF); };
+        bool isUFApplication() 			const { return (kind == NODE_KIND::NT_APPLY_UF); };
 
         // check arithmetic operations
         bool isAdd() 				const { return (kind == NODE_KIND::NT_ADD); };
@@ -404,7 +404,7 @@ namespace SMTParser{
         bool isArithTerm() 			const { return (isArithOp() || isArithConv() || isRealNonlinearOp() || isTranscendentalOp() || 
                                                     (isVar() && (isVInt() || isVReal())) ||
                                                     (isConst() && (isCInt() || isCReal())) ||
-                                                    ((isIte() || isMax() || isMin() || isApplyUF()) && (sort->isInt() || sort->isReal()))); };
+                                                    ((isIte() || isMax() || isMin() || isUFApplication()) && (sort->isInt() || sort->isReal()))); };
         bool isArithComp() 			const { return ((isEq() && getChild(0)->isArithTerm())|| 
                                                     (isDistinct() && getChild(0)->isArithTerm()) || 
                                                     isLe() || isLt() || isGe() || isGt()); };
@@ -499,7 +499,7 @@ namespace SMTParser{
                                                     (isIte() && getChild(1)->isBVTerm() && getChild(2)->isBVTerm()) ||
                                                     (isMax() && getChild(0)->isBVTerm() && getChild(1)->isBVTerm()) ||
                                                     (isMin() && getChild(0)->isBVTerm() && getChild(1)->isBVTerm()) ||
-                                                    (isApplyUF() && sort->isBv())); };
+                                                    (isUFApplication() && sort->isBv())); };
         bool isBVCompOp()     		const { return ((isEq() && getChild(0)->isBVTerm()) ||
                                                     (isDistinct() && getChild(0)->isBVTerm()) ||
                                                     isBVUlt() || isBVUle() || isBVUgt() || isBVUge() || isBVSlt() || isBVSle() || isBVSgt() || isBVSge()); };
@@ -526,7 +526,7 @@ namespace SMTParser{
         bool isFPRoToInt()  		const { return (kind == NODE_KIND::NT_FP_ROUND_TO_INTEGRAL); };
         bool isFPMin() 				const { return (kind == NODE_KIND::NT_FP_MIN); };
         bool isFPMax() 				const { return (kind == NODE_KIND::NT_FP_MAX); };
-        bool isFPOp() 				const { return (isFPAdd() || isFPSub() || isFPMul() || isFPDiv() || isFPAbs() || isFPNeg() || isFPRem() || isFPFMA() || isFPSqrt() || isFPRoToInt() || isFPMin() || isFPMax() || (isApplyUF() && sort->isFp())); };
+        bool isFPOp() 				const { return (isFPAdd() || isFPSub() || isFPMul() || isFPDiv() || isFPAbs() || isFPNeg() || isFPRem() || isFPFMA() || isFPSqrt() || isFPRoToInt() || isFPMin() || isFPMax() || (isUFApplication() && sort->isFp())); };
 
         // check floating point comparison
         bool isFPLe() 				const { return (kind == NODE_KIND::NT_FP_LE); };
@@ -559,7 +559,7 @@ namespace SMTParser{
         // check array
         bool isSelect() 			const { return (kind == NODE_KIND::NT_SELECT); };
         bool isStore() 				const { return (kind == NODE_KIND::NT_STORE); };
-        bool isArrayOp() 			const { return (isSelect() || isStore() || (isApplyUF() && sort->isArray())); };
+        bool isArrayOp() 			const { return (isSelect() || isStore() || (isUFApplication() && sort->isArray())); };
 
         // check strings common operators
         bool isStrLen() 			const { return (kind == NODE_KIND::NT_STR_LEN); };
@@ -582,7 +582,7 @@ namespace SMTParser{
         bool isStrSplitAtRe() 		const { return (kind == NODE_KIND::NT_STR_SPLIT_AT_RE); };
         bool isStrSplitRestRe() 		const { return (kind == NODE_KIND::NT_STR_SPLIT_REST_RE); };
         bool isStrNumSplitsRe() 		const { return (kind == NODE_KIND::NT_STR_NUM_SPLITS_RE); };
-        bool isStrOp() 				const { return (isStrLen() || isStrConcat() || isStrSubstr() || isStrPrefixof() || isStrSuffixof() || isStrIndexof() || isStrCharat() || isStrUpdate() || isStrReplace() || isStrReplaceAll() || isStrToLower() || isStrToUpper() || isStrRev() || isStrSplit() || isStrSplitAt() || isStrSplitRest() || isStrNumSplits() || isStrSplitAtRe() || isStrSplitRestRe() || isStrNumSplitsRe() || (isApplyUF() && sort->isStr())); };
+        bool isStrOp() 				const { return (isStrLen() || isStrConcat() || isStrSubstr() || isStrPrefixof() || isStrSuffixof() || isStrIndexof() || isStrCharat() || isStrUpdate() || isStrReplace() || isStrReplaceAll() || isStrToLower() || isStrToUpper() || isStrRev() || isStrSplit() || isStrSplitAt() || isStrSplitRest() || isStrNumSplits() || isStrSplitAtRe() || isStrSplitRestRe() || isStrNumSplitsRe() || (isUFApplication() && sort->isStr())); };
 
         // check strings comparison
         bool isStrLt() 				const { return (kind == NODE_KIND::NT_STR_LT); };
@@ -626,7 +626,7 @@ namespace SMTParser{
                                                     isBVCompOp() || 
                                                     isFPComp() || isFPProp() ||
                                                     isStrComp() || isStrProp() ||
-                                                    (isApplyUF() && sort->isBool())); };
+                                                    (isUFApplication() && sort->isBool())); };
         // check let
         bool isLet()				const { return kind == NODE_KIND::NT_LET; };
         bool isLetChain()			const { return kind == NODE_KIND::NT_LET_CHAIN; };
@@ -639,7 +639,7 @@ namespace SMTParser{
         bool isFuncDec()            const { return (kind == NODE_KIND::NT_FUNC_DEC); };
         bool isFuncDef()			const { return (kind == NODE_KIND::NT_FUNC_DEF); };
         bool isFuncParam()			const { return (kind == NODE_KIND::NT_FUNC_PARAM); };
-        bool isFuncApply()          const { return (kind == NODE_KIND::NT_FUNC_APPLY); };
+        bool isFuncApplicationy()          const { return (kind == NODE_KIND::NT_FUNC_APPLY); };
 
         // count the use of the node
         size_t getUseCount() const { return _use_count; };
