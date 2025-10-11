@@ -838,6 +838,9 @@ namespace SMTParser{
 				parseRpar();
 				std::shared_ptr<Sort> out_sort = parseSort();
 				res = mkFuncDec(name, params, out_sort);
+				if(!res->isErr()){
+					function_names.emplace_back(name);
+				}
 			}
 
 			//multiple declarations
@@ -1410,7 +1413,10 @@ namespace SMTParser{
 			{"String", SortManager::STR_SORT}, 
 			{"Float16", SortManager::FLOAT16_SORT}, 
 			{"Float32", SortManager::FLOAT32_SORT}, 
-			{"Float64", SortManager::FLOAT64_SORT}
+			{"Float64", SortManager::FLOAT64_SORT},
+			{"RegLan", SortManager::REG_SORT},
+			{"Reg", SortManager::REG_SORT},
+			{"RegEx", SortManager::REG_SORT}
 		};
 		
 		if (*bufptr != '(') {
@@ -1457,6 +1463,14 @@ namespace SMTParser{
 		else if(s == "Relation"){}
 		else if(s == "Bag"){}
 		else if(s == "Sequence"){}
+		else if(s == "RegEx"){
+			// (RegEx <alphabet-sort>)
+			std::shared_ptr<Sort> alphabet_sort = parseSort();
+			if(!alphabet_sort->isStr()){
+				err_all(ERROR_TYPE::ERR_TYPE_MIS, "RegEx sort expects String alphabet", expr_ln);
+			}
+			sort = SortManager::REG_SORT;
+		}
 		else if(s == "UF"){
 			// // (UF S T)
 			// // S: sort of parameters
