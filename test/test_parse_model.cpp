@@ -7,7 +7,7 @@ int main() {
     auto parser = SMTParser::newParser();
     
     // 测试用的SMT-LIB模型字符串
-    std::string model_str = R"(
+    std::string model_str1 = R"(
 (model
   (define-fun v17 () Real
     0.0)
@@ -103,14 +103,39 @@ int main() {
 )
 )";
 
+    std::string model_str2 = R"(
+    (
+  (define-fun | | () (_ BitVec 4)
+    #xc)
+  (define-fun v1 () (_ BitVec 4)
+    #x0)
+  (define-fun ?v0 () (_ BitVec 4)
+    #x1)
+  (define-fun notes () (_ BitVec 4)
+    #x7)
+  (define-fun V0 () (_ BitVec 4)
+    #x5)
+  (define-fun ~!@$%^&*_-+=><.?/ () (_ BitVec 4)
+    #xa)
+  (define-fun |~!@$%^&*_-+=<>.?/()| () (_ BitVec 4)
+    #xe)
+  (define-fun v0 () (_ BitVec 4)
+    #xf)
+  (define-fun  () (_ BitVec 4)
+    #x3)
+  (define-fun ~!@$%^&*_-+=<>.?/ () (_ BitVec 4)
+    #xf)
+)
+    )";
+
     
     try {
         // 解析模型
-        auto model = parser->parseModel(model_str);
+        auto model = parser->parseModel(model_str1);
         
         if (model) {
-            std::cout << "模型解析成功！" << std::endl;
-            std::cout << "模型大小: " << model->size() << std::endl;
+            std::cout << "模型1解析成功！" << std::endl;
+            std::cout << "模型1大小: " << model->size() << std::endl;
             
             // 打印模型内容
             auto pairs = model->getPairs();
@@ -118,7 +143,28 @@ int main() {
                 std::cout << "变量: " << pair.first << " = " << parser->toString(pair.second) << std::endl;
             }
         } else {
-            std::cout << "模型解析失败！" << std::endl;
+            std::cout << "模型2解析失败！" << std::endl;
+        }
+    } catch (const std::exception& e) {
+        std::cout << "解析过程中出现异常: " << e.what() << std::endl;
+    }
+
+    try {
+        // 解析模型
+        auto model = parser->parseModel(model_str2);
+        
+        if (model) {
+            std::cout << "模型2解析成功！" << std::endl;
+            std::cout << "模型2大小: " << model->size() << std::endl;
+            
+            // 打印模型内容
+            auto pairs = model->getPairs();
+            for (const auto& pair : pairs) {
+                std::cout << "变量: " << pair.first << " = " << parser->toString(pair.second) << std::endl;
+            }
+        }
+        else {
+            std::cout << "模型2解析失败！" << std::endl;
         }
     } catch (const std::exception& e) {
         std::cout << "解析过程中出现异常: " << e.what() << std::endl;

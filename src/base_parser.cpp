@@ -2229,122 +2229,7 @@ namespace SMTParser{
 	ModelPtr Parser::parseModel(const std::string& model, bool only_declared){
 		std::shared_ptr<Model> model_ptr = std::make_shared<Model>();
 		
-		// Parse model string
-		std::string model_content = model;
-		
-		// Find all define-fun definitions
-		size_t pos = 0;
-		while (pos < model_content.length()) {
-			// Find next define-fun
-			size_t define_pos = model_content.find("(define-fun", pos);
-			if (define_pos == std::string::npos) {
-				break;
-			}
-			
-			// Find matching right parenthesis
-			size_t start = define_pos;
-			if (start >= model_content.length() || model_content[start] != '(') {
-				break;
-			}
-			
-			int count = 1;
-			size_t end_pos = start + 1;
-			
-			while (end_pos < model_content.length() && count > 0) {
-				if (model_content[end_pos] == '(') {
-					count++;
-				} else if (model_content[end_pos] == ')') {
-					count--;
-				}
-				end_pos++;
-			}
-			
-			if (count != 0) {
-				break; // No matching right parenthesis found
-			}
-			
-			size_t end = end_pos - 1;
-			
-			// Extract define-fun definition
-			std::string define_fun = model_content.substr(start, end - start + 1);
-			
-			// Parse each define-fun definition
-			if (parseEachModel(define_fun, model_ptr, only_declared)) {
-				// Parsing successful
-			}
-			
-			pos = end + 1;
-		}
-		
-		return model_ptr;
-	}
-
-	// Parse each define-fun definition
-	bool Parser::parseEachModel(const std::string& define_fun, ModelPtr model_ptr, bool only_declared) {
-		// Format: (define-fun name (params) type value) or (define-fun name () type value)
-		// Remove outer parentheses
-		std::string content = define_fun;
-		if (content.front() == '(' && content.back() == ')') {
-			content = content.substr(1, content.length() - 2);
-		}
-		
-		// Split content into tokens
-		std::vector<std::string> tokens;
-		size_t pos = 0;
-		while (pos < content.length()) {
-			// Skip whitespace
-			while (pos < content.length() && std::isspace(content[pos])) {
-				pos++;
-			}
-			if (pos >= content.length()) break;
-			
-			// Extract next token
-			if (content[pos] == '(') {
-				// Find matching right parenthesis
-				int count = 1;
-				size_t start = pos;
-				pos++;
-				while (pos < content.length() && count > 0) {
-					if (content[pos] == '(') count++;
-					else if (content[pos] == ')') count--;
-					pos++;
-				}
-				tokens.push_back(content.substr(start, pos - start));
-			} else {
-				// Extract regular token
-				size_t start = pos;
-				while (pos < content.length() && !std::isspace(content[pos]) && content[pos] != '(' && content[pos] != ')') {
-					pos++;
-				}
-				tokens.push_back(content.substr(start, pos - start));
-			}
-		}
-		
-		// Validate token count
-		if (tokens.size() < 4) {
-			return false; // At least need: define-fun, name, (), type, value
-		}
-		
-		// Parse each part
-		if (tokens[0] != "define-fun") {
-			return false;
-		}
-		
-		std::string var_name = tokens[1];
-		std::string param_list = tokens[2]; // Could be () or ((x!0 Real) (x!1 Real))
-		std::string type_str = tokens[3];
-		std::string value_str = tokens[4];
-		
-		// Check if this is a function definition with parameters
-		if (param_list != "()") {
-			// TODO
-			// This is a function definition, not a simple variable assignment
-			// We should skip function definitions in model parsing as they are not variable assignments
-			return true; // Skip function definitions silently
-		}
-		
-		// Parse type - use existing parseSort function
-		// Need to temporarily set parser state to parse type string
+		// Save original parser state
 		char* original_buffer = buffer;
 		char* original_bufptr = bufptr;
 		size_t original_buflen = buflen;
@@ -2352,46 +2237,133 @@ namespace SMTParser{
 		
 		// Set temporary parsing state
 		parsing_file = false;
-		buffer = safe_strdup(type_str);
+		buffer = safe_strdup(model);
 		if (!buffer) {
-			return false;
+			return model_ptr;
 		}
-		buflen = type_str.length();
+		buflen = model.length();
 		bufptr = buffer;
 		scanToNextSymbol();
 		
-		std::shared_ptr<Sort> var_sort = parseSort();
+		try {
+			// Check if wrapped with (model ...) or just (...)
+			if (*bufptr == '(') {
+				char* lookahead = bufptr + 1;
+				while (*lookahead && (*lookahead == ' ' || *lookahead == '\t' || *lookahead == '\n' || *lookahead == '\r')) {
+					lookahead++;
+				}
+				
+				// Check if next symbol is "model"
+				if (strncmp(lookahead, "model", 5) == 0 && 
+				    (lookahead[5] == ' ' || lookahead[5] == '\t' || lookahead[5] == '\n' || lookahead[5] == '\r' || lookahead[5] == '(')) {
+					// Skip outer (model ...)
+					parseLpar();
+					std::string keyword = getSymbol();
+					// Now we're inside (model ...) or just (...), continue parsing define-fun
+				} else {
+					// Just a plain ( wrapping the define-funs, skip it
+					parseLpar();
+				}
+			}
+			
+			// Parse all define-fun definitions
+			while (*bufptr && *bufptr != 0) {
+				// Skip whitespace
+				while (*bufptr && (*bufptr == ' ' || *bufptr == '\t' || *bufptr == '\n' || *bufptr == '\r')) {
+					bufptr++;
+					if (*bufptr == '\n') line_number++;
+				}
+				
+				if (*bufptr == 0 || *bufptr == ')') break;
+				
+				if (*bufptr != '(') break;
+				
+				// Parse one define-fun
+				parseLpar();
+				std::string keyword = getSymbol();
+				
+				if (keyword != "define-fun") {
+					// Not a define-fun, skip it
+					skipToRpar();
+					parseRpar();
+					continue;
+				}
+				
+				// Parse variable name (can be any symbol including | | or ||)
+				// Note: In SMT-LIB, | | means a symbol containing a space, || means an empty symbol
+				std::string var_name;
+				
+				// Check if next token is a parameter list instead of a name
+				if (*bufptr == '(') {
+					// No variable name provided, treat it as empty symbol ||
+					var_name = "||"; // "" -> "||"
+				} else {
+					var_name = getSymbol();
+				}
+				
+				// Parse parameter list
+				parseLpar();
+				bool has_params = (*bufptr != ')');
+				
+				// Skip parameters
+				while (*bufptr != ')') {
+					parseLpar();
+					getSymbol(); // parameter name
+					parseSort(); // parameter type
+					parseRpar();
+				}
+				parseRpar();
+				
+				// If has parameters, skip this function definition
+				if (has_params) {
+					skipToRpar();
+					parseRpar();
+					continue;
+				}
+				
+				// Parse type
+				std::shared_ptr<Sort> var_sort = parseSort();
+				if (!var_sort) {
+					skipToRpar();
+					parseRpar();
+					continue;
+				}
+				
+				// Check if only declared variables
+				if (only_declared && !isDeclaredVariable(var_name)) {
+					skipToRpar();
+					parseRpar();
+					continue;
+				}
+				
+				// Define variable first
+				std::shared_ptr<DAGNode> var_node = mkVar(var_sort, var_name);
+				
+				// Parse value expression
+				std::shared_ptr<DAGNode> value = parseExpr();
+				
+				if (value && !value->isErr()) {
+					model_ptr->add(var_node, value);
+				}
+				
+				// Close the define-fun
+				parseRpar();
+			}
+			
+		} catch (...) {
+			// Ignore errors and return what we have
+		}
 		
 		// Restore original state
-		bufptr = nullptr;
 		delete[] buffer;
 		buffer = original_buffer;
 		bufptr = original_bufptr;
 		buflen = original_buflen;
 		parsing_file = original_parsing_file;
 		
-		if (!var_sort) {
-			return false;
-		}
-
-		if(only_declared && !isDeclaredVariable(var_name)){
-			return true;
-		}
-		
-		// Define variable first (so it exists when parsing the value)
-		std::shared_ptr<DAGNode> var_node = mkVar(var_sort, var_name);
-		
-		// Parse value (now variable is defined, can parse correctly)
-		std::shared_ptr<DAGNode> value = mkExpr(value_str);
-		if (!value || value->isErr()) {
-			return false;
-		}
-		
-		// Add to model
-		model_ptr->add(var_node, value);
-		
-		return true;
+		return model_ptr;
 	}
+
 	ModelPtr Parser::newEmptyModel(){
 		// new empty model
 		std::shared_ptr<Model> model = std::make_shared<Model>();

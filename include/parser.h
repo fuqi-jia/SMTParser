@@ -3804,9 +3804,6 @@ namespace SMTParser{
         
         std::shared_ptr<DAGNode>                remove(std::shared_ptr<DAGNode> expr, const std::unordered_set<std::shared_ptr<DAGNode>>& nodes, std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited);
         
-        // Helper function: parse each define-fun definition
-        bool                                    parseEachModel(const std::string& define_fun, ModelPtr model_ptr, bool only_declared = false);
-        
         //errors & warnings
         // mk errror node
         std::shared_ptr<DAGNode>	            mkErr(const ERROR_TYPE t);
