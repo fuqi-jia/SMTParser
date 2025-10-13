@@ -50,6 +50,7 @@ namespace SMTParser{
     COMP_KIND getFlipOperator(COMP_KIND comp);
     COMP_KIND getStrictOperator(COMP_KIND comp);
     NODE_KIND getCompareNodeKind(COMP_KIND comp);
+    NODE_KIND getEqNodeKind(COMP_KIND comp); // return the NodeKind of the equality node in the same theory
 
     // Composite Pattern
     class MetaObjective{
