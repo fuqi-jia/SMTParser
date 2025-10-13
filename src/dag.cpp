@@ -126,12 +126,12 @@ namespace SMTParser{
             kind_cache[NODE_KIND::NT_FP_ABS] = "fp.abs";
             kind_cache[NODE_KIND::NT_FP_NEG] = "fp.neg";
             kind_cache[NODE_KIND::NT_FP_SQRT] = "fp.sqrt";
-            kind_cache[NODE_KIND::NT_FP_LE] = "fp.le";
+            kind_cache[NODE_KIND::NT_FP_LE] = "fp.leq";
             kind_cache[NODE_KIND::NT_FP_LT] = "fp.lt";
-            kind_cache[NODE_KIND::NT_FP_GE] = "fp.ge";
+            kind_cache[NODE_KIND::NT_FP_GE] = "fp.geq";
             kind_cache[NODE_KIND::NT_FP_GT] = "fp.gt";
             kind_cache[NODE_KIND::NT_FP_EQ] = "fp.eq";
-            kind_cache[NODE_KIND::NT_FP_NE] = "fp.ne";
+            kind_cache[NODE_KIND::NT_FP_NE] = "fp.neq";
             cache_initialized = true;
         }
 

@@ -361,17 +361,17 @@ namespace SMTParser{
             return "fp.max";
         // FLOATING POINT COMP
         case NODE_KIND::NT_FP_LE:
-            return "fp.le";
+            return "fp.leq";
         case NODE_KIND::NT_FP_LT:
             return "fp.lt";
         case NODE_KIND::NT_FP_GE:
-            return "fp.ge";
+            return "fp.geq";
         case NODE_KIND::NT_FP_GT:
             return "fp.gt";
         case NODE_KIND::NT_FP_EQ:
             return "fp.eq";
         case NODE_KIND::NT_FP_NE:
-            return "fp.ne";
+            return "fp.neq";
         // FLOATING POINT CONVERSION
         case NODE_KIND::NT_FP_TO_UBV:
             return "fp.to_ubv";
