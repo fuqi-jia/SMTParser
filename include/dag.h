@@ -299,7 +299,8 @@ namespace SMTParser{
         bool isCInt()       		const { return isConst() && (sort->isInt() || sort->isIntOrReal()); };
         bool isCReal()      		const { return isConst() && (sort->isReal() || sort->isIntOrReal()); };
         bool isCBV()        		const { return isConst() && sort->isBv(); };
-        bool isCFP()        		const { return isConst() && (sort->isFp() || sort->isRoundingMode()); };
+        bool isCFP()        		const { return isConst() && sort->isFp(); };
+        bool isCRoundingMode()      const { return isConst() && sort->isRoundingMode(); };
         bool isCStr()       		const { return isConst() && sort->isStr(); };
 
         // check var
@@ -308,13 +309,14 @@ namespace SMTParser{
         bool isVInt() 				const { return (kind == NODE_KIND::NT_VAR || kind == NODE_KIND::NT_TEMP_VAR || kind == NODE_KIND::NT_QUANT_VAR || kind == NODE_KIND::NT_LET_BIND_VAR || kind == NODE_KIND::NT_PLACEHOLDER_VAR) && sort->isInt(); };
         bool isVReal() 				const { return (kind == NODE_KIND::NT_VAR || kind == NODE_KIND::NT_TEMP_VAR || kind == NODE_KIND::NT_QUANT_VAR || kind == NODE_KIND::NT_LET_BIND_VAR || kind == NODE_KIND::NT_PLACEHOLDER_VAR) && sort->isReal(); };
         bool isVBV() 				const { return (kind == NODE_KIND::NT_VAR || kind == NODE_KIND::NT_TEMP_VAR || kind == NODE_KIND::NT_QUANT_VAR || kind == NODE_KIND::NT_LET_BIND_VAR || kind == NODE_KIND::NT_PLACEHOLDER_VAR) && sort->isBv(); };
-        bool isVFP() 				const { return (kind == NODE_KIND::NT_VAR || kind == NODE_KIND::NT_TEMP_VAR || kind == NODE_KIND::NT_QUANT_VAR || kind == NODE_KIND::NT_LET_BIND_VAR || kind == NODE_KIND::NT_PLACEHOLDER_VAR) && (sort->isFp() || sort->isRoundingMode()); };
+        bool isVFP() 				const { return (kind == NODE_KIND::NT_VAR || kind == NODE_KIND::NT_TEMP_VAR || kind == NODE_KIND::NT_QUANT_VAR || kind == NODE_KIND::NT_LET_BIND_VAR || kind == NODE_KIND::NT_PLACEHOLDER_VAR) && sort->isFp(); };
+        bool isVRoundingMode()      const { return (kind == NODE_KIND::NT_VAR || kind == NODE_KIND::NT_TEMP_VAR || kind == NODE_KIND::NT_QUANT_VAR || kind == NODE_KIND::NT_LET_BIND_VAR || kind == NODE_KIND::NT_PLACEHOLDER_VAR) && sort->isRoundingMode(); };
         bool isVStr() 				const { return (kind == NODE_KIND::NT_VAR || kind == NODE_KIND::NT_TEMP_VAR || kind == NODE_KIND::NT_QUANT_VAR || kind == NODE_KIND::NT_LET_BIND_VAR || kind == NODE_KIND::NT_PLACEHOLDER_VAR) && sort->isStr(); };
         bool isTempVar() 			const { return kind == NODE_KIND::NT_TEMP_VAR; };
         bool isQuantVar() 			const { return kind == NODE_KIND::NT_QUANT_VAR; };
         bool isLetBindVar() 		const { return kind == NODE_KIND::NT_LET_BIND_VAR; };
         bool isPlaceholderVar() 	const { return kind == NODE_KIND::NT_PLACEHOLDER_VAR; };
-        bool isVar() 				const { return (isVBool() || isVInt() || isVReal() || isVBV() || isVFP() || isVStr() || isTempVar() || isQuantVar() || isLetBindVar() || isPlaceholderVar()); };
+        bool isVar() 				const { return (isVBool() || isVInt() || isVReal() || isVBV() || isVFP() || isVRoundingMode() || isVStr() || isTempVar() || isQuantVar() || isLetBindVar() || isPlaceholderVar()); };
         
         // interval
         bool isMax() 				const { return kind == NODE_KIND::NT_MAX; };
