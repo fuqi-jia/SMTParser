@@ -336,7 +336,6 @@ namespace SMTParser{
         {"fp.to_real", NODE_KIND::NT_FP_TO_REAL},
         {"to_fp", NODE_KIND::NT_FP_TO_FP},
         {"to_fp_unsigned", NODE_KIND::NT_FP_TO_FP_UNSIGNED},
-
         {"fp.isNormal", NODE_KIND::NT_FP_IS_NORMAL},
         {"fp.isSubnormal", NODE_KIND::NT_FP_IS_SUBNORMAL},
         {"fp.isZero", NODE_KIND::NT_FP_IS_ZERO},
@@ -391,6 +390,7 @@ namespace SMTParser{
         {"re.opt", NODE_KIND::NT_REG_OPT},
         {"re.range", NODE_KIND::NT_REG_RANGE},
         {"re.repeat", NODE_KIND::NT_REG_REPEAT},
+        {"re.loop", NODE_KIND::NT_REG_LOOP},
         {"re.comp", NODE_KIND::NT_REG_COMPLEMENT},
         {"root-obj", NODE_KIND::NT_ROOT_OBJ},
         {"root-of-with-interval", NODE_KIND::NT_ROOT_OF_WITH_INTERVAL}
