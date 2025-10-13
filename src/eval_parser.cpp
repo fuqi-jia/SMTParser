@@ -1627,25 +1627,25 @@ namespace SMTParser{
 	}
     bool Parser::evaluateFpToUbv(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
         (void)model;
-		not_implemented_warning("fp.toUbv");
+		not_implemented_warning("fp.to_ubv");
         result = expr;
         return false;
 	}
     bool Parser::evaluateFpToSbv(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
         (void)model;
-		not_implemented_warning("fp.toSbv");
+		not_implemented_warning("fp.to_sbv");
         result = expr;
         return false;
 	}
     bool Parser::evaluateFpToReal(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
         (void)model;
-		not_implemented_warning("fp.toReal");
+		not_implemented_warning("fp.to_real");
         result = expr;
         return false;
 	}   
     bool Parser::evaluateToFp(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
         (void)model;
-		not_implemented_warning("fp.toFp");
+		not_implemented_warning("to_fp");
         result = expr;
         return false;
 	}
@@ -1669,25 +1669,25 @@ namespace SMTParser{
 	}
     bool Parser::evaluateFpIsInf(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
         (void)model;
-		not_implemented_warning("fp.isInf");
+		not_implemented_warning("fp.isInfinite");
         result = expr;
         return false;
 	}
     bool Parser::evaluateFpIsNan(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
         (void)model;
-		not_implemented_warning("fp.isNan");
+		not_implemented_warning("fp.isNaN");
         result = expr;
         return false;
 	}
     bool Parser::evaluateFpIsNeg(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
         (void)model;
-		not_implemented_warning("fp.isNeg");
+		not_implemented_warning("fp.isNegative");
         result = expr;
         return false;
 	}
     bool Parser::evaluateFpIsPos(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
         (void)model;
-		not_implemented_warning("fp.isPos");
+		not_implemented_warning("fp.isPositive");
         result = expr;
         return false;
 	}

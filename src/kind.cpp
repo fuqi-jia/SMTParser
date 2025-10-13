@@ -374,9 +374,9 @@ namespace SMTParser{
             return "fp.ne";
         // FLOATING POINT CONVERSION
         case NODE_KIND::NT_FP_TO_UBV:
-            return "fp.toUbv";
+            return "fp.to_ubv";
         case NODE_KIND::NT_FP_TO_SBV:
-            return "fp.toSbv";
+            return "fp.to_sbv";
         case NODE_KIND::NT_FP_TO_REAL:
             return "fp.to_real";
         case NODE_KIND::NT_FP_TO_FP:
@@ -392,13 +392,13 @@ namespace SMTParser{
         case NODE_KIND::NT_FP_IS_ZERO:
             return "fp.isZero";
         case NODE_KIND::NT_FP_IS_INF:
-            return "fp.isInf";
+            return "fp.isInfinite";
         case NODE_KIND::NT_FP_IS_NAN:
-            return "fp.isNan";
+            return "fp.isNaN";
         case NODE_KIND::NT_FP_IS_NEG:
-            return "fp.isNeg";
+            return "fp.isNegative";
         case NODE_KIND::NT_FP_IS_POS:
-            return "fp.isPos";
+            return "fp.isPositive";
         // ARRAY
         case NODE_KIND::NT_SELECT:
             return "select";
