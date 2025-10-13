@@ -1064,13 +1064,13 @@ namespace SMTParser{
                 condAssert(oper_params.size() == 2, "Invalid number of parameters for fp.max");
                 return mkFpMax(oper_params);
             case NODE_KIND::NT_FP_LE:
-                condAssert(oper_params.size() == 2, "Invalid number of parameters for fp.le");
+                condAssert(oper_params.size() == 2, "Invalid number of parameters for fp.leq");
                 return mkFpLe(oper_params[0], oper_params[1]);
             case NODE_KIND::NT_FP_LT:
                 condAssert(oper_params.size() == 2, "Invalid number of parameters for fp.lt");
                 return mkFpLt(oper_params[0], oper_params[1]);
             case NODE_KIND::NT_FP_GE:
-                condAssert(oper_params.size() == 2, "Invalid number of parameters for fp.ge");
+                condAssert(oper_params.size() == 2, "Invalid number of parameters for fp.geq");
                 return mkFpGe(oper_params[0], oper_params[1]);
             case NODE_KIND::NT_FP_GT:
                 condAssert(oper_params.size() == 2, "Invalid number of parameters for fp.gt");
@@ -1079,7 +1079,7 @@ namespace SMTParser{
                 condAssert(oper_params.size() == 2, "Invalid number of parameters for fp.eq");
                 return mkFpEq(oper_params[0], oper_params[1]);
             case NODE_KIND::NT_FP_NE:
-                condAssert(oper_params.size() == 2, "Invalid number of parameters for fp.ne");
+                condAssert(oper_params.size() == 2, "Invalid number of parameters for fp.neq");
                 return mkFpNe(oper_params[0], oper_params[1]);
             case NODE_KIND::NT_FP_TO_UBV:
                 condAssert(func_args.size() == 1 && oper_params.size() == 2, "Invalid number of parameters for fp.to_ubv");

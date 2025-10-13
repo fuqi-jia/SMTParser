@@ -1597,7 +1597,7 @@ namespace SMTParser{
 	}
     bool Parser::evaluateFpLe(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
         (void)model;
-		not_implemented_warning("fp.le");
+		not_implemented_warning("fp.leq");
         result = expr;
         return false;
 	}
@@ -1609,7 +1609,7 @@ namespace SMTParser{
 	}
     bool Parser::evaluateFpGe(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
         (void)model;
-		not_implemented_warning("fp.ge");
+		not_implemented_warning("fp.geq");
         result = expr;
         return false;
 	}
