@@ -907,11 +907,19 @@ namespace SMTParser{
         
         /**
          * @brief Create a rounding mode constant
-         *
+         * 
          * @param mode Rounding mode string (RNE, RNA, RTP, RTN, RTZ)
          * @return Rounding mode constant node
          */
         std::shared_ptr<DAGNode> mkRoundingMode(const std::string &mode); // ROUNDING_MODE
+        
+        /**
+         * @brief Create a rounding mode variable
+         * 
+         * @param name Variable name
+         * @return Rounding mode variable node
+         */
+        std::shared_ptr<DAGNode> mkVarRoundingMode(const std::string &name); // VAR_ROUNDING_MODE
         
         // VAR
         /**

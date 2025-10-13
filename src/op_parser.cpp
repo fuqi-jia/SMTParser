@@ -769,6 +769,11 @@ namespace SMTParser{
     std::shared_ptr<DAGNode> Parser::mkVarReg(const std::string &name){
         return mkVar(SortManager::REG_SORT, name);
     }
+    std::shared_ptr<DAGNode> Parser::mkVarRoundingMode(const std::string &name){
+        // Create a special sort for rounding mode
+        std::shared_ptr<Sort> rounding_mode_sort = std::make_shared<Sort>(SORT_KIND::SK_ROUNDING_MODE, "RoundingMode", 0);
+        return mkVar(rounding_mode_sort, name);
+    }
     std::shared_ptr<DAGNode> Parser::mkFunParamVar(std::shared_ptr<Sort> sort, const std::string &name){
         std::shared_ptr<DAGNode> newvar = node_manager->createNode(sort, NODE_KIND::NT_FUNC_PARAM, name);
         // do not insert into variables
