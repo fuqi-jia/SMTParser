@@ -233,7 +233,19 @@ namespace SMTParser{
                             
                             std::shared_ptr<Sort> fp_sort = sort_manager->createFPSort(eb, sb);
                             std::string const_name = "(_ " + second + " " + eb_str + " " + sb_str + ")";
-                            frame.result = node_manager->createNode(fp_sort, NODE_KIND::NT_CONST, const_name);
+                            
+                            // Determine the appropriate node kind based on the special constant type
+                            NODE_KIND node_kind = NODE_KIND::NT_CONST;
+                            if (second == "NaN") {
+                                node_kind = NODE_KIND::NT_NAN;
+                            } else if (second == "+oo") {
+                                node_kind = NODE_KIND::NT_POS_INFINITY;
+                            } else if (second == "-oo") {
+                                node_kind = NODE_KIND::NT_NEG_INFINITY;
+                            }
+                            // For +zero and -zero, keep as NT_CONST
+                            
+                            frame.result = node_manager->createNode(fp_sort, node_kind, const_name);
                             parseRpar();
                             frame.state = FrameState::Finish;
                         }
