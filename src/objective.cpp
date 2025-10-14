@@ -258,19 +258,20 @@ namespace SMTParser{
     }
 
     NODE_KIND getEqNodeKind(COMP_KIND comp){
-        switch (comp)
-        {
-        case COMP_KIND::COMP_FP_LT:
-            return NODE_KIND::NT_FP_EQ;
-        case COMP_KIND::COMP_FP_LE:
-            return NODE_KIND::NT_FP_EQ;
-        case COMP_KIND::COMP_FP_GT:
-            return NODE_KIND::NT_FP_EQ;
-        case COMP_KIND::COMP_FP_GE:
-            return NODE_KIND::NT_FP_EQ;
-        default:
-            return NODE_KIND::NT_EQ;
-        }
+        // switch (comp)
+        // {
+        // case COMP_KIND::COMP_FP_LT:
+        //     return NODE_KIND::NT_FP_EQ;
+        // case COMP_KIND::COMP_FP_LE:
+        //     return NODE_KIND::NT_FP_EQ;
+        // case COMP_KIND::COMP_FP_GT:
+        //     return NODE_KIND::NT_FP_EQ;
+        // case COMP_KIND::COMP_FP_GE:
+        //     return NODE_KIND::NT_FP_EQ;
+        // default:
+        //     return NODE_KIND::NT_EQ;
+        // }
+        return NODE_KIND::NT_EQ;
     }
 
     
