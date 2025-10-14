@@ -1090,9 +1090,6 @@ namespace SMTParser{
             case NODE_KIND::NT_FP_EQ:
                 condAssert(oper_params.size() == 2, "Invalid number of parameters for fp.eq");
                 return mkFpEq(oper_params[0], oper_params[1]);
-            case NODE_KIND::NT_FP_NE:
-                condAssert(oper_params.size() == 2, "Invalid number of parameters for fp.neq");
-                return mkFpNe(oper_params[0], oper_params[1]);
             case NODE_KIND::NT_FP_TO_UBV:
                 condAssert(func_args.size() == 1 && oper_params.size() == 2, "Invalid number of parameters for fp.to_ubv");
                 return mkFpToUbv(oper_params[0], oper_params[1], func_args[0]);

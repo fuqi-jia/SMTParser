@@ -536,8 +536,7 @@ namespace SMTParser{
         bool isFPGe() 				const { return (kind == NODE_KIND::NT_FP_GE); };
         bool isFPGt() 				const { return (kind == NODE_KIND::NT_FP_GT); };
         bool isFPEq() 				const { return (kind == NODE_KIND::NT_FP_EQ); };
-        bool isFPNe() 				const { return (kind == NODE_KIND::NT_FP_NE); };
-        bool isFPComp() 			const { return (isFPLe() || isFPLt() || isFPGe() || isFPGt() || isFPEq() || isFPNe()); };
+        bool isFPComp() 			const { return (isFPLe() || isFPLt() || isFPGe() || isFPGt() || isFPEq()); };
 
         // check floating point conversion
         bool isFPToUBV() 			const { return (kind == NODE_KIND::NT_FP_TO_UBV); };

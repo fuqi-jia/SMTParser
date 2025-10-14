@@ -2467,15 +2467,6 @@ namespace SMTParser{
         
         // FLOATING POINT COMP
         /**
-         * @brief Create a floating-point not equal node
-         * 
-         * @param l Left parameter
-         * @param r Right parameter
-         * @return Floating-point not equal node (fp.ne(l, r))
-         */
-        std::shared_ptr<DAGNode> mkFpNe(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // l != r
-
-        /**
          * @brief Create a floating-point less than or equal node
          * 
          * @param l Left parameter

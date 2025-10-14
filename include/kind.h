@@ -78,7 +78,7 @@ namespace SMTParser{
         
         // FLOATING POINT OPERATORS (in parseOper)
         NT_FP_ADD,NT_FP_SUB,NT_FP_MUL,NT_FP_DIV,NT_FP_ABS,NT_FP_NEG,NT_FP_REM,NT_FP_FMA,NT_FP_SQRT,NT_FP_ROUND_TO_INTEGRAL,NT_FP_MIN,NT_FP_MAX,
-        NT_FP_LE,NT_FP_LT,NT_FP_GE,NT_FP_GT,NT_FP_EQ,NT_FP_NE,
+        NT_FP_LE,NT_FP_LT,NT_FP_GE,NT_FP_GT,NT_FP_EQ,
         NT_FP_TO_UBV,NT_FP_TO_SBV,NT_FP_TO_REAL,NT_FP_TO_FP,NT_FP_TO_FP_UNSIGNED,
         NT_FP_IS_NORMAL,NT_FP_IS_SUBNORMAL,NT_FP_IS_ZERO,NT_FP_IS_INF,NT_FP_IS_NAN,NT_FP_IS_NEG,NT_FP_IS_POS,
 
@@ -333,9 +333,6 @@ namespace SMTParser{
         {"fp.eq", NODE_KIND::NT_FP_EQ},
         {"fp.=", NODE_KIND::NT_FP_EQ},
         {"fp.==", NODE_KIND::NT_FP_EQ},
-        {"fp.ne", NODE_KIND::NT_FP_NE},
-        {"fp.!=", NODE_KIND::NT_FP_NE},
-        {"fp.neq", NODE_KIND::NT_FP_NE},
         {"fp.to_ubv", NODE_KIND::NT_FP_TO_UBV},
         {"fp.toUbv", NODE_KIND::NT_FP_TO_UBV},
         {"fp.to_sbv", NODE_KIND::NT_FP_TO_SBV},

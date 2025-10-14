@@ -131,7 +131,6 @@ namespace SMTParser{
             kind_cache[NODE_KIND::NT_FP_GE] = "fp.geq";
             kind_cache[NODE_KIND::NT_FP_GT] = "fp.gt";
             kind_cache[NODE_KIND::NT_FP_EQ] = "fp.eq";
-            kind_cache[NODE_KIND::NT_FP_NE] = "fp.neq";
             cache_initialized = true;
         }
 
@@ -628,8 +627,7 @@ namespace SMTParser{
             case NODE_KIND::NT_FP_LT:
             case NODE_KIND::NT_FP_GE:
             case NODE_KIND::NT_FP_GT:
-            case NODE_KIND::NT_FP_EQ:
-            case NODE_KIND::NT_FP_NE: {
+            case NODE_KIND::NT_FP_EQ: {
                 std::string kind_str = kindToString(kind);
                 auto child0 = node->getChild(0).get();
                 auto child1 = node->getChild(1).get();

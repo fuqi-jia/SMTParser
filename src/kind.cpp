@@ -370,8 +370,6 @@ namespace SMTParser{
             return "fp.gt";
         case NODE_KIND::NT_FP_EQ:
             return "fp.eq";
-        case NODE_KIND::NT_FP_NE:
-            return "fp.neq";
         // FLOATING POINT CONVERSION
         case NODE_KIND::NT_FP_TO_UBV:
             return "fp.to_ubv";

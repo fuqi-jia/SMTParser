@@ -3300,17 +3300,6 @@ namespace SMTParser{
 
         return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_FP_EQ, l, r);
     }
-    /*
-    (fp.ne Fp Fp), return Bool
-    */
-    std::shared_ptr<DAGNode> Parser::mkFpNe(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
-        if(!isFpParam(l) || !isFpParam(r)) {
-            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_ne", line_number);
-            return mkUnknown();
-        }
-
-        return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_FP_NE, l, r);
-    }
     // FLOATING POINT CONVERSION
     /*
     (fp.to_ubv Fp), return Bv
@@ -4377,10 +4366,9 @@ namespace SMTParser{
         }
 
         if(atom->isFPComp()){
-            if(atom->isFPEq()){
-                return mkFpNe(atom->getChild(0), atom->getChild(1));
-            }
-            else if(atom->isFPGt()){
+            // Note: fp.eq cannot be negated to fp.ne (which doesn't exist in SMT-LIB)
+            // So for fp.eq, we cannot simplify (not (fp.eq x y))
+            if(atom->isFPGt()){
                 return mkFpLe(atom->getChild(0), atom->getChild(1));
             }
             else if(atom->isFPLt()){
@@ -4392,11 +4380,9 @@ namespace SMTParser{
             else if(atom->isFPLe()){
                 return mkFpGt(atom->getChild(0), atom->getChild(1));
             }
-            else if(atom->isFPNe()){
-                return mkFpEq(atom->getChild(0), atom->getChild(1));
-            }
             else{
-                condAssert(false, "negateComp: unknown floating-point comparison operator");
+                // fp.eq cannot be negated, directly create NOT node to avoid infinite recursion
+                return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_NOT, atom);
             }
         }
 
@@ -4603,7 +4589,6 @@ namespace SMTParser{
             case NODE_KIND::NT_FP_GE:
             case NODE_KIND::NT_FP_GT:
             case NODE_KIND::NT_FP_EQ:
-            case NODE_KIND::NT_FP_NE:
             case NODE_KIND::NT_SELECT:
             case NODE_KIND::NT_STR_PREFIXOF:
             case NODE_KIND::NT_STR_SUFFIXOF:
