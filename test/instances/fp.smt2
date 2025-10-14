@@ -46,5 +46,7 @@ values (resp. models), unsatisfiable cores and interpolants.
 (declare-fun |v___ieee754_log10_#res_2_const_-1465748562| () (_ FloatingPoint 11 53))
 (assert (and (= |v___ieee754_log10_#res_2_const_-1465748562| (fp.add v_currentRoundingMode_7_const_205912936 v___ieee754_log10_~z~1_1_const_73815391 (fp.mul v_currentRoundingMode_7_const_205912936 v___ieee754_log10_~y~0_2_const_74741918 v_~log10_2hi_log10~0_1_const_307026142))) (= v___ieee754_log10_~z~1_1_const_73815391 (fp.add v_currentRoundingMode_7_const_205912936 (fp.mul v_currentRoundingMode_7_const_205912936 v___ieee754_log10_~y~0_2_const_74741918 v_~log10_2lo_log10~0_1_const_-1906172200) (fp.mul v_currentRoundingMode_7_const_205912936 v_~ivln10_log10~0_1_const_-607855457 |v___ieee754_log10_#t~ret16_3_const_-2022184893|)))))
 
+(assert (fp.isNaN (_ NaN 11 53)))
+
 (check-sat)
 (exit)

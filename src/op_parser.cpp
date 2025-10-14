@@ -1993,7 +1993,17 @@ namespace SMTParser{
         }
     }
     std::shared_ptr<DAGNode> Parser::mkPosInfinity(std::shared_ptr<Sort> sort){
-        if(sort->isEqTo(SortManager::STR_SORT)){
+        if(!sort){
+            return NodeManager::REAL_POS_INF_NODE;
+        }
+        else if(sort->isFp()){
+            // For floating point, create a node with full name including eb and sb
+            size_t eb = sort->getExponentWidth();
+            size_t sb = sort->getSignificandWidth();
+            std::string const_name = "(_ +oo " + std::to_string(eb) + " " + std::to_string(sb) + ")";
+            return node_manager->createNode(sort, NODE_KIND::NT_POS_INFINITY, const_name);
+        }
+        else if(sort->isEqTo(SortManager::STR_SORT)){
             return NodeManager::STR_POS_INF_NODE;
         }
         else if(sort->isEqTo(SortManager::INT_SORT)){
@@ -2008,7 +2018,17 @@ namespace SMTParser{
         }
     }
     std::shared_ptr<DAGNode> Parser::mkNegInfinity(std::shared_ptr<Sort> sort){
-        if(sort->isEqTo(SortManager::STR_SORT)){
+        if(!sort){
+            return NodeManager::REAL_NEG_INF_NODE;
+        }
+        else if(sort->isFp()){
+            // For floating point, create a node with full name including eb and sb
+            size_t eb = sort->getExponentWidth();
+            size_t sb = sort->getSignificandWidth();
+            std::string const_name = "(_ -oo " + std::to_string(eb) + " " + std::to_string(sb) + ")";
+            return node_manager->createNode(sort, NODE_KIND::NT_NEG_INFINITY, const_name);
+        }
+        else if(sort->isEqTo(SortManager::STR_SORT)){
             return NodeManager::STR_NEG_INF_NODE;
         }
         else if(sort->isEqTo(SortManager::INT_SORT)){
@@ -2022,8 +2042,20 @@ namespace SMTParser{
             return mkUnknown();
         }
     }
-    std::shared_ptr<DAGNode> Parser::mkNaN(){
-        return NodeManager::NAN_NODE;
+    std::shared_ptr<DAGNode> Parser::mkNaN(std::shared_ptr<Sort> sort){
+        if(!sort){
+            return NodeManager::NAN_NODE;
+        }
+        else if(sort->isFp()){
+            // For floating point, create a node with full name including eb and sb
+            size_t eb = sort->getExponentWidth();
+            size_t sb = sort->getSignificandWidth();
+            std::string const_name = "(_ NaN " + std::to_string(eb) + " " + std::to_string(sb) + ")";
+            return node_manager->createNode(sort, NODE_KIND::NT_NAN, const_name);
+        }
+        else{
+            return NodeManager::NAN_NODE;
+        }
     }
     std::shared_ptr<DAGNode> Parser::mkEpsilon(){
         return NodeManager::EPSILON_NODE;

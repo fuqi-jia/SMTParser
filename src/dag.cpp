@@ -348,16 +348,36 @@ namespace SMTParser{
                 out << "e";
                 break;
             case NODE_KIND::NT_INFINITY:
-                out << "inf";
+                // If node has a name (e.g., "(_ +oo eb sb)"), use it; otherwise use default
+                if (!node->getName().empty() && node->getName()[0] == '(') {
+                    out << node->getName();
+                } else {
+                    out << "inf";
+                }
                 break;
             case NODE_KIND::NT_POS_INFINITY:
-                out << "+inf";
+                // If node has a name (e.g., "(_ +oo eb sb)"), use it; otherwise use default
+                if (!node->getName().empty() && node->getName()[0] == '(') {
+                    out << node->getName();
+                } else {
+                    out << "+inf";
+                }
                 break;
             case NODE_KIND::NT_NEG_INFINITY:
-                out << "-inf";
+                // If node has a name (e.g., "(_ -oo eb sb)"), use it; otherwise use default
+                if (!node->getName().empty() && node->getName()[0] == '(') {
+                    out << node->getName();
+                } else {
+                    out << "-inf";
+                }
                 break;
             case NODE_KIND::NT_NAN:
-                out << "NaN";
+                // If node has a name (e.g., "(_ NaN eb sb)"), use it; otherwise use default
+                if (!node->getName().empty() && node->getName()[0] == '(') {
+                    out << node->getName();
+                } else {
+                    out << "NaN";
+                }
                 break;
             case NODE_KIND::NT_EPSILON:
                 out << "epsilon";

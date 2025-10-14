@@ -1822,23 +1822,26 @@ namespace SMTParser{
         /**
          * @brief Create a positive infinity node
          * 
+         * @param sort Optional sort (for FP types, will include eb sb in name)
          * @return Positive infinity node (+infinity)
          */
-        std::shared_ptr<DAGNode> mkPosInfinity(std::shared_ptr<Sort> sort); // +infinity
+        std::shared_ptr<DAGNode> mkPosInfinity(std::shared_ptr<Sort> sort = nullptr); // +infinity
 
         /**
          * @brief Create a negative infinity node
          * 
+         * @param sort Optional sort (for FP types, will include eb sb in name)
          * @return Negative infinity node (-infinity)
          */
-        std::shared_ptr<DAGNode> mkNegInfinity(std::shared_ptr<Sort> sort); // -infinity
+        std::shared_ptr<DAGNode> mkNegInfinity(std::shared_ptr<Sort> sort = nullptr); // -infinity
 
         /**
          * @brief Create a NaN node
          * 
+         * @param sort Optional sort (for FP types, will include eb sb in name)
          * @return NaN node (nan, i.e., Not a Number)
          */
-        std::shared_ptr<DAGNode> mkNaN(); // nan
+        std::shared_ptr<DAGNode> mkNaN(std::shared_ptr<Sort> sort = nullptr); // nan
 
         /**
          * @brief Create a epsilon node

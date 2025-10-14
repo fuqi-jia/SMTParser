@@ -232,20 +232,20 @@ namespace SMTParser{
                             size_t sb = std::stoul(sb_str);
                             
                             std::shared_ptr<Sort> fp_sort = sort_manager->createFPSort(eb, sb);
-                            std::string const_name = "(_ " + second + " " + eb_str + " " + sb_str + ")";
                             
-                            // Determine the appropriate node kind based on the special constant type
-                            NODE_KIND node_kind = NODE_KIND::NT_CONST;
+                            // Use the appropriate mk* function which will create nodes with full names
                             if (second == "NaN") {
-                                node_kind = NODE_KIND::NT_NAN;
+                                frame.result = mkNaN(fp_sort);
                             } else if (second == "+oo") {
-                                node_kind = NODE_KIND::NT_POS_INFINITY;
+                                frame.result = mkPosInfinity(fp_sort);
                             } else if (second == "-oo") {
-                                node_kind = NODE_KIND::NT_NEG_INFINITY;
+                                frame.result = mkNegInfinity(fp_sort);
+                            } else {
+                                // For +zero and -zero, create as NT_CONST with full name
+                                std::string const_name = "(_ " + second + " " + eb_str + " " + sb_str + ")";
+                                frame.result = node_manager->createNode(fp_sort, NODE_KIND::NT_CONST, const_name);
                             }
-                            // For +zero and -zero, keep as NT_CONST
                             
-                            frame.result = node_manager->createNode(fp_sort, node_kind, const_name);
                             parseRpar();
                             frame.state = FrameState::Finish;
                         }
