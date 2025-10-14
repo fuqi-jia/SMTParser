@@ -2022,7 +2022,7 @@ namespace SMTParser{
             return mkUnknown();
         }
     }
-    std::shared_ptr<DAGNode> Parser::mkNan(){
+    std::shared_ptr<DAGNode> Parser::mkNaN(){
         return NodeManager::NAN_NODE;
     }
     std::shared_ptr<DAGNode> Parser::mkEpsilon(){
@@ -3507,7 +3507,7 @@ namespace SMTParser{
     /*
     (fp.isNaN Fp), return Bool
     */
-    std::shared_ptr<DAGNode> Parser::mkFpIsNan(std::shared_ptr<DAGNode> param){
+    std::shared_ptr<DAGNode> Parser::mkFpIsNaN(std::shared_ptr<DAGNode> param){
         if(!isFpParam(param)) {
             err_all(param, "Expected floating-point parameter", line_number);
             return mkUnknown();

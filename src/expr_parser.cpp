@@ -601,7 +601,7 @@ namespace SMTParser{
 			return mkNegEpsilon();
 		}
 		else if(s == "NaN"){
-			return mkNan();
+			return mkNaN();
 		}
 		// support -3 (before only - 3)
 		else if(TypeChecker::isInt(s)){
@@ -1137,7 +1137,7 @@ namespace SMTParser{
                 return mkFpIsInf(oper_params[0]);
             case NODE_KIND::NT_FP_IS_NAN:
                 condAssert(oper_params.size() == 1, "Invalid number of parameters for fp.isNaN");
-                return mkFpIsNan(oper_params[0]);
+                return mkFpIsNaN(oper_params[0]);
             case NODE_KIND::NT_FP_IS_NEG:
                 condAssert(oper_params.size() == 1, "Invalid number of parameters for fp.isNegative");
                 return mkFpIsNeg(oper_params[0]);

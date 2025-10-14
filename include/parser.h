@@ -1834,11 +1834,11 @@ namespace SMTParser{
         std::shared_ptr<DAGNode> mkNegInfinity(std::shared_ptr<Sort> sort); // -infinity
 
         /**
-         * @brief Create a nan node
+         * @brief Create a NaN node
          * 
          * @return NaN node (nan, i.e., Not a Number)
          */
-        std::shared_ptr<DAGNode> mkNan(); // nan
+        std::shared_ptr<DAGNode> mkNaN(); // nan
 
         /**
          * @brief Create a epsilon node
@@ -2608,7 +2608,7 @@ namespace SMTParser{
          * @param param Parameter to check
          * @return Is-NaN check node (fp.isNaN(param))
          */
-        std::shared_ptr<DAGNode> mkFpIsNan(std::shared_ptr<DAGNode> param); // is_nan(param)
+        std::shared_ptr<DAGNode> mkFpIsNaN(std::shared_ptr<DAGNode> param); // is_nan(param)
         
         /**
          * @brief Create a floating-point is-negative check node
@@ -4011,7 +4011,7 @@ namespace SMTParser{
         bool		evaluateFpIsSubnormal(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
         bool		evaluateFpIsZero(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
         bool		evaluateFpIsInf(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
-        bool		evaluateFpIsNan(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
+        bool		evaluateFpIsNaN(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
         bool		evaluateFpIsNeg(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
         bool		evaluateFpIsPos(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);
         bool		evaluateSelect(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);

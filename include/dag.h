@@ -553,10 +553,10 @@ namespace SMTParser{
         bool isFPIsSubnormal() 		const { return (kind == NODE_KIND::NT_FP_IS_SUBNORMAL); };
         bool isFPIsZero() 			const { return (kind == NODE_KIND::NT_FP_IS_ZERO); };
         bool isFPIsInf() 			const { return (kind == NODE_KIND::NT_FP_IS_INF); };
-        bool isFPIsNan() 			const { return (kind == NODE_KIND::NT_FP_IS_NAN); };
+        bool isFPIsNaN() 			const { return (kind == NODE_KIND::NT_FP_IS_NAN); };
         bool isFPIsNeg() 			const { return (kind == NODE_KIND::NT_FP_IS_NEG); };
         bool isFPIsPos() 			const { return (kind == NODE_KIND::NT_FP_IS_POS); };
-        bool isFPProp() 			const { return isFPIsNormal() || isFPIsSubnormal() || isFPIsZero() || isFPIsInf() || isFPIsNan() || isFPIsNeg() || isFPIsPos(); }
+        bool isFPProp() 			const { return isFPIsNormal() || isFPIsSubnormal() || isFPIsZero() || isFPIsInf() || isFPIsNaN() || isFPIsNeg() || isFPIsPos(); }
 
         // check array
         bool isSelect() 			const { return (kind == NODE_KIND::NT_SELECT); };

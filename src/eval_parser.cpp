@@ -425,8 +425,8 @@ namespace SMTParser{
         else if(expr->isFPIsInf()){
             return evaluateFpIsInf(expr, model, result);
         }
-        else if(expr->isFPIsNan()){
-            return evaluateFpIsNan(expr, model, result);
+        else if(expr->isFPIsNaN()){
+            return evaluateFpIsNaN(expr, model, result);
         }
         else if(expr->isFPIsNeg()){
             return evaluateFpIsNeg(expr, model, result);
@@ -1673,7 +1673,7 @@ namespace SMTParser{
         result = expr;
         return false;
 	}
-    bool Parser::evaluateFpIsNan(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
+    bool Parser::evaluateFpIsNaN(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
         (void)model;
 		not_implemented_warning("fp.isNaN");
         result = expr;
