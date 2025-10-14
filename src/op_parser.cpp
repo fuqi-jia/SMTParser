@@ -3242,9 +3242,7 @@ namespace SMTParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_le", line_number);
             return mkUnknown();
         }
-        else if(l == r){
-            return mkTrue();
-        }
+        // Note: Cannot simplify (fp.le x x) to true because x might be NaN, and (NaN <= NaN) is false
 
         return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_FP_LE, l, r);
     }
@@ -3257,9 +3255,8 @@ namespace SMTParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_lt", line_number);
             return mkUnknown();
         }
-        else if(l == r){
-            return mkFalse();
-        }
+        // Note: Cannot simplify (fp.lt x x) to false without knowing if x is NaN
+        // While the result is always false, we should not simplify at parse time
 
         return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_FP_LT, l, r);
     }
@@ -3272,9 +3269,7 @@ namespace SMTParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_ge", line_number);
             return mkUnknown();
         }
-        else if(l == r){
-            return mkTrue();
-        }
+        // Note: Cannot simplify (fp.ge x x) to true because x might be NaN, and (NaN >= NaN) is false
 
         return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_FP_GE, l, r);
     }
@@ -3287,9 +3282,8 @@ namespace SMTParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_gt", line_number);
             return mkUnknown();
         }
-        else if(l == r){
-            return mkFalse();
-        }
+        // Note: Cannot simplify (fp.gt x x) to false without knowing if x is NaN
+        // While the result is always false, we should not simplify at parse time
 
         return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_FP_GT, l, r);
     }
@@ -3302,9 +3296,7 @@ namespace SMTParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_eq", line_number);
             return mkUnknown();
         }
-        else if(l == r){
-            return mkTrue();
-        }
+        // Note: Cannot simplify (fp.eq x x) to true because x might be NaN, and (NaN == NaN) is false per IEEE-754
 
         return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_FP_EQ, l, r);
     }
@@ -3315,9 +3307,6 @@ namespace SMTParser{
         if(!isFpParam(l) || !isFpParam(r)) {
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in fp_ne", line_number);
             return mkUnknown();
-        }
-        else if(l == r){
-            return mkFalse();
         }
 
         return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_FP_NE, l, r);
