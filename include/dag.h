@@ -430,7 +430,7 @@ namespace SMTParser{
         bool isInfinity() 			const { return (kind == NODE_KIND::NT_INFINITY || kind == NODE_KIND::NT_POS_INFINITY || kind == NODE_KIND::NT_NEG_INFINITY); };
         bool isPosInfinity() 		const { return (kind == NODE_KIND::NT_POS_INFINITY); };
         bool isNegInfinity() 		const { return (kind == NODE_KIND::NT_NEG_INFINITY); };
-        bool isNan() 				const { return (kind == NODE_KIND::NT_NAN); };
+        bool isNaN() 				const { return (kind == NODE_KIND::NT_NAN); };
         bool isEpsilon() 			const { return (kind == NODE_KIND::NT_EPSILON || kind == NODE_KIND::NT_POS_EPSILON || kind == NODE_KIND::NT_NEG_EPSILON ); };
         bool isPosEpsilon() 		const { return (kind == NODE_KIND::NT_POS_EPSILON); };
         bool isNegEpsilon() 		const { return (kind == NODE_KIND::NT_NEG_EPSILON); };
