@@ -229,7 +229,7 @@ namespace SMTParser{
             } else if (n == "inf") {
                 sort = SortManager::REAL_SORT;
                 kind = NODE_KIND::NT_INFINITY;
-            } else if (n == "NaN") {
+            } else if (n == "NaN" || n == "+NaN" || n == "-NaN") {
                 sort = SortManager::EXT_SORT;
                 kind = NODE_KIND::NT_NAN;
             } else if (n == "epsilon") {

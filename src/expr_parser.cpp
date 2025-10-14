@@ -225,7 +225,7 @@ namespace SMTParser{
                             frame.state = FrameState::Finish;
                         }
                         // Handle floating point special constants: (_ +zero eb sb), (_ -zero eb sb), (_ +oo eb sb), (_ -oo eb sb), (_ NaN eb sb)
-                        else if(second == "+zero" || second == "-zero" || second == "+oo" || second == "-oo" || second == "NaN"){
+                        else if(second == "+zero" || second == "-zero" || second == "+oo" || second == "-oo" || second == "NaN" || second == "+NaN" || second == "-NaN"){
                             std::string eb_str = getSymbol();
                             std::string sb_str = getSymbol();
                             size_t eb = std::stoul(eb_str);
@@ -234,7 +234,7 @@ namespace SMTParser{
                             std::shared_ptr<Sort> fp_sort = sort_manager->createFPSort(eb, sb);
                             
                             // Use the appropriate mk* function which will create nodes with full names
-                            if (second == "NaN") {
+                            if (second == "NaN" || second == "+NaN" || second == "-NaN") {
                                 frame.result = mkNaN(fp_sort);
                             } else if (second == "+oo") {
                                 frame.result = mkPosInfinity(fp_sort);
@@ -612,7 +612,7 @@ namespace SMTParser{
 		else if(s == "-epsilon"){
 			return mkNegEpsilon();
 		}
-		else if(s == "NaN"){
+		else if(s == "NaN" || s == "+NaN" || s == "-NaN"){
 			return mkNaN();
 		}
 		// support -3 (before only - 3)
