@@ -592,10 +592,23 @@ namespace SMTParser{
                 break;
             }
 
+            case NODE_KIND::NT_FP_SQRT:
+            case NODE_KIND::NT_FP_ROUND_TO_INTEGRAL: {
+                // fp.sqrt and fp.roundToIntegral require rounding mode and input: (fp.sqrt <rm> <arg>)
+                std::string kind_str = kindToString(kind);
+                out << "(" << kind_str;
+                work_stack.emplace_back(nullptr, 2);  // )
+                const auto& children = node->getChildren();
+                for (int i = children.size() - 1; i >= 0; i--) {
+                    auto current_child = children[i].get();
+                    work_stack.emplace_back(current_child, 0);
+                    work_stack.emplace_back(nullptr, 1);  // space
+                }
+                break;
+            }
+
             case NODE_KIND::NT_FP_ABS:
             case NODE_KIND::NT_FP_NEG:
-            case NODE_KIND::NT_FP_SQRT:
-            case NODE_KIND::NT_FP_ROUND_TO_INTEGRAL:
             case NODE_KIND::NT_FP_IS_NORMAL:
             case NODE_KIND::NT_FP_IS_SUBNORMAL:
             case NODE_KIND::NT_FP_IS_ZERO:

@@ -4511,8 +4511,6 @@ namespace SMTParser{
             case NODE_KIND::NT_BV_NEGO:
             case NODE_KIND::NT_FP_ABS:
             case NODE_KIND::NT_FP_NEG:
-            case NODE_KIND::NT_FP_SQRT:
-            case NODE_KIND::NT_FP_ROUND_TO_INTEGRAL:
             case NODE_KIND::NT_FP_IS_NORMAL:
             case NODE_KIND::NT_FP_IS_SUBNORMAL:
             case NODE_KIND::NT_FP_IS_ZERO:
@@ -4584,6 +4582,8 @@ namespace SMTParser{
             case NODE_KIND::NT_INT_TO_BV:
             case NODE_KIND::NT_FP_DIV:
             case NODE_KIND::NT_FP_REM:
+            case NODE_KIND::NT_FP_SQRT:
+            case NODE_KIND::NT_FP_ROUND_TO_INTEGRAL:
             case NODE_KIND::NT_FP_LE:
             case NODE_KIND::NT_FP_LT:
             case NODE_KIND::NT_FP_GE:
