@@ -294,7 +294,10 @@ namespace SMTParser{
         bool isFalse() 			    const { return kind == NODE_KIND::NT_CONST_FALSE && sort->isBool(); };
         bool isConst() 				const { return  kind == NODE_KIND::NT_CONST || 
                                                     kind == NODE_KIND::NT_CONST_TRUE || kind == NODE_KIND::NT_CONST_FALSE ||
-                                                    kind == NODE_KIND::NT_CONST_PI || kind == NODE_KIND::NT_CONST_E; };
+                                                    kind == NODE_KIND::NT_CONST_PI || kind == NODE_KIND::NT_CONST_E ||
+                                                    kind == NODE_KIND::NT_INFINITY || kind == NODE_KIND::NT_POS_INFINITY || kind == NODE_KIND::NT_NEG_INFINITY ||
+                                                    kind == NODE_KIND::NT_NAN || kind == NODE_KIND::NT_EPSILON || 
+                                                    kind == NODE_KIND::NT_POS_EPSILON || kind == NODE_KIND::NT_NEG_EPSILON; };
         bool isNumeral() 			const { return isCInt() || isCReal(); };
         bool isCInt()       		const { return isConst() && (sort->isInt() || sort->isIntOrReal()); };
         bool isCReal()      		const { return isConst() && (sort->isReal() || sort->isIntOrReal()); };
