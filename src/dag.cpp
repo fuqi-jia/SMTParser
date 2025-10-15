@@ -654,17 +654,18 @@ namespace SMTParser{
 
             case NODE_KIND::NT_FP_TO_UBV:
             case NODE_KIND::NT_FP_TO_SBV: {
+                // Format: ((_ fp.to_ubv size) rm fp) or ((_ fp.to_sbv size) rm fp)
                 std::string kind_str = kindToString(kind);
                 auto rm = node->getChild(0).get();
                 auto fp = node->getChild(1).get();
                 auto size = node->getChild(2).get();
-                out << "(" << kind_str << " ";
+                out << "((_ " << kind_str << " ";
                 work_stack.emplace_back(nullptr, 2);  // )
-                work_stack.emplace_back(size, 0);     // size
-                work_stack.emplace_back(nullptr, 1);  // space
                 work_stack.emplace_back(fp, 0);       // fp
                 work_stack.emplace_back(nullptr, 1);  // space
                 work_stack.emplace_back(rm, 0);       // rm
+                work_stack.emplace_back(nullptr, 3);  // ") "
+                work_stack.emplace_back(size, 0);     // size
                 break;
             }
 

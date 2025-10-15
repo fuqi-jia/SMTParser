@@ -4518,8 +4518,6 @@ namespace SMTParser{
             case NODE_KIND::NT_FP_IS_NAN:
             case NODE_KIND::NT_FP_IS_NEG:
             case NODE_KIND::NT_FP_IS_POS:
-            case NODE_KIND::NT_FP_TO_UBV:
-            case NODE_KIND::NT_FP_TO_SBV:
             case NODE_KIND::NT_FP_TO_REAL:
             case NODE_KIND::NT_STR_LEN:
             case NODE_KIND::NT_STR_TO_LOWER:
@@ -4580,7 +4578,6 @@ namespace SMTParser{
             case NODE_KIND::NT_BV_SGE:
             case NODE_KIND::NT_NAT_TO_BV:
             case NODE_KIND::NT_INT_TO_BV:
-            case NODE_KIND::NT_FP_DIV:
             case NODE_KIND::NT_FP_REM:
             case NODE_KIND::NT_FP_SQRT:
             case NODE_KIND::NT_FP_ROUND_TO_INTEGRAL:
@@ -4612,7 +4609,12 @@ namespace SMTParser{
 
             // ternary
             case NODE_KIND::NT_ITE:
-            case NODE_KIND::NT_FP_FMA:
+            case NODE_KIND::NT_FP_ADD:
+            case NODE_KIND::NT_FP_SUB:
+            case NODE_KIND::NT_FP_MUL:
+            case NODE_KIND::NT_FP_DIV:
+            case NODE_KIND::NT_FP_TO_UBV:
+            case NODE_KIND::NT_FP_TO_SBV:
             case NODE_KIND::NT_STORE:
             case NODE_KIND::NT_STR_SUBSTR:
             case NODE_KIND::NT_STR_INDEXOF:
@@ -4631,6 +4633,7 @@ namespace SMTParser{
                 return 3;
 
             // 4-ary
+            case NODE_KIND::NT_FP_FMA:
             case NODE_KIND::NT_FP_TO_FP:
                 return 4;
 
@@ -4663,9 +4666,6 @@ namespace SMTParser{
             case NODE_KIND::NT_BV_SMULO:
             case NODE_KIND::NT_BV_UMULO:
             case NODE_KIND::NT_BV_CONCAT:
-            case NODE_KIND::NT_FP_ADD:
-            case NODE_KIND::NT_FP_SUB:
-            case NODE_KIND::NT_FP_MUL:
             case NODE_KIND::NT_FP_MIN:
             case NODE_KIND::NT_FP_MAX:
             case NODE_KIND::NT_STR_CONCAT:

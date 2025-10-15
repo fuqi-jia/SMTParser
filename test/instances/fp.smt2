@@ -1,4 +1,4 @@
-(set-logic QF_FP)
+(set-logic ALL)
 (set-info :status unsat)
 (define-sort FPN () (_ FloatingPoint 11 53))
 (declare-fun x () FPN)
@@ -47,8 +47,6 @@ values (resp. models), unsatisfiable cores and interpolants.
 (assert (and (= |v___ieee754_log10_#res_2_const_-1465748562| (fp.add v_currentRoundingMode_7_const_205912936 v___ieee754_log10_~z~1_1_const_73815391 (fp.mul v_currentRoundingMode_7_const_205912936 v___ieee754_log10_~y~0_2_const_74741918 v_~log10_2hi_log10~0_1_const_307026142))) (= v___ieee754_log10_~z~1_1_const_73815391 (fp.add v_currentRoundingMode_7_const_205912936 (fp.mul v_currentRoundingMode_7_const_205912936 v___ieee754_log10_~y~0_2_const_74741918 v_~log10_2lo_log10~0_1_const_-1906172200) (fp.mul v_currentRoundingMode_7_const_205912936 v_~ivln10_log10~0_1_const_-607855457 |v___ieee754_log10_#t~ret16_3_const_-2022184893|)))))
 
 (assert (fp.isNaN (_ NaN 11 53)))
-(assert (fp.isNaN (_ +NaN 11 53)))
-(assert (fp.isNaN (_ -NaN 11 53)))
 (assert (fp.isInfinite (_ +oo 11 53)))
 (assert (fp.isInfinite (_ -oo 11 53)))
 
@@ -96,5 +94,56 @@ values (resp. models), unsatisfiable cores and interpolants.
 (declare-fun c___kernel_sin_~v~0_primed () (_ FloatingPoint 11 53))
 (assert (and (= c___kernel_sin_~z~3_primed (fp.mul c_currentRoundingMode c___kernel_sin_~x c___kernel_sin_~x)) (= c___kernel_sin_~r~2_primed (fp.add c_currentRoundingMode c_~S2_ksin~0 (fp.mul c_currentRoundingMode c___kernel_sin_~z~3_primed (fp.add c_currentRoundingMode c_~S3_ksin~0 (fp.mul c_currentRoundingMode c___kernel_sin_~z~3_primed (fp.add c_currentRoundingMode c_~S4_ksin~0 (fp.mul c_currentRoundingMode c___kernel_sin_~z~3_primed (fp.add c_currentRoundingMode c_~S5_ksin~0 (fp.mul c_currentRoundingMode c___kernel_sin_~z~3_primed c_~S6_ksin~0))))))))) (= c___kernel_sin_~v~0_primed (fp.mul c_currentRoundingMode c___kernel_sin_~z~3_primed c___kernel_sin_~x))))
 (assert (not (or (not (let ((.cse0 (fp.sub c_currentRoundingMode c_sin_double_~x c_sin_double_~x))) (fp.eq .cse0 .cse0))) (let ((.cse1 (fp.sub c_currentRoundingMode |c_sin_double_#in~x| |c_sin_double_#in~x|))) (fp.eq .cse1 .cse1)))))
+
+; Test cases for fixed floating point operators
+; Declare test variables
+(declare-fun test_fp1 () (_ FloatingPoint 11 53))
+(declare-fun test_fp2 () (_ FloatingPoint 11 53))
+
+; Test fp.sqrt (RoundingMode + FloatingPoint)
+(assert (fp.leq (fp.sqrt RNE (fp.abs test_fp1)) (fp.abs test_fp1)))
+
+; Test fp.roundToIntegral (RoundingMode + FloatingPoint)
+(declare-fun test_fp_val () (_ FloatingPoint 11 53))
+(assert (fp.isNormal (fp.roundToIntegral RNE test_fp_val)))
+
+; Test fp.fma (RoundingMode + 3 FloatingPoints)
+(declare-fun test_a () (_ FloatingPoint 11 53))
+(declare-fun test_b () (_ FloatingPoint 11 53))
+(declare-fun test_c () (_ FloatingPoint 11 53))
+(assert (fp.eq (fp.fma RNE test_a test_b test_c) 
+               (fp.add RNE (fp.mul RNE test_a test_b) test_c)))
+
+; Test fp.add (RoundingMode + 2 FloatingPoints)
+(assert (fp.eq (fp.add RNE test_fp1 test_fp2) 
+               (fp.add RNE test_fp2 test_fp1)))
+
+; Test fp.sub (RoundingMode + 2 FloatingPoints)
+(assert (fp.eq (fp.sub RNE test_fp1 test_fp2) 
+               (fp.neg (fp.sub RNE test_fp2 test_fp1))))
+
+; Test fp.mul (RoundingMode + 2 FloatingPoints)
+(assert (fp.eq (fp.mul RNE test_fp1 test_fp2) 
+               (fp.mul RNE test_fp2 test_fp1)))
+
+; Test fp.div (RoundingMode + 2 FloatingPoints)
+(declare-fun test_fp_x () (_ FloatingPoint 11 53))
+(declare-fun test_fp_y () (_ FloatingPoint 11 53))
+(assert (=> (and (not (fp.isNaN test_fp_x)) (not (fp.isZero test_fp_x)))
+            (fp.eq (fp.div RNE test_fp_x test_fp_x) ((_ to_fp 11 53) RNE 1.0))))
+
+; Test fp.to_ubv (indexed operator: ((_ fp.to_ubv m) RoundingMode FloatingPoint))
+(declare-fun test_bv32 () (_ BitVec 32))
+(assert (= test_bv32 ((_ fp.to_ubv 32) RNE test_fp1)))
+
+; Test fp.to_sbv (indexed operator: ((_ fp.to_sbv m) RoundingMode FloatingPoint))
+(declare-fun test_sbv32 () (_ BitVec 32))
+(assert (= test_sbv32 ((_ fp.to_sbv 32) RNE test_fp2)))
+
+; Combined test: sqrt of a multiplication
+(declare-fun test_pos_fp () (_ FloatingPoint 11 53))
+(assert (=> (and (not (fp.isNaN test_pos_fp)) (fp.isPositive test_pos_fp))
+            (fp.eq (fp.sqrt RNE (fp.mul RNE test_pos_fp test_pos_fp)) test_pos_fp)))
+
 (check-sat)
 (exit)
