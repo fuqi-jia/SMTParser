@@ -2094,7 +2094,10 @@ namespace SMTParser{
 			std::shared_ptr<DAGNode> newNode;
 			// For nodes with meaningful names (UF applications, function applications, etc.),
 			// preserve the original name instead of using kindToString
-			if(current->isUFApplication()|| current->isFuncApplication() || current->isFuncRecApplication()){ 
+			if(current->isUFApplication() || 
+			   current->isFuncApplication() || 
+			   current->isFuncRecApplication() ||
+			   current->isArray()) {
 				// Create node with original name preserved
 				newNode = node_manager->createNode(current->getSort(), current->getKind(), current->getName(), newChildren);
 			} else {
@@ -2208,7 +2211,10 @@ namespace SMTParser{
 			if(any_changed){
 				// For nodes with meaningful names (UF applications, function applications, etc.),
 				// preserve the original name instead of using kindToString
-				if(node->isUFApplication() || node->isFuncApplication() || node->isFuncRecApplication()){
+				if(	node->isUFApplication() || 
+					node->isFuncApplication() || 
+					node->isFuncRecApplication() ||
+					node->isArray()) {
 					// Create node with original name preserved
 					new_node = node_manager->createNode(node->getSort(), node->getKind(), node->getName(), new_children);
 				} else {
