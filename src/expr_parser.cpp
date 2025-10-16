@@ -249,6 +249,15 @@ namespace SMTParser{
                             parseRpar();
                             frame.state = FrameState::Finish;
                         }
+                        // Handle as-array: (_ as-array k!name)
+                        else if(second == "as-array"){
+                            std::string func_name = getSymbol();
+                            // Create a placeholder variable for the array represented by the function
+                            // The function will be defined elsewhere in the model
+                            frame.result = mkPlaceholderVar(func_name);
+                            parseRpar();
+                            frame.state = FrameState::Finish;
+                        }
                         else{
                             frame.second_symbol = second;
                             frame.state = FrameState::ProcessingParams;
