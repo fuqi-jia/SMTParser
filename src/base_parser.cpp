@@ -2325,6 +2325,7 @@ namespace SMTParser{
 		
 		try {
 			// Check if wrapped with (model ...) or just (...)
+			char* start_pos = bufptr;
 			if (*bufptr == '(') {
 				char* lookahead = bufptr + 1;
 				while (*lookahead && (*lookahead == ' ' || *lookahead == '\t' || *lookahead == '\n' || *lookahead == '\r')) {
@@ -2343,8 +2344,75 @@ namespace SMTParser{
 					parseLpar();
 				}
 			}
+			start_pos = bufptr;
 			
-			// Parse all define-fun definitions
+			// FIRST PASS: Declare all functions (including parameterized ones)
+			// This allows forward references in expressions
+			while (*bufptr && *bufptr != 0) {
+				// Skip whitespace
+				while (*bufptr && (*bufptr == ' ' || *bufptr == '\t' || *bufptr == '\n' || *bufptr == '\r')) {
+					bufptr++;
+					if (*bufptr == '\n') line_number++;
+				}
+				
+				if (*bufptr == 0 || *bufptr == ')') break;
+				
+				if (*bufptr != '(') break;
+				
+				// Parse one define-fun
+				parseLpar();
+				std::string keyword = getSymbol();
+				
+				if (keyword != "define-fun") {
+					// Not a define-fun, skip it
+					skipToRpar();
+					parseRpar();
+					continue;
+				}
+				
+				// Parse function name
+				std::string func_name;
+				if (*bufptr == '(') {
+					func_name = "||";
+				} else {
+					func_name = getSymbol();
+				}
+				
+				// Parse parameter list
+				parseLpar();
+				std::vector<std::shared_ptr<Sort>> param_sorts;
+				while (*bufptr != ')') {
+					parseLpar();
+					getSymbol(); // parameter name (ignored)
+					std::shared_ptr<Sort> param_sort = parseSort();
+					param_sorts.push_back(param_sort);
+					parseRpar();
+				}
+				parseRpar();
+				
+				// Parse return type
+				std::shared_ptr<Sort> return_sort = parseSort();
+				
+				// Declare the function so it can be referenced
+				if (!param_sorts.empty()) {
+					// Function with parameters - declare it
+					mkFuncDec(func_name, param_sorts, return_sort);
+					if (fun_key_map.find(func_name) == fun_key_map.end() || 
+					    std::find(function_names.begin(), function_names.end(), func_name) == function_names.end()) {
+						function_names.emplace_back(func_name);
+					}
+				}
+				
+				// Skip the function body for now
+				skipToRpar();
+				parseRpar();
+			}
+			
+			// SECOND PASS: Parse variable values (only for 0-parameter functions)
+			// Reset to start position
+			bufptr = start_pos;
+			line_number = 1;
+			
 			while (*bufptr && *bufptr != 0) {
 				// Skip whitespace
 				while (*bufptr && (*bufptr == ' ' || *bufptr == '\t' || *bufptr == '\n' || *bufptr == '\r')) {
@@ -2392,7 +2460,7 @@ namespace SMTParser{
 				}
 				parseRpar();
 				
-				// If has parameters, skip this function definition
+				// If has parameters, skip this function definition in second pass
 				if (has_params) {
 					skipToRpar();
 					parseRpar();
