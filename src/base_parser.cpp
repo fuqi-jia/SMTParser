@@ -2080,20 +2080,29 @@ namespace SMTParser{
 				continue;
 			}
 
-			if(processed){
-				/*
-					All children have been processed – build the new node using the
-					(possibly substituted) child results that are now stored in
-					`visited`.
-				*/
-				std::vector<std::shared_ptr<DAGNode>> newChildren;
-				newChildren.reserve(current->getChildrenSize());
-				for(size_t i = 0; i < current->getChildrenSize(); ++i){
-					newChildren.emplace_back(visited[current->getChild(i)]);
-				}
-				std::shared_ptr<DAGNode> newNode = mkOper(current->getSort(), current->getKind(), newChildren);
-				visited[current] = newNode;
+		if(processed){
+			/*
+				All children have been processed – build the new node using the
+				(possibly substituted) child results that are now stored in
+				`visited`.
+			*/
+			std::vector<std::shared_ptr<DAGNode>> newChildren;
+			newChildren.reserve(current->getChildrenSize());
+			for(size_t i = 0; i < current->getChildrenSize(); ++i){
+				newChildren.emplace_back(visited[current->getChild(i)]);
 			}
+			std::shared_ptr<DAGNode> newNode;
+			// For nodes with meaningful names (UF applications, function applications, etc.),
+			// preserve the original name instead of using kindToString
+			if(current->isUFApplication()|| current->isFuncApplication() || current->isFuncRecApplication()){ 
+				// Create node with original name preserved
+				newNode = node_manager->createNode(current->getSort(), current->getKind(), current->getName(), newChildren);
+			} else {
+				// Use standard mkOper for other node types
+				newNode = mkOper(current->getSort(), current->getKind(), newChildren);
+			}
+			visited[current] = newNode;
+		}
 			else{
 				/* First visit */
 				if(current->isVar()){
@@ -2154,52 +2163,64 @@ namespace SMTParser{
 			// If already processed, skip
 			if(result_map.find(node) != result_map.end()) continue;
 
-			if(processed){
-				/* Second visit: all children have been processed, can construct the current node */
-				if(node->isConst() || node->isVar() || node->isArithTerm() || node->isErr()){
-					result_map[node]  = node;
-					changed_map[node] = false;
-					continue;
+		if(processed){
+			/* Second visit: all children have been processed, can construct the current node */
+			if(node->isConst() || node->isVar() || node->isArithTerm() || node->isErr()){
+				result_map[node]  = node;
+				changed_map[node] = false;
+				continue;
+			}
+
+			if(node->isArithComp()){
+				condAssert(node->getChildrenSize()==2, "ArithComp should have two children");
+				std::shared_ptr<DAGNode> leftN  = result_map[node->getChild(0)];
+				std::shared_ptr<DAGNode> rightN = result_map[node->getChild(1)];
+				bool child_changed = changed_map[node->getChild(0)] || changed_map[node->getChild(1)];
+
+				bool cur_changed = child_changed;
+				std::shared_ptr<DAGNode> new_node = node; // default to keep unchanged
+
+				if(!rightN->isConst()){
+					cur_changed = true;
+					auto left_sub = mkOper(leftN->getSort(), NODE_KIND::NT_SUB, {leftN, rightN});
+					auto zero     = getZero(leftN->getSort());
+					new_node      = mkOper(SortManager::BOOL_SORT, node->getKind(), {left_sub, zero});
+				}else if(child_changed){
+					new_node = mkOper(node->getSort(), node->getKind(), {leftN, rightN});
 				}
-
-				if(node->isArithComp()){
-					condAssert(node->getChildrenSize()==2, "ArithComp should have two children");
-					std::shared_ptr<DAGNode> leftN  = result_map[node->getChild(0)];
-					std::shared_ptr<DAGNode> rightN = result_map[node->getChild(1)];
-					bool child_changed = changed_map[node->getChild(0)] || changed_map[node->getChild(1)];
-
-					bool cur_changed = child_changed;
-					std::shared_ptr<DAGNode> new_node = node; // default to keep unchanged
-
-					if(!rightN->isConst()){
-						cur_changed = true;
-						auto left_sub = mkOper(leftN->getSort(), NODE_KIND::NT_SUB, {leftN, rightN});
-						auto zero     = getZero(leftN->getSort());
-						new_node      = mkOper(SortManager::BOOL_SORT, node->getKind(), {left_sub, zero});
-					}else if(child_changed){
-						new_node = mkOper(node->getSort(), node->getKind(), {leftN, rightN});
-					}
-
-					result_map[node]  = new_node;
-					changed_map[node] = cur_changed;
-					continue;
-				}
-
-				/* General operator */
-				std::vector<std::shared_ptr<DAGNode>> new_children;
-				bool any_changed = false;
-				new_children.reserve(node->getChildrenSize());
-				for(size_t i=0;i<node->getChildrenSize();++i){
-					auto child = node->getChild(i);
-					new_children.emplace_back(result_map[child]);
-					any_changed = any_changed || changed_map[child];
-				}
-
-				std::shared_ptr<DAGNode> new_node = any_changed ?
-					mkOper(node->getSort(), node->getKind(), new_children) : node;
 
 				result_map[node]  = new_node;
-				changed_map[node] = any_changed;
+				changed_map[node] = cur_changed;
+				continue;
+			}
+
+			/* General operator */
+			std::vector<std::shared_ptr<DAGNode>> new_children;
+			bool any_changed = false;
+			new_children.reserve(node->getChildrenSize());
+			for(size_t i=0;i<node->getChildrenSize();++i){
+				auto child = node->getChild(i);
+				new_children.emplace_back(result_map[child]);
+				any_changed = any_changed || changed_map[child];
+			}
+
+			std::shared_ptr<DAGNode> new_node;
+			if(any_changed){
+				// For nodes with meaningful names (UF applications, function applications, etc.),
+				// preserve the original name instead of using kindToString
+				if(node->isUFApplication() || node->isFuncApplication() || node->isFuncRecApplication()){
+					// Create node with original name preserved
+					new_node = node_manager->createNode(node->getSort(), node->getKind(), node->getName(), new_children);
+				} else {
+					// Use standard mkOper for other node types
+					new_node = mkOper(node->getSort(), node->getKind(), new_children);
+				}
+			} else {
+				new_node = node;
+			}
+
+			result_map[node]  = new_node;
+			changed_map[node] = any_changed;
 			}else{
 				/* First visit */
 				// Leaf node directly processed
