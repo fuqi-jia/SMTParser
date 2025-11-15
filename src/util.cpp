@@ -983,7 +983,7 @@ namespace SMTParser{
     
         // build unsigned integer
         Integer u = 0;
-        for(int i = 2; i < bv.size(); ++i)
+        for(size_t i = 2; i < bv.size(); ++i)
             u = (u << 1) + (bv[i] == '1');
     
         // if MSB = 1 → subtract 2^(n-2)
