@@ -977,48 +977,45 @@ namespace SMTParser{
             return BitVectorUtils::natToBv(Integer(i), n);
         }
     }
-    Integer BitVectorUtils::bvToInt(const std::string& bv){
-        condAssert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvToInt: invalid bitvector");
-        if(bv[2] == '0'){
-            Integer res = 0;
-            for(size_t i = 3; i < bv.size(); i++){
-                res = res * 2 + (bv[i] == '1' ? 1 : 0);
-            }
-            return res;
-        }
-        else{
-            Integer res = -1;
-            for(size_t i = 3; i < bv.size(); i++){
-                res = res * 2 + (bv[i] == '0' ? 1 : 0);
-            }
-            return res;
-        }
+    Integer BitVectorUtils::bvToInt(const std::string& bv) {
+        condAssert(bv.substr(0,2) == "#b", "invalid bitvector");
+        int n = bv.size() - 2;
+    
+        // build unsigned integer
+        Integer u = 0;
+        for(int i = 2; i < bv.size(); ++i)
+            u = (u << 1) + (bv[i] == '1');
+    
+        // if MSB = 1 → subtract 2^(n-2)
+        if(bv[2] == '1')
+            return u - (Integer(1) << (n - 1));
+        else
+            return u;
     }
-    std::string BitVectorUtils::intToBv(const Integer& i, const Integer& n){
-        if(i >= 0){
-            std::string res = "#b0";
-            std::string bin = i.toString(2);
-            if(bin.size() < n.toULong()){
-                res += std::string(n.toULong() - bin.size(), '0') + bin;
-            }
-            else{
-                res += bin.substr(bin.size() - i.toULong(), i.toULong());
-            }
-            return res;
+    std::string BitVectorUtils::intToBv(const Integer& i, const Integer& n) {
+        const uint64_t bits = n.toULong();
+        condAssert(bits > 0, "bit-width must be positive");
+    
+        // 1. Compute value modulo 2^n
+        Integer mod = i;
+        Integer two_n = Integer(1) << bits;      // 2^n
+        mod = mod % two_n;                        // wrap into [-(2^n), 2^n)
+        if (mod < 0) mod += two_n;               // ensure in [0, 2^n)
+    
+        // 2. Convert to binary string
+        std::string bin = mod.toString(2);       // binary, no leading zeros
+    
+        // 3. Pad with zeros to exactly n bits
+        if (bin.size() < bits) {
+            bin = std::string(bits - bin.size(), '0') + bin;
+        } else if (bin.size() > bits) {
+            bin = bin.substr(bin.size() - bits, bits);  // keep low bits
         }
-        else{
-            std::string res = "#b1";
-            Integer j = -i;
-            std::string bin = j.toString(2);
-            if(bin.size() < n.toULong()){
-                res += std::string(n.toULong() - bin.size(), '0') + bin;
-            }
-            else{
-                res += bin.substr(bin.size() - i.toULong(), i.toULong());
-            }
-            return res;
-        }
+    
+        // 4. Prepend #b
+        return std::string("#b") + bin;
     }
+    
 
     // TODO??
     std::string FloatingPointUtils::fpToUbv(const std::string& fp, const Integer& n){
