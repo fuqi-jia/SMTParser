@@ -680,18 +680,14 @@ namespace SMTParser{
     }
     // truncate-toward-zero division for arbitrary Integer
     static Integer truncDiv(const Integer& a, const Integer& b) {
-        // assumes b != 0
-        Integer q = a / b;   // might be floor, might be trunc — so we fix it
-        Integer r = a % b;
-
-        // If remainder has same sign as divisor → / was truncation already.
-        // If remainder has opposite sign → correct quotient by adding 1 toward zero.
-        if ((r != 0) && ((r > 0) != (b > 0)))
-            q += 1; // move toward zero
-
-        return q;
+        bool neg = (a < 0) ^ (b < 0);
+        Integer aa = (a < 0 ? -a : a);
+        Integer bb = (b < 0 ? -b : b);
+    
+        Integer q = aa / bb;
+        return neg ? -q : q;
     }
-
+    
     // mathematical modulo (always non-negative)
     static Integer mathMod(const Integer& a, const Integer& b) {
         // assumes b != 0
