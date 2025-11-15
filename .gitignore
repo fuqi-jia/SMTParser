@@ -75,3 +75,7 @@ docs/
 conan.lock
 conanbuildinfo.txt
 conaninfo.txt
+
+# markdown
+*.md
+!README.md
