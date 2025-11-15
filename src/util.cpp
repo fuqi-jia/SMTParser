@@ -687,7 +687,7 @@ namespace SMTParser{
         Integer q = aa / bb;
         return neg ? -q : q;
     }
-    
+
     // mathematical modulo (always non-negative)
     static Integer mathMod(const Integer& a, const Integer& b) {
         // assumes b != 0
@@ -988,19 +988,25 @@ namespace SMTParser{
     }
     Integer BitVectorUtils::bvToInt(const std::string& bv) {
         condAssert(bv.substr(0,2) == "#b", "invalid bitvector");
-        int n = bv.size() - 2;
-    
+        const size_t n = bv.size() - 2;
+
         // build unsigned integer
         Integer u = 0;
-        for(size_t i = 2; i < bv.size(); ++i)
-            u = (u << 1) + (bv[i] == '1');
-    
-        // if MSB = 1 → subtract 2^(n-2)
-        if(bv[2] == '1')
-            return u - (Integer(1) << (n - 1));
-        else
+        for (size_t i = 2; i < bv.size(); ++i) {
+            u = (u << 1) + (bv[i] == '1' ? 1 : 0);
+        }
+
+        // two's complement signed value
+        if (bv[2] == '1') {
+            // MSB = 1 → negative: u - 2^n
+            Integer two_n = (Integer(1) << n);
+            return u - two_n;
+        } else {
+            // MSB = 0 → non-negative
             return u;
+        }
     }
+
     std::string BitVectorUtils::intToBv(const Integer& i, const Integer& n) {
         const uint64_t bits = n.toULong();
         condAssert(bits > 0, "bit-width must be positive");
