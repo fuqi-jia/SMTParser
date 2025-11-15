@@ -678,59 +678,80 @@ namespace SMTParser{
         std::string res = SMTParser::BitVectorUtils::bvUrem(bv1, bv2);
         return res;
     }
-    std::string BitVectorUtils::bvSdiv(const std::string& bv1, const std::string& bv2) {
+    // truncate-toward-zero division for arbitrary Integer
+    static Integer truncDiv(const Integer& a, const Integer& b) {
+        // assumes b != 0
+        Integer q = a / b;   // might be floor, might be trunc — so we fix it
+        Integer r = a % b;
+
+        // If remainder has same sign as divisor → / was truncation already.
+        // If remainder has opposite sign → correct quotient by adding 1 toward zero.
+        if ((r != 0) && ((r > 0) != (b > 0)))
+            q += 1; // move toward zero
+
+        return q;
+    }
+
+    // mathematical modulo (always non-negative)
+    static Integer mathMod(const Integer& a, const Integer& b) {
+        // assumes b != 0
+        Integer m = a % b;
+        if (m < 0) m += (b > 0 ? b : -b);
+        return m;
+    }
+    std::string BitVectorUtils::bvSdiv(const std::string& bv1, const std::string& bv2){
         size_t n = bv1.size() - 2;
         Integer a = bvToInt(bv1);
         Integer b = bvToInt(bv2);
 
-        // divisor = 0  →  -1  (all ones)
+        // divisor = 0 → result = -1 (all ones)
         if (b == 0)
-            return intToBv(Integer(-1), n);
+        return intToBv(Integer(-1), n);
 
         // special overflow: min / -1 = min
         Integer minVal = -(Integer(1) << (n - 1));
         if (a == minVal && b == -1)
-            return intToBv(minVal, n);
+        return intToBv(minVal, n);
 
-        // truncate toward zero
-        Integer q = a / b;
+        // signed division truncate-toward-zero
+        Integer q = truncDiv(a, b);
         return intToBv(q, n);
     }
-    std::string BitVectorUtils::bvSrem(const std::string& bv1, const std::string& bv2) {
+    std::string BitVectorUtils::bvSrem(const std::string& bv1, const std::string& bv2){
         size_t n = bv1.size() - 2;
         Integer a = bvToInt(bv1);
         Integer b = bvToInt(bv2);
 
-        // divisor = 0 → return a
         if (b == 0)
-            return bv1;
+        return bv1;
 
-        Integer q = a / b;       // trunc toward zero
+        Integer q = truncDiv(a, b);
         Integer r = a - q * b;   // signed remainder
         return intToBv(r, n);
     }
+
     std::string BitVectorUtils::bvSmod(const std::string& bv1, const std::string& bv2){
         size_t n = bv1.size() - 2;
         Integer a = bvToInt(bv1);
         Integer b = bvToInt(bv2);
 
         if (b == 0)
-            return bv1;
+        return bv1;
 
-        Integer r = a % b;   // true mathematical mod (sign follows divisor)
+        // mathematical modulo (never negative)
+        Integer m = mathMod(a, (b > 0 ? b : -b));
 
-        // SMT-LIB bvsmod definition
-        if (r == 0)
-            return intToBv(Integer(0), n);
+        if (m == 0)
+        return intToBv(Integer(0), n);
 
+        // sign(a) == sign(b)
         if ((a > 0 && b > 0) || (a < 0 && b < 0))
-            return intToBv(r, n);
+        return intToBv(m, n);
 
-        // else: a and b have opposite signs
-        Integer res = r + b;
+        // opposite signs
+        Integer res = (b > 0 ? b : -b) - m;
         return intToBv(res, n);
     }
-
 
     std::string BitVectorUtils::bvShl(const std::string& bv, const std::string& n){
         // left shift
