@@ -282,12 +282,24 @@ namespace SMTParser{
 		condAssert(expr->isCReal() || expr->isCInt(), "Cannot convert non-constant expression to real");
 		if(expr->isPi()) return Real::pi(getEvaluatePrecision());
 		if(expr->isE()) return Real::e(getEvaluatePrecision());
-		return expr->getValue()->getNumberValue().toReal(getEvaluatePrecision());
+		auto value = expr->getValue();
+		if(value == nullptr) {
+			// If value is still nullptr after ensureNumberValue, return 0 as default
+			// This can happen if the expression cannot be converted to a number
+			return Real(0, getEvaluatePrecision());
+		}
+		return value->getNumberValue().toReal(getEvaluatePrecision());
 	}
 	Integer Parser::toInt(std::shared_ptr<DAGNode> expr){
 		ensureNumberValue(expr);
 		condAssert(expr->isCInt(), "Cannot convert non-integer expression to integer");
-		return expr->getValue()->getNumberValue().toInteger();
+		auto value = expr->getValue();
+		if(value == nullptr) {
+			// If value is still nullptr after ensureNumberValue, return 0 as default
+			// This can happen if the expression cannot be converted to a number
+			return Integer(0);
+		}
+		return value->getNumberValue().toInteger();
 	}
 	bool Parser::isZero(std::shared_ptr<DAGNode> expr){
 		if(expr->isCReal()) return toReal(expr) == 0.0;
