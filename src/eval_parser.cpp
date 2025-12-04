@@ -1100,6 +1100,13 @@ namespace SMTParser{
                     return true;
                 }
             }
+            else if(const_val->isArray() && const_vals[i]->isArray()){
+                // Use canonical form to check array equality
+                if(!areArraysEqual(const_val, const_vals[i])){
+                    result = mkFalse();
+                    return true;
+                }
+            }
             else{
                 condAssert(false, "evaluateEq: const_val is not a constant");
             }

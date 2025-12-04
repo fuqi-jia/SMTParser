@@ -823,6 +823,21 @@ namespace SMTParser{
                         return mkFalse();
                     }
                 }
+                else if(l->isArray() && r->isArray()){
+                    // Use canonical form to check array equality
+                    if(areArraysEqual(l, r)){
+                        return mkTrue();
+                    }
+                    else{
+                        // If canonical forms are different, check if it's due to variables
+                        // If either array contains variables, we can't determine equality
+                        if(arrayContainsVar(l) || arrayContainsVar(r)){
+                            return mkUnknown();
+                        }
+                        // Otherwise, arrays are definitely not equal
+                        return mkFalse();
+                    }
+                }
                 return mkUnknown();
             }
             case NODE_KIND::NT_POW:{
@@ -1515,6 +1530,15 @@ namespace SMTParser{
                         return mkFalse();
                     }
                 }
+                else if(l->isArray() && m->isArray() && r->isArray()){
+                    // Use canonical form to check array equality
+                    if(areArraysEqual(l, m) && areArraysEqual(m, r)){
+                        return mkTrue();
+                    }
+                    else{
+                        return mkFalse();
+                    }
+                }
                 else if(simp_oper(NODE_KIND::NT_EQ, l, m)->isTrue() && simp_oper(NODE_KIND::NT_EQ, m, r)->isTrue()){
                     return mkTrue();
                 }
@@ -1884,9 +1908,252 @@ namespace SMTParser{
             return true;
         }
 
-        // Use hash-consing: if hash codes match and nodes are equivalent, they are equal
+        // Fast path: if hash codes match, check equivalence
         if (a->hashCode() == b->hashCode()) {
             return a->isEquivalentTo(*b);
+        }
+
+        return false;
+    }
+
+    // =========================================================
+    // Array Canonical Form Functions
+    // =========================================================
+
+    Parser::ArrayCanonicalForm Parser::canonicalizeArray(std::shared_ptr<DAGNode> array) {
+        // Check cache first
+        auto cache_it = array_canonical_cache.find(array);
+        if (cache_it != array_canonical_cache.end()) {
+            return cache_it->second;
+        }
+
+        ArrayCanonicalForm cf;
+        
+        if (!array || !array->getSort() || !array->getSort()->isArray()) {
+            cf.base = array;
+            cf.is_const_array = false;
+            array_canonical_cache[array] = cf;
+            return cf;
+        }
+
+        // Case 1: Constant array (const(v))
+        if (array->isConstArray()) {
+            cf.base = array->getChild(0);  // The value node
+            cf.is_const_array = true;
+            cf.writes.clear();
+            // Cache the canonical form
+            array_canonical_cache[array] = cf;
+            return cf;
+        }
+
+        // Case 2: Store chain or array variable
+        // Traverse store chain from top to bottom, collecting writes
+        // Reference implementation: traverse top-down, first occurrence of an index is the last write
+        std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>, NodeHash, NodeEqual> lastWrite;
+        std::shared_ptr<DAGNode> cur = array;
+        std::shared_ptr<DAGNode> base = nullptr;
+
+        // Traverse store chain top-down (from root to base)
+        while (cur) {
+            if (cur->isStore()) {
+                std::shared_ptr<DAGNode> idx = cur->getStoreIndex();
+                std::shared_ptr<DAGNode> val = cur->getStoreValue();
+                // Only record if first time seen (top-down traversal ensures first = last write)
+                if (lastWrite.find(idx) == lastWrite.end()) {
+                    lastWrite[idx] = val;
+                }
+                cur = cur->getStoreArray();
+            } else if (cur->isConstArray()) {
+                base = cur;
+                break;
+            } else {
+                // Array variable or other base
+                base = cur;
+                break;
+            }
+        }
+
+        // Set base
+        if (base && base->isConstArray()) {
+            cf.base = base->getChild(0);
+            cf.is_const_array = true;
+        } else {
+            cf.base = base;
+            cf.is_const_array = false;
+        }
+
+        // Convert map to sorted vector for canonical form
+        // Filter out writes that equal base value (they don't change the array)
+        cf.writes.reserve(lastWrite.size());
+        for (const auto& kv : lastWrite) {
+            // Only include writes that differ from base value
+            if (cf.is_const_array && cf.base) {
+                // If base is const array value, skip writes that equal base
+                if (!areDefinitelyEqual(kv.second, cf.base)) {
+                    cf.writes.emplace_back(kv.first, kv.second);
+                }
+            } else {
+                // If base is array variable, include all writes
+                cf.writes.emplace_back(kv.first, kv.second);
+            }
+        }
+        std::sort(cf.writes.begin(), cf.writes.end(),
+            [this](const std::pair<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& a,
+                   const std::pair<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& b) {
+                // Sort by hash code for deterministic ordering (same values -> same hash -> same order)
+                // If hashes are equal, compare by pointer as tie-breaker
+                size_t hash_a = a.first ? a.first->hashCode() : 0;
+                size_t hash_b = b.first ? b.first->hashCode() : 0;
+                if (hash_a != hash_b) {
+                    return hash_a < hash_b;
+                }
+                // If hashes are equal, compare by pointer
+                return a.first.get() < b.first.get();
+            });
+
+        // Cache the canonical form
+        array_canonical_cache[array] = cf;
+        return cf;
+    }
+
+    bool Parser::areArraysEqual(const std::shared_ptr<DAGNode>& a, const std::shared_ptr<DAGNode>& b) {
+        if (!a || !b) {
+            return a == b;
+        }
+
+        // Fast path: same pointer
+        if (a == b) {
+            return true;
+        }
+
+        // Get canonical forms (cached)
+        ArrayCanonicalForm cf_a = canonicalizeArray(a);
+        ArrayCanonicalForm cf_b = canonicalizeArray(b);
+
+        // Fast path: compare canonical hashes
+        if (cf_a.computeHash() != cf_b.computeHash()) {
+            return false;
+        }
+
+        // Compare base values
+        if (cf_a.is_const_array != cf_b.is_const_array) {
+            // One is const array, the other is store-chain
+            // They can be equal only if store-chain has all writes equal to const base
+            // and store-chain base equals const base
+            ArrayCanonicalForm& const_cf = cf_a.is_const_array ? cf_a : cf_b;
+            ArrayCanonicalForm& store_cf = cf_a.is_const_array ? cf_b : cf_a;
+            
+            // Check if all writes equal const base
+            for (const auto& w : store_cf.writes) {
+                if (!areDefinitelyEqual(w.second, const_cf.base)) {
+                    return false;
+                }
+            }
+            
+            // Check if store-chain base equals const base
+            if (store_cf.base && store_cf.base->isConstArray()) {
+                std::shared_ptr<DAGNode> store_base_val = store_cf.base->getChild(0);
+                return areDefinitelyEqual(store_base_val, const_cf.base);
+            } else {
+                // Base is array variable, can't determine equality
+                return false;
+            }
+        }
+
+        // Both have same const_array flag
+        // Compare base values
+        if (!cf_a.base || !cf_b.base) {
+            return cf_a.base == cf_b.base;
+        }
+
+        if (cf_a.is_const_array) {
+            // Both are const arrays (or have const array base)
+            if (!areDefinitelyEqual(cf_a.base, cf_b.base)) {
+                return false;
+            }
+        } else {
+            // Both have array bases
+            if (cf_a.base->isArray() && cf_b.base->isArray()) {
+                // Recursively check base arrays
+                if (!areArraysEqual(cf_a.base, cf_b.base)) {
+                    return false;
+                }
+            } else {
+                // Compare base directly
+                if (!areDefinitelyEqual(cf_a.base, cf_b.base)) {
+                    return false;
+                }
+            }
+        }
+
+        // Compare writes: both should have same indices and values
+        if (cf_a.writes.size() != cf_b.writes.size()) {
+            return false;
+        }
+
+        // Since writes are sorted by pointer, do linear comparison
+        // But we need to match writes by value, not just by position
+        // (because pointer-based sorting may not match for equivalent nodes)
+        if (cf_a.writes.size() != cf_b.writes.size()) {
+            return false;
+        }
+        
+        // For each write in cf_a, find matching write in cf_b
+        std::vector<bool> matched_b(cf_b.writes.size(), false);
+        for (size_t i = 0; i < cf_a.writes.size(); ++i) {
+            bool found_match = false;
+            for (size_t j = 0; j < cf_b.writes.size(); ++j) {
+                if (matched_b[j]) continue;
+                // Check if indices and values match
+                if (areDefinitelyEqual(cf_a.writes[i].first, cf_b.writes[j].first) &&
+                    areDefinitelyEqual(cf_a.writes[i].second, cf_b.writes[j].second)) {
+                    matched_b[j] = true;
+                    found_match = true;
+                    break;
+                }
+            }
+            if (!found_match) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    bool Parser::arrayContainsVar(const std::shared_ptr<DAGNode>& array) {
+        if (!array || !array->getSort() || !array->getSort()->isArray()) {
+            return false;
+        }
+
+        // Check if array itself is a variable
+        if (array->isVar() && array->isArray()) {
+            return true;
+        }
+
+        // Check store chain for variables
+        std::shared_ptr<DAGNode> cur = array;
+        while (cur) {
+            if (cur->isStore()) {
+                // Check index and value for variables
+                std::shared_ptr<DAGNode> idx = cur->getStoreIndex();
+                std::shared_ptr<DAGNode> val = cur->getStoreValue();
+                if (idx->isVar() || val->isVar()) {
+                    return true;
+                }
+                cur = cur->getStoreArray();
+            } else if (cur->isConstArray()) {
+                // Check const array value for variables
+                if (cur->getChild(0)->isVar()) {
+                    return true;
+                }
+                break;
+            } else {
+                // Array variable
+                if (cur->isVar() && cur->isArray()) {
+                    return true;
+                }
+                break;
+            }
         }
 
         return false;

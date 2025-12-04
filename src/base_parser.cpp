@@ -2254,6 +2254,24 @@ namespace SMTParser{
 				}
 			}
 
+			// Apply simplification for equality operations (including array equality)
+			if(new_node->isEq()){
+				std::shared_ptr<DAGNode> simplified;
+				if(new_node->getChildrenSize() == 2){
+					simplified = simp_oper(new_node->getKind(), new_node->getChild(0), new_node->getChild(1));
+				}
+				else if(new_node->getChildrenSize() > 2){
+					simplified = simp_oper(new_node->getKind(), new_children);
+				}
+				else{
+					simplified = NodeManager::UNKNOWN_NODE;
+				}
+				if(simplified && !simplified->isUnknown()){
+					new_node = simplified;
+					any_changed = true;
+				}
+			}
+
 			result_map[node]  = new_node;
 			changed_map[node] = any_changed;
 			}else{

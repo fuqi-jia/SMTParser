@@ -326,7 +326,15 @@ namespace SMTParser{
         bool isMin() 				const { return kind == NODE_KIND::NT_MIN; };
 
         // check array
-        bool isArray() 			    const { return (kind == NODE_KIND::NT_VAR || kind == NODE_KIND::NT_PLACEHOLDER_VAR || kind == NODE_KIND::NT_CONST_ARRAY) && sort->isArray(); };
+        // An array is: array variable, const array, or store operation (which returns array)
+        bool isArray() 			    const { 
+            if (!sort || !sort->isArray()) return false;
+            return (kind == NODE_KIND::NT_VAR || 
+                    kind == NODE_KIND::NT_PLACEHOLDER_VAR || 
+                    kind == NODE_KIND::NT_CONST_ARRAY ||
+                    kind == NODE_KIND::NT_STORE ||
+                    (kind == NODE_KIND::NT_UF_APPLY && sort->isArray()));
+        };
         bool isConstArray() 		const { return kind == NODE_KIND::NT_CONST_ARRAY; };
         
         // check Boolean operations

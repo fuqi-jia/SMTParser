@@ -198,6 +198,33 @@ namespace SMTParser{
         // Cache for normalized store chains: array -> normalized_array
         std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>, NodeHash, NodeEqual>
                                                         array_normalize_cache;
+        
+        // Structure to represent canonical form of an array (needed for cache)
+        struct ArrayCanonicalForm {
+            std::shared_ptr<DAGNode> base;  // Base value (for const array) or base array
+            std::vector<std::pair<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>> writes; // Final writes: (index, value) pairs, sorted by pointer
+            bool is_const_array;  // true if base is a const array value, false if base is an array node
+            
+            // Compute hash for canonical form
+            // Note: writes are sorted by hash code, so same content -> same order -> same hash
+            size_t computeHash() const {
+                size_t h = base ? base->hashCode() : 0;
+                // Combine writes in order (since they're sorted, same content -> same order)
+                for (const auto& w : writes) {
+                    size_t idx_hash = w.first ? w.first->hashCode() : 0;
+                    size_t val_hash = w.second ? w.second->hashCode() : 0;
+                    // Combine index and value hash
+                    size_t write_hash = idx_hash ^ (val_hash << 1);
+                    // Combine with base hash using boost::hash_combine style
+                    h ^= write_hash + 0x9e3779b9 + (h << 6) + (h >> 2);
+                }
+                return h;
+            }
+        };
+        
+        // Cache for canonical form: array -> canonical_form
+        std::unordered_map<std::shared_ptr<DAGNode>, ArrayCanonicalForm, NodeHash, NodeEqual>
+                                                        array_canonical_cache;
 
         // result
         RESULT_TYPE                                   result_type;
@@ -3890,6 +3917,15 @@ namespace SMTParser{
         
         // Collect store chain from an array term
         StoreChain                                 collectStoreChain(std::shared_ptr<DAGNode> arrayTerm);
+        
+        // Canonicalize an array to canonical form (base, writes)
+        ArrayCanonicalForm                         canonicalizeArray(std::shared_ptr<DAGNode> array);
+        
+        // Check if two arrays are equal using canonical form
+        bool                                      areArraysEqual(const std::shared_ptr<DAGNode>& a, const std::shared_ptr<DAGNode>& b);
+        
+        // Check if an array contains variables (that prevent equality determination)
+        bool                                      arrayContainsVar(const std::shared_ptr<DAGNode>& array);
         
         // Rewrite select(store(...), index) to value or select(base, index)
         std::shared_ptr<DAGNode>                rewriteSelect(std::shared_ptr<DAGNode> selectNode);

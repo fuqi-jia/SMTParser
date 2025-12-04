@@ -230,6 +230,117 @@ void test_evaluate_array(ParserPtr& parser) {
     std::cout << "  ✓ PASSED" << std::endl;
 }
 
+// Test array equality using canonical form
+void test_array_equality(ParserPtr& parser) {
+    std::cout << "\n=== Testing Array Equality ===" << std::endl;
+    
+    auto int_sort = SortManager::INT_SORT;
+    auto array_sort = parser->mkArraySort(int_sort, int_sort);
+    auto const_array = parser->mkConstArray(array_sort, parser->mkConstInt(0));
+    
+    // Test 1: Two identical const arrays should be equal
+    std::cout << "\nTest 1: const_array(0) = const_array(0)" << std::endl;
+    auto const_array2 = parser->mkConstArray(array_sort, parser->mkConstInt(0));
+    auto eq1 = parser->mkEq(const_array, const_array2);
+    std::cout << "  Input: (= const_array(0) const_array(0))" << std::endl;
+    std::cout << "  Output: " << dumpSMTLIB2(eq1) << std::endl;
+    std::cout << "  Expected: true" << std::endl;
+    // After simplification, should be true
+    auto eq1_simp = parser->arithNormalize(eq1);
+    assert(eq1_simp->isTrue());
+    std::cout << "  ✓ PASSED" << std::endl;
+    
+    // Test 2: Two different const arrays should not be equal
+    std::cout << "\nTest 2: const_array(0) = const_array(1)" << std::endl;
+    auto const_array3 = parser->mkConstArray(array_sort, parser->mkConstInt(1));
+    auto eq2 = parser->mkEq(const_array, const_array3);
+    std::cout << "  Input: (= const_array(0) const_array(1))" << std::endl;
+    std::cout << "  Output: " << dumpSMTLIB2(eq2) << std::endl;
+    std::cout << "  Expected: false" << std::endl;
+    auto eq2_simp = parser->arithNormalize(eq2);
+    assert(eq2_simp->isFalse());
+    std::cout << "  ✓ PASSED" << std::endl;
+    
+    // Test 3: store(const_array, i, v) = store(const_array, i, v) (same writes)
+    std::cout << "\nTest 3: store(const_array, 1, 10) = store(const_array, 1, 10)" << std::endl;
+    auto store1 = parser->mkStore(const_array, parser->mkConstInt(1), parser->mkConstInt(10));
+    auto store2 = parser->mkStore(const_array, parser->mkConstInt(1), parser->mkConstInt(10));
+    auto eq3 = parser->mkEq(store1, store2);
+    std::cout << "  Input: (= store(...) store(...))" << std::endl;
+    std::cout << "  Output: " << dumpSMTLIB2(eq3) << std::endl;
+    std::cout << "  Expected: true" << std::endl;
+    auto eq3_simp = parser->arithNormalize(eq3);
+    assert(eq3_simp->isTrue());
+    std::cout << "  ✓ PASSED" << std::endl;
+    
+    // Test 4: store(const_array, i, v1) = store(const_array, i, v2) (different values)
+    std::cout << "\nTest 4: store(const_array, 1, 10) = store(const_array, 1, 20)" << std::endl;
+    auto store3 = parser->mkStore(const_array, parser->mkConstInt(1), parser->mkConstInt(20));
+    auto eq4 = parser->mkEq(store1, store3);
+    std::cout << "  Input: (= store(..., 10) store(..., 20))" << std::endl;
+    std::cout << "  Output: " << dumpSMTLIB2(eq4) << std::endl;
+    std::cout << "  Expected: false" << std::endl;
+    auto eq4_simp = parser->arithNormalize(eq4);
+    assert(eq4_simp->isFalse());
+    std::cout << "  ✓ PASSED" << std::endl;
+    
+    // Test 5: store(store(const_array, 1, 10), 1, 20) = store(const_array, 1, 20) (duplicate index merged)
+    std::cout << "\nTest 5: store(store(..., 1, 10), 1, 20) = store(..., 1, 20)" << std::endl;
+    auto store4 = parser->mkStore(store1, parser->mkConstInt(1), parser->mkConstInt(20));
+    auto store5 = parser->mkStore(const_array, parser->mkConstInt(1), parser->mkConstInt(20));
+    auto eq5 = parser->mkEq(store4, store5);
+    std::cout << "  Input: (= store(store(..., 10), 20) store(..., 20))" << std::endl;
+    std::cout << "  Output: " << dumpSMTLIB2(eq5) << std::endl;
+    std::cout << "  Expected: true (duplicate index merged in canonical form)" << std::endl;
+    auto eq5_simp = parser->arithNormalize(eq5);
+    assert(eq5_simp->isTrue());
+    std::cout << "  ✓ PASSED" << std::endl;
+    
+    // Test 6: store(const_array, i, base_value) = const_array (semantically equal but structurally different)
+    std::cout << "\nTest 6: store(const_array(0), 1, 0) = const_array(0)" << std::endl;
+    std::cout << "  Note: Even if store writes the same value as base, it's still a store-chain (not const array)" << std::endl;
+    auto store6 = parser->mkStore(const_array, parser->mkConstInt(1), parser->mkConstInt(0));
+    std::cout << "  store6->isStore(): " << (store6->isStore() ? "true" : "false") << std::endl;
+    std::cout << "  store6->isConstArray(): " << (store6->isConstArray() ? "true" : "false") << std::endl;
+    assert(store6->isStore() && !store6->isConstArray());  // Store operation creates a store node, not const array
+    
+    auto eq6 = parser->mkEq(store6, const_array);
+    std::cout << "  Input: (= store(const_array(0), 1, 0) const_array(0))" << std::endl;
+    std::cout << "  Output: " << dumpSMTLIB2(eq6) << std::endl;
+    std::cout << "  Expected: true (canonical form: all writes equal base, so semantically equivalent)" << std::endl;
+    auto eq6_simp = parser->arithNormalize(eq6);
+    // According to extensional equality, if all writes equal base, they are equal
+    // But structurally, store6 is not a const array (it's a store node)
+    assert(eq6_simp->isTrue());
+    std::cout << "  ✓ PASSED (structurally different but semantically equal)" << std::endl;
+    
+    // Test 6b: Multiple stores with same value as base
+    std::cout << "\nTest 6b: store(store(const_array(0), 1, 0), 2, 0) = const_array(0)" << std::endl;
+    auto store6b = parser->mkStore(store6, parser->mkConstInt(2), parser->mkConstInt(0));
+    assert(store6b->isStore() && !store6b->isConstArray());
+    auto eq6b = parser->mkEq(store6b, const_array);
+    auto eq6b_simp = parser->arithNormalize(eq6b);
+    assert(eq6b_simp->isTrue());
+    std::cout << "  ✓ PASSED" << std::endl;
+    
+    // Test 7: Complex store chain equality
+    std::cout << "\nTest 7: Complex store chain equality" << std::endl;
+    auto store7a = parser->mkStore(const_array, parser->mkConstInt(1), parser->mkConstInt(10));
+    auto store7b = parser->mkStore(store7a, parser->mkConstInt(2), parser->mkConstInt(20));
+    auto store7c = parser->mkStore(store7b, parser->mkConstInt(1), parser->mkConstInt(100));
+    
+    auto store8a = parser->mkStore(const_array, parser->mkConstInt(2), parser->mkConstInt(20));
+    auto store8b = parser->mkStore(store8a, parser->mkConstInt(1), parser->mkConstInt(100));
+    
+    auto eq7 = parser->mkEq(store7c, store8b);
+    std::cout << "  Input: (= store(store(store(..., 1, 10), 2, 20), 1, 100) store(store(..., 2, 20), 1, 100))" << std::endl;
+    std::cout << "  Output: " << dumpSMTLIB2(eq7) << std::endl;
+    std::cout << "  Expected: true (canonical form should be same)" << std::endl;
+    auto eq7_simp = parser->arithNormalize(eq7);
+    assert(eq7_simp->isTrue());
+    std::cout << "  ✓ PASSED" << std::endl;
+}
+
 int main() {
     std::cout << "======= Array Simplification Test =======" << std::endl;
     
@@ -241,6 +352,7 @@ int main() {
         test_array_output_format(parser);
         test_integration_with_normalize(parser);
         test_evaluate_array(parser);
+        test_array_equality(parser);
         
         std::cout << "\n======= All Tests Passed! =======" << std::endl;
         return 0;
