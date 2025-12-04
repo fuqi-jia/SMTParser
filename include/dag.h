@@ -647,6 +647,7 @@ namespace SMTParser{
         bool isFuncApplication()          const { return (kind == NODE_KIND::NT_FUNC_APPLY); };
         bool isFuncRecApplication()       const { return (kind == NODE_KIND::NT_FUNC_REC_APPLY); };
 
+
         // count the use of the node
         size_t getUseCount() const { return _use_count; };
         void incUseCount() { _use_count++; };

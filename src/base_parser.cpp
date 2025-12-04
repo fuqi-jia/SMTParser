@@ -2822,4 +2822,101 @@ namespace SMTParser{
 		return std::make_shared<Parser>(filename);
 	}
 
+	bool Parser::isUnit(std::shared_ptr<DAGNode> node) const {
+		if (!node) {
+			return true;
+		}
+		
+		std::stack<std::shared_ptr<DAGNode>> nodeStack;
+		std::unordered_set<std::shared_ptr<DAGNode>> visited;
+		std::unordered_set<std::shared_ptr<DAGNode>> vars;
+		
+		nodeStack.push(node);
+		
+		while (!nodeStack.empty()) {
+			std::shared_ptr<DAGNode> currentNode = nodeStack.top();
+			nodeStack.pop();
+			
+			// if visited, skip
+			if (visited.find(currentNode) != visited.end()) {
+				continue;
+			}
+			visited.insert(currentNode);
+			
+			// if current node is a variable, add to the variable set
+			if (currentNode->isVar()) {
+				vars.insert(currentNode);
+				if(vars.size() > 1){
+					return false;
+				}
+			}
+			
+			// push the children to the stack
+			for (size_t i = 0; i < currentNode->getChildrenSize(); i++) {
+				std::shared_ptr<DAGNode> child = currentNode->getChild(i);
+				if (visited.find(child) == visited.end()) {
+					nodeStack.push(child);
+				}
+			}
+		}
+		
+		// if there is no variable or only one variable, return true
+		if (vars.size() <= 1) {
+			return true;
+		}
+
+		return false;
+	}
+
+	bool Parser::isUnitAtom(std::shared_ptr<DAGNode> node) const {
+		return node && isUnit(node) && node->isAtom();
+	}
+
+	std::shared_ptr<DAGNode> Parser::getUnitVar(std::shared_ptr<DAGNode> node) const {
+		if (!node) {
+			return NodeManager::NULL_NODE;
+		}
+		
+		// use iterative method to traverse all nodes, collect variables
+		std::stack<std::shared_ptr<DAGNode>> nodeStack;
+		std::unordered_set<std::shared_ptr<DAGNode>> visited;
+		std::unordered_set<std::shared_ptr<DAGNode>> vars;
+		
+		nodeStack.push(node);
+		
+		while (!nodeStack.empty()) {
+			std::shared_ptr<DAGNode> currentNode = nodeStack.top();
+			nodeStack.pop();
+			
+			// if visited, skip
+			if (visited.find(currentNode) != visited.end()) {
+				continue;
+			}
+			visited.insert(currentNode);
+			
+			// if current node is a variable, add to the variable set
+			if (currentNode->isVar()) {
+				vars.insert(currentNode);
+				if(vars.size() > 1){
+					return NodeManager::NULL_NODE;
+				}
+			}
+			
+			// push the children to the stack
+			for (size_t i = 0; i < currentNode->getChildrenSize(); i++) {
+				std::shared_ptr<DAGNode> child = currentNode->getChild(i);
+				if (visited.find(child) == visited.end()) {
+					nodeStack.push(child);
+				}
+			}
+		}
+		
+		// if there is only one variable, return it
+		if (vars.size() == 1) {
+			return *vars.begin();
+		}
+
+		return NodeManager::NULL_NODE;
+	}
+
 }

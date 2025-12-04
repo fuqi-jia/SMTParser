@@ -32,7 +32,6 @@
 #include <unordered_set>
 
 namespace SMTParser{
-
     void DAGNode::updateFuncDef(std::shared_ptr<Sort> out_sort, std::shared_ptr<DAGNode> body, const std::vector<std::shared_ptr<DAGNode>> &params, bool is_rec){
         condAssert(out_sort == sort, "updateFuncDef: out_sort != sort");
         (void)out_sort;

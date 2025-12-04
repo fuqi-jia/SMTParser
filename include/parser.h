@@ -381,6 +381,30 @@ namespace SMTParser{
         std::shared_ptr<DAGNode> getVariable(const std::string& var_name);
 
         /**
+         * @brief Check if a DAG node is unit (contains at most one unique variable)
+         * 
+         * @param node The DAG node to check
+         * @return True if the node contains at most one unique variable, false otherwise
+         */
+        bool isUnit(std::shared_ptr<DAGNode> node) const;
+
+        /**
+         * @brief Check if a DAG node is a unit atom
+         * 
+         * @param node The DAG node to check
+         * @return True if the node is a unit atom, false otherwise
+         */
+        bool isUnitAtom(std::shared_ptr<DAGNode> node) const;
+
+        /**
+         * @brief Get the unique variable from a DAG node
+         * 
+         * @param node The DAG node
+         * @return The unique variable if exists, NULL_NODE otherwise
+         */
+        std::shared_ptr<DAGNode> getUnitVar(std::shared_ptr<DAGNode> node) const;
+
+        /**
          * @brief Get functions
          * 
          * Returns a vector of all functions. Use (define-fun name (params) body) to define a function.
