@@ -1692,14 +1692,63 @@ namespace SMTParser{
         return false;
 	}
     bool Parser::evaluateSelect(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        (void)model;
-		not_implemented_warning("select");
+        // Evaluate array and index first (this will handle variable substitution)
+        std::shared_ptr<DAGNode> array = expr->getSelectArray();
+        std::shared_ptr<DAGNode> index = expr->getSelectIndex();
+        
+        std::shared_ptr<DAGNode> eval_array;
+        std::shared_ptr<DAGNode> eval_index;
+        bool array_changed = evaluate(array, model, eval_array);
+        bool index_changed = evaluate(index, model, eval_index);
+        
+        // Apply array simplification to the evaluated select
+        if (array_changed || index_changed) {
+            // Use mkOper directly to create select, then simplify
+            std::shared_ptr<DAGNode> new_select = mkOper(eval_array->getSort()->getElemSort(), NODE_KIND::NT_SELECT, eval_array, eval_index);
+            std::shared_ptr<DAGNode> simplified = simplifyArray(new_select);
+            result = simplified;
+            return true;
+        }
+        
+        // If nothing changed, try to simplify the original select
+        std::shared_ptr<DAGNode> simplified = simplifyArray(expr);
+        if (simplified != expr) {
+            result = simplified;
+            return true;
+        }
+        
         result = expr;
         return false;
 	}
     bool Parser::evaluateStore(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
-        (void)model;
-		not_implemented_warning("store");
+        // Evaluate array, index, and value first (this will handle variable substitution)
+        std::shared_ptr<DAGNode> array = expr->getStoreArray();
+        std::shared_ptr<DAGNode> index = expr->getStoreIndex();
+        std::shared_ptr<DAGNode> value = expr->getStoreValue();
+        
+        std::shared_ptr<DAGNode> eval_array;
+        std::shared_ptr<DAGNode> eval_index;
+        std::shared_ptr<DAGNode> eval_value;
+        bool array_changed = evaluate(array, model, eval_array);
+        bool index_changed = evaluate(index, model, eval_index);
+        bool value_changed = evaluate(value, model, eval_value);
+        
+        // Apply array simplification to the evaluated store
+        if (array_changed || index_changed || value_changed) {
+            // Use mkOper directly to create store, then simplify
+            std::shared_ptr<DAGNode> new_store = mkOper(eval_array->getSort(), NODE_KIND::NT_STORE, eval_array, eval_index, eval_value);
+            std::shared_ptr<DAGNode> simplified = simplifyArray(new_store);
+            result = simplified;
+            return true;
+        }
+        
+        // If nothing changed, try to simplify the original store
+        std::shared_ptr<DAGNode> simplified = simplifyArray(expr);
+        if (simplified != expr) {
+            result = simplified;
+            return true;
+        }
+        
         result = expr;
         return false;
 	}

@@ -62,6 +62,10 @@ namespace SMTParser{
 		var_names.reserve(1024);
 		temp_var_names.reserve(1024);
 		function_names.reserve(1024);
+		
+		// array cache
+		array_select_cache.reserve(1024);
+		array_normalize_cache.reserve(1024);
 	}
 
 	
@@ -98,6 +102,10 @@ namespace SMTParser{
 		var_names.reserve(1024);
 		temp_var_names.reserve(1024);
 		function_names.reserve(1024);
+		
+		// array cache
+		array_select_cache.reserve(1024);
+		array_normalize_cache.reserve(1024);
 
 		parseSmtlib2File(filename);
 	}
@@ -2235,6 +2243,15 @@ namespace SMTParser{
 				}
 			} else {
 				new_node = node;
+			}
+
+			// Apply array simplification if the node is an array operation
+			if(new_node->isSelect() || new_node->isStore()){
+				std::shared_ptr<DAGNode> simplified = simplifyArray(new_node);
+				if(simplified != new_node){
+					new_node = simplified;
+					any_changed = true;
+				}
 			}
 
 			result_map[node]  = new_node;

@@ -760,7 +760,34 @@ namespace SMTParser{
                 break;
             }
 
+            // Array operations
+            case NODE_KIND::NT_SELECT: {
+                // select(array, index) -> (select array index)
+                auto array = node->getChild(0).get();
+                auto index = node->getChild(1).get();
+                out << "(select ";
+                work_stack.emplace_back(nullptr, 2);  // )
+                work_stack.emplace_back(index, 0);    // index
+                work_stack.emplace_back(nullptr, 1);  // space
+                work_stack.emplace_back(array, 0);    // array
+                break;
+            }
 
+            case NODE_KIND::NT_STORE: {
+                // store(array, index, value) -> (store array index value)
+                // Note: The array should already be normalized as a store-chain
+                auto array = node->getChild(0).get();
+                auto index = node->getChild(1).get();
+                auto value = node->getChild(2).get();
+                out << "(store ";
+                work_stack.emplace_back(nullptr, 2);  // )
+                work_stack.emplace_back(value, 0);    // value
+                work_stack.emplace_back(nullptr, 1);  // space
+                work_stack.emplace_back(index, 0);    // index
+                work_stack.emplace_back(nullptr, 1);  // space
+                work_stack.emplace_back(array, 0);    // array
+                break;
+            }
 
             default: {
                 // Fallback for other cases - iterative version

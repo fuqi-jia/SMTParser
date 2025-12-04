@@ -58,6 +58,7 @@ if [ -z "$TEST_EXES" ]; then
         "./test_theory_combination"
         "./test_parse_model"
         "./test_options_config"
+        "./test_array_simplify"
     )
     
     # Check each potential test

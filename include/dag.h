@@ -796,6 +796,62 @@ namespace SMTParser{
             return res;
         }
 
+        // Array operations helper functions
+        /**
+         * @brief Get the array operand of a store node
+         * 
+         * @note For store(array, index, value), returns array
+         * @return The array operand
+         */
+        std::shared_ptr<DAGNode> getStoreArray() const {
+            condAssert(isStore() && getChildrenSize() >= 3, "getStoreArray: node is not a store or has insufficient children");
+            return getChild(0);
+        }
+
+        /**
+         * @brief Get the index operand of a store node
+         * 
+         * @note For store(array, index, value), returns index
+         * @return The index operand
+         */
+        std::shared_ptr<DAGNode> getStoreIndex() const {
+            condAssert(isStore() && getChildrenSize() >= 3, "getStoreIndex: node is not a store or has insufficient children");
+            return getChild(1);
+        }
+
+        /**
+         * @brief Get the value operand of a store node
+         * 
+         * @note For store(array, index, value), returns value
+         * @return The value operand
+         */
+        std::shared_ptr<DAGNode> getStoreValue() const {
+            condAssert(isStore() && getChildrenSize() >= 3, "getStoreValue: node is not a store or has insufficient children");
+            return getChild(2);
+        }
+
+        /**
+         * @brief Get the array operand of a select node
+         * 
+         * @note For select(array, index), returns array
+         * @return The array operand
+         */
+        std::shared_ptr<DAGNode> getSelectArray() const {
+            condAssert(isSelect() && getChildrenSize() >= 2, "getSelectArray: node is not a select or has insufficient children");
+            return getChild(0);
+        }
+
+        /**
+         * @brief Get the index operand of a select node
+         * 
+         * @note For select(array, index), returns index
+         * @return The index operand
+         */
+        std::shared_ptr<DAGNode> getSelectIndex() const {
+            condAssert(isSelect() && getChildrenSize() >= 2, "getSelectIndex: node is not a select or has insufficient children");
+            return getChild(1);
+        }
+
         // is really equal to another node
         /**
          * @brief Check if the node is equivalent to another node

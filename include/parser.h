@@ -177,6 +177,28 @@ namespace SMTParser{
         std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>
                                                         nnf_map;
 
+        // array simplification cache
+        // Cache for select rewrite: (array, index) -> result
+        struct PairNodeHash {
+            size_t operator()(const std::pair<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& p) const {
+                size_t h1 = p.first ? p.first->hashCode() : 0;
+                size_t h2 = p.second ? p.second->hashCode() : 0;
+                return h1 ^ (h2 << 1);
+            }
+        };
+        struct PairNodeEqual {
+            bool operator()(const std::pair<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& p1,
+                          const std::pair<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& p2) const {
+                return p1.first == p2.first && p1.second == p2.second;
+            }
+        };
+        std::unordered_map<std::pair<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>, 
+                          std::shared_ptr<DAGNode>, PairNodeHash, PairNodeEqual>
+                                                        array_select_cache;
+        // Cache for normalized store chains: array -> normalized_array
+        std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>, NodeHash, NodeEqual>
+                                                        array_normalize_cache;
+
         // result
         RESULT_TYPE                                   result_type;
         std::shared_ptr<DAGNode>                      result_node;
@@ -3858,6 +3880,29 @@ namespace SMTParser{
         std::shared_ptr<DAGNode>                toNNF(std::shared_ptr<DAGNode> expr, bool is_not);
 
         std::shared_ptr<DAGNode>                arithNormalize(std::shared_ptr<DAGNode> expr, bool& is_changed);
+        
+        // Array simplification functions
+        // Structure to represent a store chain
+        struct StoreChain {
+            std::shared_ptr<DAGNode> base;
+            std::vector<std::pair<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>> updates; // (index, value) pairs, oldest -> newest
+        };
+        
+        // Collect store chain from an array term
+        StoreChain                                 collectStoreChain(std::shared_ptr<DAGNode> arrayTerm);
+        
+        // Rewrite select(store(...), index) to value or select(base, index)
+        std::shared_ptr<DAGNode>                rewriteSelect(std::shared_ptr<DAGNode> selectNode);
+        
+        // Normalize store chain: merge duplicate indices, fix order
+        std::shared_ptr<DAGNode>                normalizeStoreChain(std::shared_ptr<DAGNode> arrayTerm);
+        
+        // Main array simplification entry point
+        std::shared_ptr<DAGNode>                simplifyArray(std::shared_ptr<DAGNode> node);
+        
+        // Check if two nodes are definitely equal (for index comparison)
+        bool                                      areDefinitelyEqual(const std::shared_ptr<DAGNode>& a, const std::shared_ptr<DAGNode>& b);
+        
         std::shared_ptr<DAGNode>                splitOp(std::shared_ptr<DAGNode> expr, 
                                                         const std::unordered_set<NODE_KIND>& op_set, 
                                                         bool& is_changed, 

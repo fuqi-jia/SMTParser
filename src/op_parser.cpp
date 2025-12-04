@@ -3560,7 +3560,9 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(l->getSort()->getElemSort(), NODE_KIND::NT_SELECT, l, r);
+        std::shared_ptr<DAGNode> select_node = mkOper(l->getSort()->getElemSort(), NODE_KIND::NT_SELECT, l, r);
+        // Apply array simplification
+        return simplifyArray(select_node);
     }
     /*
     (store Array Int Int), return Array
@@ -3572,7 +3574,9 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        return mkOper(l->getSort(), NODE_KIND::NT_STORE, l, r, v);
+        std::shared_ptr<DAGNode> store_node = mkOper(l->getSort(), NODE_KIND::NT_STORE, l, r, v);
+        // Apply array simplification to normalize store chain
+        return simplifyArray(store_node);
     }
     // STRINGS COMMON OPERATORS
     /*

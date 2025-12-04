@@ -1751,4 +1751,144 @@ namespace SMTParser{
         }
         return mkUnknown();
     }
+
+    // =========================================================
+    // Array Simplification Functions
+    // =========================================================
+
+    Parser::StoreChain Parser::collectStoreChain(std::shared_ptr<DAGNode> arrayTerm) {
+        StoreChain sc;
+        std::shared_ptr<DAGNode> cur = arrayTerm;
+        std::vector<std::pair<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>> tmp; // newest -> oldest
+
+        while (cur && cur->isStore()) {
+            tmp.emplace_back(cur->getStoreIndex(), cur->getStoreValue());
+            cur = cur->getStoreArray();
+        }
+
+        sc.base = cur;
+        // Reverse to get oldest -> newest order
+        sc.updates.assign(tmp.rbegin(), tmp.rend());
+        return sc;
+    }
+
+    std::shared_ptr<DAGNode> Parser::rewriteSelect(std::shared_ptr<DAGNode> selectNode) {
+        if (!selectNode || !selectNode->isSelect()) {
+            return selectNode;
+        }
+
+        std::shared_ptr<DAGNode> array = selectNode->getSelectArray();
+        std::shared_ptr<DAGNode> index = selectNode->getSelectIndex();
+
+        // Check cache first
+        auto key = std::make_pair(array, index);
+        auto it = array_select_cache.find(key);
+        if (it != array_select_cache.end()) {
+            return it->second;
+        }
+
+        // If array is not a store, cannot simplify
+        if (!array->isStore()) {
+            array_select_cache[key] = selectNode;
+            return selectNode;
+        }
+
+        // Scan store chain: most recent write takes priority
+        std::shared_ptr<DAGNode> cur = array;
+        while (cur && cur->isStore()) {
+            std::shared_ptr<DAGNode> sIdx = cur->getStoreIndex();
+            std::shared_ptr<DAGNode> sVal = cur->getStoreValue();
+
+            if (areDefinitelyEqual(index, sIdx)) {
+                // Found matching index, return the value
+                array_select_cache[key] = sVal;
+                return sVal;
+            }
+
+            cur = cur->getStoreArray();
+        }
+
+        // No matching index found, reduce to select(base, index)
+        // Use mkOper directly to avoid recursive call to simplifyArray
+        std::shared_ptr<DAGNode> reduced = mkOper(cur->getSort()->getElemSort(), NODE_KIND::NT_SELECT, cur, index);
+        array_select_cache[key] = reduced;
+        return reduced;
+    }
+
+    std::shared_ptr<DAGNode> Parser::normalizeStoreChain(std::shared_ptr<DAGNode> arrayTerm) {
+        if (!arrayTerm || !arrayTerm->isStore()) {
+            return arrayTerm;
+        }
+
+        // Check cache first
+        auto it = array_normalize_cache.find(arrayTerm);
+        if (it != array_normalize_cache.end()) {
+            return it->second;
+        }
+
+        StoreChain sc = collectStoreChain(arrayTerm);
+        
+        if (sc.updates.empty()) {
+            array_normalize_cache[arrayTerm] = sc.base;
+            return sc.base;
+        }
+
+        // Merge duplicate indices: latest overwrites older ones
+        std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>, NodeHash, NodeEqual> overwrite;
+        for (auto& kv : sc.updates) {
+            overwrite[kv.first] = kv.second;
+        }
+
+        // For stable hash-cons, need fixed order
+        // Use pointer-based ordering for deterministic results
+        std::vector<std::shared_ptr<DAGNode>> keys;
+        for (auto& kv : overwrite) {
+            keys.push_back(kv.first);
+        }
+        std::sort(keys.begin(), keys.end(), [](const std::shared_ptr<DAGNode>& a, const std::shared_ptr<DAGNode>& b) {
+            return a.get() < b.get(); // Pointer-based ordering
+        });
+
+        // Reconstruct store chain (oldest -> newest)
+        // Use mkOper directly to avoid recursive call to simplifyArray during normalization
+        std::shared_ptr<DAGNode> res = sc.base;
+        for (auto idx : keys) {
+            res = mkOper(res->getSort(), NODE_KIND::NT_STORE, res, idx, overwrite[idx]);
+        }
+
+        array_normalize_cache[arrayTerm] = res;
+        return res;
+    }
+
+    std::shared_ptr<DAGNode> Parser::simplifyArray(std::shared_ptr<DAGNode> node) {
+        if (!node) {
+            return node;
+        }
+
+        if (node->isSelect()) {
+            return rewriteSelect(node);
+        } else if (node->isStore()) {
+            return normalizeStoreChain(node);
+        }
+
+        return node;
+    }
+
+    bool Parser::areDefinitelyEqual(const std::shared_ptr<DAGNode>& a, const std::shared_ptr<DAGNode>& b) {
+        if (!a || !b) {
+            return a == b;
+        }
+
+        // Fast path: same pointer
+        if (a == b) {
+            return true;
+        }
+
+        // Use hash-consing: if hash codes match and nodes are equivalent, they are equal
+        if (a->hashCode() == b->hashCode()) {
+            return a->isEquivalentTo(*b);
+        }
+
+        return false;
+    }
 }
