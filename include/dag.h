@@ -319,7 +319,7 @@ namespace SMTParser{
         bool isQuantVar() 			const { return kind == NODE_KIND::NT_QUANT_VAR; };
         bool isLetBindVar() 		const { return kind == NODE_KIND::NT_LET_BIND_VAR; };
         bool isPlaceholderVar() 	const { return kind == NODE_KIND::NT_PLACEHOLDER_VAR; };
-        bool isVar() 				const { return (isVBool() || isVInt() || isVReal() || isVBV() || isVFP() || isVRoundingMode() || isVStr() || isTempVar() || isQuantVar() || isLetBindVar() || isPlaceholderVar()); };
+        bool isVar() 				const { return (kind == NODE_KIND::NT_VAR || isVBool() || isVInt() || isVReal() || isVBV() || isVFP() || isVRoundingMode() || isVStr() || isTempVar() || isQuantVar() || isLetBindVar() || isPlaceholderVar()); };
         
         // interval
         bool isMax() 				const { return kind == NODE_KIND::NT_MAX; };
@@ -327,17 +327,10 @@ namespace SMTParser{
 
         // check array
         // An array is: array variable, const array, or store operation (which returns array)
-        bool isArray() 			    const { 
-            if (!sort || !sort->isArray()) return false;
-            return (kind == NODE_KIND::NT_VAR || 
-                    kind == NODE_KIND::NT_PLACEHOLDER_VAR || 
-                    kind == NODE_KIND::NT_CONST_ARRAY ||
-                    kind == NODE_KIND::NT_STORE ||
-                    (kind == NODE_KIND::NT_UF_APPLY && sort->isArray()));
-        };
+        bool isArray() 			    const { return sort && sort->isArray(); };
         bool isConstArray() 		const { return kind == NODE_KIND::NT_CONST_ARRAY; };
 
-        bool isAssignableVar() 		const { return isVar() || (isArray() && !isConstArray()) || isUFApplication(); };
+        bool isAssignableVar() 		const { return isVar() || isUFApplication(); };
         
         // check Boolean operations
         bool isAnd() 				const { return (kind == NODE_KIND::NT_AND); };
