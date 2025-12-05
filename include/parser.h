@@ -3386,6 +3386,16 @@ namespace SMTParser{
          */
         bool                                    evaluate(std::shared_ptr<DAGNode> expr, const std::shared_ptr<Model> &model, std::shared_ptr<DAGNode> &result);
 
+
+        /**
+         * @brief Check if an expression has some kinds
+         * 
+         * @param expr Expression to check
+         * @param kinds Kinds to check
+         * @return true if the expression has some kind, false otherwise
+         */
+        bool                                    hasSomeKinds(std::shared_ptr<DAGNode> expr, const std::unordered_set<NODE_KIND>& kinds);
+
         // type conversion
         /**
          * @brief Convert an expression to a real

@@ -1848,4 +1848,29 @@ namespace SMTParser {
                                         NODE_KIND::NT_DISTINCT, NODE_KIND::NT_DISTINCT_BOOL, NODE_KIND::NT_DISTINCT_OTHER, 
                                         NODE_KIND::NT_GE, NODE_KIND::NT_LE, NODE_KIND::NT_GT, NODE_KIND::NT_LT});
     }
+
+    bool Parser::hasSomeKinds(std::shared_ptr<DAGNode> expr, const std::unordered_set<NODE_KIND>& kinds){
+        // iterative
+        std::queue<std::shared_ptr<DAGNode>> node_queue;
+        node_queue.push(expr);
+        std::unordered_set<std::shared_ptr<DAGNode>> visited;
+        while(!node_queue.empty()){
+            std::shared_ptr<DAGNode> node = node_queue.front();
+            node_queue.pop();
+            if(visited.find(node) != visited.end()){
+                continue;
+            }
+            if(kinds.find(node->getKind()) != kinds.end()){
+                return true;
+            }
+            visited.insert(node);
+            for(size_t i = 0; i < node->getChildrenSize(); i++){
+                std::shared_ptr<DAGNode> child = node->getChild(i);
+                if(visited.find(child) == visited.end()){
+                    node_queue.push(child);
+                }
+            }
+        }
+        return false;
+    }
 }
