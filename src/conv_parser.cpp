@@ -1851,12 +1851,12 @@ namespace SMTParser {
 
     bool Parser::hasSomeKinds(std::shared_ptr<DAGNode> expr, const std::unordered_set<NODE_KIND>& kinds){
         // iterative
-        std::queue<std::shared_ptr<DAGNode>> node_queue;
-        node_queue.push(expr);
+        std::stack<std::shared_ptr<DAGNode>> node_stack;
+        node_stack.push(expr);
         std::unordered_set<std::shared_ptr<DAGNode>> visited;
-        while(!node_queue.empty()){
-            std::shared_ptr<DAGNode> node = node_queue.front();
-            node_queue.pop();
+        while(!node_stack.empty()){
+            std::shared_ptr<DAGNode> node = node_stack.top();
+            node_stack.pop();
             if(visited.find(node) != visited.end()){
                 continue;
             }
@@ -1867,7 +1867,7 @@ namespace SMTParser {
             for(size_t i = 0; i < node->getChildrenSize(); i++){
                 std::shared_ptr<DAGNode> child = node->getChild(i);
                 if(visited.find(child) == visited.end()){
-                    node_queue.push(child);
+                    node_stack.push(child);
                 }
             }
         }
