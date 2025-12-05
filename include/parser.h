@@ -3471,6 +3471,22 @@ namespace SMTParser{
         void                                    collectVars(std::shared_ptr<DAGNode> expr, std::unordered_set<std::shared_ptr<DAGNode>>& vars);
 
         /**
+         * @brief Collect assignable variables from a vector of expressions
+         * 
+         * @param exprs Expressions to collect assignable variables from
+         * @param vars Assignable variables (stored in a set)
+         */
+        void                                    collectAssignableVars(std::vector<std::shared_ptr<DAGNode>> exprs, std::unordered_set<std::shared_ptr<DAGNode>>& vars);
+
+        /**
+         * @brief Collect assignable variables from an expression
+         * 
+         * @param expr Expression to collect assignable variables from
+         * @param vars Assignable variables (stored in a set)
+         */
+        void                                    collectAssignableVars(std::shared_ptr<DAGNode> expr, std::unordered_set<std::shared_ptr<DAGNode>>& vars);
+
+        /**
          * @brief Replace atoms in an expression
          * 
          * @param expr Expression to replace atoms in
@@ -3982,6 +3998,7 @@ namespace SMTParser{
         void        collectAtoms(std::shared_ptr<DAGNode> expr, std::unordered_set<std::shared_ptr<DAGNode>>& atoms, std::unordered_set<std::shared_ptr<DAGNode>>& visited);
         void        collectGroundAtoms(std::shared_ptr<DAGNode> expr, std::unordered_set<std::shared_ptr<DAGNode>>& atoms, std::unordered_set<std::shared_ptr<DAGNode>>& visited);
         void        collectVars(std::shared_ptr<DAGNode> expr, std::unordered_set<std::shared_ptr<DAGNode>>& vars, std::unordered_set<std::shared_ptr<DAGNode>>& visited);
+        void        collectAssignableVars(std::shared_ptr<DAGNode> expr, std::unordered_set<std::shared_ptr<DAGNode>>& vars, std::unordered_set<std::shared_ptr<DAGNode>>& visited);
         // evaluate functions
         bool		evaluateSimpleOp(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result, NODE_KIND op);
         bool		evaluateAnd(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result);

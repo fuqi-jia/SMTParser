@@ -188,6 +188,34 @@ namespace SMTParser {
         }
     }
 
+    void Parser::collectAssignableVars(std::vector<std::shared_ptr<DAGNode>> exprs, std::unordered_set<std::shared_ptr<DAGNode>>& vars) {
+        std::unordered_set<std::shared_ptr<DAGNode>> visited;
+        for(auto& expr : exprs) {
+            collectAssignableVars(expr, vars, visited);
+        }
+    }
+
+    void Parser::collectAssignableVars(std::shared_ptr<DAGNode> expr, std::unordered_set<std::shared_ptr<DAGNode>>& vars) {
+        std::unordered_set<std::shared_ptr<DAGNode>> visited;
+        collectAssignableVars(expr, vars, visited);
+    }
+
+    void Parser::collectAssignableVars(std::shared_ptr<DAGNode> expr, std::unordered_set<std::shared_ptr<DAGNode>>& vars, std::unordered_set<std::shared_ptr<DAGNode>>& visited) {
+        if (visited.find(expr) != visited.end()) {
+            return;
+        }
+        visited.insert(expr);
+        if (expr->isAssignableVar()) {
+            vars.insert(expr);
+        }
+        else{
+            for (size_t i = 0; i < expr->getChildrenSize(); i++) {
+                collectAssignableVars(expr->getChild(i), vars, visited);
+            }
+        }
+    }
+
+    
     std::shared_ptr<DAGNode> Parser::replaceAtoms(std::shared_ptr<DAGNode> expr, std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& atom_map) {
         std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> visited;
         bool is_changed = false;

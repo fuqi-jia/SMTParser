@@ -336,6 +336,8 @@ namespace SMTParser{
                     (kind == NODE_KIND::NT_UF_APPLY && sort->isArray()));
         };
         bool isConstArray() 		const { return kind == NODE_KIND::NT_CONST_ARRAY; };
+
+        bool isAssignableVar() 		const { return isVar() || (isArray() && !isConstArray()) || isUFApplication(); };
         
         // check Boolean operations
         bool isAnd() 				const { return (kind == NODE_KIND::NT_AND); };
