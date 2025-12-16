@@ -100,7 +100,7 @@ namespace SMTParser{
         case NODE_KIND::NT_DIV_REAL:
             return "/";
         case NODE_KIND::NT_MOD:
-            return "%";
+            return "mod";
         case NODE_KIND::NT_ABS:
             return "abs";
         case NODE_KIND::NT_SQRT:
