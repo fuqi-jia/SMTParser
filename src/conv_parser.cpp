@@ -510,17 +510,31 @@ namespace SMTParser {
             return result;
         }
         else if(expr->isEq()){
-            // all children are boolean variables
+            // check if this is a non-boolean equality that has been abstracted
+            if(cnf_map.find(expr) != cnf_map.end()){
+                // this non-boolean equality has been abstracted to a boolean variable
+                return cnf_map[expr];
+            }
+            
+            // check if all children are boolean variables
             bool all_bool = true;
             for(size_t i = 0; i < expr->getChildrenSize(); i++){
                 if(!expr->getChild(i)->getSort()->isBool()){
                     all_bool = false;
-                    err_all(ERROR_TYPE::ERR_TYPE_MIS, "Need boolean variables for eq, but got " + expr->getChild(i)->getSort()->toString());
                     break;
                 }
             }
 
-            condAssert(all_bool, "toTseitinCNF: eq has non-boolean variables");
+            // if not all boolean and not in cnf_map, create a fallback temporary variable
+            if(!all_bool){
+                std::shared_ptr<DAGNode> fallback_var = mkTempVar(SortManager::BOOL_SORT);
+                // add to cnf_map for future reference
+                cnf_map[expr] = fallback_var;
+                std::shared_ptr<DAGNode> not_expr = mkNot(expr);
+                cnf_map[not_expr] = mkNot(fallback_var);
+                visited[expr] = fallback_var;
+                return fallback_var;
+            }
             
             if(all_bool){
                 if(expr->getChildrenSize() == 1){
