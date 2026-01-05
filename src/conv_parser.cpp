@@ -820,69 +820,128 @@ namespace SMTParser {
             exprs = new_exprs;
         }
 
-        // if it is already a CNF, return it directly
-        if(isCNF(exprs)){
-            return mkAnd(exprs);
+        // handle empty expressions
+        if(exprs.size() == 0){
+            return mkTrue();
         }
 
-        // create a new variable for each top atom
-        std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> atom_map;
-        // a new vector to store the new assertions
-        new_exprs.clear();
-        std::vector<std::shared_ptr<DAGNode>> new_children;
+        // check if it is already a CNF (structure-wise)
+        bool already_cnf = isCNF(exprs);
+
+        // collect all non-boolean variable atoms (including nested ones)
+        std::unordered_set<std::shared_ptr<DAGNode>> atoms;
+        std::unordered_set<std::shared_ptr<DAGNode>> visited;
         for(auto& expr : exprs){
-            if(expr->isAtom() && !expr->isVBool()){
+            collectAtoms(expr, atoms, visited);
+        }
+
+        // create a new variable for each non-boolean variable atom
+        std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> atom_map;
+        std::vector<std::shared_ptr<DAGNode>> new_children;
+        for(auto& atom : atoms){
+            if(!atom->isVBool()){
                 // it is an atom, but not a boolean variable
                 std::shared_ptr<DAGNode> new_var = mkTempVar(SortManager::BOOL_SORT);
                 new_children.emplace_back(new_var);
                 // add to cnf_map
-                std::shared_ptr<DAGNode> not_atom = mkNot(expr);
+                std::shared_ptr<DAGNode> not_atom = mkNot(atom);
                 std::shared_ptr<DAGNode> not_new_var = mkNot(new_var);
-                cnf_map[expr] = new_var;
+                cnf_map[atom] = new_var;
                 cnf_map[not_atom] = not_new_var;
-                atom_map[expr] = new_var;
+                atom_map[atom] = new_var;
                 atom_map[not_atom] = not_new_var;
                 
-                cnf_atom_map[new_var] = expr;
-                cnf_bool_var_map[expr] = new_var;
+                cnf_atom_map[new_var] = atom;
+                cnf_bool_var_map[atom] = new_var;
                 cnf_atom_map[not_new_var] = not_atom;
                 cnf_bool_var_map[not_atom] = not_new_var;
             }
+        }
+
+        // replace atoms with new variables in all expressions
+        new_exprs.clear();
+        for(auto& expr : exprs){
+            if(atom_map.size() != 0){
+                new_exprs.emplace_back(replaceAtoms(expr, atom_map));
+            }
             else{
-                // it is not an atom, or it is a boolean variable
                 new_exprs.emplace_back(expr);
             }
         }
         
         std::shared_ptr<DAGNode> result = mkAnd(new_exprs);
-        if(atom_map.size() != 0){
-            // have some top atoms, replace them with new variables
-            result = replaceAtoms(result, atom_map);
+        std::shared_ptr<DAGNode> cnf;
+        
+        // if it is already a CNF, no need to convert again
+        if(already_cnf){
+            cnf = result;
         }
-
-        // convert to CNF
-        std::shared_ptr<DAGNode> cnf = toCNF(result);
-        // if there are top atoms, add them to the result
+        else{
+            // convert to CNF
+            cnf = toCNF(result);
+        }
+        
+        // if there are atoms to define, add them to the result
         if(atom_map.size() != 0){
+            // new_children contains the atom definitions (new_var for each atom)
+            // we need to add the CNF clauses to new_children
             if(cnf->isAnd()){
-                if(cnf->getChildrenSize() == 0){ }
+                if(cnf->getChildrenSize() == 0){
+                    // empty CNF, just add atom definitions
+                    if(new_children.size() == 0){
+                        cnf = mkTrue();
+                    }
+                    else if(new_children.size() == 1){
+                        cnf = new_children[0];
+                    }
+                    else{
+                        cnf = mkAnd(new_children);
+                    }
+                }
                 else if(cnf->getChildrenSize() == 1){
                     new_children.emplace_back(cnf->getChild(0));
+                    if(new_children.size() == 1){
+                        cnf = new_children[0];
+                    }
+                    else{
+                        cnf = mkAnd(new_children);
+                    }
                 }
                 else{
+                    // add all CNF clauses to new_children
                     for(size_t i=0;i<cnf->getChildrenSize();i++){
                         new_children.emplace_back(cnf->getChild(i));
                     }
+                    cnf = mkAnd(new_children);
                 }
-                cnf = mkAnd(new_children);
                 cnf_map[result] = cnf;
             }
             else{
                 // cnf is a single node
-                if(cnf->isTrue()){ }
-                else if(cnf->isFalse()){ return cnf; }
-                else{ new_children.emplace_back(cnf); }
-                cnf = mkAnd(new_children);
+                if(cnf->isTrue()){
+                    // if CNF is true, just return atom definitions
+                    if(new_children.size() == 0){
+                        cnf = mkTrue();
+                    }
+                    else if(new_children.size() == 1){
+                        cnf = new_children[0];
+                    }
+                    else{
+                        cnf = mkAnd(new_children);
+                    }
+                }
+                else if(cnf->isFalse()){
+                    return cnf;
+                }
+                else{
+                    new_children.emplace_back(cnf);
+                    if(new_children.size() == 1){
+                        cnf = new_children[0];
+                    }
+                    else{
+                        cnf = mkAnd(new_children);
+                    }
+                }
             }
         }
         // add to cnf_map
@@ -895,43 +954,138 @@ namespace SMTParser {
         if(cnf_map.find(expr) != cnf_map.end()){
             return cnf_map[expr];
         }
-        std::vector<std::shared_ptr<DAGNode>> clauses;
-        // collect all atoms
+        
+        // expand let if needed
+        if(expr->isLet()){
+            expr = expandLet(expr);
+        }
+        
+        // convert to NNF first
+        expr = toNNF(expr);
+        
+        // check if it is already a CNF (structure-wise)
+        bool already_cnf = isCNF(expr);
+        
+        // collect all non-boolean variable atoms (including nested ones)
         std::unordered_set<std::shared_ptr<DAGNode>> atoms;
-        collectAtoms(expr, atoms);
+        std::unordered_set<std::shared_ptr<DAGNode>> visited;
+        collectAtoms(expr, atoms, visited);
 
-        // create a new variable for each atom
+        // create a new variable for each non-boolean variable atom
         std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> atom_map;
+        std::vector<std::shared_ptr<DAGNode>> new_children;
         for (auto& atom : atoms) {
-            std::shared_ptr<DAGNode> new_var = mkTempVar(SortManager::BOOL_SORT);
-            // add to cnf_map
-            std::shared_ptr<DAGNode> not_atom = mkNot(atom);
-            std::shared_ptr<DAGNode> not_new_var = mkNot(new_var);
-            cnf_map[atom] = new_var;
-            cnf_map[not_atom] = not_new_var;
-            atom_map[atom] = new_var;
-            atom_map[not_atom] = not_new_var;
+            if(!atom->isVBool()){
+                // it is an atom, but not a boolean variable
+                std::shared_ptr<DAGNode> new_var = mkTempVar(SortManager::BOOL_SORT);
+                new_children.emplace_back(new_var);
+                // add to cnf_map
+                std::shared_ptr<DAGNode> not_atom = mkNot(atom);
+                std::shared_ptr<DAGNode> not_new_var = mkNot(new_var);
+                cnf_map[atom] = new_var;
+                cnf_map[not_atom] = not_new_var;
+                atom_map[atom] = new_var;
+                atom_map[not_atom] = not_new_var;
 
-            cnf_atom_map[new_var] = atom;
-            cnf_bool_var_map[atom] = new_var;
-            cnf_atom_map[not_new_var] = not_atom;
-            cnf_bool_var_map[not_atom] = not_new_var;
+                cnf_atom_map[new_var] = atom;
+                cnf_bool_var_map[atom] = new_var;
+                cnf_atom_map[not_new_var] = not_atom;
+                cnf_bool_var_map[not_atom] = not_new_var;
+            }
         }
 
-        // create a new formula with Tseitin variables
-        std::shared_ptr<DAGNode> new_expr = replaceAtoms(expr, atom_map);
-
-        // currently, the new formula has only boolean variables
-        std::shared_ptr<DAGNode> tseitin_cnf = toTseitinCNF(new_expr, clauses);
-        clauses.emplace_back(tseitin_cnf);
-
-        // if there is only one clause, return it directly
-        if (clauses.size() == 1) {
-            cnf_map[expr] = clauses[0];
-            return clauses[0];
+        // replace atoms with new variables
+        std::shared_ptr<DAGNode> new_expr = expr;
+        if(atom_map.size() != 0){
+            new_expr = replaceAtoms(expr, atom_map);
         }
-        // otherwise, create an AND node, containing all OR clauses
-        std::shared_ptr<DAGNode> cnf = mkAnd(clauses);
+        
+        std::shared_ptr<DAGNode> cnf;
+        
+        // if it is already a CNF, no need to convert again
+        if(already_cnf){
+            cnf = new_expr;
+        }
+        else{
+            // convert to CNF using Tseitin transformation
+            std::vector<std::shared_ptr<DAGNode>> clauses;
+            std::shared_ptr<DAGNode> tseitin_cnf = toTseitinCNF(new_expr, clauses);
+            clauses.emplace_back(tseitin_cnf);
+
+            // if there is only one clause, return it directly
+            if (clauses.size() == 1) {
+                cnf = clauses[0];
+            }
+            else{
+                // otherwise, create an AND node, containing all OR clauses
+                cnf = mkAnd(clauses);
+            }
+        }
+        
+        // if there are atoms to define, add them to the result
+        if(atom_map.size() != 0){
+            // new_children contains the atom definitions (new_var for each atom)
+            // we need to add the CNF clauses to new_children
+            if(cnf->isAnd()){
+                if(cnf->getChildrenSize() == 0){
+                    // empty CNF, just add atom definitions
+                    if(new_children.size() == 0){
+                        cnf = mkTrue();
+                    }
+                    else if(new_children.size() == 1){
+                        cnf = new_children[0];
+                    }
+                    else{
+                        cnf = mkAnd(new_children);
+                    }
+                }
+                else if(cnf->getChildrenSize() == 1){
+                    new_children.emplace_back(cnf->getChild(0));
+                    if(new_children.size() == 1){
+                        cnf = new_children[0];
+                    }
+                    else{
+                        cnf = mkAnd(new_children);
+                    }
+                }
+                else{
+                    // add all CNF clauses to new_children
+                    for(size_t i=0;i<cnf->getChildrenSize();i++){
+                        new_children.emplace_back(cnf->getChild(i));
+                    }
+                    cnf = mkAnd(new_children);
+                }
+            }
+            else{
+                // cnf is a single node
+                if(cnf->isTrue()){
+                    // if CNF is true, just return atom definitions
+                    if(new_children.size() == 0){
+                        cnf = mkTrue();
+                    }
+                    else if(new_children.size() == 1){
+                        cnf = new_children[0];
+                    }
+                    else{
+                        cnf = mkAnd(new_children);
+                    }
+                }
+                else if(cnf->isFalse()){
+                    // false remains false
+                    cnf = mkFalse();
+                }
+                else{
+                    new_children.emplace_back(cnf);
+                    if(new_children.size() == 1){
+                        cnf = new_children[0];
+                    }
+                    else{
+                        cnf = mkAnd(new_children);
+                    }
+                }
+            }
+        }
+        
         cnf_map[expr] = cnf;
         return cnf;
     }
