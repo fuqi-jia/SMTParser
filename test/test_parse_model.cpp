@@ -1220,6 +1220,25 @@ int main() {
 )
   )";
 
+    // Test case from smtrat: symbols starting with invalid characters like '('
+    // These symbols need to be wrapped with |...| in define-fun/declare-fun declarations
+    std::string model_str4_smtrat = R"(
+(model 
+        (define-fun (38,19)!131 () Real
+                1
+        )
+        (define-fun (72,19)!72 () Real
+                1
+        )
+        (define-fun (70,19)!73 () Real
+                1
+        )
+        (define-fun (63,19)!117 () Real
+                0
+        )
+)
+)";
+
     
     try {
         // 解析模型
@@ -1278,6 +1297,28 @@ int main() {
         }
         else {
             std::cout << "模型3解析失败！" << std::endl;
+        }
+    }
+    catch (const std::exception& e) {
+        std::cout << "解析过程中出现异常: " << e.what() << std::endl;
+    }
+
+    try {
+        // 解析模型4 - smtrat 测试用例：包含以 '(' 开头的符号名
+        auto model = parser->parseModel(model_str4_smtrat);
+        
+        if (model) {
+            std::cout << "模型4（smtrat）解析成功！" << std::endl;
+            std::cout << "模型4大小: " << model->size() << std::endl;
+            
+            // 打印模型内容
+            auto pairs = model->getPairs();
+            for (const auto& pair : pairs) {
+                std::cout << "变量: " << pair.first << " = " << parser->toString(pair.second) << std::endl;
+            }
+        }
+        else {
+            std::cout << "模型4解析失败！" << std::endl;
         }
     }
     catch (const std::exception& e) {

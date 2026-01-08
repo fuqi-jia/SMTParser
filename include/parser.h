@@ -3842,6 +3842,8 @@ namespace SMTParser{
         void		                            parseLpar();
         void 		                            parseRpar();
         void		                            skipToRpar();
+        // Helper for parseModel: parse symbol name that may start with invalid characters
+        std::string                             parseModelSymbolName();
         std::string                             peekSymbol();
 
 

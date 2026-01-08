@@ -2350,6 +2350,57 @@ namespace SMTParser{
 		}
 	}
 
+	// Helper function to parse symbol name that may start with invalid characters
+	// Returns the symbol name, wrapping with |...| if it starts with invalid characters
+	std::string Parser::parseModelSymbolName() {
+		if (*bufptr == '(') {
+			// Check if this is an empty symbol (next is parameter list) or a symbol starting with '('
+			// Skip whitespace after '('
+			char* lookahead = bufptr + 1;
+			while (*lookahead && (*lookahead == ' ' || *lookahead == '\t' || *lookahead == '\n' || *lookahead == '\r' || *lookahead == '\v' || *lookahead == '\f')) {
+				lookahead++;
+			}
+			// If next is ')' or '(', it's likely a parameter list, so empty symbol
+			if (*lookahead == ')' || *lookahead == '(') {
+				return "||";
+			} else {
+				// Symbol starts with '(', need to parse it and wrap with |...|
+				// Parse the symbol manually: read all non-whitespace characters until we hit whitespace
+				// that is followed by '(' or ')' (parameter list start)
+				char* name_start = bufptr;
+				while (*bufptr && *bufptr != 0) {
+					// Check if current position is whitespace
+					if (*bufptr == ' ' || *bufptr == '\t' || *bufptr == '\n' || *bufptr == '\r' || *bufptr == '\v' || *bufptr == '\f') {
+						// Found whitespace, check what comes after
+						char* after_ws = bufptr + 1;
+						while (*after_ws && (*after_ws == ' ' || *after_ws == '\t' || *after_ws == '\n' || *after_ws == '\r' || *after_ws == '\v' || *after_ws == '\f')) {
+							after_ws++;
+						}
+						// If next non-whitespace is '(' or ')', this is the end of symbol
+						if (*after_ws == '(' || *after_ws == ')') {
+							break;
+						}
+					}
+					bufptr++;
+				}
+				std::string raw_name(name_start, bufptr - name_start);
+				scanToNextSymbol();
+				return "|" + raw_name + "|";
+			}
+		} else {
+			std::string name = getSymbol();
+			// Check if symbol starts with invalid character (digit, ')', etc.)
+			if (!name.empty()) {
+				char first_char = name[0];
+				if ((first_char >= '0' && first_char <= '9') || first_char == ')' || first_char == ';') {
+					// Invalid first character, wrap with |...|
+					return "|" + name + "|";
+				}
+			}
+			return name;
+		}
+	}
+
 	// parse model
 	ModelPtr Parser::parseModel(const std::string& model, bool only_declared){
 		std::shared_ptr<Model> model_ptr = std::make_shared<Model>();
@@ -2362,8 +2413,11 @@ namespace SMTParser{
 		
 		// Set temporary parsing state
 		parsing_file = false;
+		size_t original_line_number = line_number;
+		line_number = 1;
 		buffer = safe_strdup(model);
 		if (!buffer) {
+			line_number = original_line_number;
 			return model_ptr;
 		}
 		buflen = model.length();
@@ -2417,13 +2471,8 @@ namespace SMTParser{
 					continue;
 				}
 				
-				// Parse function name
-				std::string func_name;
-				if (*bufptr == '(') {
-					func_name = "||";
-				} else {
-					func_name = getSymbol();
-				}
+				// Parse function name (may start with invalid characters like '(')
+				std::string func_name = parseModelSymbolName();
 				
 				// Parse parameter list
 				parseLpar();
@@ -2484,15 +2533,8 @@ namespace SMTParser{
 				
 				// Parse variable name (can be any symbol including | | or ||)
 				// Note: In SMT-LIB, | | means a symbol containing a space, || means an empty symbol
-				std::string var_name;
-				
-				// Check if next token is a parameter list instead of a name
-				if (*bufptr == '(') {
-					// No variable name provided, treat it as empty symbol ||
-					var_name = "||"; // "" -> "||"
-				} else {
-					var_name = getSymbol();
-				}
+				// May start with invalid characters like '('
+				std::string var_name = parseModelSymbolName();
 				
 				// Parse parameter list
 				parseLpar();
