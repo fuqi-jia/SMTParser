@@ -559,6 +559,73 @@ namespace SMTParser{
 
         return Interval(new_lower, new_upper, new_leftClosed, new_rightClosed);
     }
+    Interval Interval::log(const Number& base) const {
+        if(isEmpty()) {
+            return EmptyInterval;
+        }
+
+        // log(x, base) = ln(x) / ln(base)
+        // base must be > 0 and != 1
+        if(base <= 0) {
+            throw std::domain_error("Logarithm base must be positive");
+        }
+        if(base == 1) {
+            throw std::domain_error("Logarithm base cannot be 1");
+        }
+
+        // ln(x) is defined for x > 0
+        if(upper <= 0) {
+            return EmptyInterval;
+        }
+
+        // compute ln(x) first
+        Interval lnInterval = this->ln();
+        
+        // compute ln(base)
+        Number lnBase = base.ln();
+        
+        // if ln(base) == 0, which means base == 1, but we already checked this
+        // divide ln(x) by ln(base)
+        if(lnBase > 0) {
+            return Interval(lnInterval.getLower() / lnBase, lnInterval.getUpper() / lnBase, 
+                           lnInterval.isLeftClosed(), lnInterval.isRightClosed());
+        } else {
+            // ln(base) < 0, which means base < 1, so we need to reverse the interval
+            return Interval(lnInterval.getUpper() / lnBase, lnInterval.getLower() / lnBase, 
+                           lnInterval.isRightClosed(), lnInterval.isLeftClosed());
+        }
+    }
+    Interval Interval::log(const Interval& base) const {
+        if(isEmpty() || base.isEmpty()) {
+            return EmptyInterval;
+        }
+
+        // log(x, base) = ln(x) / ln(base)
+        // base must be > 0 and != 1
+        
+        // check if base contains invalid values
+        if(base.getUpper() <= 0) {
+            throw std::domain_error("Logarithm base must be positive");
+        }
+        if(base.contains(Number(1))) {
+            throw std::domain_error("Logarithm base cannot be 1");
+        }
+
+        // ln(x) is defined for x > 0
+        if(upper <= 0) {
+            return EmptyInterval;
+        }
+
+        // compute ln(x) first
+        Interval lnInterval = this->ln();
+        
+        // compute ln(base)
+        Interval lnBaseInterval = base.ln();
+        
+        // if ln(base) interval contains 0, which means base contains 1, but we already checked this
+        // divide ln(x) by ln(base) using interval division
+        return lnInterval.divReal(lnBaseInterval);
+    }
     Interval Interval::exp() const {
         if(isEmpty()) {
             return EmptyInterval;
