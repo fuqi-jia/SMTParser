@@ -1140,19 +1140,21 @@ Number Number::one() {
     return Number(1, false);
 }
 Number Number::infinity() {
-    Number result;
-    mpfr_set_inf(result.realValue.getMPFR(), 1);
-    return result;
+    // 无穷必须用 REAL_TYPE 表示，因为整数无法表示无穷
+    // 使用 HighPrecisionReal 构造函数，自动设置 type = REAL_TYPE
+    HighPrecisionReal inf(128);
+    mpfr_set_inf(inf.getMPFR(), 1);
+    return Number(inf);
 }
 Number Number::negativeInfinity() {
-    Number result;
-    mpfr_set_inf(result.realValue.getMPFR(), -1);
-    return result;
+    HighPrecisionReal negInf(128);
+    mpfr_set_inf(negInf.getMPFR(), -1);
+    return Number(negInf);
 }
 Number Number::positiveInfinity() {
-    Number result;
-    mpfr_set_inf(result.realValue.getMPFR(), 1);
-    return result;
+    HighPrecisionReal posInf(128);
+    mpfr_set_inf(posInf.getMPFR(), 1);
+    return Number(posInf);
 }
 bool Number::isZero() const {
     if(type == INT_TYPE) {
