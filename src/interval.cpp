@@ -1451,6 +1451,36 @@ namespace SMTParser{
         if(isEmpty() || other.isEmpty()) {
             return EmptyInterval;
         }
+        
+        // Special case: when multiplying an interval by itself (squaring),
+        // and the interval crosses zero, the result should be [0, max(abs(lower), abs(upper))²)
+        // because x² is always non-negative and reaches minimum 0 at x=0
+        if (this == &other || (lower == other.lower && upper == other.upper && 
+            leftClosed == other.leftClosed && rightClosed == other.rightClosed)) {
+            // Squaring operation: x² where x is in this interval
+            if (lower <= Number(0) && upper >= Number(0)) {
+                // Interval crosses zero: x² is in [0, max(abs(lower), abs(upper))²)
+                Number absLower = lower.abs();
+                Number absUpper = upper.abs();
+                Number maxAbs = (absLower > absUpper) ? absLower : absUpper;
+                Number maxSquared = maxAbs * maxAbs;
+                
+                // Lower bound is always 0 (closed) because x² = 0 when x = 0
+                // Upper bound: if the original interval is open at the boundary where max occurs,
+                // the square is also open; otherwise closed
+                bool upperClosed = false;
+                if (absLower > absUpper) {
+                    // Maximum occurs at lower boundary
+                    upperClosed = leftClosed;
+                } else {
+                    // Maximum occurs at upper boundary
+                    upperClosed = rightClosed;
+                }
+                
+                return Interval(Number(0), maxSquared, true, upperClosed);
+            }
+        }
+        
         Number p1 = lower * other.lower;
         Number p2 = lower * other.upper;
         Number p3 = upper * other.lower;
