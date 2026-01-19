@@ -32,6 +32,16 @@ namespace SMTParser{
     void precision_warning(const std::string& op){
         std::cerr << "Precision warning: " << op << " will use double precision" << std::endl;
     }
+    
+    // Helper function to check if a node can be used in arithmetic operations
+    // root-obj and root-of-with-interval nodes cannot be directly used in arithmetic operations
+    static bool canPerformArithmeticOp(std::shared_ptr<DAGNode> node){
+        if(node->isCRootObj() || node->isCRootOfWithInterval()){
+            return false;
+        }
+        return true;
+    }
+    
     std::shared_ptr<DAGNode> Parser::simp_oper(const NODE_KIND& t, std::shared_ptr<DAGNode> p){
         switch(t){
             // Unary operation - accepts one parameter
@@ -841,6 +851,10 @@ namespace SMTParser{
                 return mkUnknown();
             }
             case NODE_KIND::NT_POW:{
+                // root-obj and root-of-with-interval nodes cannot be directly used in arithmetic operations
+                if(!canPerformArithmeticOp(l) || !canPerformArithmeticOp(r)){
+                    return mkUnknown();
+                }
                 if(l->isCInt() && r->isCInt()){
                     if(getEvaluateUseFloating()){
                         return mkConstReal(toReal(l).pow(toReal(r)));
@@ -859,6 +873,10 @@ namespace SMTParser{
                 return mkUnknown();
             }
             case NODE_KIND::NT_DIV_INT:{
+                // root-obj and root-of-with-interval nodes cannot be directly used in arithmetic operations
+                if(!canPerformArithmeticOp(l) || !canPerformArithmeticOp(r)){
+                    return mkUnknown();
+                }
                 if(l->isCInt() && r->isCInt()){
                     return mkConstInt(toInt(l) / toInt(r));
                 }
@@ -870,6 +888,10 @@ namespace SMTParser{
                 return mkUnknown();
             }
             case NODE_KIND::NT_DIV_REAL:{
+                // root-obj and root-of-with-interval nodes cannot be directly used in arithmetic operations
+                if(!canPerformArithmeticOp(l) || !canPerformArithmeticOp(r)){
+                    return mkUnknown();
+                }
                 if((l->isCReal() && r->isCReal()) || (l->isCInt() && r->isCReal()) || (l->isCReal() && r->isCInt()) || (l->isCInt() && r->isCInt())){
                     if(options->keep_division_if_not_divisible){
                         if((toReal(l) / toReal(r)).isInteger()){
@@ -886,12 +908,20 @@ namespace SMTParser{
                 return mkUnknown();
             }
             case NODE_KIND::NT_MOD:{
+                // root-obj and root-of-with-interval nodes cannot be directly used in arithmetic operations
+                if(!canPerformArithmeticOp(l) || !canPerformArithmeticOp(r)){
+                    return mkUnknown();
+                }
                 if(l->isCInt() && r->isCInt()){
                     return mkConstInt(toInt(l) % toInt(r));
                 }
                 return mkUnknown();
             }
             case NODE_KIND::NT_LOG:{
+                // root-obj and root-of-with-interval nodes cannot be directly used in arithmetic operations
+                if(!canPerformArithmeticOp(l) || !canPerformArithmeticOp(r)){
+                    return mkUnknown();
+                }
                 if((l->isCReal() && r->isCReal()) || (l->isCInt() && r->isCReal()) || (l->isCReal() && r->isCInt()) || (l->isCInt() && r->isCInt())){
                     if(getEvaluateUseFloating()){
                         // log_r(l)
@@ -901,6 +931,10 @@ namespace SMTParser{
                 return mkUnknown();
             }
             case NODE_KIND::NT_ATAN2:{
+                // root-obj and root-of-with-interval nodes cannot be directly used in arithmetic operations
+                if(!canPerformArithmeticOp(l) || !canPerformArithmeticOp(r)){
+                    return mkUnknown();
+                }
                 if((l->isCReal() && r->isCReal()) || (l->isCInt() && r->isCReal()) || (l->isCReal() && r->isCInt()) || (l->isCInt() && r->isCInt())){
                     if(getEvaluateUseFloating()){
                         return mkConstReal(Real::atan2(toReal(l), toReal(r)));
@@ -909,6 +943,10 @@ namespace SMTParser{
                 return mkUnknown();
             }
             case NODE_KIND::NT_LE:{
+                // root-obj and root-of-with-interval nodes cannot be directly used in arithmetic operations
+                if(!canPerformArithmeticOp(l) || !canPerformArithmeticOp(r)){
+                    return mkUnknown();
+                }
                 if(l->isCInt() && r->isCInt()){
                     if(toInt(l) <= toInt(r)){
                         return mkTrue();
@@ -928,6 +966,10 @@ namespace SMTParser{
                 return mkUnknown();
             }
             case NODE_KIND::NT_LT:{
+                // root-obj and root-of-with-interval nodes cannot be directly used in arithmetic operations
+                if(!canPerformArithmeticOp(l) || !canPerformArithmeticOp(r)){
+                    return mkUnknown();
+                }
                 if(l->isCInt() && r->isCInt()){
                     if(toInt(l) < toInt(r)){
                         return mkTrue();
@@ -949,6 +991,10 @@ namespace SMTParser{
                 return mkUnknown();
             }
             case NODE_KIND::NT_GE:{
+                // root-obj and root-of-with-interval nodes cannot be directly used in arithmetic operations
+                if(!canPerformArithmeticOp(l) || !canPerformArithmeticOp(r)){
+                    return mkUnknown();
+                }
                 if(l->isCInt() && r->isCInt()){
                     if(toInt(l) >= toInt(r)){
                         return mkTrue();
@@ -970,6 +1016,10 @@ namespace SMTParser{
                 return mkUnknown();
             }
             case NODE_KIND::NT_GT:{
+                // root-obj and root-of-with-interval nodes cannot be directly used in arithmetic operations
+                if(!canPerformArithmeticOp(l) || !canPerformArithmeticOp(r)){
+                    return mkUnknown();
+                }
                 if(l->isCInt() && r->isCInt()){
                     if(toInt(l) > toInt(r)){
                         return mkTrue();
@@ -1286,6 +1336,10 @@ namespace SMTParser{
                 return mkUnknown();
             }
             case NODE_KIND::NT_ADD:{
+                // root-obj and root-of-with-interval nodes cannot be directly used in arithmetic operations
+                if(!canPerformArithmeticOp(l) || !canPerformArithmeticOp(r)){
+                    return mkUnknown();
+                }
                 if(l->isCInt() && r->isCInt()){
                     return mkConstInt(toInt(l) + toInt(r));
                 }
@@ -1295,6 +1349,10 @@ namespace SMTParser{
                 return mkUnknown();
             }
             case NODE_KIND::NT_MUL:{
+                // root-obj and root-of-with-interval nodes cannot be directly used in arithmetic operations
+                if(!canPerformArithmeticOp(l) || !canPerformArithmeticOp(r)){
+                    return mkUnknown();
+                }
                 if(l->isCInt() && r->isCInt()){
                     return mkConstInt(toInt(l) * toInt(r));
                 }
@@ -1310,6 +1368,10 @@ namespace SMTParser{
                 return mkUnknown();
             }
             case NODE_KIND::NT_SUB:{
+                // root-obj and root-of-with-interval nodes cannot be directly used in arithmetic operations
+                if(!canPerformArithmeticOp(l) || !canPerformArithmeticOp(r)){
+                    return mkUnknown();
+                }
                 if(l->isCInt() && r->isCInt()){
                     return mkConstInt(toInt(l) - toInt(r));
                 }
