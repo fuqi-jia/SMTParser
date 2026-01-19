@@ -310,6 +310,10 @@ namespace SMTParser{
 		return value->getNumberValue().toInteger();
 	}
 	bool Parser::isZero(std::shared_ptr<DAGNode> expr){
+		// cannot check zero for root-obj and root-of-with-interval
+		if(expr->isCRootObj()) return false;
+		if(expr->isCRootOfWithInterval()) return false;
+		// otherwise, check zero
 		if(expr->isCReal()) return toReal(expr) == 0.0;
 		if(expr->isCInt()) return toInt(expr) == 0;
 		return false;
