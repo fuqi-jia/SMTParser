@@ -604,7 +604,7 @@ namespace SMTParser {
                 else{
                     // for boolean variables, distinct with more than 2 variables is always unsatisfiable
                     // because boolean values can only be true or false
-                    std::cerr << "toTseitinCNF: distinct with more than 2 variables is always unsatisfiable" << std::endl;
+                    // std::cerr << "toTseitinCNF: distinct with more than 2 variables is always unsatisfiable" << std::endl;
                     return mkFalse();
                 }
             }
@@ -1722,7 +1722,7 @@ namespace SMTParser {
         }
         if(op_set.find(expr->getKind()) != op_set.end()){
             if(expr->isLt() || expr->isGt() || expr->isEq()){
-                std::cerr << "splitArithComp: " << expr->toString() << " is not supported"<< std::endl;
+                // std::cerr << "splitArithComp: " << expr->toString() << " is not supported"<< std::endl;
                 is_changed = false;
                 return expr;
             }
@@ -1772,7 +1772,7 @@ namespace SMTParser {
                 });
             }
             else{
-                std::cerr << "splitArithComp: " << expr->toString() << " is not supported"<< std::endl;
+                // std::cerr << "splitArithComp: " << expr->toString() << " is not supported"<< std::endl;
                 is_changed = false;
                 return expr;
             }

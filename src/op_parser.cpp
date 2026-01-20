@@ -372,7 +372,7 @@ namespace SMTParser{
     std::shared_ptr<DAGNode> Parser::mkEq(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(!l->getSort()->isEqTo(r->getSort())) {
             if(canExempt(l->getSort(), r->getSort())){
-                std::cerr << "Type mismatch in eq, but now exempt for int/real"<<std::endl;
+                // std::cerr << "Type mismatch in eq, but now exempt for int/real"<<std::endl;
             }
             else{
                 err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in equality", line_number);
@@ -430,7 +430,7 @@ namespace SMTParser{
         for(size_t i=0;i<params.size();i++){
             if(sort != nullptr && !params[i]->getSort()->isEqTo(sort)) {
                 if(canExempt(params[i]->getSort(), sort)){
-                    std::cerr << "Type mismatch in eq, but now exempt for int/real"<<std::endl;
+                    // std::cerr << "Type mismatch in eq, but now exempt for int/real"<<std::endl;
                 }
                 else{
                     err_all(params[i], "Type mismatch in equality", line_number);
@@ -470,7 +470,7 @@ namespace SMTParser{
     std::shared_ptr<DAGNode> Parser::mkDistinct(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(!l->getSort()->isEqTo(r->getSort())) {
             if(canExempt(l->getSort(), r->getSort())){
-                std::cerr << "Type mismatch in distinct, but now exempt for int/real"<<std::endl;
+                // std::cerr << "Type mismatch in distinct, but now exempt for int/real"<<std::endl;
             }
             else{
                 err_all(l, "Type mismatch in distinct", line_number);
@@ -532,7 +532,7 @@ namespace SMTParser{
             if(params[i]->isErr()) return params[i];
             if(sort != nullptr && !params[i]->getSort()->isEqTo(sort)) {
                 if(canExempt(params[i]->getSort(), sort)){
-                    std::cerr << "Type mismatch in distinct, but now exempt for int/real"<<std::endl;
+                    // std::cerr << "Type mismatch in distinct, but now exempt for int/real"<<std::endl;
                 }
                 else{
                     err_all(params[i], "Type mismatch in distinct", line_number);
@@ -852,7 +852,7 @@ namespace SMTParser{
     }
     std::shared_ptr<DAGNode> Parser::mkAnd(const std::vector<std::shared_ptr<DAGNode>> &params){
         if(params.size() == 0){
-            std::cerr << "AND on empty parameters, return true" << std::endl;
+            // std::cerr << "AND on empty parameters, return true" << std::endl;
             return mkTrue();
         }
         else if(params.size() == 1){
@@ -908,7 +908,7 @@ namespace SMTParser{
     }
     std::shared_ptr<DAGNode> Parser::mkOr(const std::vector<std::shared_ptr<DAGNode>> &params){
         if(params.size() == 0){
-            std::cerr << "OR on empty parameters, return false" << std::endl;
+            // std::cerr << "OR on empty parameters, return false" << std::endl;
             return mkFalse();
         }
         else if(params.size() == 1){
@@ -1004,7 +1004,7 @@ namespace SMTParser{
     }
     std::shared_ptr<DAGNode> Parser::mkXor(const std::vector<std::shared_ptr<DAGNode>> &params){
         if(params.size() == 0){
-            std::cerr << "XOR on empty parameters, return false" << std::endl;
+            // std::cerr << "XOR on empty parameters, return false" << std::endl;
             return mkFalse();
         }
         else if(params.size() == 1){
@@ -1079,7 +1079,7 @@ namespace SMTParser{
             if(params[i]->isErr()) return params[i];
             if(sort != nullptr && !params[i]->getSort()->isEqTo(sort)) {
                 if(canExempt(params[i]->getSort(), sort)){
-                    std::cerr << "Type mismatch in add, but now exempt for int/real"<<std::endl;
+                    // std::cerr << "Type mismatch in add, but now exempt for int/real"<<std::endl;
                 }
                 else{
                     err_all(params[i], "Type mismatch in add", line_number);
@@ -1150,7 +1150,7 @@ namespace SMTParser{
             if(params[i]->isErr()) return params[i];
             if(sort != nullptr && !params[i]->getSort()->isEqTo(sort)) {
                 if(canExempt(params[i]->getSort(), sort)){
-                    std::cerr << "Type mismatch in mul, but now exempt for int/real"<<std::endl;
+                    // std::cerr << "Type mismatch in mul, but now exempt for int/real"<<std::endl;
                 }
                 else{
                     err_all(params[i], "Type mismatch in mul", line_number);
@@ -1234,7 +1234,7 @@ namespace SMTParser{
             if(params[i]->isErr()) return params[i];
             if(sort != nullptr && !params[i]->getSort()->isEqTo(sort)) {
                 if(canExempt(params[i]->getSort(), sort)){
-                    std::cerr << "Type mismatch in iand, but now exempt for int/real"<<std::endl;
+                    // std::cerr << "Type mismatch in iand, but now exempt for int/real"<<std::endl;
                 }
                 else{
                     err_all(params[i], "Type mismatch in iand", line_number);
@@ -1299,7 +1299,7 @@ namespace SMTParser{
             if(params[i]->isErr()) return params[i];
             if(sort != nullptr && !params[i]->getSort()->isEqTo(sort)) {
                 if(canExempt(params[i]->getSort(), sort)){
-                    std::cerr << "Type mismatch in sub, but now exempt for int/real"<<std::endl;
+                    // std::cerr << "Type mismatch in sub, but now exempt for int/real"<<std::endl;
                 }
                 else{
                     err_all(params[i], "Type mismatch in sub", line_number);
@@ -1354,7 +1354,7 @@ namespace SMTParser{
         
         if((!isIntParam(l) || !isIntParam(r))) {
             if(canExempt(l->getSort(), r->getSort())){
-                std::cerr << "Type mismatch in div_int, but now exempt for int/real"<<std::endl;
+                // std::cerr << "Type mismatch in div_int, but now exempt for int/real"<<std::endl;    
             }
             else{
                 err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in div", line_number);
@@ -1389,7 +1389,7 @@ namespace SMTParser{
         
         if((!isRealParam(l) || !isRealParam(r))) {
             if(canExempt(l->getSort(), r->getSort())){
-                std::cerr << "Type mismatch in div_real, but now exempt for int/real"<<std::endl;
+                // std::cerr << "Type mismatch in div_real, but now exempt for int/real"<<std::endl;
             }
             else{
                 err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in div", line_number);
@@ -1514,7 +1514,7 @@ namespace SMTParser{
     std::shared_ptr<DAGNode> Parser::mkLog(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         if(!l->getSort()->isEqTo(r->getSort())) {
             if(canExempt(l->getSort(), r->getSort())){
-                std::cerr << "Type mismatch in log, but now exempt for int/real"<<std::endl;
+                // std::cerr << "Type mismatch in log, but now exempt for int/real"<<std::endl;
             }
             else{
                 err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in log", line_number);
@@ -1706,7 +1706,7 @@ namespace SMTParser{
         
         if(!l->getSort()->isEqTo(r->getSort())) {
             if(canExempt(l->getSort(), r->getSort())){
-                std::cerr << "Type mismatch in le, but now exempt for int/real"<<std::endl;
+                // std::cerr << "Type mismatch in le, but now exempt for int/real"<<std::endl;
             }
             else{
                 err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in le", line_number);
@@ -1722,7 +1722,7 @@ namespace SMTParser{
         
         if(!l->getSort()->isEqTo(r->getSort())) {
             if(canExempt(l->getSort(), r->getSort())){
-                std::cerr << "Type mismatch in lt, but now exempt for int/real"<<std::endl;
+                // std::cerr << "Type mismatch in lt, but now exempt for int/real"<<std::endl;
             }
             else{
                 err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in lt", line_number);
@@ -1738,7 +1738,7 @@ namespace SMTParser{
         
         if(!l->getSort()->isEqTo(r->getSort())) {
             if(canExempt(l->getSort(), r->getSort())){
-                std::cerr << "Type mismatch in ge, but now exempt for int/real"<<std::endl;
+                // std::cerr << "Type mismatch in ge, but now exempt for int/real"<<std::endl;
             }
             else{
                 err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in ge", line_number);
@@ -1754,7 +1754,7 @@ namespace SMTParser{
         
         if(!l->getSort()->isEqTo(r->getSort())) {
             if(canExempt(l->getSort(), r->getSort())){
-                std::cerr << "Type mismatch in gt, but now exempt for int/real"<<std::endl;
+                // std::cerr << "Type mismatch in gt, but now exempt for int/real"<<std::endl;
             }
             else{
                 err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in gt", line_number);
@@ -1784,7 +1784,7 @@ namespace SMTParser{
             if(params[i]->isErr()) return params[i];
             if(sort != nullptr && !params[i]->getSort()->isEqTo(sort)) {
                 if(canExempt(params[i]->getSort(), sort)){
-                    std::cerr << "Type mismatch in le, but now exempt for int/real"<<std::endl;
+                    // std::cerr << "Type mismatch in le, but now exempt for int/real"<<std::endl;
                 }
                 else{
                     err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in le", line_number);
@@ -1816,7 +1816,7 @@ namespace SMTParser{
             if(params[i]->isErr()) return params[i];
             if(sort != nullptr && !params[i]->getSort()->isEqTo(sort)) {
                 if(canExempt(params[i]->getSort(), sort)){
-                    std::cerr << "Type mismatch in lt, but now exempt for int/real"<<std::endl;
+                    // std::cerr << "Type mismatch in lt, but now exempt for int/real"<<std::endl;
                 }
                 else{
                     err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in lt", line_number);
@@ -1848,7 +1848,7 @@ namespace SMTParser{
             if(params[i]->isErr()) return params[i];
             if(sort != nullptr && !params[i]->getSort()->isEqTo(sort)) {
                 if(canExempt(params[i]->getSort(), sort)){
-                    std::cerr << "Type mismatch in ge, but now exempt for int/real"<<std::endl;
+                    // std::cerr << "Type mismatch in ge, but now exempt for int/real"<<std::endl;
                 }
                 else{
                     err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in ge", line_number);
@@ -1880,7 +1880,7 @@ namespace SMTParser{
             if(params[i]->isErr()) return params[i];
             if(sort != nullptr && !params[i]->getSort()->isEqTo(sort)) {
                 if(canExempt(params[i]->getSort(), sort)){
-                    std::cerr << "Type mismatch in gt, but now exempt for int/real"<<std::endl;
+                    // std::cerr << "Type mismatch in gt, but now exempt for int/real"<<std::endl;
                 }
                 else{
                     err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in gt", line_number);
@@ -2133,7 +2133,7 @@ namespace SMTParser{
     }
     std::shared_ptr<DAGNode> Parser::mkBvAnd(const std::vector<std::shared_ptr<DAGNode>> &params){
         if(params.size() == 0){
-            std::cerr << "BVAND on empty parameters, return true" << std::endl;
+            // std::cerr << "BVAND on empty parameters, return true" << std::endl;
             return mkTrue();
         }
         else if(params.size() == 1){
@@ -2178,7 +2178,7 @@ namespace SMTParser{
     */
     std::shared_ptr<DAGNode> Parser::mkBvOr(const std::vector<std::shared_ptr<DAGNode>> &params){
         if(params.size() == 0){
-            std::cerr << "BVOR on empty parameters, return false" << std::endl;
+            // std::cerr << "BVOR on empty parameters, return false" << std::endl;
             return mkFalse();
         }
         else if(params.size() == 1){
@@ -2218,7 +2218,7 @@ namespace SMTParser{
     }
     std::shared_ptr<DAGNode> Parser::mkBvXor(const std::vector<std::shared_ptr<DAGNode>> &params){
         if(params.size() == 0){
-            std::cerr << "BVXOR on empty parameters, return false" << std::endl;
+            // std::cerr << "BVXOR on empty parameters, return false" << std::endl;
             return mkFalse();
         }
         else if(params.size() == 1){
@@ -2260,7 +2260,7 @@ namespace SMTParser{
     }
     std::shared_ptr<DAGNode> Parser::mkBvNand(const std::vector<std::shared_ptr<DAGNode>> &params){
         if(params.size() == 0){
-            std::cerr << "BVNAND on empty parameters, return false" << std::endl;
+            // std::cerr << "BVNAND on empty parameters, return false" << std::endl;
             return mkFalse();
         }
         else if(params.size() == 1){
@@ -2302,7 +2302,7 @@ namespace SMTParser{
     }
     std::shared_ptr<DAGNode> Parser::mkBvNor(const std::vector<std::shared_ptr<DAGNode>> &params){
         if(params.size() == 0){
-            std::cerr << "BVNOR on empty parameters, return true" << std::endl;
+            // std::cerr << "BVNOR on empty parameters, return true" << std::endl;
             return mkTrue();
         }
         else if(params.size() == 1){
@@ -2344,7 +2344,7 @@ namespace SMTParser{
     }
     std::shared_ptr<DAGNode> Parser::mkBvXnor(const std::vector<std::shared_ptr<DAGNode>> &params){
         if(params.size() == 0){
-            std::cerr << "BVXNOR on empty parameters, return false" << std::endl;
+            // std::cerr << "BVXNOR on empty parameters, return false" << std::endl;
             return mkFalse();
         }
         else if(params.size() == 1){
@@ -4253,7 +4253,7 @@ namespace SMTParser{
             if(params[i]->isErr()) return params[i];
             if(sort != nullptr && !params[i]->getSort()->isEqTo(sort)) {
                 if(canExempt(params[i]->getSort(), sort)){
-                    std::cerr << "Type mismatch in max, but now exempt for int/real"<<std::endl;
+                    // std::cerr << "Type mismatch in max, but now exempt for int/real"<<std::endl;
                 }
                 else{
                     err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in max", line_number);
@@ -4282,7 +4282,7 @@ namespace SMTParser{
             if(params[i]->isErr()) return params[i];
             if(sort != nullptr && !params[i]->getSort()->isEqTo(sort)) {
                 if(canExempt(params[i]->getSort(), sort)){
-                    std::cerr << "Type mismatch in min, but now exempt for int/real"<<std::endl;
+                    // std::cerr << "Type mismatch in min, but now exempt for int/real"<<std::endl;
                 }
                 else{
                     err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in min", line_number);
