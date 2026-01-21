@@ -834,7 +834,20 @@ namespace SMTParser{
         else if(param->isFalse()){
             return mkTrue();
         }
-        else if(param->isArithComp() || param->isBVComp() || param->isStrComp() || param->isFPComp()){
+        else if(param->isArithComp() || param->isBVComp() || param->isStrComp()){
+            // negate a comparison atom
+
+            // IMPORTANT: For floating-point comparisons, we cannot convert to their "opposite" operators
+            // (e.g., fp.lt to fp.geq) because of NaN semantics.
+            // 
+            // Example: When x or y is NaN:
+            //   - fp.lt(x, y) returns false
+            //   - fp.geq(x, y) also returns false
+            //   - not fp.lt(x, y) returns true (because fp.lt returns false)
+            // 
+            // Therefore, not fp.lt is NOT equivalent to fp.geq when NaN is involved.
+            // The same applies to all fp comparison operators (fp.lt, fp.le, fp.gt, fp.ge, fp.eq).
+            // Return NT_UNKNOWN to indicate that negation cannot be simplified to another operator.
             return negateComp(param);
         }
         else{

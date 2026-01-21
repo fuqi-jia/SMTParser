@@ -26,6 +26,7 @@
  */
 
 #include "kind.h"
+#include <iostream>
 
 namespace SMTParser{
 
@@ -586,13 +587,20 @@ namespace SMTParser{
             case NODE_KIND::NT_BV_SGE:
                 return NODE_KIND::NT_BV_SLT;
             case NODE_KIND::NT_FP_LE:
+                // std::cerr << "Warning: getNegatedKind(fp.leq) returns fp.gt, but note that not fp.leq is NOT equivalent to fp.gt due to NaN semantics." << std::endl;
                 return NODE_KIND::NT_FP_GT;
             case NODE_KIND::NT_FP_LT:
+                // std::cerr << "Warning: getNegatedKind(fp.lt) returns fp.geq, but note that not fp.lt is NOT equivalent to fp.geq due to NaN semantics." << std::endl;
                 return NODE_KIND::NT_FP_GE;
             case NODE_KIND::NT_FP_GE:
+                // std::cerr << "Warning: getNegatedKind(fp.geq) returns fp.lt, but note that not fp.geq is NOT equivalent to fp.lt due to NaN semantics." << std::endl;
                 return NODE_KIND::NT_FP_LT;
             case NODE_KIND::NT_FP_GT:
+                // std::cerr << "Warning: getNegatedKind(fp.gt) returns fp.leq, but note that not fp.gt is NOT equivalent to fp.leq due to NaN semantics." << std::endl;
                 return NODE_KIND::NT_FP_LE;
+            case NODE_KIND::NT_FP_EQ:
+                // std::cerr << "Warning: getNegatedKind(fp.eq) - fp.eq cannot be negated to fp.ne (which doesn't exist in SMT-LIB) due to NaN semantics." << std::endl;
+                return NODE_KIND::NT_UNKNOWN;
             case NODE_KIND::NT_STR_LT:
                 return NODE_KIND::NT_STR_GE;
             case NODE_KIND::NT_STR_GT:
