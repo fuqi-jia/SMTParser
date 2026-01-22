@@ -69,7 +69,6 @@ namespace SMTParser {
             if(visited.find(expr) != visited.end()){
                 continue;
             }
-            visited.insert(expr);
             collectGroundAtoms(expr, atoms, visited);
         }
     }
