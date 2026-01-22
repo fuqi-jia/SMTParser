@@ -415,7 +415,7 @@ namespace SMTParser{
         bool isArithTerm() 			const { return (isArithOp() || isArithConv() || isRealNonlinearOp() || isTranscendentalOp() || 
                                                     (isVar() && (isVInt() || isVReal())) ||
                                                     (isConst() && (isCInt() || isCReal())) ||
-                                                    ((isIte() || isMax() || isMin() || isUFApplication()) && (sort->isInt() || sort->isReal()))); };
+                                                    ((isIte() || isMax() || isMin() || isUFApplication()) && (sort->isInt() || sort->isReal() || sort->isIntOrReal()))); };
         bool isArithComp() 			const { return ((isEq() && getChild(0)->isArithTerm())|| 
                                                     (isDistinct() && getChild(0)->isArithTerm()) || 
                                                     isLe() || isLt() || isGe() || isGt()); };
