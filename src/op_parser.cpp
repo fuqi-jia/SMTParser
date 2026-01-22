@@ -897,6 +897,19 @@ namespace SMTParser{
             }
         }
 
+        // Remove duplicate literals (keep only one copy of equivalent nodes)
+        if (new_params.size() > 1) {
+            std::unordered_set<std::shared_ptr<DAGNode>, NodeHash, NodeEqual> seen;
+            std::vector<std::shared_ptr<DAGNode>> deduplicated_params;
+            for (const auto& param : new_params) {
+                if (seen.find(param) == seen.end()) {
+                    seen.insert(param);
+                    deduplicated_params.emplace_back(param);
+                }
+            }
+            new_params = std::move(deduplicated_params);
+        }
+
         if (new_params.size() == 0) {
             // all true constant
             return mkTrue();
@@ -950,6 +963,19 @@ namespace SMTParser{
                 // insert uncertain param
                 new_params.emplace_back(params[i]);
             }
+        }
+
+        // Remove duplicate literals (keep only one copy of equivalent nodes)
+        if (new_params.size() > 1) {
+            std::unordered_set<std::shared_ptr<DAGNode>, NodeHash, NodeEqual> seen;
+            std::vector<std::shared_ptr<DAGNode>> deduplicated_params;
+            for (const auto& param : new_params) {
+                if (seen.find(param) == seen.end()) {
+                    seen.insert(param);
+                    deduplicated_params.emplace_back(param);
+                }
+            }
+            new_params = std::move(deduplicated_params);
         }
 
         if (new_params.size() == 0) {
