@@ -881,69 +881,12 @@ namespace SMTParser {
             cnf = toCNF(result);
         }
         
-        // if there are atoms to define, add them to the result
-        if(atom_map.size() != 0){
-            // new_children contains the atom definitions (new_var for each atom)
-            // we need to add the CNF clauses to new_children
-            if(cnf->isAnd()){
-                if(cnf->getChildrenSize() == 0){
-                    // empty CNF, just add atom definitions
-                    if(new_children.size() == 0){
-                        cnf = mkTrue();
-                    }
-                    else if(new_children.size() == 1){
-                        cnf = new_children[0];
-                    }
-                    else{
-                        cnf = mkAnd(new_children);
-                    }
-                }
-                else if(cnf->getChildrenSize() == 1){
-                    new_children.emplace_back(cnf->getChild(0));
-                    if(new_children.size() == 1){
-                        cnf = new_children[0];
-                    }
-                    else{
-                        cnf = mkAnd(new_children);
-                    }
-                }
-                else{
-                    // add all CNF clauses to new_children
-                    for(size_t i=0;i<cnf->getChildrenSize();i++){
-                        new_children.emplace_back(cnf->getChild(i));
-                    }
-                    cnf = mkAnd(new_children);
-                }
-                cnf_map[result] = cnf;
-            }
-            else{
-                // cnf is a single node
-                if(cnf->isTrue()){
-                    // if CNF is true, just return atom definitions
-                    if(new_children.size() == 0){
-                        cnf = mkTrue();
-                    }
-                    else if(new_children.size() == 1){
-                        cnf = new_children[0];
-                    }
-                    else{
-                        cnf = mkAnd(new_children);
-                    }
-                }
-                else if(cnf->isFalse()){
-                    return cnf;
-                }
-                else{
-                    new_children.emplace_back(cnf);
-                    if(new_children.size() == 1){
-                        cnf = new_children[0];
-                    }
-                    else{
-                        cnf = mkAnd(new_children);
-                    }
-                }
-            }
-        }
+        // Note: new_children contains the Tseitin variables for atoms, but these should NOT
+        // be added as independent clauses. The atom definitions are handled implicitly
+        // through the cnf_atom_map and cnf_bool_var_map mappings. The CNF formula already
+        // contains all necessary clauses after Tseitin transformation.
+        // So we don't need to add new_children to the CNF result.
+
         // add to cnf_map
         cnf_map[result] = cnf;
         return cnf;
@@ -1022,69 +965,11 @@ namespace SMTParser {
             }
         }
         
-        // if there are atoms to define, add them to the result
-        if(atom_map.size() != 0){
-            // new_children contains the atom definitions (new_var for each atom)
-            // we need to add the CNF clauses to new_children
-            if(cnf->isAnd()){
-                if(cnf->getChildrenSize() == 0){
-                    // empty CNF, just add atom definitions
-                    if(new_children.size() == 0){
-                        cnf = mkTrue();
-                    }
-                    else if(new_children.size() == 1){
-                        cnf = new_children[0];
-                    }
-                    else{
-                        cnf = mkAnd(new_children);
-                    }
-                }
-                else if(cnf->getChildrenSize() == 1){
-                    new_children.emplace_back(cnf->getChild(0));
-                    if(new_children.size() == 1){
-                        cnf = new_children[0];
-                    }
-                    else{
-                        cnf = mkAnd(new_children);
-                    }
-                }
-                else{
-                    // add all CNF clauses to new_children
-                    for(size_t i=0;i<cnf->getChildrenSize();i++){
-                        new_children.emplace_back(cnf->getChild(i));
-                    }
-                    cnf = mkAnd(new_children);
-                }
-            }
-            else{
-                // cnf is a single node
-                if(cnf->isTrue()){
-                    // if CNF is true, just return atom definitions
-                    if(new_children.size() == 0){
-                        cnf = mkTrue();
-                    }
-                    else if(new_children.size() == 1){
-                        cnf = new_children[0];
-                    }
-                    else{
-                        cnf = mkAnd(new_children);
-                    }
-                }
-                else if(cnf->isFalse()){
-                    // false remains false
-                    cnf = mkFalse();
-                }
-                else{
-                    new_children.emplace_back(cnf);
-                    if(new_children.size() == 1){
-                        cnf = new_children[0];
-                    }
-                    else{
-                        cnf = mkAnd(new_children);
-                    }
-                }
-            }
-        }
+        // Note: new_children contains the Tseitin variables for atoms, but these should NOT
+        // be added as independent clauses. The atom definitions are handled implicitly
+        // through the cnf_atom_map and cnf_bool_var_map mappings. The CNF formula already
+        // contains all necessary clauses after Tseitin transformation.
+        // So we don't need to add new_children to the CNF result.
         
         cnf_map[expr] = cnf;
         return cnf;
