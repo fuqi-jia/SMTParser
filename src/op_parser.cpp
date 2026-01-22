@@ -4775,4 +4775,24 @@ namespace SMTParser{
         
         return node_manager->createNode(sort, NODE_KIND::NT_ROOT_OF_WITH_INTERVAL, name, children);
     }
+
+    std::shared_ptr<DAGNode> Parser::mkRealAlgebraicNumber(std::shared_ptr<DAGNode> polynomial, std::shared_ptr<DAGNode> lower_bound, std::shared_ptr<DAGNode> upper_bound) {
+        if(polynomial->isErr()) return polynomial;
+        if(lower_bound->isErr()) return lower_bound;
+        if(upper_bound->isErr()) return upper_bound;
+        
+        // Create real-algebraic-number node with real sort
+        std::shared_ptr<Sort> sort = SortManager::REAL_SORT;
+        
+        // Build name string
+        std::string name = "real-algebraic-number(poly:" + toString(polynomial) + ",lb:" + toString(lower_bound) + ",ub:" + toString(upper_bound) + ")";
+        
+        // Create children vector: polynomial + bounds
+        std::vector<std::shared_ptr<DAGNode>> children;
+        children.push_back(polynomial);
+        children.push_back(lower_bound);
+        children.push_back(upper_bound);
+        
+        return node_manager->createNode(sort, NODE_KIND::NT_REAL_ALGEBRAIC_NUMBER, name, children);
+    }
 }

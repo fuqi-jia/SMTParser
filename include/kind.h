@@ -139,6 +139,7 @@ namespace SMTParser{
         // ROOT OBJECT
         NT_ROOT_OBJ,
         NT_ROOT_OF_WITH_INTERVAL,
+        NT_REAL_ALGEBRAIC_NUMBER,
         
         // NUM_KINDS
         NUM_KINDS

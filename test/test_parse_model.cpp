@@ -1324,5 +1324,41 @@ int main() {
     catch (const std::exception& e) {
         std::cout << "解析过程中出现异常: " << e.what() << std::endl;
     }
+
+    try {
+        // 解析模型5 - CVC5 real_algebraic_number 格式测试
+        std::string model_str5_cvc5 = R"(
+(model
+  (define-fun x () Real
+    (_ real_algebraic_number <(+ (* 1 (^ x 2)) (- 3)), ((/ 3 2), (/ 7 4))>))
+)";
+        
+        auto model = parser->parseModel(model_str5_cvc5);
+        
+        if (model) {
+            std::cout << "模型5（CVC5 real_algebraic_number）解析成功！" << std::endl;
+            std::cout << "模型5大小: " << model->size() << std::endl;
+            
+            // 打印模型内容
+            auto pairs = model->getPairs();
+            for (const auto& pair : pairs) {
+                std::cout << "变量: " << pair.first << " = " << parser->toString(pair.second) << std::endl;
+                
+                // 检查是否是 real_algebraic_number
+                if (pair.second->isCRealAlgebraicNumber()) {
+                    std::cout << "  -> 这是一个 real_algebraic_number 节点" << std::endl;
+                    std::cout << "  -> 多项式: " << parser->toString(pair.second->getChild(0)) << std::endl;
+                    std::cout << "  -> 下界: " << parser->toString(pair.second->getChild(1)) << std::endl;
+                    std::cout << "  -> 上界: " << parser->toString(pair.second->getChild(2)) << std::endl;
+                }
+            }
+        }
+        else {
+            std::cout << "模型5解析失败！" << std::endl;
+        }
+    }
+    catch (const std::exception& e) {
+        std::cout << "解析过程中出现异常: " << e.what() << std::endl;
+    }
     return 0;
 }

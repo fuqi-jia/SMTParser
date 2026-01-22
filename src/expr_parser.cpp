@@ -258,6 +258,75 @@ namespace SMTParser{
                             parseRpar();
                             frame.state = FrameState::Finish;
                         }
+                        // Handle real_algebraic_number: (_ real_algebraic_number <polynomial>, (lower_bound, upper_bound)>)
+                        // Format: (_ real_algebraic_number polynomial lower_bound upper_bound)
+                        // or: (_ real_algebraic_number <polynomial>, (lower_bound, upper_bound)>)
+                        else if(second == "real_algebraic_number"){
+                            // Enable placeholder variables for polynomial expressions
+                            bool old_allow_placeholder = allow_placeholder_vars;
+                            std::shared_ptr<Sort> old_placeholder_sort = placeholder_var_sort;
+                            allow_placeholder_vars = true;
+                            placeholder_var_sort = SortManager::REAL_SORT;
+                            
+                            // Check if we have angle brackets (CVC5 format)
+                            scanToNextSymbol();
+                            std::shared_ptr<DAGNode> polynomial;
+                            std::shared_ptr<DAGNode> lower_bound;
+                            std::shared_ptr<DAGNode> upper_bound;
+                            
+                            if(*bufptr == '<'){
+                                // CVC5 format: <polynomial>, (lower_bound, upper_bound)>
+                                bufptr++; // skip '<'
+                                scanToNextSymbol();
+                                
+                                // Parse polynomial (until we find ',')
+                                polynomial = parseExpr();
+                                
+                                // Skip comma and whitespace
+                                scanToNextSymbol();
+                                if(*bufptr == ','){
+                                    bufptr++;
+                                    scanToNextSymbol();
+                                }
+                                
+                                // Parse interval: (lower_bound, upper_bound)
+                                if(*bufptr == '('){
+                                    parseLpar();
+                                    lower_bound = parseExpr();
+                                    scanToNextSymbol();
+                                    if(*bufptr == ','){
+                                        bufptr++;
+                                        scanToNextSymbol();
+                                    }
+                                    upper_bound = parseExpr();
+                                    parseRpar();
+                                } else {
+                                    // Fallback: parse two separate expressions
+                                    lower_bound = parseExpr();
+                                    upper_bound = parseExpr();
+                                }
+                                
+                                // Skip '>'
+                                scanToNextSymbol();
+                                if(*bufptr == '>'){
+                                    bufptr++;
+                                }
+                            } else {
+                                // Simple format: polynomial lower_bound upper_bound
+                                polynomial = parseExpr();
+                                lower_bound = parseExpr();
+                                upper_bound = parseExpr();
+                            }
+                            
+                            // Restore original settings
+                            allow_placeholder_vars = old_allow_placeholder;
+                            placeholder_var_sort = old_placeholder_sort;
+                            
+                            // Create real-algebraic-number node
+                            frame.result = mkRealAlgebraicNumber(polynomial, lower_bound, upper_bound);
+                            parseRpar();
+                            frame.state = FrameState::Finish;
+                        }
                         else{
                             frame.second_symbol = second;
                             frame.state = FrameState::ProcessingParams;
@@ -369,7 +438,7 @@ namespace SMTParser{
                     bool old_allow_placeholder = allow_placeholder_vars;
                     std::shared_ptr<Sort> old_placeholder_sort = placeholder_var_sort;
                     const std::string& opName = (frame.headSymbol == "_") ? frame.second_symbol : frame.headSymbol;
-                    if(opName == "root-obj" || opName == "root-of-with-interval"){
+                    if(opName == "root-obj" || opName == "root-of-with-interval" || opName == "real_algebraic_number"){
                         allow_placeholder_vars = true;
                         placeholder_var_sort = SortManager::REAL_SORT;
                     }
@@ -453,7 +522,7 @@ namespace SMTParser{
                         frame.state = FrameState::Finish;
                         
                         // Restore placeholder settings
-                        if(opName == "root-obj" || opName == "root-of-with-interval"){
+                        if(opName == "root-obj" || opName == "root-of-with-interval" || opName == "real_algebraic_number"){
                             allow_placeholder_vars = old_allow_placeholder;
                             placeholder_var_sort = old_placeholder_sort;
                         }

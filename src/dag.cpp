@@ -760,6 +760,42 @@ namespace SMTParser{
                 break;
             }
 
+            case NODE_KIND::NT_REAL_ALGEBRAIC_NUMBER: {
+                // Format: (_ real_algebraic_number <polynomial>, (lower_bound, upper_bound)>)
+                out << "(_ real_algebraic_number <";
+                
+                // Stack order (LIFO - Last In First Out):
+                // We want output: (_ real_algebraic_number <polynomial>, (lower_bound, upper_bound)>)
+                // So we push in reverse order:
+                
+                // 1. Push closing '>' for angle brackets
+                work_stack.emplace_back(">", 4);  // '>'
+                
+                // 2. Push closing parenthesis for interval
+                work_stack.emplace_back(nullptr, 2);  // )
+                
+                // 3. Push upper bound
+                work_stack.emplace_back(node->getChild(2).get(), 0);
+                work_stack.emplace_back(nullptr, 1);  // space
+                work_stack.emplace_back(",", 4);  // ','
+                
+                // 4. Push lower bound
+                work_stack.emplace_back(node->getChild(1).get(), 0);
+                work_stack.emplace_back(nullptr, 1);  // space
+                
+                // 5. Push opening parenthesis for interval
+                work_stack.emplace_back("(", 4);  // '('
+                
+                // 6. Push comma and space
+                work_stack.emplace_back(nullptr, 1);  // space
+                work_stack.emplace_back(",", 4);  // ','
+                
+                // 7. Push polynomial
+                work_stack.emplace_back(node->getChild(0).get(), 0);
+                
+                break;
+            }
+
             // Array operations
             case NODE_KIND::NT_SELECT: {
                 // select(array, index) -> (select array index)
