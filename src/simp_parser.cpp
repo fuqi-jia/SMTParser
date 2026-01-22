@@ -1297,7 +1297,7 @@ namespace SMTParser{
                 if(l->isFalse() || r->isFalse()){
                     return mkFalse();
                 }
-                else if(l->isTrue() || r->isTrue()){
+                else if(l->isTrue() && r->isTrue()){
                     return mkTrue();
                 }
                 return mkUnknown();
