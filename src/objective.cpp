@@ -304,4 +304,22 @@ namespace SMTParser{
         }
         return OPT_KIND::OPT_NULL;
     }
+
+    
+    COMP_KIND getCompareOperatorForObjectiveTerm(const std::shared_ptr<DAGNode>& obj_term, OPT_KIND opt_type){
+        condAssert(opt_type == OPT_KIND::OPT_MINIMIZE || opt_type == OPT_KIND::OPT_MAXIMIZE, 
+                   "getCompareOperatorForObjectiveTerm: opt_type is not minimize or maximize");
+        
+        if(!obj_term || !obj_term->getSort()){
+            return opt_type == OPT_KIND::OPT_MINIMIZE ? COMP_KIND::COMP_LT : COMP_KIND::COMP_GT;
+        }
+        
+        if(obj_term->getSort()->isFp()){
+            return opt_type == OPT_KIND::OPT_MINIMIZE ? COMP_KIND::COMP_FP_LT : COMP_KIND::COMP_FP_GT;
+        } else if(obj_term->getSort()->isBv()){
+            return opt_type == OPT_KIND::OPT_MINIMIZE ? COMP_KIND::COMP_BV_ULT : COMP_KIND::COMP_BV_UGT;
+        } else {
+            return opt_type == OPT_KIND::OPT_MINIMIZE ? COMP_KIND::COMP_LT : COMP_KIND::COMP_GT;
+        }
+    }
 }

@@ -52,6 +52,9 @@ namespace SMTParser{
     NODE_KIND getCompareNodeKind(COMP_KIND comp);
     NODE_KIND getEqNodeKind(COMP_KIND comp); // return the NodeKind of the equality node in the same theory
 
+    
+    COMP_KIND getCompareOperatorForObjectiveTerm(const std::shared_ptr<DAGNode>& obj_term, OPT_KIND opt_type = OPT_KIND::OPT_MINIMIZE);
+
     // Composite Pattern
     class MetaObjective{
     protected:
