@@ -699,25 +699,30 @@ namespace SMTParser{
         Integer m = a % b;
         if (m < 0) m += (b > 0 ? b : -b);
         return m;
-    }
-    std::string BitVectorUtils::bvSdiv(const std::string& bv1, const std::string& bv2){
+    }std::string BitVectorUtils::bvSdiv(const std::string& bv1,
+        const std::string& bv2){
         size_t n = bv1.size() - 2;
         Integer a = bvToInt(bv1);
         Integer b = bvToInt(bv2);
 
-        // divisor = 0 → result = -1 (all ones)
-        if (b == 0)
-        return intToBv(Integer(-1), n);
+        // divisor = 0 → piecewise by sign of dividend
+        if (b == 0) {
+            if (a >= 0)
+                return intToBv(a, n);
+            else
+                return intToBv(Integer(1), n);
+        }
 
         // special overflow: min / -1 = min
         Integer minVal = -(Integer(1) << (n - 1));
         if (a == minVal && b == -1)
-        return intToBv(minVal, n);
+            return intToBv(minVal, n);
 
         // signed division truncate-toward-zero
         Integer q = truncDiv(a, b);
         return intToBv(q, n);
     }
+
     std::string BitVectorUtils::bvSrem(const std::string& bv1, const std::string& bv2){
         size_t n = bv1.size() - 2;
         Integer a = bvToInt(bv1);
