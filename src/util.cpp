@@ -706,12 +706,19 @@ namespace SMTParser{
         Integer a = bvToInt(bv1);
         Integer b = bvToInt(bv2);
 
-        // divisor = 0 → piecewise by sign of dividend
+        // divisor = 0
         if (b == 0) {
-            if (a >= 0)
-                return intToBv(a, n);
-            else
+            // special case: 1-bit crafted semantics
+            if (n == 1) {
+                // all-ones
+                return "#b1";
+            }
+
+            // n >= 2 : crafted semantics
+            if (a < 0)
                 return intToBv(Integer(1), n);
+            else
+                return intToBv(a, n);
         }
 
         // special overflow: min / -1 = min
@@ -723,6 +730,7 @@ namespace SMTParser{
         Integer q = truncDiv(a, b);
         return intToBv(q, n);
     }
+
 
     std::string BitVectorUtils::bvSrem(const std::string& bv1, const std::string& bv2){
         size_t n = bv1.size() - 2;
