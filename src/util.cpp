@@ -699,7 +699,8 @@ namespace SMTParser{
         Integer m = a % b;
         if (m < 0) m += (b > 0 ? b : -b);
         return m;
-    }std::string BitVectorUtils::bvSdiv(const std::string& bv1,
+    }
+    std::string BitVectorUtils::bvSdiv(const std::string& bv1,
         const std::string& bv2){
         size_t n = bv1.size() - 2;
         Integer a = bvToInt(bv1);
@@ -736,28 +737,33 @@ namespace SMTParser{
         return intToBv(r, n);
     }
 
-    std::string BitVectorUtils::bvSmod(const std::string& bv1, const std::string& bv2){
+    std::string BitVectorUtils::bvSmod(const std::string& bv1,
+        const std::string& bv2){
         size_t n = bv1.size() - 2;
         Integer a = bvToInt(bv1);
         Integer b = bvToInt(bv2);
 
         if (b == 0)
-        return bv1;
+            return bv1;
 
-        // mathematical modulo (never negative)
-        Integer m = mathMod(a, (b > 0 ? b : -b));
+        Integer absb = (b > 0 ? b : -b);
+        Integer m = mathMod(a, absb);   // 0 <= m < |b|
 
         if (m == 0)
-        return intToBv(Integer(0), n);
+            return intToBv(Integer(0), n);
 
-        // sign(a) == sign(b)
+        // same sign
         if ((a > 0 && b > 0) || (a < 0 && b < 0))
-        return intToBv(m, n);
+            return intToBv(m, n);
 
-        // opposite signs
-        Integer res = (b > 0 ? b : -b) - m;
-        return intToBv(res, n);
+        // opposite sign → sign follows b
+        Integer r = absb - m;
+        if (b < 0)
+            r = -r;
+
+        return intToBv(r, n);
     }
+
 
     std::string BitVectorUtils::bvShl(const std::string& bv, const std::string& n){
         // left shift
