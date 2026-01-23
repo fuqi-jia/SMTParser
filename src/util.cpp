@@ -407,23 +407,28 @@ namespace SMTParser{
     }
 
     std::string BitVectorUtils::bvNeg(const std::string& bv){
-        condAssert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvNeg: invalid bitvector");
-        // 2's complement
-        std::string res = "";
+        condAssert(bv.starts_with("#b"), "invalid bitvector");
+    
+        std::string res = bv;
+    
+        // 1. bitwise NOT
+        for (size_t i = 2; i < res.size(); ++i) {
+            res[i] = (res[i] == '0') ? '1' : '0';
+        }
+    
+        // 2. add 1
         bool carry = true;
-        for(size_t i = bv.size() - 1; i >= 2; i--){
-            if(bv[i] == '0'){
-                res += carry ? '1' : '0';
+        for (size_t i = res.size(); i-- > 2 && carry; ) {
+            if (res[i] == '0') {
+                res[i] = '1';
                 carry = false;
-            }
-            else{
-                res += carry ? '0' : '1';
+            } else {
+                res[i] = '0';
             }
         }
-        res = std::string(res.rbegin(), res.rend());
-        res = "#b" + res;
+    
         return res;
-    }
+    }    
 
     std::string BitVectorUtils::bvAdd(const std::string& bv1, const std::string& bv2){
         condAssert(bv1[0] == '#' && bv1[1] == 'b', "BitVectorUtils::bvAdd: invalid bitvector");
