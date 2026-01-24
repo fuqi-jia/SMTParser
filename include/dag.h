@@ -433,6 +433,7 @@ namespace SMTParser{
         bool isEven() 				const { return (kind == NODE_KIND::NT_IS_EVEN); };
         bool isOdd() 				const { return (kind == NODE_KIND::NT_IS_ODD); };
         bool isArithProp() 			const { return (isInt() || isDivisible() || isPrime() || isEven() || isOdd()); };
+        bool isArithAtom() 			const { return isArithComp() || isArithProp(); }
 
         // check arithmetic constants
         bool isPi() 				const { return (kind == NODE_KIND::NT_CONST_PI); };
@@ -508,14 +509,17 @@ namespace SMTParser{
         bool isBVTerm()    		    const { return (isBVOp() ||
                                                     (isVar() && isVBV()) ||
                                                     (isConst() && isCBV()) ||
-                                                    (isIte() && getChild(1)->isBVTerm() && getChild(2)->isBVTerm()) ||
-                                                    (isMax() && getChild(0)->isBVTerm() && getChild(1)->isBVTerm()) ||
-                                                    (isMin() && getChild(0)->isBVTerm() && getChild(1)->isBVTerm()) ||
+                                                    (isIte() && sort->isBv()) ||
+                                                    (isMax() && sort->isBv()) ||
+                                                    (isMin() && sort->isBv()) ||
                                                     (isUFApplication() && sort->isBv())); };
-        bool isBVCompOp()     		const { return ((isEq() && getChild(0)->isBVTerm()) ||
-                                                    (isDistinct() && getChild(0)->isBVTerm()) ||
-                                                    isBVUlt() || isBVUle() || isBVUgt() || isBVUge() || isBVSlt() || isBVSle() || isBVSgt() || isBVSge()); };
-        bool isBvAtom()             const { return isBVCompOp(); }; 
+        bool isBVCompOp()     		const {
+            bool eqOrDistinctBv = (getChildrenSize() >= 1) &&
+                ((isEq() && getChild(0)->isBVTerm()) || (isDistinct() && getChild(0)->isBVTerm()));
+            return eqOrDistinctBv || isBVUlt() || isBVUle() || isBVUgt() || isBVUge() ||
+                   isBVSlt() || isBVSle() || isBVSgt() || isBVSge();
+        }
+        bool isBVAtom()              const { return isBVCompOp(); } 
 
         // check bitvector conversion
         bool isBVToNat() 			const { return (kind == NODE_KIND::NT_BV_TO_NAT); };
@@ -546,7 +550,11 @@ namespace SMTParser{
         bool isFPGe() 				const { return (kind == NODE_KIND::NT_FP_GE); };
         bool isFPGt() 				const { return (kind == NODE_KIND::NT_FP_GT); };
         bool isFPEq() 				const { return (kind == NODE_KIND::NT_FP_EQ); };
-        bool isFPComp() 			const { return (isFPLe() || isFPLt() || isFPGe() || isFPGt() || isFPEq()); };
+        bool isFPComp() 				const {
+            bool eqOrDistinctFp = (getChildrenSize() >= 1) &&
+                ((isEq() && getChild(0)->isFPTerm()) || (isDistinct() && getChild(0)->isFPTerm()));
+            return eqOrDistinctFp || isFPLe() || isFPLt() || isFPGe() || isFPGt() || isFPEq();
+        }
 
         // check floating point conversion
         bool isFPToUBV() 			const { return (kind == NODE_KIND::NT_FP_TO_UBV); };
@@ -557,6 +565,14 @@ namespace SMTParser{
 
         bool isFPConv() 			const { return (isFPToUBV() || isFPToSBV() || isFPToReal() || isToFP() || isToFPUnsigned()); };
 
+        bool isFPTerm() 				const {
+            return isFPOp() || (isFPConv() && sort->isFp()) ||
+                   (isVar() && isVFP()) || (isConst() && isCFP()) ||
+                   (isIte() && sort->isFp()) ||
+                   (isMax() && sort->isFp()) ||
+                   (isMin() && sort->isFp());
+        }
+
         // check floating point properties
         bool isFPIsNormal() 		const { return (kind == NODE_KIND::NT_FP_IS_NORMAL); };
         bool isFPIsSubnormal() 		const { return (kind == NODE_KIND::NT_FP_IS_SUBNORMAL); };
@@ -565,7 +581,8 @@ namespace SMTParser{
         bool isFPIsNaN() 			const { return (kind == NODE_KIND::NT_FP_IS_NAN); };
         bool isFPIsNeg() 			const { return (kind == NODE_KIND::NT_FP_IS_NEG); };
         bool isFPIsPos() 			const { return (kind == NODE_KIND::NT_FP_IS_POS); };
-        bool isFPProp() 			const { return isFPIsNormal() || isFPIsSubnormal() || isFPIsZero() || isFPIsInf() || isFPIsNaN() || isFPIsNeg() || isFPIsPos(); }
+        bool isFPProp() 				const { return isFPIsNormal() || isFPIsSubnormal() || isFPIsZero() || isFPIsInf() || isFPIsNaN() || isFPIsNeg() || isFPIsPos(); }
+        bool isFPAtom() 				const { return isFPComp() || isFPProp(); }
 
         // check array
         bool isSelect() 			const { return (kind == NODE_KIND::NT_SELECT); };
@@ -607,7 +624,8 @@ namespace SMTParser{
         bool isStrInReg() 			const { return (kind == NODE_KIND::NT_STR_IN_REG); };
         bool isStrContains() 		const { return (kind == NODE_KIND::NT_STR_CONTAINS); };
         bool isStrIsDigit() 		const { return (kind == NODE_KIND::NT_STR_IS_DIGIT); };
-        bool isStrProp() 			const { return (isStrInReg() || isStrContains() || isStrIsDigit()); };
+        bool isStrProp() 				const { return (isStrInReg() || isStrContains() || isStrIsDigit()); };
+        bool isStrAtom() 				const { return isStrComp() || isStrProp(); }
 
         // check strings conversion
         bool isStrFromInt() 		const { return (kind == NODE_KIND::NT_STR_FROM_INT); };
@@ -633,11 +651,10 @@ namespace SMTParser{
         bool isRegLoop() 			const { return (kind == NODE_KIND::NT_REG_LOOP); };
         bool isRegComplement() 		const { return (kind == NODE_KIND::NT_REG_COMPLEMENT); };
 
-        bool isAtom()				const { return (isArithComp() || isArithProp() ||
-                                                    isBVCompOp() || 
-                                                    isFPComp() || isFPProp() ||
-                                                    isStrComp() || isStrProp() ||
-                                                    (isUFApplication() && sort->isBool())); };
+        bool isAtom()				const {
+            return isArithAtom() || isBVAtom() || isFPAtom() || isStrAtom() ||
+                   (isUFApplication() && sort->isBool());
+        }
         // check let
         bool isLet()				const { return kind == NODE_KIND::NT_LET; };
         bool isLetChain()			const { return kind == NODE_KIND::NT_LET_CHAIN; };
