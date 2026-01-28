@@ -1154,20 +1154,50 @@ namespace SMTParser{
                 condAssert(oper_params.size() == 2, "Invalid number of parameters for fp.max");
                 return mkFpMax(oper_params);
             case NODE_KIND::NT_FP_LE:
-                condAssert(oper_params.size() == 2, "Invalid number of parameters for fp.leq");
-                return mkFpLe(oper_params[0], oper_params[1]);
+                condAssert(oper_params.size() >= 2, "Invalid number of parameters for fp.leq (chainable, at least 2)");
+                if (oper_params.size() == 2) return mkFpLe(oper_params[0], oper_params[1]);
+                else {
+                    std::vector<std::shared_ptr<DAGNode>> chain;
+                    for (size_t i = 0; i + 1 < oper_params.size(); ++i)
+                        chain.push_back(mkFpLe(oper_params[i], oper_params[i + 1]));
+                    return mkAnd(chain);
+                }
             case NODE_KIND::NT_FP_LT:
-                condAssert(oper_params.size() == 2, "Invalid number of parameters for fp.lt");
-                return mkFpLt(oper_params[0], oper_params[1]);
+                condAssert(oper_params.size() >= 2, "Invalid number of parameters for fp.lt (chainable, at least 2)");
+                if (oper_params.size() == 2) return mkFpLt(oper_params[0], oper_params[1]);
+                else {
+                    std::vector<std::shared_ptr<DAGNode>> chain;
+                    for (size_t i = 0; i + 1 < oper_params.size(); ++i)
+                        chain.push_back(mkFpLt(oper_params[i], oper_params[i + 1]));
+                    return mkAnd(chain);
+                }
             case NODE_KIND::NT_FP_GE:
-                condAssert(oper_params.size() == 2, "Invalid number of parameters for fp.geq");
-                return mkFpGe(oper_params[0], oper_params[1]);
+                condAssert(oper_params.size() >= 2, "Invalid number of parameters for fp.geq (chainable, at least 2)");
+                if (oper_params.size() == 2) return mkFpGe(oper_params[0], oper_params[1]);
+                else {
+                    std::vector<std::shared_ptr<DAGNode>> chain;
+                    for (size_t i = 0; i + 1 < oper_params.size(); ++i)
+                        chain.push_back(mkFpGe(oper_params[i], oper_params[i + 1]));
+                    return mkAnd(chain);
+                }
             case NODE_KIND::NT_FP_GT:
-                condAssert(oper_params.size() == 2, "Invalid number of parameters for fp.gt");
-                return mkFpGt(oper_params[0], oper_params[1]);
+                condAssert(oper_params.size() >= 2, "Invalid number of parameters for fp.gt (chainable, at least 2)");
+                if (oper_params.size() == 2) return mkFpGt(oper_params[0], oper_params[1]);
+                else {
+                    std::vector<std::shared_ptr<DAGNode>> chain;
+                    for (size_t i = 0; i + 1 < oper_params.size(); ++i)
+                        chain.push_back(mkFpGt(oper_params[i], oper_params[i + 1]));
+                    return mkAnd(chain);
+                }
             case NODE_KIND::NT_FP_EQ:
-                condAssert(oper_params.size() == 2, "Invalid number of parameters for fp.eq");
-                return mkFpEq(oper_params[0], oper_params[1]);
+                condAssert(oper_params.size() >= 2, "Invalid number of parameters for fp.eq (chainable, at least 2)");
+                if (oper_params.size() == 2) return mkFpEq(oper_params[0], oper_params[1]);
+                else {
+                    std::vector<std::shared_ptr<DAGNode>> chain;
+                    for (size_t i = 0; i + 1 < oper_params.size(); ++i)
+                        chain.push_back(mkFpEq(oper_params[i], oper_params[i + 1]));
+                    return mkAnd(chain);
+                }
             case NODE_KIND::NT_FP_TO_UBV:
                 condAssert(func_args.size() == 1 && oper_params.size() == 2, "Invalid number of parameters for fp.to_ubv");
                 return mkFpToUbv(oper_params[0], oper_params[1], func_args[0]);
