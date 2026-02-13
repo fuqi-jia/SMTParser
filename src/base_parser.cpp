@@ -2834,21 +2834,21 @@ namespace SMTParser{
 		for(auto& var : vars){
 			ss << "(declare-fun " << var->getName() << " () " << var->getSort()->toString() << ")" << std::endl;
 		}
-	std::vector<std::shared_ptr<DAGNode>> functions = getFunctions();
-	for(auto& func : functions){
-		if(func->isFuncDec()){
-			// NT_FUNC_DEC: Uninterpreted function declaration (declare-fun)
-			ss << dumpFuncDec(func) << std::endl;
+		std::vector<std::shared_ptr<DAGNode>> functions = getFunctions();
+		for(auto& func : functions){
+			if(func->isFuncDec()){
+				// NT_FUNC_DEC: Uninterpreted function declaration (declare-fun)
+				ss << dumpFuncDec(func) << std::endl;
+			}
+			else if(func->isFuncRec()){
+				// NT_FUNC_REC: Recursive function definition (define-fun-rec)
+				ss << dumpFuncRec(func) << std::endl;
+			}
+			else{
+				// NT_FUNC_DEF: Regular function definition (define-fun)
+				ss << dumpFuncDef(func) << std::endl;
+			}
 		}
-		else if(func->isFuncRec()){
-			// NT_FUNC_REC: Recursive function definition (define-fun-rec)
-			ss << dumpFuncRec(func) << std::endl;
-		}
-		else{
-			// NT_FUNC_DEF: Regular function definition (define-fun)
-			ss << dumpFuncDef(func) << std::endl;
-		}
-	}
 		// constraints
 		for(auto& constraint : assertions){
 			ss << "(assert " << dumpSMTLIB2(constraint) << ")" << std::endl;

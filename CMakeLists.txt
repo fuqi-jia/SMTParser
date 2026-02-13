@@ -19,6 +19,7 @@ endif()
 option(BUILD_SHARED_LIBS "Build shared libraries (.so/.dll)" OFF)
 option(BUILD_BOTH_LIBS "Build both static and shared libraries" ON)
 option(BUILD_TESTS "Build the tests" OFF)
+option(BUILD_NL2SMT "Build NL2SMT frontend into smtparser" OFF)
 option(ENABLE_DEBUG_SYMBOLS "Enable debug symbols for GDB support" OFF)
 option(ENABLE_TIMING "Enable timing profiler" OFF)
 
@@ -55,7 +56,7 @@ if(NOT MPFR_FOUND)
     endif()
 endif()
 
-# collect all source files, excluding test directory
+# collect all source files
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 
 # collect all header files
@@ -75,7 +76,7 @@ if(BUILD_BOTH_LIBS)
     endif()
     
     # set static library include directories
-    target_include_directories(smtparser_static PUBLIC 
+    target_include_directories(smtparser_static PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${GMP_INCLUDE_DIRS}
         ${MPFR_INCLUDE_DIRS}
@@ -100,7 +101,7 @@ if(BUILD_BOTH_LIBS)
     endif()
     
     # set shared library include directories
-    target_include_directories(smtparser_shared PUBLIC 
+    target_include_directories(smtparser_shared PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${GMP_INCLUDE_DIRS}
         ${MPFR_INCLUDE_DIRS}
@@ -129,8 +130,8 @@ else()
         target_compile_options(smtparser PRIVATE -g -O0)
     endif()
     
-    # set library include directories
-    target_include_directories(smtparser PUBLIC 
+    # set library include directories (single lib branch)
+    target_include_directories(smtparser PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${GMP_INCLUDE_DIRS}
         ${MPFR_INCLUDE_DIRS}
@@ -152,6 +153,47 @@ endif()
 
 # install header files
 install(DIRECTORY include/ DESTINATION include/smtparser)
+
+# smtparser: unified CLI (parser / solver / nl when BUILD_NL2SMT)
+set(APPS_INCLUDES
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/apps
+    ${GMP_INCLUDE_DIRS}
+    ${MPFR_INCLUDE_DIRS}
+)
+set(SMTPARSER_EXE_SOURCES
+    apps/main.cpp
+    apps/config/config_loader.cpp
+    apps/parser/run_parser.cpp
+    apps/solver/run_solver.cpp
+)
+if(BUILD_NL2SMT)
+    list(APPEND SMTPARSER_EXE_SOURCES
+        apps/nl2smt/llm_caller.cpp
+        apps/nl2smt/nl2smt.cpp
+    )
+endif()
+add_executable(smtparser_exe ${SMTPARSER_EXE_SOURCES})
+set_target_properties(smtparser_exe PROPERTIES OUTPUT_NAME smtparser)
+target_include_directories(smtparser_exe PRIVATE ${APPS_INCLUDES})
+if(BUILD_NL2SMT)
+    target_compile_definitions(smtparser_exe PRIVATE BUILD_NL2SMT)
+endif()
+target_link_libraries(smtparser_exe PRIVATE smtparser ${GMP_LIBRARIES} ${MPFR_LIBRARIES})
+install(TARGETS smtparser_exe RUNTIME DESTINATION bin)
+
+# NL2SMT demo and test (only when BUILD_NL2SMT)
+if(BUILD_NL2SMT)
+    set(NL2SMT_SOURCES apps/nl2smt/llm_caller.cpp apps/nl2smt/nl2smt.cpp)
+    add_executable(demo_nl2smt apps/nl2smt/demo_nl2smt.cpp ${NL2SMT_SOURCES})
+    target_include_directories(demo_nl2smt PRIVATE ${APPS_INCLUDES})
+    target_link_libraries(demo_nl2smt PRIVATE smtparser ${GMP_LIBRARIES} ${MPFR_LIBRARIES})
+
+    add_executable(test_nl2smt apps/nl2smt/test_nl2smt.cpp ${NL2SMT_SOURCES})
+    target_include_directories(test_nl2smt PRIVATE ${APPS_INCLUDES})
+    target_compile_definitions(test_nl2smt PRIVATE "NL2SMT_MOCK_SCRIPT_PATH=\"${CMAKE_CURRENT_SOURCE_DIR}/apps/nl2smt/mock_llm.sh\"")
+    target_link_libraries(test_nl2smt PRIVATE smtparser ${GMP_LIBRARIES} ${MPFR_LIBRARIES})
+endif()
 
 # if needed, add test subdirectory
 if(BUILD_TESTS)

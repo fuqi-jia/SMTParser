@@ -60,7 +60,7 @@ foreach(test_file ${TEST_SOURCES})
     endif()
     
     # Include parent project's include directories
-    target_include_directories(${test_name} PRIVATE 
+    target_include_directories(${test_name} PRIVATE
         ${CMAKE_SOURCE_DIR}/include
         ${GMP_INCLUDE_DIRS}
         ${MPFR_INCLUDE_DIRS}

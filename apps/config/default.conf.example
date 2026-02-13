@@ -1,0 +1,21 @@
+# Unified config: parser + apps (nl2smt, solver). Use: smtparser --config PATH ...
+# Sections: [parser] (options.h), [nl2smt] (env names), [solver]. Lines without section = parser.
+
+[parser]
+logic=QF_LIA
+# keep_let=true
+# keep_division=true
+# precision=128
+# float_evaluate=true
+# expand_functions=true
+# expand_recursive_functions=false
+
+[nl2smt]
+# Keys = env var names (overridden by real env). Optional.
+# NL2SMT_LLM_SCRIPT=/path/to/llm_call.py
+# NL2SMT_LLM_CMD=sh /path/to/mock_llm.sh
+# NL2SMT_MODEL=gpt-4o-mini
+# NL2SMT_PROMPT_FILE=/path/to/prompt.txt
+
+[solver]
+# path=/usr/bin/z3
