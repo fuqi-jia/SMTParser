@@ -28,7 +28,16 @@ static void usage(const char* prog) {
               << "  parse [options] <file.smt2>     Parse SMT file and print statistics.\n"
               << "  solve [options] [file.smt2]     Run external solver on file (requires solver path).\n"
 #if defined(BUILD_NL2SMT)
-              << "  --nl <file|string>               Natural language → SMT-LIB2 (requires BUILD_NL2SMT).\n"
+              << "  --nl <file|string>               Natural language → SMT-LIB2 (Tree-Plan→Emit→Repair).\n"
+              << "  --nl-plan-only                   Only output JSON plan (no emit/parse).\n"
+              << "  --nl-no-repair                   Do not run repair loop on parse failure.\n"
+              << "  --nl-max-repair=N                Max repair attempts (default: 3).\n"
+              << "  --nl-no-typecheck                Disable plan arity/sort checks (default: on).\n"
+              << "  --nl-artifact-dir=DIR            Write nl.txt, plan.json, emit.smt2, repair_*.smt2 for debugging.\n"
+              << "  --nl-keep-tmp                    Keep temporary .smt2 files.\n"
+              << "  --nl-roundtrip-check             Verify parse(dump(parse(emit(plan)))) succeeds.\n"
+              << "  --nl-fallback-cmd                On SCRIPT failure, fall back to CMD (default: no).\n"
+              << "  --quiet                          Suppress NL2SMT summary (assertions/objectives/repair count).\n"
 #endif
               << "  [options] <file.smt2>           Default: same as parse.\n\n";
 
@@ -55,7 +64,8 @@ static void usage(const char* prog) {
               << "    nl2smt.OPENAI_API_KEY            API key for OpenAI-compatible service.\n"
               << "    nl2smt.OPENAI_API_BASE           Optional API base URL.\n"
               << "    nl2smt.NL2SMT_MODEL              Model name (default: gpt-4o-mini).\n"
-              << "    nl2smt.NL2SMT_PROMPT_FILE        Optional path to system prompt file.\n\n";
+              << "    nl2smt.NL2SMT_PROMPT_FILE        Optional path to system prompt file (legacy).\n"
+              << "    nl2smt.NL2SMT_PROMPT_PLAN/EMIT/REPAIR  Three-phase prompt files.\n\n";
 
     std::cerr << "  [solver]  — solver mode\n"
               << "    solver.path                       Path to SMT solver executable (e.g. /usr/bin/z3).\n\n";
@@ -75,6 +85,17 @@ int main(int argc, char* argv[]) {
     std::string smtFile;
     std::string nlInput;
     bool hasNl = false;
+#if defined(BUILD_NL2SMT)
+    bool nlPlanOnly = false;
+    bool nlNoRepair = false;
+    int nlMaxRepair = 3;
+    bool nlNoTypecheck = false;
+    std::string nlArtifactDir;
+    bool nlKeepTmp = false;
+    bool nlRoundtripCheck = false;
+    bool nlFallbackCmd = false;
+    bool nlQuiet = false;
+#endif
 
     for (int i = 1; i < argc; ++i) {
         std::string a = argv[i];
@@ -93,6 +114,21 @@ int main(int argc, char* argv[]) {
             }
             continue;
         }
+#if defined(BUILD_NL2SMT)
+        if (a == "--nl-plan-only") { nlPlanOnly = true; continue; }
+        if (a == "--nl-no-repair") { nlNoRepair = true; continue; }
+        if (a.compare(0, 15, "--nl-max-repair=") == 0) {
+            nlMaxRepair = std::atoi(a.c_str() + 15);
+            if (nlMaxRepair < 0) nlMaxRepair = 0;
+            continue;
+        }
+        if (a == "--nl-no-typecheck") { nlNoTypecheck = true; continue; }
+        if (a.compare(0, 19, "--nl-artifact-dir=") == 0) { nlArtifactDir = a.substr(19); continue; }
+        if (a == "--nl-keep-tmp") { nlKeepTmp = true; continue; }
+        if (a == "--nl-roundtrip-check") { nlRoundtripCheck = true; continue; }
+        if (a == "--nl-fallback-cmd") { nlFallbackCmd = true; continue; }
+        if (a == "--quiet") { nlQuiet = true; continue; }
+#endif
         if (a == "--logic" || a == "--option" || (a.size() > 1 && a[0] == '-')) continue;
         if (a == "parse" || a == "solve") {
             subcommand = a;
@@ -132,6 +168,15 @@ int main(int argc, char* argv[]) {
         if (pathToRun.empty() && hasNl && !nlInput.empty()) {
 #if defined(BUILD_NL2SMT)
             SMTParser::NL2SMT::NL2SMTCompiler compiler(parser);
+            compiler.options().plan_only = nlPlanOnly;
+            compiler.options().no_repair = nlNoRepair;
+            compiler.options().max_repair = nlMaxRepair;
+            compiler.options().no_typecheck = nlNoTypecheck;
+            compiler.options().artifact_dir = nlArtifactDir;
+            compiler.options().keep_tmp = nlKeepTmp;
+            compiler.options().roundtrip_check = nlRoundtripCheck;
+            compiler.options().fallback_cmd = nlFallbackCmd;
+            compiler.options().quiet = nlQuiet;
             if (!compiler.compile(nlInput)) {
                 std::cerr << "NL2SMT error: " << compiler.report() << std::endl;
                 return 1;
@@ -174,11 +219,32 @@ int main(int argc, char* argv[]) {
             return 1;
         }
         SMTParser::NL2SMT::NL2SMTCompiler compiler(parser);
+        compiler.options().plan_only = nlPlanOnly;
+        compiler.options().no_repair = nlNoRepair;
+        compiler.options().max_repair = nlMaxRepair;
+        compiler.options().no_typecheck = nlNoTypecheck;
+        compiler.options().artifact_dir = nlArtifactDir;
+        compiler.options().keep_tmp = nlKeepTmp;
+        compiler.options().roundtrip_check = nlRoundtripCheck;
+        compiler.options().fallback_cmd = nlFallbackCmd;
+        compiler.options().quiet = nlQuiet;
         if (!compiler.compile(nlInput)) {
             std::cerr << "NL2SMT error: " << compiler.report() << std::endl;
             return 1;
         }
-        std::cout << parser->dumpSMT2() << std::endl;
+        if (nlPlanOnly) {
+            std::cout << compiler.report() << std::endl;
+        } else {
+            if (!nlQuiet) {
+                size_t nAst = parser->getAssertions().size();
+                size_t nObj = parser->getObjectives().size();
+                int repairs = compiler.lastRepairCount() >= 0 ? compiler.lastRepairCount() : 0;
+                std::cerr << "NL2SMT: assertions=" << nAst << " objectives=" << nObj << " repair_rounds=" << repairs;
+                if (!nlArtifactDir.empty()) std::cerr << " artifacts=" << nlArtifactDir;
+                std::cerr << std::endl;
+            }
+            std::cout << parser->dumpSMT2() << std::endl;
+        }
         return 0;
 #else
         std::cerr << "Error: --nl requires BUILD_NL2SMT.\n";

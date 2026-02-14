@@ -11,11 +11,19 @@ logic=QF_LIA
 # expand_recursive_functions=false
 
 [nl2smt]
-# Keys = env var names (overridden by real env). Optional.
-# NL2SMT_LLM_SCRIPT=/path/to/llm_call.py
-# NL2SMT_LLM_CMD=sh /path/to/mock_llm.sh
+# Keys = env var names (overridden by real env). Prompt paths are best set here for reproducibility.
+# --- LLM ---
+# NL2SMT_LLM_SCRIPT=/path/to/llm_call.py   # required for Tree-Plan→Emit→Repair
+# NL2SMT_LLM_CMD=sh /path/to/mock_llm.sh   # legacy single-shot (e.g. tests)
 # NL2SMT_MODEL=gpt-4o-mini
+# OPENAI_API_KEY=...
+# OPENAI_API_BASE=...
+# --- Prompt (optional; default = script dir) ---
+# Single-shot mode uses only PROMPT_FILE; three-phase uses only PLAN/EMIT/REPAIR.
 # NL2SMT_PROMPT_FILE=/path/to/prompt.txt
+# NL2SMT_PROMPT_PLAN=/path/to/prompt_plan.txt
+# NL2SMT_PROMPT_EMIT=/path/to/prompt_emit.txt
+# NL2SMT_PROMPT_REPAIR=/path/to/prompt_repair.txt
 
 [solver]
 # path=/usr/bin/z3

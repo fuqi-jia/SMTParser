@@ -8,6 +8,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <vector>
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <io.h>
@@ -116,6 +117,129 @@ std::string callLLM(const std::string& naturalLanguageInput) {
     }
 
     return stripMarkdownCodeBlock(out.str());
+}
+
+/** Run command, read stdout; on failure set g_llm_last_error and return "". */
+static std::string runScriptCommand(const std::string& cmd, const std::vector<std::string>& cleanupPaths) {
+    FILE* fp = popen(cmd.c_str(), "r");
+    if (!fp) {
+        g_llm_last_error = "Failed to run LLM script. Check NL2SMT_LLM_SCRIPT.";
+        for (const auto& p : cleanupPaths) std::remove(p.c_str());
+        return "";
+    }
+    std::ostringstream out;
+    char buf[4096];
+    while (fgets(buf, sizeof(buf), fp))
+        out << buf;
+    int status = pclose(fp);
+    for (const auto& p : cleanupPaths)
+        std::remove(p.c_str());
+    if (status != 0) {
+        g_llm_last_error = "LLM script exited with status " + std::to_string(status) + ".";
+        return "";
+    }
+    return stripMarkdownCodeBlock(out.str());
+}
+
+static std::string tempDir() {
+    const char* t = std::getenv("TMPDIR");
+    if (!t) t = std::getenv("TEMP");
+    if (!t) t = "/tmp";
+    return std::string(t);
+}
+
+static std::string tempPrefix() {
+#if defined(_WIN32) || defined(_WIN64)
+    const char* pidStr = "0";
+#else
+    std::string pidStr = std::to_string(static_cast<long>(getpid()));
+#endif
+    return tempDir() + "/nl2smt_" + pidStr + "_";
+}
+
+std::string callLLM_Plan(const std::string& naturalLanguageInput) {
+    g_llm_last_error.clear();
+    if (naturalLanguageInput.empty()) {
+        g_llm_last_error = "Empty input.";
+        return "";
+    }
+    std::string scriptPath = getScriptPath();
+    if (scriptPath.empty()) {
+        g_llm_last_error = "Tree-Plan phase requires NL2SMT_LLM_SCRIPT (path to llm_call.py).";
+        return "";
+    }
+    std::string inPath = tempPrefix() + "plan_in.txt";
+    std::ofstream f(inPath);
+    if (!f) {
+        g_llm_last_error = "Cannot write temp file: " + inPath;
+        return "";
+    }
+    f << naturalLanguageInput;
+    f.close();
+    if (!f) {
+        g_llm_last_error = "Failed to write temp file.";
+        return "";
+    }
+    std::string cmd = "python \"" + scriptPath + "\" plan \"" + inPath + "\"";
+    return runScriptCommand(cmd, {inPath});
+}
+
+std::string callLLM_Emit(const std::string& planJson) {
+    g_llm_last_error.clear();
+    if (planJson.empty()) {
+        g_llm_last_error = "Empty plan JSON.";
+        return "";
+    }
+    std::string scriptPath = getScriptPath();
+    if (scriptPath.empty()) {
+        g_llm_last_error = "Emit phase requires NL2SMT_LLM_SCRIPT.";
+        return "";
+    }
+    std::string planPath = tempPrefix() + "plan.json";
+    std::ofstream f(planPath);
+    if (!f) {
+        g_llm_last_error = "Cannot write temp plan file.";
+        return "";
+    }
+    f << planJson;
+    f.close();
+    if (!f) {
+        g_llm_last_error = "Failed to write temp file.";
+        return "";
+    }
+    std::string cmd = "python \"" + scriptPath + "\" emit \"" + planPath + "\"";
+    return runScriptCommand(cmd, {planPath});
+}
+
+std::string callLLM_Repair(const std::string& errorMessage, const std::string& planJson, const std::string& previousSmt) {
+    g_llm_last_error.clear();
+    std::string scriptPath = getScriptPath();
+    if (scriptPath.empty()) {
+        g_llm_last_error = "Repair phase requires NL2SMT_LLM_SCRIPT.";
+        return "";
+    }
+    std::string prefix = tempPrefix();
+    std::string errPath = prefix + "repair_err.txt";
+    std::string planPath = prefix + "repair_plan.json";
+    std::string smtPath = prefix + "repair_prev.smt2";
+    std::ofstream fe(errPath);
+    std::ofstream fp(planPath);
+    std::ofstream fs(smtPath);
+    if (!fe || !fp || !fs) {
+        g_llm_last_error = "Cannot write temp files for repair.";
+        std::remove(errPath.c_str());
+        std::remove(planPath.c_str());
+        std::remove(smtPath.c_str());
+        return "";
+    }
+    fe << errorMessage;
+    fp << planJson;
+    fs << previousSmt;
+    fe.close();
+    fp.close();
+    fs.close();
+    std::string cmd = "python \"" + scriptPath + "\" repair \"" + errPath + "\" \"" + planPath + "\" \"" + smtPath + "\"";
+    return runScriptCommand(cmd, {errPath, planPath, smtPath});
 }
 
 }  // namespace NL2SMT
