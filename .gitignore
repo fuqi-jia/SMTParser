@@ -38,6 +38,7 @@ cmake-build-*/
 
 # temporary files
 *.swp
+llm.log
 *.swo
 *~
 *.bak

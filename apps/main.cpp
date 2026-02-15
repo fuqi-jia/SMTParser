@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
     int nlMaxRepair = 3;
     std::string nlArtifactDir;
     std::string nlStrategyOverride;
-    bool nlQuiet = false;
+    bool nlQuiet = true;
 #endif
 
     for (int i = 1; i < argc; ++i) {
