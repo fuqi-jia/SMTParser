@@ -56,8 +56,22 @@ if(NOT MPFR_FOUND)
     endif()
 endif()
 
-# collect all source files
+# Optional NL2SMT: only when BUILD_NL2SMT=ON (default OFF, no third-party deps)
+if(BUILD_NL2SMT)
+    include(FetchContent)
+    FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz)
+    FetchContent_MakeAvailable(json)
+    FetchContent_Declare(httplib
+        GIT_REPOSITORY https://github.com/yhirose/cpp-httplib
+        GIT_TAG v0.14.3)
+    FetchContent_MakeAvailable(httplib)
+endif()
+
+# collect all source files (exclude nl2smt.cpp when BUILD_NL2SMT=OFF)
 file(GLOB_RECURSE SOURCES "src/*.cpp")
+if(NOT BUILD_NL2SMT)
+    list(FILTER SOURCES EXCLUDE REGEX ".*/nl2smt\\.cpp$")
+endif()
 
 # collect all header files
 file(GLOB_RECURSE HEADERS "include/*.h")
@@ -81,8 +95,11 @@ if(BUILD_BOTH_LIBS)
         ${GMP_INCLUDE_DIRS}
         ${MPFR_INCLUDE_DIRS}
     )
-    
-    # link static library dependencies
+    if(BUILD_NL2SMT)
+        target_compile_definitions(smtparser_static PUBLIC SMTLIBPARSER_ENABLE_NL2SMT)
+        target_include_directories(smtparser_static PRIVATE ${httplib_SOURCE_DIR})
+        target_link_libraries(smtparser_static PUBLIC nlohmann_json::nlohmann_json)
+    endif()
     target_link_libraries(smtparser_static PUBLIC
         ${GMP_LIBRARIES}
         ${MPFR_LIBRARIES}
@@ -106,8 +123,11 @@ if(BUILD_BOTH_LIBS)
         ${GMP_INCLUDE_DIRS}
         ${MPFR_INCLUDE_DIRS}
     )
-    
-    # link shared library dependencies
+    if(BUILD_NL2SMT)
+        target_compile_definitions(smtparser_shared PUBLIC SMTLIBPARSER_ENABLE_NL2SMT)
+        target_include_directories(smtparser_shared PRIVATE ${httplib_SOURCE_DIR})
+        target_link_libraries(smtparser_shared PUBLIC nlohmann_json::nlohmann_json)
+    endif()
     target_link_libraries(smtparser_shared PUBLIC
         ${GMP_LIBRARIES}
         ${MPFR_LIBRARIES}
@@ -136,8 +156,11 @@ else()
         ${GMP_INCLUDE_DIRS}
         ${MPFR_INCLUDE_DIRS}
     )
-    
-    # link library dependencies
+    if(BUILD_NL2SMT)
+        target_compile_definitions(smtparser PUBLIC SMTLIBPARSER_ENABLE_NL2SMT)
+        target_include_directories(smtparser PRIVATE ${httplib_SOURCE_DIR})
+        target_link_libraries(smtparser PUBLIC nlohmann_json::nlohmann_json)
+    endif()
     target_link_libraries(smtparser PUBLIC
         ${GMP_LIBRARIES}
         ${MPFR_LIBRARIES}
@@ -164,20 +187,17 @@ set(APPS_INCLUDES
 set(SMTPARSER_EXE_SOURCES
     apps/main.cpp
     apps/config/config_loader.cpp
-    apps/parser/run_parser.cpp
+    apps/features/run_features.cpp
     apps/solver/run_solver.cpp
 )
 if(BUILD_NL2SMT)
-    list(APPEND SMTPARSER_EXE_SOURCES
-        apps/nl2smt/llm_caller.cpp
-        apps/nl2smt/nl2smt.cpp
-    )
+    list(APPEND SMTPARSER_EXE_SOURCES apps/nl2smt/run_nl2smt.cpp)
 endif()
 add_executable(smtparser_exe ${SMTPARSER_EXE_SOURCES})
 set_target_properties(smtparser_exe PROPERTIES OUTPUT_NAME smtparser)
 target_include_directories(smtparser_exe PRIVATE ${APPS_INCLUDES})
 if(BUILD_NL2SMT)
-    target_compile_definitions(smtparser_exe PRIVATE BUILD_NL2SMT)
+    target_compile_definitions(smtparser_exe PRIVATE BUILD_NL2SMT SMTLIBPARSER_ENABLE_NL2SMT)
 endif()
 target_link_libraries(smtparser_exe PRIVATE smtparser ${GMP_LIBRARIES} ${MPFR_LIBRARIES})
 install(TARGETS smtparser_exe RUNTIME DESTINATION bin)

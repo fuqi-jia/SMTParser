@@ -10,8 +10,12 @@
 #include <cstring>
 #include <string>
 
-#if !defined(_WIN32) && !defined(_WIN64)
+#if defined(_WIN32) || defined(_WIN64)
+#include <direct.h>
+#include <io.h>
+#else
 #include <stdlib.h>
+#include <unistd.h>
 #endif
 
 namespace SMTParser {
@@ -20,6 +24,12 @@ namespace App {
 static void trim(std::string& s) {
     s.erase(0, s.find_first_not_of(" \t"));
     s.erase(s.find_last_not_of(" \t") + 1);
+}
+
+/** Return true if path exists and is readable (file). */
+static bool fileExists(const std::string& path) {
+    std::ifstream f(path);
+    return f.good();
 }
 
 /** True if path looks absolute (Unix / or Windows C:). */
@@ -83,6 +93,21 @@ bool loadConfigFile(const std::string& path, AppConfig* config) {
     return true;
 }
 
+std::string findDefaultConfigPath() {
+    if (fileExists("smtparser.conf"))
+        return "smtparser.conf";
+    if (fileExists(".config/llm.conf"))
+        return ".config/llm.conf";
+#if !defined(_WIN32) && !defined(_WIN64)
+    const char* home = getenv("HOME");
+    if (home && *home) {
+        std::string p = std::string(home) + "/.config/smtparser/llm.conf";
+        if (fileExists(p)) return p;
+    }
+#endif
+    return std::string();
+}
+
 void applyArgs(int argc, char* argv[], AppConfig* config) {
     if (!config) return;
     for (int i = 0; i < argc; ++i) {
@@ -133,6 +158,13 @@ static const char* nl2smtKeyToEnv(const std::string& key) {
 void applyNl2smtEnv(const std::map<std::string, std::string>& nl2smt_opts) {
     for (const auto& kv : nl2smt_opts) {
         if (kv.first.empty()) continue;
+        /* api_key: env overrides config (do not overwrite if already set) */
+        if (kv.first == "api_key" || kv.first == "OPENAI_API_KEY") {
+            const char* ek = getenv("NL2SMT_API_KEY");
+            if (ek && ek[0] != '\0') continue;
+            ek = getenv("OPENAI_API_KEY");
+            if (ek && ek[0] != '\0') continue;
+        }
         const char* envKey = nl2smtKeyToEnv(kv.first);
         if (!envKey) envKey = kv.first.c_str();
 #ifdef _WIN32

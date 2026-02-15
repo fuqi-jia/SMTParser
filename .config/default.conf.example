@@ -1,0 +1,40 @@
+# smtparser unified config example. Use: smtparser --config PATH, or copy to .config/default.conf
+# Sections: [parser] parse options, [nl2smt] NL2SMT/LLM (full example in llm.conf.example), [solver] solver path
+
+[parser]
+# SMT-LIB2 logic (e.g. QF_LIA, QF_LRA, QF_BV, ALL)
+# logic = QF_LIA
+
+# Whether to preserve let-bindings (true=preserve, false=expand)
+keep_let = true
+
+# Whether to keep division in non-divisible form (true=keep / form)
+keep_division = true
+
+# MPFR evaluation precision in bits
+precision = 128
+
+# Use floating-point (true) or exact rational (false) for evaluation
+float_evaluate = true
+
+# Whether to inline expand define-fun
+expand_functions = true
+
+# Whether to expand define-fun-rec (default false)
+expand_recursive_functions = false
+
+[nl2smt]
+# Full NL2SMT config in llm.conf.example in this dir; below are override examples only
+# endpoint = http://127.0.0.1:4000
+# path = /v1/chat/completions
+# model = openai/gpt-4o-mini
+# temperature = 0.0
+# timeout_sec = 90
+# max_repair = 3
+# strategy = StructuredCompilation | StructuredOnly | TextualCompilation | DirectTextual
+# prompt_plan / prompt_emit / prompt_repair paths are relative to this config file's directory
+# api_key: prefer env NL2SMT_API_KEY or OPENAI_API_KEY, or set in llm.conf (do not commit)
+
+[solver]
+# Path to external SMT solver executable (required for solve subcommand)
+# path = /usr/bin/z3

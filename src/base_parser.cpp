@@ -240,6 +240,9 @@ namespace SMTParser{
 	std::shared_ptr<GlobalOptions> Parser::getOptions() const{
 		return options;
 	}
+	std::shared_ptr<SortManager> Parser::getSortManager() const{
+		return sort_manager;
+	}
 	std::vector<std::shared_ptr<DAGNode>> Parser::getVariables() const{
 		std::vector<std::shared_ptr<DAGNode>> vars;
 		for(auto& var : var_names){
@@ -2999,5 +3002,45 @@ namespace SMTParser{
 
 		return NodeManager::NULL_NODE;
 	}
+
+#ifdef SMTLIBPARSER_ENABLE_NL2SMT
+	void Parser::swapContent(Parser& other) {
+		std::swap(node_manager, other.node_manager);
+		std::swap(sort_manager, other.sort_manager);
+		std::swap(let_key_map, other.let_key_map);
+		std::swap(preserving_let_key_map, other.preserving_let_key_map);
+		std::swap(fun_key_map, other.fun_key_map);
+		std::swap(fun_var_map, other.fun_var_map);
+		std::swap(sort_key_map, other.sort_key_map);
+		std::swap(quant_var_map, other.quant_var_map);
+		std::swap(static_functions, other.static_functions);
+		std::swap(var_names, other.var_names);
+		std::swap(temp_var_names, other.temp_var_names);
+		std::swap(placeholder_var_names, other.placeholder_var_names);
+		std::swap(function_names, other.function_names);
+		std::swap(options, other.options);
+		std::swap(assertions, other.assertions);
+		std::swap(assertion_groups, other.assertion_groups);
+		std::swap(named_assertions, other.named_assertions);
+		std::swap(assumptions, other.assumptions);
+		std::swap(soft_assertions, other.soft_assertions);
+		std::swap(soft_weights, other.soft_weights);
+		std::swap(soft_assertion_groups, other.soft_assertion_groups);
+		std::swap(objectives, other.objectives);
+		std::swap(objective_map, other.objective_map);
+		std::swap(split_lemmas, other.split_lemmas);
+		std::swap(cnf_map, other.cnf_map);
+		std::swap(cnf_atom_map, other.cnf_atom_map);
+		std::swap(cnf_bool_var_map, other.cnf_bool_var_map);
+		std::swap(dnf_map, other.dnf_map);
+		std::swap(nnf_map, other.nnf_map);
+		std::swap(array_select_cache, other.array_select_cache);
+		std::swap(array_normalize_cache, other.array_normalize_cache);
+		std::swap(array_canonical_cache, other.array_canonical_cache);
+		std::swap(result_type, other.result_type);
+		std::swap(result_node, other.result_node);
+		std::swap(result_model, other.result_model);
+	}
+#endif
 
 }

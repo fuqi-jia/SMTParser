@@ -1,0 +1,18 @@
+# NL2SMT / LiteLLM Proxy — example config. Copy to .config/llm.conf and edit; do not commit.
+# Paths are relative to this file's directory (.config/); prompts live under .config/prompts/nl2smt/
+
+[nl2smt]
+endpoint = http://127.0.0.1:4000
+path = /v1/chat/completions
+model = openrouter/deepseek/deepseek-chat
+temperature = 0.0
+timeout_sec = 90
+max_repair = 3
+strategy = StructuredCompilation
+
+prompt_plan = prompts/nl2smt/prompt_plan.txt
+prompt_emit = prompts/nl2smt/prompt_emit.txt
+prompt_repair = prompts/nl2smt/prompt_repair.txt
+
+# api_key optional (for Proxy auth); or use env NL2SMT_API_KEY / OPENAI_API_KEY
+# api_key = your-token

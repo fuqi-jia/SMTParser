@@ -233,6 +233,15 @@ namespace SMTParser{
         return node_manager->createNode(sort, t, kindToString(t), params);
     }
 
+    std::shared_ptr<DAGNode> Parser::mkApp(const std::shared_ptr<Sort>& sort, NODE_KIND kind, const std::vector<std::shared_ptr<DAGNode>>& args){
+        // Variable kinds must be created via mkVar/mkPlaceholderVar so they are registered (var_names etc.); mkOper does not do that.
+        if (kind == NODE_KIND::NT_VAR && args.size() == 1 && !args[0]->getName().empty())
+            return mkVar(sort, args[0]->getName());
+        if (kind == NODE_KIND::NT_PLACEHOLDER_VAR && args.size() == 1 && !args[0]->getName().empty())
+            return mkPlaceholderVar(args[0]->getName());
+        return mkOper(sort, kind, args);
+    }
+
     // mk function
     std::shared_ptr<DAGNode> Parser::mkFuncDec(const std::string &name, const std::vector<std::shared_ptr<Sort>> &params, std::shared_ptr<Sort> out_sort){
         if(fun_key_map.find(name)!=fun_key_map.end()){

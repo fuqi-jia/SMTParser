@@ -79,3 +79,9 @@ conaninfo.txt
 # markdown
 *.md
 !README.md
+
+# Local / user config (never commit real keys)
+.config/llm.conf
+.config/*.local.conf
+smtparser.conf
+apps/config/llm.conf

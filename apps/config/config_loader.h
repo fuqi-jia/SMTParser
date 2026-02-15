@@ -24,6 +24,15 @@ struct AppConfig {
 /** Load config file into config. Sections: [parser], [nl2smt], [solver]. */
 bool loadConfigFile(const std::string& path, AppConfig* config);
 
+/**
+ * Default config search order (when --config not given):
+ * 1) ./smtparser.conf
+ * 2) ./.config/llm.conf   (project-local)
+ * 3) ~/.config/smtparser/llm.conf  (Linux/macOS user)
+ * Returns first path that exists and is readable; empty string if none.
+ */
+std::string findDefaultConfigPath();
+
 /** Parse argv and override config: --logic X, --option K=V (parser), --solver PATH. */
 void applyArgs(int argc, char* argv[], AppConfig* config);
 

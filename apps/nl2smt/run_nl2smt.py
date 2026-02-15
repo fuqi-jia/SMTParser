@@ -5,13 +5,13 @@ LiteLLM-only version (recommended): unified config, no 'export' needed.
 
 Usage:
   # Three-phase (Tree-Plan → Emit → Repair)
-  python llm_call.py plan <nl_file>              # NL → JSON plan (stdout)
-  python llm_call.py emit <plan_file>            # Plan JSON → SMT-LIB2 (stdout)
-  python llm_call.py repair <err_file> <plan_file> <smt_file>  # Fix SMT (stdout)
+  python run_nl2smt.py plan <nl_file>              # NL → JSON plan (stdout)
+  python run_nl2smt.py emit <plan_file>            # Plan JSON → SMT-LIB2 (stdout)
+  python run_nl2smt.py repair <err_file> <plan_file> <smt_file>  # Fix SMT (stdout)
 
   # Legacy: single file = NL → SMT-LIB2 (uses prompt.txt)
-  python llm_call.py <input_file>
-  echo "x is int and x > 0, minimize x" | python llm_call.py -
+  python run_nl2smt.py <input_file>
+  echo "x is int and x > 0, minimize x" | python run_nl2smt.py -
 
 Config (INI):
   Default search order:
@@ -83,8 +83,9 @@ def locate_config_path(argv: list[str], script_dir: str) -> Optional[str]:
     if p:
         return p
 
-    # default <script_dir>/llm.conf, or <script_dir>/../config/llm.conf (prompts in apps/config/prompts/)
+    # default: repo root .config/llm.conf, then script-relative
     for candidate in (
+        os.path.normpath(os.path.join(script_dir, "..", "..", ".config", "llm.conf")),
         os.path.join(script_dir, "llm.conf"),
         os.path.normpath(os.path.join(script_dir, "..", "config", "llm.conf")),
     ):
@@ -147,7 +148,7 @@ def read_input_maybe_stdin(path: str) -> str:
 
 def _debug_print(debug: bool, msg: str) -> None:
     if debug:
-        print(f"[nl2smt][llm_call] {msg}", file=sys.stderr)
+        print(f"[nl2smt][run_nl2smt] {msg}", file=sys.stderr)
 
 
 # ----------------------------
@@ -229,6 +230,14 @@ def call_llm_litellm(
 # ----------------------------
 
 def _default_prompts_dir(script_dir: str) -> str:
+    repo_root = os.path.normpath(os.path.join(script_dir, "..", ".."))
+    for candidate in (
+        os.path.join(repo_root, ".config", "prompts", "nl2smt"),
+        os.path.normpath(os.path.join(script_dir, "..", "config", "prompts", "nl2smt")),
+        os.path.normpath(os.path.join(script_dir, "..", "config", "prompts")),
+    ):
+        if os.path.isdir(candidate):
+            return candidate
     return os.path.normpath(os.path.join(script_dir, "..", "config", "prompts"))
 
 
@@ -277,7 +286,7 @@ def run_legacy(script_dir: str, cfg: Dict[str, str], nl_text: str) -> str:
 def main() -> None:
     argv = sys.argv[1:]
     if not argv:
-        print("Usage: llm_call.py [--config PATH] [plan|emit|repair] <file(s)> | llm_call.py [--config PATH] <nl_file|->",
+        print("Usage: run_nl2smt.py [--config PATH] [plan|emit|repair] <file(s)> | run_nl2smt.py [--config PATH] <nl_file|->",
               file=sys.stderr)
         sys.exit(1)
 
@@ -311,7 +320,7 @@ def main() -> None:
 
     if mode == "plan":
         if len(argv) < 2:
-            print("Usage: llm_call.py [--config PATH] plan <nl_file|->", file=sys.stderr)
+            print("Usage: run_nl2smt.py [--config PATH] plan <nl_file|->", file=sys.stderr)
             sys.exit(1)
         nl_content = read_input_maybe_stdin(argv[1])
         if not nl_content:
@@ -322,7 +331,7 @@ def main() -> None:
 
     if mode == "emit":
         if len(argv) < 2:
-            print("Usage: llm_call.py [--config PATH] emit <plan_file>", file=sys.stderr)
+            print("Usage: run_nl2smt.py [--config PATH] emit <plan_file>", file=sys.stderr)
             sys.exit(1)
         plan_json = read_input_maybe_stdin(argv[1])
         if not plan_json:
@@ -333,7 +342,7 @@ def main() -> None:
 
     if mode == "repair":
         if len(argv) < 4:
-            print("Usage: llm_call.py [--config PATH] repair <err_file> <plan_file> <smt_file>", file=sys.stderr)
+            print("Usage: run_nl2smt.py [--config PATH] repair <err_file> <plan_file> <smt_file>", file=sys.stderr)
             sys.exit(1)
         error_message = read_input_maybe_stdin(argv[1])
         plan_json = read_input_maybe_stdin(argv[2])

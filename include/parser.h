@@ -33,6 +33,9 @@
 #include "options.h"
 #include "objective.h"
 #include "model.h"
+#ifdef SMTLIBPARSER_ENABLE_NL2SMT
+#include "nl2smt.h"
+#endif
 
 namespace SMTParser{
     #undef assert
@@ -398,6 +401,9 @@ namespace SMTParser{
          * @return Pointer to global options
          */
         std::shared_ptr<GlobalOptions> getOptions() const;
+
+        /** @brief Get sort manager (e.g. for parseNL Builder to create BV/FP sorts). */
+        std::shared_ptr<SortManager> getSortManager() const;
 
         /**
          * @brief Get variables
@@ -1205,6 +1211,15 @@ namespace SMTParser{
          * @return Xor node (l xor m xor r xor ...)
          */
         std::shared_ptr<DAGNode> mkXor(const std::vector<std::shared_ptr<DAGNode>> &params);
+
+        /**
+         * @brief Create an application node by kind (for NL2SMT Builder and generic ops).
+         * @param sort Result sort
+         * @param kind Node kind (e.g. NT_BV_ADD, NT_XOR)
+         * @param args Child nodes
+         * @return Application node
+         */
+        std::shared_ptr<DAGNode> mkApp(const std::shared_ptr<Sort>& sort, NODE_KIND kind, const std::vector<std::shared_ptr<DAGNode>>& args);
         
         /**
          * @brief Create an ite node
@@ -3835,6 +3850,14 @@ namespace SMTParser{
          * @return New empty model
          */
         ModelPtr                                newEmptyModel();
+
+#ifdef SMTLIBPARSER_ENABLE_NL2SMT
+        /** Parse natural language into DAG via Plan (JSON) and optional SMT2 fallback. See nl2smt.h. */
+        bool parseNL(const std::string& nl, const smtlib::NL2SMTOptions& opt, smtlib::NL2SMTReport* rpt = nullptr);
+        /** Swap all parsed content with another parser (used by parseNL). */
+        void swapContent(Parser& other);
+#endif
+
         
     private:
         // parse smt-lib2 file
