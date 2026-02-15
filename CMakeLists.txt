@@ -182,19 +182,6 @@ endif()
 target_link_libraries(smtparser_exe PRIVATE smtparser ${GMP_LIBRARIES} ${MPFR_LIBRARIES})
 install(TARGETS smtparser_exe RUNTIME DESTINATION bin)
 
-# NL2SMT demo and test (only when BUILD_NL2SMT)
-if(BUILD_NL2SMT)
-    set(NL2SMT_SOURCES apps/nl2smt/llm_caller.cpp apps/nl2smt/nl2smt.cpp)
-    add_executable(demo_nl2smt apps/nl2smt/demo_nl2smt.cpp ${NL2SMT_SOURCES})
-    target_include_directories(demo_nl2smt PRIVATE ${APPS_INCLUDES})
-    target_link_libraries(demo_nl2smt PRIVATE smtparser ${GMP_LIBRARIES} ${MPFR_LIBRARIES})
-
-    add_executable(test_nl2smt apps/nl2smt/test_nl2smt.cpp ${NL2SMT_SOURCES})
-    target_include_directories(test_nl2smt PRIVATE ${APPS_INCLUDES})
-    target_compile_definitions(test_nl2smt PRIVATE "NL2SMT_MOCK_SCRIPT_PATH=\"${CMAKE_CURRENT_SOURCE_DIR}/apps/nl2smt/mock_llm.sh\"")
-    target_link_libraries(test_nl2smt PRIVATE smtparser ${GMP_LIBRARIES} ${MPFR_LIBRARIES})
-endif()
-
 # if needed, add test subdirectory
 if(BUILD_TESTS)
     add_subdirectory(test)
