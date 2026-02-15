@@ -240,14 +240,18 @@ int main(int argc, char* argv[]) {
         smtlib::NL2SMTReport report;
         if (!SMTParser::NL2SMT::runParseNL(parser.get(), nlInput, opt, &report)) {
             std::cerr << "NL2SMT error: " << report.last_error << std::endl;
+            if (!report.debug_info.empty()) std::cerr << "  debug: " << report.debug_info << std::endl;
             return 1;
         }
         if (!nlQuiet) {
             size_t nAst = parser->getAssertions().size();
             size_t nObj = parser->getObjectives().size();
+            std::string logicStr = parser->getOptions() && parser->getOptions()->getLogic() != "" ? parser->getOptions()->getLogic() : "UNKNOWN_LOGIC";
             std::cerr << "NL2SMT: strategy=" << (opt.strategy == smtlib::NLCompilationStrategy::DirectTextual ? "DirectTextual" : "Structured")
+                      << " logic=" << logicStr
                       << " assertions=" << nAst << " objectives=" << nObj << " repair_rounds=" << report.repair_rounds;
             if (!report.artifacts_dir_used.empty()) std::cerr << " artifacts=" << report.artifacts_dir_used;
+            if (!report.debug_info.empty()) std::cerr << " | " << report.debug_info;
             std::cerr << std::endl;
         }
         std::cout << parser->dumpSMT2() << std::endl;

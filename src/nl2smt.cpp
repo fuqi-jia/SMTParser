@@ -668,7 +668,23 @@ static bool run_structured_pipeline(Parser* self, const std::string& nl, const s
     std::string buildErr;
     auto mainConstraint = buildFromSkeleton(ld["skeleton"], propNodes, &allPropNodes, &syms, &temp, &buildErr);
     if (!mainConstraint) {
-        if (rpt) rpt->last_error = "Builder failed: " + buildErr;
+        std::string dbgLine;
+        {
+            std::string skelStr = ld["skeleton"].dump();
+            if (skelStr.size() > 200) skelStr = skelStr.substr(0, 197) + "...";
+            std::string ldKeys, propKeys, allKeys;
+            if (ld.contains("propositions") && ld["propositions"].is_object())
+                for (auto it = ld["propositions"].begin(); it != ld["propositions"].end(); ++it)
+                    ldKeys += it.key() + " ";
+            for (const auto& e : propNodes) propKeys += e.first + " ";
+            for (const auto& e : allPropNodes) allKeys += e.first + " ";
+            dbgLine = " [Structured debug] skeleton=" + skelStr + " ; LD_propositions=" + (ldKeys.empty() ? "none" : ldKeys)
+                    + " ; propNodes=" + (propKeys.empty() ? "none" : propKeys) + " ; allPropNodes=" + (allKeys.empty() ? "none" : allKeys);
+        }
+        if (rpt) {
+            rpt->last_error = "Builder failed: " + buildErr + dbgLine;
+            rpt->debug_info = "skeleton=" + ld["skeleton"].dump();
+        }
         if (!artifactDir.empty()) {
             std::ostringstream dbg;
             dbg << "skeleton: " << ld["skeleton"].dump() << "\n";
@@ -688,10 +704,13 @@ static bool run_structured_pipeline(Parser* self, const std::string& nl, const s
     }
     temp.assert(mainConstraint);
 
+    bool objectiveInPlan = false;
+    bool objectiveBuilt = false;
     if (ld.contains("objective") && ld["objective"].is_object()) {
         const auto& obj = ld["objective"];
         std::string sense = obj.contains("sense") ? obj["sense"].get<std::string>() : "none";
         if (sense != "none") {
+            objectiveInPlan = true;
             std::shared_ptr<DAGNode> termNode = nullptr;
             if (obj.contains("proposition") && obj["proposition"].is_string()) {
                 std::string pk = obj["proposition"].get<std::string>();
@@ -712,6 +731,7 @@ static bool run_structured_pipeline(Parser* self, const std::string& nl, const s
             if (!termNode && obj.contains("term") && !obj["term"].is_null())
                 termNode = buildExpr(&temp, obj["term"], syms, &buildErr);
             if (termNode) {
+                objectiveBuilt = true;
                 OPT_KIND optKind = (sense == "max") ? OPT_KIND::OPT_MAXIMIZE : OPT_KIND::OPT_MINIMIZE;
                 COMP_KIND comp = getDefaultCompareOperator(temp.getOptions()->logic, optKind);
                 auto singleObj = std::make_shared<SingleObjective>(optKind, termNode, comp, NodeManager::NULL_NODE, NodeManager::NULL_NODE, "");
@@ -721,6 +741,8 @@ static bool run_structured_pipeline(Parser* self, const std::string& nl, const s
             }
         }
     }
+    if (rpt && objectiveInPlan && !objectiveBuilt)
+        rpt->debug_info = "Structured: objective in LD (min/max) but term not built";
 
     std::string smt2 = temp.dumpSMT2();
     if (!artifactDir.empty()) {
@@ -773,7 +795,7 @@ static std::string loadPrompt(const std::string& path, const char* defaultPrompt
 
 // ---------- Parser::parseNL ----------
 bool Parser::parseNL(const std::string& nl, const smtlib::NL2SMTOptions& opt, smtlib::NL2SMTReport* rpt) {
-    if (rpt) { rpt->ok = false; rpt->repair_rounds = 0; rpt->plan_json.clear(); rpt->smt2.clear(); rpt->last_error.clear(); rpt->artifacts_dir_used.clear(); }
+    if (rpt) { rpt->ok = false; rpt->repair_rounds = 0; rpt->plan_json.clear(); rpt->smt2.clear(); rpt->last_error.clear(); rpt->artifacts_dir_used.clear(); rpt->debug_info.clear(); }
     if (nl.empty()) {
         if (rpt) rpt->last_error = "Empty NL input";
         return false;

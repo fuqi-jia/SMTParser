@@ -46,6 +46,8 @@ struct NL2SMTReport {
     std::string smt2;
     std::string last_error;
     std::string artifacts_dir_used;
+    /** One-line or short debug (e.g. Structured: skeleton/prop keys; objective_in_plan but not built). */
+    std::string debug_info;
 };
 
 } // namespace smtlib

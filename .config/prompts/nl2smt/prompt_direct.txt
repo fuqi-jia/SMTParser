@@ -1,4 +1,8 @@
 Translate the following natural language into valid SMT-LIB2. Output ONLY SMT-LIB2. No markdown, no explanations.
-Include (set-logic ...), (declare-fun ...), (assert ...), (check-sat), (exit).
+
+Rules:
+- Output (set-logic <name>) with an appropriate SMT-LIB logic (e.g. QF_LIA, QF_LRA, QF_LIRA, QF_NIA, QF_NRA, QF_BV, QF_UF, etc.) for the problem.
+- Include (declare-fun ...) for each variable, (assert ...) for constraints, then (check-sat), (exit).
+- If the problem asks to minimize or maximize a term, add (minimize x) or (maximize x) (or the expression) before (check-sat).
 
 <<<USER_INPUT>>>
