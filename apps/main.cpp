@@ -95,7 +95,7 @@ int main(int argc, char* argv[]) {
             continue;
         }
         if (a.compare(0, 19, "--nl-artifact-dir=") == 0) { nlArtifactDir = a.substr(19); continue; }
-        if (a.compare(0, 15, "--nl-strategy=") == 0) { nlStrategyOverride = a.substr(15); continue; }
+        if (a.compare(0, 14, "--nl-strategy=") == 0) { nlStrategyOverride = a.substr(14); continue; }
         if (a == "--nl-strategy" && i + 1 < argc) { nlStrategyOverride = argv[++i]; continue; }
         if (a == "--quiet") { nlQuiet = true; continue; }
 #endif
