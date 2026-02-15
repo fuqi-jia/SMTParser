@@ -17,8 +17,8 @@ namespace App {
 
 void printSolverUsage(const char* prog) {
     std::cerr << "Usage: " << prog << " solve --solver <path> [file.smt2]\n"
-              << "       " << prog << " solve --solver <path> --nl \"<natural language>\"\n"
-              << "  Run the given SMT solver on the file (or on SMT generated from --nl).\n";
+              << "       " << prog << " solve --solver <path> nl \"<natural language>\"\n"
+              << "  Run the given SMT solver on the file (or on SMT generated from nl).\n";
 }
 
 static int executeSolver(const std::string& solverPath, const std::string& smtFilePath) {
@@ -45,7 +45,7 @@ int runSolver(const std::string& solverPath, const std::string& smtFilePath) {
         return -1;
     }
     if (smtFilePath.empty()) {
-        std::cerr << "Error: provide file.smt2 or use --nl (in main) to generate SMT first.\n";
+        std::cerr << "Error: provide file.smt2 or use 'solve nl \"...\"' to generate SMT first.\n";
         return -1;
     }
     return executeSolver(solverPath, smtFilePath);

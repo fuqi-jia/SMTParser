@@ -65,6 +65,7 @@ if(BUILD_NL2SMT)
         GIT_REPOSITORY https://github.com/yhirose/cpp-httplib
         GIT_TAG v0.14.3)
     FetchContent_MakeAvailable(httplib)
+    message(STATUS "NL2SMT enabled. For natural-language tests, start the LLM proxy first: ./llm.sh")
 endif()
 
 # collect all source files (exclude nl2smt.cpp when BUILD_NL2SMT=OFF)
@@ -186,7 +187,6 @@ set(APPS_INCLUDES
 )
 set(SMTPARSER_EXE_SOURCES
     apps/main.cpp
-    apps/config/config_loader.cpp
     apps/features/run_features.cpp
     apps/solver/run_solver.cpp
 )

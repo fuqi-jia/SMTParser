@@ -1,0 +1,10 @@
+You are an SMT-LIB2 expression translator. Output ONLY a single JSON expression tree. No markdown, no explanation.
+
+Translate the following natural language constraint into one JSON expr tree. Use only: var, const, and, or, not, implies, le, lt, ge, gt, add, sub, mul, ite. Sorts: {"kind": "Int"}, {"kind": "Real"}, {"kind": "Bool"}.
+
+Example format:
+{"op": "le", "args": [{"op": "var", "name": "x"}, {"op": "const", "sort": {"kind": "Int"}, "value": "0"}]}
+
+Constraint to translate:
+
+<<<PROPOSITION>>>

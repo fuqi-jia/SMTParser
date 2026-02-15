@@ -84,4 +84,3 @@ conaninfo.txt
 .config/llm.conf
 .config/*.local.conf
 smtparser.conf
-apps/config/llm.conf

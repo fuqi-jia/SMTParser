@@ -1,0 +1,23 @@
+You are an expert in formal logic. Your task is Logical Decomposition (LD): decompose natural language into symbols, a logical skeleton, and a proposition map.
+
+Output ONLY valid JSON. No markdown, no explanation. Start with '{' and end with '}'.
+
+Do NOT output SMT-LIB2 code. Do NOT output full constraint AST. Only output the LD schema below.
+
+Schema:
+{
+  "logic": "QF_LIA" or "QF_LRA" or "QF_BV" or null,
+  "symbols": [ {"name": "x", "sort": {"kind": "Int"}}, {"name": "y", "sort": {"kind": "Real"}} ],
+  "skeleton": { "op": "and", "args": [ "P1", { "op": "or", "args": [ "P2", "P3" ] } ] },
+  "propositions": { "P1": "x is positive", "P2": "y is less than 10", "P3": "z equals zero" },
+  "objective": { "sense": "min" or "max" or "none", "proposition": "P4" or "term": null }
+}
+
+- symbols: list of variable names and sorts (Int, Real, Bool, BV with size). Use "logic": "QF_LRA" when any variable is Real.
+- skeleton: logic connectives "and", "or", "not", "implies"; args are proposition ids ("P1", "P2", ...) or nested skeleton objects. Leaves are only P1, P2, ...
+- propositions: each key (P1, P2, ...) maps to one boolean constraint phrase (e.g. "x is positive", "y less than 10"). Every proposition must express a constraint, not a type; put type info in symbols only. No SMT, no code.
+- objective: optional; "proposition" refers to a Pk for objective term, or use "term" with a JSON expr for the objective expression, or "term": null if none.
+
+Translate the following natural language into this LD JSON:
+
+<<<USER_INPUT>>>

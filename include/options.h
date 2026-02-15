@@ -30,7 +30,7 @@
 #include "asserting.h"
 #include <unordered_map>
 
-/* Parser-internal options. Unified config (parser + apps) is in apps/config; parser section is applied here via setOption. */
+/* Parser-internal options. Unified config (parser, nl2smt, solver) is in include/app_config.h; parser section is applied via applyParserConfig. */
 
 namespace SMTParser{
     class GlobalOptions {

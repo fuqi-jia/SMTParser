@@ -1,5 +1,5 @@
 /* -*- Header -*-
- * NL2SMT: Natural language -> Plan (JSON) -> Builder or SMT2 -> DAG
+ * NL2SMT: Natural language -> Structured (LD+APT+Builder) or DirectTextual -> DAG
  * Options and report for Parser::parseNL(). Only relevant when SMTLIBPARSER_ENABLE_NL2SMT is defined.
  */
 #ifndef NL2SMT_HEADER
@@ -11,13 +11,9 @@ namespace smtlib {
 
 /** Compilation strategy for parseNL. */
 enum class NLCompilationStrategy {
-    /** Plan -> Builder -> fallback to Emit/Parse on builder failure. */
-    StructuredCompilation,
-    /** Plan -> Builder only; no SMT2 fallback. */
-    StructuredOnly,
-    /** Plan -> Emit -> Parse (with optional repair). No builder. */
-    TextualCompilation,
-    /** NL -> SMT2 via legacy prompt; parseString + optional repair. No plan/JSON/builder. */
+    /** Logical Decomposition + Atomic Proposition Translation + Builder (semantic compiler path). */
+    Structured,
+    /** End-to-end text: NL -> LLM -> SMT2 -> Parse (baseline). */
     DirectTextual
 };
 
@@ -30,10 +26,10 @@ struct NL2SMTOptions {
     int timeout_sec      = 90;
     int max_repair       = 3;
 
-    NLCompilationStrategy strategy = NLCompilationStrategy::StructuredCompilation;
+    NLCompilationStrategy strategy = NLCompilationStrategy::Structured;
 
-    std::string prompt_plan_path;
-    std::string prompt_emit_path;
+    std::string prompt_ld_path;
+    std::string prompt_apt_path;
     std::string prompt_repair_path;
     std::string prompt_legacy_path;
 

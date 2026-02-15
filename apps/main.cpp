@@ -1,7 +1,7 @@
 /* -*- Source -*-
  * smtparser: unified main — feature (syntax features), solver, nl (natural language → SMT)
  */
-#include "config/config_loader.h"
+#include "app_config.h"
 #include "parser.h"
 #include "features/run_features.h"
 #include "solver/run_solver.h"
@@ -28,12 +28,8 @@ static void usage(const char* prog) {
               << "  feature [options] <file.smt2>  Parse SMT file and print syntax features.\n"
               << "  solve [options] [file.smt2]     Run external solver on file (requires solver path).\n"
 #if defined(BUILD_NL2SMT)
-              << "  --nl <file|string>               Natural language → DAG (Parser::parseNL, LiteLLM Proxy).\n"
-              << "  --nl-no-repair                   Do not run repair loop on parse failure.\n"
-              << "  --nl-max-repair=N                Max repair attempts (default: 3).\n"
-              << "  --nl-artifact-dir=DIR            Write nl.txt, plan.json, emit.smt2, repair_*.smt2 for debugging.\n"
-              << "  --nl-strategy=STRATEGY           Override strategy: StructuredCompilation|StructuredOnly|TextualCompilation|DirectTextual.\n"
-              << "  --quiet                          Suppress NL2SMT summary (assertions/objectives/repair count).\n"
+              << "  nl [options] <file|string>      Natural language → DAG (Parser::parseNL, LiteLLM Proxy).\n"
+              << "  (nl options: --nl-no-repair, --nl-max-repair=N, --nl-artifact-dir=DIR, --nl-strategy=Structured|DirectTextual, --quiet)\n"
 #endif
               << "  [options] <file.smt2>           Default: same as feature.\n\n";
 
@@ -59,7 +55,7 @@ static void usage(const char* prog) {
               << "    path                            API path (default: /v1/chat/completions).\n"
               << "    model / NL2SMT_MODEL            Model name (default: openai/gpt-4o-mini).\n"
               << "    api_key / OPENAI_API_KEY        API key (or NL2SMT_API_KEY).\n"
-              << "    prompt_plan, prompt_emit, prompt_repair, prompt_file  Prompt file paths.\n\n";
+              << "    prompt_ld, prompt_apt, prompt_repair, prompt_file  Prompt file paths.\n\n";
 
     std::cerr << "  [solver]  — solver mode\n"
               << "    solver.path                       Path to SMT solver executable (e.g. /usr/bin/z3).\n\n";
@@ -68,7 +64,7 @@ static void usage(const char* prog) {
               << "  " << prog << " --config my.conf feature foo.smt2\n"
               << "  " << prog << " solve --solver /usr/bin/z3 foo.smt2\n"
 #if defined(BUILD_NL2SMT)
-              << "  " << prog << " --nl \"maximize x + y under x >= 0, y >= 0\"\n"
+              << "  " << prog << " nl \"maximize x + y under x >= 0, y >= 0\"\n"
 #endif
               << "  " << prog << " --option logic=QF_LRA feature foo.smt2\n";
 }
@@ -91,19 +87,6 @@ int main(int argc, char* argv[]) {
         std::string a = argv[i];
         if (a == "--config" && i + 1 < argc) { configPath = argv[++i]; continue; }
         if (a == "--solver" && i + 1 < argc) { (void)argv[++i]; continue; }
-        if (a == "--nl") {
-            hasNl = true;
-            if (i + 1 < argc) {
-                nlInput = argv[++i];
-                if (nlInput.size() >= 2 && nlInput.front() == '"' && nlInput.back() == '"')
-                    nlInput = nlInput.substr(1, nlInput.size() - 2);
-                else if (nlInput.find('"') == std::string::npos) {
-                    std::ifstream f(nlInput);
-                    if (f) { std::ostringstream os; os << f.rdbuf(); nlInput = os.str(); }
-                }
-            }
-            continue;
-        }
 #if defined(BUILD_NL2SMT)
         if (a == "--nl-no-repair") { nlNoRepair = true; continue; }
         if (a.compare(0, 15, "--nl-max-repair=") == 0) {
@@ -120,11 +103,40 @@ int main(int argc, char* argv[]) {
             subcommand = a;
             continue;
         }
-        if (!a.empty() && a[0] != '-') smtFile = a;
+        if (a == "nl") {
+            if (subcommand.empty())
+                subcommand = "nl";
+            else if (subcommand == "solve")
+                smtFile = "nl";
+            continue;
+        }
+        if (!a.empty() && a[0] != '-') {
+            if (subcommand == "nl")
+                nlInput = a;
+            else if (subcommand == "solve" && smtFile == "nl")
+                nlInput = a, smtFile.clear(), hasNl = true;
+            else
+                smtFile = a;
+        }
     }
     if (subcommand.empty() && !smtFile.empty()) subcommand = "feature";
-    if (subcommand.empty() && hasNl) subcommand = "nl";
+    if (subcommand == "solve" && smtFile == "nl" && !nlInput.empty())
+        smtFile.clear(), hasNl = true;
     if (subcommand.empty() && !smtFile.empty()) subcommand = "feature";
+
+    /* Resolve nl input: strip quotes or read from file */
+#if defined(BUILD_NL2SMT)
+    if (subcommand == "nl" || hasNl) {
+        if (!nlInput.empty()) {
+            if (nlInput.size() >= 2 && nlInput.front() == '"' && nlInput.back() == '"')
+                nlInput = nlInput.substr(1, nlInput.size() - 2);
+            else if (nlInput.find('"') == std::string::npos) {
+                std::ifstream f(nlInput);
+                if (f) { std::ostringstream os; os << f.rdbuf(); nlInput = os.str(); }
+            }
+        }
+    }
+#endif
 
     SMTParser::App::AppConfig config;
     bool configLoaded = false;
@@ -192,12 +204,12 @@ int main(int argc, char* argv[]) {
             of.close();
             pathToRun = tempPath;
 #else
-            std::cerr << "Error: --nl in solve mode requires BUILD_NL2SMT. Use file.smt2.\n";
+            std::cerr << "Error: solve nl requires BUILD_NL2SMT. Use file.smt2.\n";
             return 1;
 #endif
         }
         if (pathToRun.empty()) {
-            std::cerr << "Error: provide file.smt2 or --nl \"...\".\n";
+            std::cerr << "Error: provide file.smt2 or solve nl \"...\".\n";
             SMTParser::App::printSolverUsage(argv[0]);
             return 1;
         }
@@ -209,7 +221,7 @@ int main(int argc, char* argv[]) {
     if (subcommand == "nl") {
 #if defined(BUILD_NL2SMT) && defined(SMTLIBPARSER_ENABLE_NL2SMT)
         if (nlInput.empty()) {
-            std::cerr << "Error: --nl requires a file path or quoted string.\n";
+            std::cerr << "Error: nl requires <file> or <string>.\n";
             usage(argv[0]);
             return 1;
         }
@@ -239,7 +251,7 @@ int main(int argc, char* argv[]) {
         std::cout << parser->dumpSMT2() << std::endl;
         return 0;
 #else
-        std::cerr << "Error: --nl requires BUILD_NL2SMT.\n";
+        std::cerr << "Error: nl subcommand requires BUILD_NL2SMT.\n";
         return 1;
 #endif
     }

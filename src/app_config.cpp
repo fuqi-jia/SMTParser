@@ -1,9 +1,9 @@
 /* -*- Source -*-
- * Unified config: load file (sections [parser], [nl2smt], [solver]) and apply to parser + env.
- * [nl2smt]: short keys (model, api_key, prompt_plan, ...) are mapped to env names when applying.
+ * Unified config (library): load file (sections [parser], [nl2smt], [solver]) and apply to parser + env.
+ * [nl2smt]: short keys (model, api_key, prompt_ld, prompt_apt, ...) are mapped to env names when applying.
  * Relative prompt paths in [nl2smt] are resolved against the config file's directory.
  */
-#include "config/config_loader.h"
+#include "app_config.h"
 #include "parser.h"
 #include <fstream>
 #include <cstdlib>
@@ -44,9 +44,9 @@ static bool isAbsolutePath(const std::string& path) {
 
 /** [nl2smt] keys whose values are prompt file paths (relative → resolve against config dir). */
 static bool isPromptPathKey(const std::string& key) {
-    return key == "prompt_file" || key == "prompt_plan" || key == "prompt_emit" || key == "prompt_repair"
-        || key == "NL2SMT_PROMPT_FILE" || key == "NL2SMT_PROMPT_PLAN"
-        || key == "NL2SMT_PROMPT_EMIT" || key == "NL2SMT_PROMPT_REPAIR";
+    return key == "prompt_file" || key == "prompt_ld" || key == "prompt_apt" || key == "prompt_repair"
+        || key == "NL2SMT_PROMPT_FILE" || key == "NL2SMT_PROMPT_LD"
+        || key == "NL2SMT_PROMPT_APT" || key == "NL2SMT_PROMPT_REPAIR";
 }
 
 bool loadConfigFile(const std::string& path, AppConfig* config) {
@@ -149,16 +149,15 @@ static const char* nl2smtKeyToEnv(const std::string& key) {
     if (key == "max_retries") return "NL2SMT_MAX_RETRIES";
     if (key == "debug") return "NL2SMT_DEBUG";
     if (key == "prompt_file") return "NL2SMT_PROMPT_FILE";
-    if (key == "prompt_plan") return "NL2SMT_PROMPT_PLAN";
-    if (key == "prompt_emit") return "NL2SMT_PROMPT_EMIT";
+    if (key == "prompt_ld") return "NL2SMT_PROMPT_LD";
+    if (key == "prompt_apt") return "NL2SMT_PROMPT_APT";
     if (key == "prompt_repair") return "NL2SMT_PROMPT_REPAIR";
-    return nullptr;  /* use key as env name (e.g. NL2SMT_LLM_SCRIPT) */
+    return nullptr;
 }
 
 void applyNl2smtEnv(const std::map<std::string, std::string>& nl2smt_opts) {
     for (const auto& kv : nl2smt_opts) {
         if (kv.first.empty()) continue;
-        /* api_key: env overrides config (do not overwrite if already set) */
         if (kv.first == "api_key" || kv.first == "OPENAI_API_KEY") {
             const char* ek = getenv("NL2SMT_API_KEY");
             if (ek && ek[0] != '\0') continue;

@@ -28,7 +28,7 @@ struct NLCliOverrides {
 /**
  * Build smtlib::NL2SMTOptions from config [nl2smt] map and CLI overrides.
  * Config keys: endpoint, path, model, temperature, timeout_sec, max_repair,
- *   strategy, prompt_plan, prompt_emit, prompt_repair, prompt_file (legacy), artifact_dir, quiet.
+ *   strategy, prompt_ld, prompt_apt, prompt_repair, prompt_file (legacy), artifact_dir, quiet.
  * Env (if set) can override: NL2SMT_API_KEY/OPENAI_API_KEY used by library; optional NL2SMT_ENDPOINT, etc.
  */
 smtlib::NL2SMTOptions buildOptions(

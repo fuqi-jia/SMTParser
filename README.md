@@ -174,7 +174,7 @@ To customize the build configuration:
 
 ```bash
 cmake -DBUILD_SHARED_LIBS=ON -DBUILD_BOTH_LIBS=OFF ..
-cmake -DBUILD_NL2SMT=ON ..   # enable natural-language-to-SMT in smtparser
+cmake -DBUILD_NL2SMT=ON ..   # enable natural-language-to-SMT in smtparser (or use ./build.sh --nl2smt)
 ```
 
 ### Command-Line Application (smtparser)
@@ -183,20 +183,19 @@ The build produces a **`smtparser`** executable that provides:
 
 | Subcommand / mode | Description |
 |-------------------|-------------|
-| **feature** | Parse an SMT-LIB2 file and print syntax features (logic, assertions, variables, functions, objectives, nodes). |
+| **feature** | Parse an SMT-LIB2 file and print syntax features (logic, assertions, objectives, variables, functions). |
 | **solve** | Run an external SMT solver on a file (e.g. Z3). Requires `--solver PATH` or `solver.path` in config. |
-| **--nl** | *(when `BUILD_NL2SMT=ON`)* Compile natural language to DAG via `Parser::parseNL` (configurable strategy; see **NL Compilation Strategy** below). Output SMT2 is printed; use with `solve` to run the solver on the result. |
+| **nl** | *(when `BUILD_NL2SMT=ON`)* Compile natural language to DAG via `Parser::parseNL` (configurable strategy; see **NL Compilation Strategy** below). Output SMT2 is printed; use `solve nl "..."` to run the solver on the result. |
 
-**Config:** Use `--config PATH` to load a unified config file with optional sections `[parser]`, `[nl2smt]`, and `[solver]`. Parser options (logic, precision, etc.), NL2SMT (endpoint, model, API key, prompt paths), and solver path can be set there. See **`.config/default.conf.example`**（parser + solver）或 **`.config/llm.conf.example`**（NL2SMT）.
+**Config:** Use `--config PATH` to load a unified config file with optional sections `[parser]`, `[nl2smt]`, and `[solver]`. Parser options (logic, precision, etc.), NL2SMT (endpoint, model, API key, **strategy**, prompt paths), and solver path can be set there. See **`.config/default.conf.example`** (parser + solver) and **`.config/llm.conf.example`** (NL2SMT).
 
 **Layout:**
 
 - **`apps/main.cpp`** — Unified entry; dispatches to feature, solver, or nl.
 - **`apps/features/`** — Feature subcommand: `run_features.h` / `run_features.cpp` (parse file, print syntax features).
 - **`apps/solver/`** — Solve subcommand (invoke external solver on file).
-- **`apps/nl2smt/`** — NL2SMT app: `run_nl2smt.h` / `run_nl2smt.cpp` (CLI options + `Parser::parseNL`), `run_nl2smt.py` (optional Plan/Emit/Repair script); see **`apps/nl2smt/NL2SMT.md`** for usage and options.
-- **`apps/config/`** — Config loader 源码（`config_loader.cpp/h`）；运行期配置在仓库根目录 **`.config/`**，见下文。
-- **`.config/`** — 默认本地配置目录：`llm.conf.example`、`prompts/nl2smt/`；真实 `llm.conf` 不提交。
+- **`apps/nl2smt/`** — NL2SMT app: `run_nl2smt.h` / `run_nl2smt.cpp` (CLI options + `Parser::parseNL`); see **`apps/nl2smt/NL2SMT.md`** for usage and options.
+- **`.config/`** — Default local config directory: `llm.conf.example`, `prompts/nl2smt/`. Do not commit the real `llm.conf`.
 
 **Examples:**
 
@@ -208,16 +207,16 @@ The build produces a **`smtparser`** executable that provides:
 ./smtparser --config my.conf solve formula.smt2
 
 # Natural language → SMT (requires BUILD_NL2SMT=ON; see "NL2SMT 配置（LiteLLM Proxy）" below)
-./smtparser --nl "maximize x + y under x >= 0, y >= 0"
+./smtparser nl "maximize x + y under x >= 0, y >= 0"
 ```
 
 #### NL2SMT 配置（LiteLLM Proxy）
 
-NL2SMT（`--nl`）通过 LiteLLM Proxy 与 LLM 交互；配置使用仓库根目录 **`.config/`**，不依赖 `make install`，不要求 `export` 环境变量。
+NL2SMT（子命令 **`nl`**）通过 LiteLLM Proxy 与 LLM 交互；配置使用仓库根目录 **`.config/`**，不依赖 `make install`，不要求 `export` 环境变量。
 
 1. **默认使用项目根目录 `.config/llm.conf`**
    - 配置搜索顺序：`--config PATH` → `./smtparser.conf` → `./.config/llm.conf` → `~/.config/smtparser/llm.conf`
-   - 若都不存在且使用 `--nl`：报错「未找到 NL2SMT 配置。请复制 .config/llm.conf.example 为 .config/llm.conf 并编辑。」
+   - 若都不存在且使用子命令 `nl`：报错「未找到 NL2SMT 配置。请复制 .config/llm.conf.example 为 .config/llm.conf 并编辑。」
 
 2. **首次使用**
    ```bash
@@ -226,25 +225,29 @@ NL2SMT（`--nl`）通过 LiteLLM Proxy 与 LLM 交互；配置使用仓库根目
    编辑 `.config/llm.conf`：设置 `endpoint`、`model` 等。  
    **api_key**（可选）：用于 Proxy 鉴权；优先级 `NL2SMT_API_KEY` > `OPENAI_API_KEY` > 配置文件中的 `api_key`；不设置则不发送 Authorization header。Provider key 由 LiteLLM Proxy 管理，SMTParser 不直接接触。
 
+   **Helper scripts (repo root):**
+   - **`./build.sh --nl2smt`** — 检查 cmake/g++/pkg-config/gmp/mpfr，缺则提示安装命令；配置并编译，启用 NL2SMT。
+   - **`./llm.sh`** — 启动 LiteLLM Proxy，从 `.config/llm.conf` 读取 port 与 model；若缺依赖会提示 `pip install "litellm[proxy]" python-multipart`。需先启动后再跑 `smtparser nl` 或 `test/nl/run_cases.sh`。
+
 3. **运行**
    ```bash
-   ./smtparser --nl "maximize x + y under x >= 0, y >= 0"
+   ./smtparser nl "maximize x + y under x >= 0, y >= 0"
    ```
    - 不需要 `export`；若需 key，可在 `.config/llm.conf` 中写 `api_key = ...`（勿提交）或由 Proxy 侧鉴权。
 
 #### NL Compilation Strategy
 
-`Parser::parseNL` 支持四种编译策略（`NLCompilationStrategy`），由配置 `strategy` 或 CLI `--nl-strategy=` 指定；优先级：**CLI > llm.conf > 默认**。默认值为 `StructuredCompilation`。
+`Parser::parseNL` supports two strategies, set by config key **`strategy`** or CLI **`--nl-strategy=`**. Priority: **CLI > llm.conf > default**. Default is **Structured**.
 
-| 策略 | 语义 | 适用场景 |
-|------|------|----------|
-| **StructuredCompilation** | Plan → Builder → 失败时 fallback 到 Emit/Parse | 默认；兼顾结构化构建与鲁棒性 |
-| **StructuredOnly** | 仅 Plan → Builder，无 SMT2 fallback | 评估纯 Builder 路径或禁止文本回退 |
-| **TextualCompilation** | Plan → Emit → Parse（可选 repair），不使用 Builder | 只要“计划 + 文本生成”，不做 DAG 构建 |
-| **DirectTextual** | NL → 单一 legacy prompt → SMT2 → Parse（可选 repair）；无 Plan/JSON/Builder | 传统单轮 NL→SMT2，复现或对比实验 |
+| Strategy | Pipeline | Role |
+|----------|----------|------|
+| **Structured** | NL → Logical Decomposition (LD) → Atomic Proposition Translation (APT) → Builder → DAG | Semantic compiler path: LD yields symbols, logical skeleton (and/or/not/implies), and proposition map (P1, P2, …); APT translates each proposition to SMT expression; Builder assembles via parser `mk*` API. No direct LLM SMT2 output. |
+| **DirectTextual** | NL → LLM → SMT2 → Parse (+ optional repair) | End-to-end baseline: legacy prompt, LLM outputs SMT-LIB2, strip markdown, `parseString`, optional repair. No LD, APT, or Builder. |
 
-- 配置示例（`.config/llm.conf`）：`strategy = StructuredCompilation`
-- CLI 覆盖：`--nl-strategy=DirectTextual`
+- **Structured** is the semantic-compiler path (LD + APT + Builder).
+- **DirectTextual** is the end-to-end text-generation baseline.
+- Config (`.config/llm.conf`): `strategy = Structured` or `strategy = DirectTextual`
+- CLI override: `--nl-strategy=DirectTextual`
 
 ### Compiling Client Applications
 

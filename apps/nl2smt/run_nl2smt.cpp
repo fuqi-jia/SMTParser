@@ -51,11 +51,9 @@ static double getConfigDouble(const std::map<std::string, std::string>& m,
 }
 
 static smtlib::NLCompilationStrategy strategyFromString(const std::string& s) {
-    if (s == "StructuredCompilation") return smtlib::NLCompilationStrategy::StructuredCompilation;
-    if (s == "StructuredOnly")       return smtlib::NLCompilationStrategy::StructuredOnly;
-    if (s == "TextualCompilation")   return smtlib::NLCompilationStrategy::TextualCompilation;
-    if (s == "DirectTextual")        return smtlib::NLCompilationStrategy::DirectTextual;
-    return smtlib::NLCompilationStrategy::StructuredCompilation;
+    if (s == "Structured")   return smtlib::NLCompilationStrategy::Structured;
+    if (s == "DirectTextual") return smtlib::NLCompilationStrategy::DirectTextual;
+    return smtlib::NLCompilationStrategy::Structured;
 }
 
 }  // namespace
@@ -71,15 +69,16 @@ smtlib::NL2SMTOptions buildOptions(
     opt.model      = getConfigOrEnv(config_nl2smt, "model",      "NL2SMT_MODEL",      "openai/gpt-4o-mini");
     opt.temperature= getConfigDouble(config_nl2smt, "temperature", 0.0);
     opt.timeout_sec= getConfigInt(config_nl2smt, "timeout_sec", 90);
+    // max_repair: used by library in parseNL (parse+repair step for both Structured and DirectTextual: src/nl2smt.cpp parseSmt2WithRepair)
     opt.max_repair = cli.no_repair ? 0 : (cli.max_repair >= 0 ? cli.max_repair : getConfigInt(config_nl2smt, "max_repair", 3));
-    opt.prompt_plan_path  = getConfigOrEnv(config_nl2smt, "prompt_plan",  "NL2SMT_PROMPT_PLAN",  "");
-    opt.prompt_emit_path  = getConfigOrEnv(config_nl2smt, "prompt_emit",  "NL2SMT_PROMPT_EMIT",  "");
+    opt.prompt_ld_path    = getConfigOrEnv(config_nl2smt, "prompt_ld",   "NL2SMT_PROMPT_LD",   "");
+    opt.prompt_apt_path   = getConfigOrEnv(config_nl2smt, "prompt_apt",  "NL2SMT_PROMPT_APT",  "");
     opt.prompt_repair_path= getConfigOrEnv(config_nl2smt, "prompt_repair","NL2SMT_PROMPT_REPAIR","");
     opt.prompt_legacy_path= getConfigOrEnv(config_nl2smt, "prompt_file",  "NL2SMT_PROMPT_FILE",  "");
     opt.artifact_dir = cli.artifact_dir.empty()
         ? getConfigOrEnv(config_nl2smt, "artifact_dir", nullptr, "") : cli.artifact_dir;
     opt.quiet = cli.quiet;
-    std::string strategyStr = getConfigOrEnv(config_nl2smt, "strategy", nullptr, "StructuredCompilation");
+    std::string strategyStr = getConfigOrEnv(config_nl2smt, "strategy", nullptr, "Structured");
     if (!cli.strategy_override.empty()) strategyStr = cli.strategy_override;
     opt.strategy = strategyFromString(strategyStr);
     return opt;

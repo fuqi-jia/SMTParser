@@ -8,10 +8,10 @@ model = openrouter/deepseek/deepseek-chat
 temperature = 0.0
 timeout_sec = 90
 max_repair = 3
-strategy = StructuredCompilation
+strategy = Structured
 
-prompt_plan = prompts/nl2smt/prompt_plan.txt
-prompt_emit = prompts/nl2smt/prompt_emit.txt
+prompt_ld   = prompts/nl2smt/prompt_ld.txt
+prompt_apt  = prompts/nl2smt/prompt_apt.txt
 prompt_repair = prompts/nl2smt/prompt_repair.txt
 
 # api_key optional (for Proxy auth); or use env NL2SMT_API_KEY / OPENAI_API_KEY

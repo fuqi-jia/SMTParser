@@ -37,49 +37,38 @@ namespace {
 
 using json = nlohmann::json;
 
+static std::string loadPrompt(const std::string& path, const char* defaultPrompt);
+static void writeArtifact(const std::string& dir, const std::string& name, const std::string& content);
+
 // ---------- Default prompts (embedded) ----------
-const char* const DEFAULT_PROMPT_PLAN = R"(You are an expert in SMT-LIB2 and formal logic.
+// LD: Logical Decomposition — symbols, skeleton (and/or/not/implies + P1,P2,...), proposition map (Pi -> NL clause). No SMT AST, no SMT text.
+const char* const DEFAULT_PROMPT_LD = R"(You are an expert in formal logic. Output ONLY valid JSON. No markdown, no explanation.
 
-Your task is to translate natural language problem descriptions into a structured, machine-readable JSON constraint plan.
-
-IMPORTANT: Output MUST be valid JSON only. No explanations, no markdown, no commentary. Start with '{' and end with '}'.
-
-Schema:
+Logical Decomposition schema:
 {
-  "version": 1,
   "logic": "QF_LIA" or "QF_LRA" or "QF_BV" or null,
-  "symbols": [
-    {"name": "x", "sort": {"kind": "Int"}},
-    {"name": "y", "sort": {"kind": "Real"}},
-    {"name": "bv", "sort": {"kind": "BV", "size": 32}},
-    {"name": "b", "sort": {"kind": "Bool"}}
-  ],
-  "constraints": [
-    {"id": "c1", "expr": <Expr>},
-    {"id": "c2", "expr": <Expr>}
-  ],
-  "objective": {"sense": "min" or "max" or "none", "term": <Expr> or null},
-  "assumptions": []
+  "symbols": [ {"name": "x", "sort": {"kind": "Int"}}, {"name": "y", "sort": {"kind": "Real"}} ],
+  "skeleton": { "op": "and", "args": [ "P1", { "op": "or", "args": [ "P2", "P3" ] } ] },
+  "propositions": { "P1": "x is positive", "P2": "y is less than 10", "P3": "z equals zero" },
+  "objective": { "sense": "min" or "max" or "none", "proposition": "P4" or "term": null }
 }
 
-Expr: variable: {"op": "var", "name": "x"}
-  constant: {"op": "const", "sort": {"kind": "Int"}, "value": "3"}
-  Bool const: {"op": "const", "sort": {"kind": "Bool"}, "value": true}
-  application: {"op": "add", "args": [<Expr>, <Expr>]}
-  comparison: {"op": "le", "args": [<Expr>, <Expr>]}
-  logic: {"op": "and", "args": [<Expr>, ...]}, "or", "not", "ite" (3 args)
-  BV const: {"op": "bvconst", "size": 32, "value": "#x0000000f"}
+skeleton: logic connectives "and", "or", "not", "implies" with args = proposition ids (e.g. "P1") or nested skeleton. Leaves are only P1, P2, ...
+propositions: each key (P1, P2, ...) maps to one boolean constraint phrase. Every proposition must be a constraint, not a type; put type info in symbols only. Use logic QF_LRA when any variable is Real. No SMT, no code.
 
-Translate the following natural language into a constraint plan (JSON only):
+Translate the following natural language into this JSON (symbols + skeleton + propositions only):
 
 <<<USER_INPUT>>>)";
 
-const char* const DEFAULT_PROMPT_EMIT = R"(You are an SMT-LIB2 code generator. Given a JSON constraint plan, output ONLY valid SMT-LIB2. No markdown, no explanations.
+// APT: Atomic Proposition Translation — one NL clause -> JSON expr tree (variable/const/op/args). Used per proposition.
+const char* const DEFAULT_PROMPT_APT = R"(Output ONLY a JSON expression tree. No markdown, no explanation.
 
-Rules: (set-logic LOGIC) if logic present; (declare-fun name () Sort) per symbol; (assert <expr>) per constraint; (minimize TERM) or (maximize TERM) if objective sense min/max; end with (check-sat).
+Format: {"op": "le", "args": [{"op": "var", "name": "x"}, {"op": "const", "sort": {"kind": "Int"}, "value": "0"}]}
+Ops: var, const, and, or, not, implies, le, lt, ge, gt, add, sub, mul, ite. Sort: {"kind": "Int"}|{"kind": "Real"}|{"kind": "Bool"}.
 
-Plan:
-<<<PLAN_JSON>>>)";
+Translate this single constraint into one JSON expr tree:
+
+<<<PROPOSITION>>>)";
 
 const char* const DEFAULT_PROMPT_REPAIR = R"(The previous SMT-LIB2 failed to parse. Fix it. Output ONLY corrected SMT-LIB2. No explanations. Preserve semantics. Do not introduce new symbols.
 
@@ -291,7 +280,22 @@ static std::shared_ptr<DAGNode> buildExpr(Parser* p, const json& j,
                 return v ? NodeManager::getTrue() : NodeManager::getFalse();
             }
             if (sort->isInt()) {
-                std::string v = j["value"].is_string() ? j["value"].get<std::string>() : std::to_string(j["value"].get<int>());
+                std::string v;
+                if (j["value"].is_string()) {
+                    v = j["value"].get<std::string>();
+                    if (!TypeChecker::isInt(v)) {
+                        if (TypeChecker::isReal(v)) {
+                            double d = std::stod(v);
+                            v = std::to_string(static_cast<long long>(d));
+                        } else
+                            v = "0";
+                    }
+                } else if (j["value"].is_number_integer())
+                    v = std::to_string(j["value"].get<int>());
+                else if (j["value"].is_number_float())
+                    v = std::to_string(static_cast<long long>(j["value"].get<double>()));
+                else
+                    v = "0";
                 return p->mkConstInt(v);
             }
             if (sort->isReal()) {
@@ -464,102 +468,107 @@ static bool parseJsonStrict(const std::string& s, json* out, std::string* err) {
     }
 }
 
-static void writeArtifact(const std::string& dir, const std::string& name, const std::string& content) {
-    if (dir.empty()) return;
-    std::string path = (dir.back() == '/' || dir.back() == '\\') ? dir + name : dir + "/" + name;
-    std::ofstream f(path);
-    if (f) f << content;
-}
-
-static std::string loadPrompt(const std::string& path, const char* defaultPrompt) {
-    if (path.empty()) return defaultPrompt;
-    std::ifstream f(path);
-    if (!f) return defaultPrompt;
-    std::ostringstream os;
-    os << f.rdbuf();
-    return os.str();
-}
-
-// ---------- Strategy helpers ----------
-// Plan -> Builder (DAG). On failure, planJsonOut is set if plan was obtained (for fallback).
-static bool run_plan_builder(Parser* self, const std::string& nl, const smtlib::NL2SMTOptions& opt,
-    smtlib::NL2SMTReport* rpt, const std::string& artifactDir, std::string* planJsonOut) {
-    std::string planJson;
-    std::string systemPrompt = "You output only valid JSON. No markdown, no explanation.";
-    std::string userPrompt = loadPrompt(opt.prompt_plan_path, DEFAULT_PROMPT_PLAN);
-    size_t pos = userPrompt.find("<<<USER_INPUT>>>");
-    if (pos != std::string::npos) userPrompt.replace(pos, 16, nl);
-    std::string err;
-    if (!callLLM(opt.endpoint, opt.path, opt.model, opt.temperature, systemPrompt, userPrompt, opt.timeout_sec, &planJson, &err)) {
-        if (rpt) rpt->last_error = "Plan LLM failed: " + err;
-        return false;
+// ---------- Structured: build DAG from skeleton + proposition nodes ----------
+static std::shared_ptr<DAGNode> buildFromSkeleton(const json& skel,
+    const std::unordered_map<std::string, std::shared_ptr<DAGNode>>& propNodes,
+    const std::unordered_map<std::string, std::shared_ptr<DAGNode>>* allPropNodes,
+    const std::unordered_map<std::string, std::shared_ptr<DAGNode>>* syms,
+    Parser* p, std::string* outError) {
+    if (skel.is_string()) {
+        std::string id = skel.get<std::string>();
+        auto it = propNodes.find(id);
+        if (it != propNodes.end()) return it->second;
+        if (allPropNodes) {
+            auto ait = allPropNodes->find(id);
+            if (ait != allPropNodes->end() && ait->second->getSort() && ait->second->getSort()->isBool())
+                return ait->second;
+            if (propNodes.empty() && allPropNodes->size() == 1 && allPropNodes->begin()->second->getSort()
+                && allPropNodes->begin()->second->getSort()->isBool())
+                return allPropNodes->begin()->second;
+        }
+        if (syms) {
+            auto sit = syms->find(id);
+            if (sit != syms->end() && sit->second->getSort() && sit->second->getSort()->isBool())
+                return sit->second;
+        }
+        if (!propNodes.empty()) {
+            if (propNodes.size() == 1)
+                return propNodes.begin()->second;
+            size_t idx = 0;
+            if (id.size() > 1 && (id[0] == 'P' || id[0] == 'p') && std::isdigit(static_cast<unsigned char>(id[1]))) {
+                idx = static_cast<size_t>(std::atoi(id.c_str() + 1));
+                if (idx >= 1) {
+                    std::vector<std::string> keys;
+                    for (const auto& e : propNodes) keys.push_back(e.first);
+                    std::sort(keys.begin(), keys.end());
+                    size_t i = idx - 1;
+                    if (i >= keys.size()) i = keys.size() - 1;
+                    return propNodes.find(keys[i])->second;
+                }
+            }
+        }
+        if (allPropNodes && !allPropNodes->empty() && id.size() > 1 && (id[0] == 'P' || id[0] == 'p') && std::isdigit(static_cast<unsigned char>(id[1]))) {
+            size_t idx = static_cast<size_t>(std::atoi(id.c_str() + 1));
+            if (idx >= 1) {
+                std::vector<std::string> keys;
+                for (const auto& e : *allPropNodes) keys.push_back(e.first);
+                std::sort(keys.begin(), keys.end());
+                size_t i = idx - 1;
+                if (i >= keys.size()) i = keys.size() - 1;
+                auto node = allPropNodes->find(keys[i])->second;
+                if (node->getSort() && node->getSort()->isBool()) return node;
+            }
+        }
+        if (outError) {
+            std::string avail;
+            for (const auto& e : propNodes) { if (!avail.empty()) avail += ", "; avail += e.first; }
+            if (avail.empty() && allPropNodes) for (const auto& e : *allPropNodes) { if (!avail.empty()) avail += ", "; avail += e.first; }
+            *outError = "Unknown proposition id: " + id + " (available: " + (avail.empty() ? "none" : avail) + ")";
+        }
+        return nullptr;
     }
-    json plan;
-    std::string parseErr;
-    if (!parseJsonStrict(planJson, &plan, &parseErr)) {
-        if (rpt) rpt->last_error = "Plan JSON parse failed: " + parseErr;
-        if (planJsonOut) *planJsonOut = planJson;
-        return false;
+    if (!skel.is_object() || !skel.contains("op")) {
+        if (outError) *outError = "Skeleton node must be string (Pi) or {op, args}";
+        return nullptr;
     }
-    if (!plan.is_object()) {
-        if (rpt) rpt->last_error = "Plan is not a JSON object";
-        if (planJsonOut) *planJsonOut = planJson;
-        return false;
-    }
-    Parser temp;
-    if (plan.contains("logic") && !plan["logic"].is_null())
-        temp.getOptions()->logic = plan["logic"].get<std::string>();
-    std::string buildErr;
-    if (!buildFromPlan(&temp, plan, &planJson, &buildErr)) {
-        if (rpt) rpt->last_error = buildErr;
-        if (planJsonOut) *planJsonOut = planJson;
-        if (!artifactDir.empty()) writeArtifact(artifactDir, "builder_status.txt", "fail: " + buildErr);
-        return false;
-    }
-    self->swapContent(temp);
-    if (rpt) { rpt->ok = true; rpt->plan_json = planJson; }
-    if (!artifactDir.empty()) {
-        writeArtifact(artifactDir, "plan.json", planJson);
-        writeArtifact(artifactDir, "builder_status.txt", "ok");
-    }
-    return true;
-}
-
-// Plan (or fetch) -> Emit -> ParseStr + optional repair. planJsonInOut: in = existing plan or empty to fetch.
-static bool run_plan_emit_parse(Parser* self, const std::string& nl, const smtlib::NL2SMTOptions& opt,
-    smtlib::NL2SMTReport* rpt, const std::string& artifactDir, std::string* planJsonInOut) {
-    std::string& planJson = *planJsonInOut;
-    if (planJson.empty()) {
-        std::string systemPrompt = "You output only valid JSON. No markdown, no explanation.";
-        std::string userPrompt = loadPrompt(opt.prompt_plan_path, DEFAULT_PROMPT_PLAN);
-        size_t pos = userPrompt.find("<<<USER_INPUT>>>");
-        if (pos != std::string::npos) userPrompt.replace(pos, 16, nl);
-        std::string err;
-        if (!callLLM(opt.endpoint, opt.path, opt.model, opt.temperature, systemPrompt, userPrompt, opt.timeout_sec, &planJson, &err)) {
-            if (rpt) rpt->last_error = "Plan LLM failed: " + err;
-            return false;
+    std::string op = skel["op"].get<std::string>();
+    std::vector<std::shared_ptr<DAGNode>> args;
+    if (skel.contains("args") && skel["args"].is_array()) {
+        for (const auto& a : skel["args"]) {
+            auto child = buildFromSkeleton(a, propNodes, allPropNodes, syms, p, outError);
+            if (!child) return nullptr;
+            args.push_back(child);
         }
     }
-    if (planJson.empty()) {
-        if (rpt) rpt->last_error = "No plan from LLM";
-        return false;
+    if (op == "and") {
+        if (args.empty()) return p->mkTrue();
+        return p->mkAnd(args);
     }
-    std::string smt2;
-    if (planJson[0] == '{') {
-        std::string emitPrompt = loadPrompt(opt.prompt_emit_path, DEFAULT_PROMPT_EMIT);
-        size_t pos = emitPrompt.find("<<<PLAN_JSON>>>");
-        if (pos != std::string::npos) emitPrompt.replace(pos, 15, planJson);
-        std::string err;
-        if (!callLLM(opt.endpoint, opt.path, opt.model, opt.temperature, "Output only SMT-LIB2.", emitPrompt, opt.timeout_sec, &smt2, &err)) {
-            if (rpt) rpt->last_error = "Emit LLM failed: " + err;
-            return false;
+    if (op == "or") {
+        if (args.empty()) return p->mkFalse();
+        return p->mkOr(args);
+    }
+    if (op == "not") {
+        if (args.size() == 1) return p->mkNot(args[0]);
+        if (args.size() == 0 && allPropNodes && allPropNodes->size() == 1) {
+            auto node = allPropNodes->begin()->second;
+            if (node->getSort() && node->getSort()->isBool()) return p->mkNot(node);
         }
-        smt2 = stripMarkdown(smt2);
-    } else
-        smt2 = planJson;
-    if (!artifactDir.empty()) { writeArtifact(artifactDir, "plan.json", planJson); writeArtifact(artifactDir, "emit.smt2", smt2); }
-    if (rpt) rpt->plan_json = planJson;
+        if (outError) *outError = "not requires exactly one arg (got " + std::to_string(args.size()) + ")";
+        return nullptr;
+    }
+    if (op == "implies") {
+        if (args.size() != 2) { if (outError) *outError = "implies requires two args"; return nullptr; }
+        return p->mkImplies(args[0], args[1]);
+    }
+    if (outError) *outError = "Unsupported skeleton op: " + op;
+    return nullptr;
+}
 
+// ---------- Shared: parse SMT2 string with optional repair (used by both Structured and DirectTextual) ----------
+static bool parseSmt2WithRepair(Parser* self, std::string* smt2InOut, const std::string& planJsonForRepair,
+    const smtlib::NL2SMTOptions& opt, smtlib::NL2SMTReport* rpt, const std::string& artifactDir) {
+    std::string& smt2 = *smt2InOut;
     Parser temp;
     int repairRounds = 0;
     for (;;) {
@@ -575,7 +584,7 @@ static bool run_plan_emit_parse(Parser* self, const std::string& nl, const smtli
             size_t p2 = repairPrompt.find("<<<PLAN_JSON>>>");
             size_t p3 = repairPrompt.find("<<<PREVIOUS_SMT>>>");
             if (p1 != std::string::npos) repairPrompt.replace(p1, 19, parseErr);
-            if (p2 != std::string::npos) repairPrompt.replace(p2, 15, planJson);
+            if (p2 != std::string::npos) repairPrompt.replace(p2, 15, planJsonForRepair);
             if (p3 != std::string::npos) repairPrompt.replace(p3, 18, smt2);
             std::string err;
             if (callLLM(opt.endpoint, opt.path, opt.model, opt.temperature, "Output only corrected SMT-LIB2.", repairPrompt, opt.timeout_sec, &smt2, &err))
@@ -590,8 +599,143 @@ static bool run_plan_emit_parse(Parser* self, const std::string& nl, const smtli
     }
 }
 
-// DirectTextual: legacy prompt -> SMT2 -> parseStr + optional repair. No plan/JSON/builder.
-static bool run_direct_legacy(Parser* self, const std::string& nl, const smtlib::NL2SMTOptions& opt,
+// ---------- Structured pipeline: LD -> APT -> Builder -> dump SMT2 -> parse + optional repair ----------
+static bool run_structured_pipeline(Parser* self, const std::string& nl, const smtlib::NL2SMTOptions& opt,
+    smtlib::NL2SMTReport* rpt, const std::string& artifactDir) {
+    std::string ldJson;
+    std::string systemPrompt = "You output only valid JSON. No markdown, no explanation.";
+    std::string userPrompt = loadPrompt(opt.prompt_ld_path, DEFAULT_PROMPT_LD);
+    size_t pos = userPrompt.find("<<<USER_INPUT>>>");
+    if (pos != std::string::npos) userPrompt.replace(pos, 16, nl);
+    std::string err;
+    if (!callLLM(opt.endpoint, opt.path, opt.model, opt.temperature, systemPrompt, userPrompt, opt.timeout_sec, &ldJson, &err)) {
+        if (rpt) rpt->last_error = "LD LLM failed: " + err;
+        return false;
+    }
+    json ld;
+    if (!parseJsonStrict(ldJson, &ld, &err) || !ld.is_object()) {
+        if (rpt) rpt->last_error = "LD JSON failed: " + err;
+        return false;
+    }
+    if (!ld.contains("symbols") || !ld["symbols"].is_array() || !ld.contains("skeleton") || !ld.contains("propositions")
+        || !ld["propositions"].is_object()) {
+        if (rpt) rpt->last_error = "LD must contain symbols, skeleton, propositions";
+        return false;
+    }
+    if (!artifactDir.empty()) writeArtifact(artifactDir, "ld.json", ldJson);
+
+    Parser temp;
+    if (ld.contains("logic") && !ld["logic"].is_null())
+        temp.getOptions()->logic = ld["logic"].get<std::string>();
+    std::unordered_map<std::string, std::shared_ptr<DAGNode>> syms;
+    for (const auto& sym : ld["symbols"]) {
+        if (!sym.contains("name")) continue;
+        std::string name = sym["name"].get<std::string>();
+        std::shared_ptr<Sort> sort = sortFromPlan(sym.contains("sort") ? sym["sort"] : json("Int"), &temp);
+        if (!sort) continue;
+        if (sort->isBool()) syms[name] = temp.mkVarBool(name);
+        else if (sort->isInt()) syms[name] = temp.mkVarInt(name);
+        else if (sort->isReal()) syms[name] = temp.mkVarReal(name);
+        else if (sort->isBv()) syms[name] = temp.mkVarBv(name, sort->getBitWidth());
+        else syms[name] = temp.mkVar(sort, name);
+    }
+
+    std::string aptPromptTemplate = loadPrompt(opt.prompt_apt_path, DEFAULT_PROMPT_APT);
+    std::unordered_map<std::string, std::shared_ptr<DAGNode>> propNodes;
+    std::unordered_map<std::string, std::shared_ptr<DAGNode>> allPropNodes;
+    for (auto it = ld["propositions"].begin(); it != ld["propositions"].end(); ++it) {
+        std::string pid = it.key();
+        if (!it.value().is_string()) continue;
+        std::string propText = it.value().get<std::string>();
+        std::string aptUser = aptPromptTemplate;
+        size_t ap = aptUser.find("<<<PROPOSITION>>>");
+        if (ap != std::string::npos) aptUser.replace(ap, 17, propText);
+        std::string aptOut;
+        if (!callLLM(opt.endpoint, opt.path, opt.model, opt.temperature, "Output only valid JSON.", aptUser, opt.timeout_sec, &aptOut, &err)) {
+            if (rpt) rpt->last_error = "APT LLM failed for " + pid + ": " + err;
+            return false;
+        }
+        json exprJson;
+        if (!parseJsonStrict(aptOut, &exprJson, &err)) continue;
+        std::string buildErr;
+        auto node = buildExpr(&temp, exprJson, syms, &buildErr);
+        if (!node) continue;
+        allPropNodes[pid] = node;
+        if (node->getSort() && node->getSort()->isBool())
+            propNodes[pid] = node;
+    }
+
+    std::string buildErr;
+    auto mainConstraint = buildFromSkeleton(ld["skeleton"], propNodes, &allPropNodes, &syms, &temp, &buildErr);
+    if (!mainConstraint) {
+        if (rpt) rpt->last_error = "Builder failed: " + buildErr;
+        if (!artifactDir.empty()) {
+            std::ostringstream dbg;
+            dbg << "skeleton: " << ld["skeleton"].dump() << "\n";
+            dbg << "propositions (LD keys): ";
+            if (ld.contains("propositions") && ld["propositions"].is_object()) {
+                for (auto it = ld["propositions"].begin(); it != ld["propositions"].end(); ++it)
+                    dbg << it.key() << " ";
+            }
+            dbg << "\npropNodes (bool only): ";
+            for (const auto& e : propNodes) dbg << e.first << " ";
+            dbg << "\nallPropNodes: ";
+            for (const auto& e : allPropNodes) dbg << e.first << " ";
+            dbg << "\nbuildErr: " << buildErr << "\n";
+            writeArtifact(artifactDir, "builder_debug.txt", dbg.str());
+        }
+        return false;
+    }
+    temp.assert(mainConstraint);
+
+    if (ld.contains("objective") && ld["objective"].is_object()) {
+        const auto& obj = ld["objective"];
+        std::string sense = obj.contains("sense") ? obj["sense"].get<std::string>() : "none";
+        if (sense != "none") {
+            std::shared_ptr<DAGNode> termNode = nullptr;
+            if (obj.contains("proposition") && obj["proposition"].is_string()) {
+                std::string pk = obj["proposition"].get<std::string>();
+                auto it = allPropNodes.find(pk);
+                if (it != allPropNodes.end()) termNode = it->second;
+                if (!termNode && !allPropNodes.empty() && pk.size() > 1 && (pk[0] == 'P' || pk[0] == 'p') && std::isdigit(static_cast<unsigned char>(pk[1]))) {
+                    size_t idx = static_cast<size_t>(std::atoi(pk.c_str() + 1));
+                    if (idx >= 1) {
+                        std::vector<std::string> okeys;
+                        for (const auto& e : allPropNodes) okeys.push_back(e.first);
+                        std::sort(okeys.begin(), okeys.end());
+                        size_t i = idx - 1;
+                        if (i >= okeys.size()) i = okeys.size() - 1;
+                        termNode = allPropNodes.find(okeys[i])->second;
+                    }
+                }
+            }
+            if (!termNode && obj.contains("term") && !obj["term"].is_null())
+                termNode = buildExpr(&temp, obj["term"], syms, &buildErr);
+            if (termNode) {
+                OPT_KIND optKind = (sense == "max") ? OPT_KIND::OPT_MAXIMIZE : OPT_KIND::OPT_MINIMIZE;
+                COMP_KIND comp = getDefaultCompareOperator(temp.getOptions()->logic, optKind);
+                auto singleObj = std::make_shared<SingleObjective>(optKind, termNode, comp, NodeManager::NULL_NODE, NodeManager::NULL_NODE, "");
+                auto objective = std::make_shared<Objective>(optKind, "");
+                objective->addObjective(singleObj);
+                temp.objectives.push_back(objective);
+            }
+        }
+    }
+
+    std::string smt2 = temp.dumpSMT2();
+    if (!artifactDir.empty()) {
+        writeArtifact(artifactDir, "emit.smt2", smt2);
+        writeArtifact(artifactDir, "builder_status.txt", "ok");
+    }
+    if (rpt) rpt->plan_json = ldJson;
+    bool ok = parseSmt2WithRepair(self, &smt2, ldJson, opt, rpt, artifactDir);
+    if (ok && !temp.objectives.empty())
+        self->objectives = temp.objectives;
+    return ok;
+}
+
+// ---------- DirectTextual: legacy prompt -> SMT2 -> parse + optional repair ----------
+static bool run_direct_textual(Parser* self, const std::string& nl, const smtlib::NL2SMTOptions& opt,
     smtlib::NL2SMTReport* rpt, const std::string& artifactDir) {
     std::string systemPrompt = "Output only valid SMT-LIB2. No markdown, no explanation.";
     std::string userPrompt = loadPrompt(opt.prompt_legacy_path, DEFAULT_PROMPT_LEGACY);
@@ -606,34 +750,23 @@ static bool run_direct_legacy(Parser* self, const std::string& nl, const smtlib:
     smt2 = stripMarkdown(smt2);
     if (!artifactDir.empty()) writeArtifact(artifactDir, "emit.smt2", smt2);
     if (rpt) rpt->smt2 = smt2;
+    return parseSmt2WithRepair(self, &smt2, "", opt, rpt, artifactDir);
+}
 
-    Parser temp;
-    int repairRounds = 0;
-    for (;;) {
-        if (temp.parseStr(smt2)) {
-            self->swapContent(temp);
-            if (rpt) { rpt->ok = true; rpt->repair_rounds = repairRounds; rpt->artifacts_dir_used = artifactDir; }
-            return true;
-        }
-        std::string parseErr = "Parse failed";
-        if (repairRounds < opt.max_repair) {
-            std::string repairPrompt = loadPrompt(opt.prompt_repair_path, DEFAULT_PROMPT_REPAIR);
-            size_t p1 = repairPrompt.find("<<<ERROR_MESSAGE>>>");
-            size_t p2 = repairPrompt.find("<<<PLAN_JSON>>>");
-            size_t p3 = repairPrompt.find("<<<PREVIOUS_SMT>>>");
-            if (p1 != std::string::npos) repairPrompt.replace(p1, 19, parseErr);
-            if (p2 != std::string::npos) repairPrompt.replace(p2, 15, "");
-            if (p3 != std::string::npos) repairPrompt.replace(p3, 18, smt2);
-            if (callLLM(opt.endpoint, opt.path, opt.model, opt.temperature, "Output only corrected SMT-LIB2.", repairPrompt, opt.timeout_sec, &smt2, &err))
-                smt2 = stripMarkdown(smt2);
-            if (!artifactDir.empty())
-                writeArtifact(artifactDir, "repair_" + std::to_string(repairRounds) + ".smt2", smt2);
-            repairRounds++;
-            continue;
-        }
-        if (rpt) { rpt->last_error = parseErr; rpt->repair_rounds = repairRounds; rpt->artifacts_dir_used = artifactDir; }
-        return false;
-    }
+static void writeArtifact(const std::string& dir, const std::string& name, const std::string& content) {
+    if (dir.empty()) return;
+    std::string path = (dir.back() == '/' || dir.back() == '\\') ? dir + name : dir + "/" + name;
+    std::ofstream f(path);
+    if (f) f << content;
+}
+
+static std::string loadPrompt(const std::string& path, const char* defaultPrompt) {
+    if (path.empty()) return defaultPrompt;
+    std::ifstream f(path);
+    if (!f) return defaultPrompt;
+    std::ostringstream os;
+    os << f.rdbuf();
+    return os.str();
 }
 
 } // anonymous namespace
@@ -652,20 +785,10 @@ bool Parser::parseNL(const std::string& nl, const smtlib::NL2SMTOptions& opt, sm
         writeArtifact(artifactDir, "nl.txt", nl);
 
     switch (opt.strategy) {
-    case smtlib::NLCompilationStrategy::StructuredCompilation: {
-        std::string planJsonFallback;
-        if (run_plan_builder(this, nl, opt, rpt, artifactDir, &planJsonFallback))
-            return true;
-        return run_plan_emit_parse(this, nl, opt, rpt, artifactDir, &planJsonFallback);
-    }
-    case smtlib::NLCompilationStrategy::StructuredOnly:
-        return run_plan_builder(this, nl, opt, rpt, artifactDir, nullptr);
-    case smtlib::NLCompilationStrategy::TextualCompilation: {
-        std::string planJson;
-        return run_plan_emit_parse(this, nl, opt, rpt, artifactDir, &planJson);
-    }
+    case smtlib::NLCompilationStrategy::Structured:
+        return run_structured_pipeline(this, nl, opt, rpt, artifactDir);
     case smtlib::NLCompilationStrategy::DirectTextual:
-        return run_direct_legacy(this, nl, opt, rpt, artifactDir);
+        return run_direct_textual(this, nl, opt, rpt, artifactDir);
     }
     return false;
 }
