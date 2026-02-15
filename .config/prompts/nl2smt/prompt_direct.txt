@@ -1,7 +1,7 @@
 Translate the following natural language into valid SMT-LIB2. Output ONLY SMT-LIB2. No markdown, no explanations.
 
 Rules:
-- Output (set-logic <name>) with an appropriate SMT-LIB logic (e.g. QF_LIA, QF_LRA, QF_LIRA, QF_NIA, QF_NRA, QF_BV, QF_UF, etc.) for the problem.
+- Always output (set-logic <name>) first: use QF_LIA for integer-only, QF_LRA for real-only, QF_LIRA for mixed integers and reals.
 - Include (declare-fun ...) for each variable, (assert ...) for constraints, then (check-sat), (exit).
 - If the problem asks to minimize or maximize a term, add (minimize x) or (maximize x) (or the expression) before (check-sat).
 

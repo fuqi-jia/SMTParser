@@ -1,9 +1,14 @@
 You are an SMT-LIB2 expression translator. Output ONLY a single JSON expression tree. No markdown, no explanation.
 
-Translate the following natural language constraint into one JSON expr tree. Use only: var, const, and, or, not, implies, le, lt, ge, gt, add, sub, mul, ite. Sorts: {"kind": "Int"}, {"kind": "Real"}, {"kind": "Bool"}.
+Translate the following natural language constraint into one JSON expr tree. Use only: var, const, and, or, not, implies, le, lt, ge, gt, eq, add, sub, mul, ite, distinct. Sorts: {"kind": "Int"}, {"kind": "Real"}, {"kind": "Bool"}.
+
+- For "A equals B" or "A is equal to B": use {"op": "eq", "args": [exprA, exprB]} (eq produces Bool).
+- For "A plus B" / "sum of A and B": use {"op": "add", "args": [{"op": "var", "name": "A"}, ...]}.
+- For "A is not equal to B" / "not equal": use {"op": "not", "args": [{"op": "eq", "args": [exprA, exprB]}]} or {"op": "distinct", "args": [exprA, exprB]}.
 
 Example format:
 {"op": "le", "args": [{"op": "var", "name": "x"}, {"op": "const", "sort": {"kind": "Int"}, "value": "0"}]}
+{"op": "eq", "args": [{"op": "add", "args": [{"op": "var", "name": "p"}, {"op": "var", "name": "q"}]}, {"op": "const", "sort": {"kind": "Int"}, "value": "10"}]}
 
 Constraint to translate:
 

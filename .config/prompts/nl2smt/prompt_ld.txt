@@ -15,8 +15,8 @@ Schema:
 
 - symbols: list of variable names and sorts (Int, Real, Bool, BV with size). Choose an appropriate logic for the problem (e.g. QF_LRA when reals are used).
 - skeleton: logic connectives "and", "or", "not", "implies"; args are proposition ids ("P1", "P2", ...) or nested skeleton objects. Leaves are only P1, P2, ...
-- propositions: each key (P1, P2, ...) maps to one boolean constraint phrase (e.g. "x is positive", "y less than 10"). Every proposition must express a constraint, not a type; put type info in symbols only. No SMT, no code.
-- objective: optional; "proposition" refers to a Pk for objective term, or use "term" with a JSON expr for the objective expression, or "term": null if none.
+- propositions: each key (P1, P2, ...) maps to exactly one boolean constraint stated in the problem. Do not invent constraints: e.g. "k is at least 1" gives only one constraint (lower bound k >= 1), do not add an upper bound (k <= 0) or anything else. Every proposition must come from the problem text; put type info in symbols only. No SMT, no code.
+- objective: when the problem says minimize or maximize, always set "sense" to "min" or "max" and set "term" to the expression to optimize (e.g. single variable {"op": "var", "name": "x"}, or sum {"op": "add", "args": [{"op": "var", "name": "a"}, {"op": "var", "name": "b"}]}). Use "proposition" only when the objective is exactly one constraint id (rare). Use "sense": "none" and "term": null only when there is no optimization.
 
 Translate the following natural language into this LD JSON:
 

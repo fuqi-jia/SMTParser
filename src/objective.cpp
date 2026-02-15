@@ -306,6 +306,34 @@ namespace SMTParser{
     }
 
     
+    std::string optKindToString(const OPT_KIND& opt_kind){
+        switch (opt_kind)
+        {
+        case OPT_KIND::OPT_MINIMIZE:
+            return "minimize";
+        case OPT_KIND::OPT_MAXIMIZE:
+            return "maximize";
+        case OPT_KIND::OPT_MAXSAT:
+            return "maxsat";
+        case OPT_KIND::OPT_MINSAT:
+            return "minsat";
+        case OPT_KIND::OPT_LEX_OPTIMIZE:
+            return "lex";
+        case OPT_KIND::OPT_PARETO_OPTIMIZE:
+            return "pareto";
+        case OPT_KIND::OPT_BOX_OPTIMIZE:
+            return "box";
+        case OPT_KIND::OPT_MINMAX:
+            return "minmax";
+        case OPT_KIND::OPT_MAXMIN:
+            return "maxmin";
+        case OPT_KIND::OPT_NULL:
+            return "null";
+        }
+        return "UNKNOWN_OPT_KIND";
+    }
+
+    
     COMP_KIND getCompareOperatorForObjectiveTerm(const std::shared_ptr<DAGNode>& obj_term, OPT_KIND opt_type){
         condAssert(opt_type == OPT_KIND::OPT_MINIMIZE || opt_type == OPT_KIND::OPT_MAXIMIZE, 
                    "getCompareOperatorForObjectiveTerm: opt_type is not minimize or maximize");

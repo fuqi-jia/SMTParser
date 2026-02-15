@@ -22,8 +22,11 @@ namespace SMTParser {
 namespace App {
 
 static void trim(std::string& s) {
-    s.erase(0, s.find_first_not_of(" \t"));
-    s.erase(s.find_last_not_of(" \t") + 1);
+    /* Strip CR/LF so CRLF config files parse correctly */
+    while (!s.empty() && (s.back() == '\r' || s.back() == '\n')) s.pop_back();
+    s.erase(0, s.find_first_not_of(" \t\n\r"));
+    size_t last = s.find_last_not_of(" \t\n\r");
+    if (last != std::string::npos) s.erase(last + 1); else s.clear();
 }
 
 /** Return true if path exists and is readable (file). */
@@ -98,6 +101,9 @@ std::string findDefaultConfigPath() {
         return "smtparser.conf";
     if (fileExists(".config/llm.conf"))
         return ".config/llm.conf";
+    /* When run from build/, cwd has no .config; try parent (repo root). */
+    if (fileExists("../.config/llm.conf"))
+        return "../.config/llm.conf";
 #if !defined(_WIN32) && !defined(_WIN64)
     const char* home = getenv("HOME");
     if (home && *home) {

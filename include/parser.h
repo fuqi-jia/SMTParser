@@ -385,6 +385,12 @@ namespace SMTParser{
          */
         std::vector<std::shared_ptr<Objective>> getObjectives() const;
 
+        /**
+         * @brief Add an objective (e.g. minimize/maximize). Use after parsing or when building programmatically.
+         * @param obj Single objective (minimize/maximize) or composite objective.
+         */
+        void addObjective(const std::shared_ptr<Objective>& obj);
+
         /** 
         * @brief Set global options
         * 

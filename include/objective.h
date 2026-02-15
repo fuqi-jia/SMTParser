@@ -40,9 +40,12 @@ namespace SMTParser{
         OPT_NULL
     };
 
+
+
     enum class COMP_KIND{
         COMP_LT, COMP_LE, COMP_GT, COMP_GE, COMP_BV_ULT, COMP_BV_ULE, COMP_BV_UGT, COMP_BV_UGE, COMP_BV_SLT, COMP_BV_SLE, COMP_BV_SGT, COMP_BV_SGE, COMP_FP_LT, COMP_FP_LE, COMP_FP_GT, COMP_FP_GE, COMP_NULL
     };
+
 
     COMP_KIND getDefaultCompareOperator(const std::string& logic, OPT_KIND opt_type = OPT_KIND::OPT_MINIMIZE);
     COMP_KIND getCompareOperator(const std::string& symbol);
@@ -237,6 +240,7 @@ namespace SMTParser{
     };
 
     OPT_KIND getOptKind(const std::string& symbol);
+    std::string optKindToString(const OPT_KIND& opt_kind);
 
     // smart pointers
     typedef std::shared_ptr<MetaObjective> MetaObjectivePtr;

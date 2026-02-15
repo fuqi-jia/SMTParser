@@ -224,6 +224,10 @@ namespace SMTParser{
 	std::vector<std::shared_ptr<Objective>> Parser::getObjectives() const{
 		return objectives;
 	}
+
+	void Parser::addObjective(const std::shared_ptr<Objective>& obj){
+		if(obj) objectives.push_back(obj);
+	}
 	
 	void Parser::setOption(const std::string& key, const std::string& value){
 		options->setOption(key, value);
@@ -2855,6 +2859,15 @@ namespace SMTParser{
 		// constraints
 		for(auto& constraint : assertions){
 			ss << "(assert " << dumpSMTLIB2(constraint) << ")" << std::endl;
+		}
+		// objectives (minimize / maximize); skip invalid term (null or NT_ERROR)
+		for(auto& obj : objectives){
+			if(obj){
+				std::shared_ptr<DAGNode> term = obj->getObjectiveTerm();
+				if(term && term->getKind() != NODE_KIND::NT_ERROR && term->getKind() != NODE_KIND::NT_NULL){
+					ss << "(" << optKindToString(obj->getObjectiveKind()) << " " << dumpSMTLIB2(term) << ")" << std::endl;
+				}
+			}
 		}
 		ss << "(check-sat)" << std::endl;
 		ss << "(exit)" << std::endl;
