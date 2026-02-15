@@ -738,7 +738,7 @@ static bool run_structured_pipeline(Parser* self, const std::string& nl, const s
 static bool run_direct_textual(Parser* self, const std::string& nl, const smtlib::NL2SMTOptions& opt,
     smtlib::NL2SMTReport* rpt, const std::string& artifactDir) {
     std::string systemPrompt = "Output only valid SMT-LIB2. No markdown, no explanation.";
-    std::string userPrompt = loadPrompt(opt.prompt_legacy_path, DEFAULT_PROMPT_LEGACY);
+    std::string userPrompt = loadPrompt(opt.prompt_direct_path, DEFAULT_PROMPT_LEGACY);
     size_t pos = userPrompt.find("<<<USER_INPUT>>>");
     if (pos != std::string::npos) userPrompt.replace(pos, 16, nl);
     std::string smt2;

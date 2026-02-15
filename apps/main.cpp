@@ -55,7 +55,7 @@ static void usage(const char* prog) {
               << "    path                            API path (default: /v1/chat/completions).\n"
               << "    model / NL2SMT_MODEL            Model name (default: openai/gpt-4o-mini).\n"
               << "    api_key / OPENAI_API_KEY        API key (or NL2SMT_API_KEY).\n"
-              << "    prompt_ld, prompt_apt, prompt_repair, prompt_file  Prompt file paths.\n\n";
+              << "    prompt_ld, prompt_apt, prompt_repair, prompt_direct  Prompt file paths.\n\n";
 
     std::cerr << "  [solver]  — solver mode\n"
               << "    solver.path                       Path to SMT solver executable (e.g. /usr/bin/z3).\n\n";
@@ -96,6 +96,7 @@ int main(int argc, char* argv[]) {
         }
         if (a.compare(0, 19, "--nl-artifact-dir=") == 0) { nlArtifactDir = a.substr(19); continue; }
         if (a.compare(0, 15, "--nl-strategy=") == 0) { nlStrategyOverride = a.substr(15); continue; }
+        if (a == "--nl-strategy" && i + 1 < argc) { nlStrategyOverride = argv[++i]; continue; }
         if (a == "--quiet") { nlQuiet = true; continue; }
 #endif
         if (a == "--logic" || a == "--option" || (a.size() > 1 && a[0] == '-')) continue;
@@ -244,7 +245,8 @@ int main(int argc, char* argv[]) {
         if (!nlQuiet) {
             size_t nAst = parser->getAssertions().size();
             size_t nObj = parser->getObjectives().size();
-            std::cerr << "NL2SMT: assertions=" << nAst << " objectives=" << nObj << " repair_rounds=" << report.repair_rounds;
+            std::cerr << "NL2SMT: strategy=" << (opt.strategy == smtlib::NLCompilationStrategy::DirectTextual ? "DirectTextual" : "Structured")
+                      << " assertions=" << nAst << " objectives=" << nObj << " repair_rounds=" << report.repair_rounds;
             if (!report.artifacts_dir_used.empty()) std::cerr << " artifacts=" << report.artifacts_dir_used;
             std::cerr << std::endl;
         }

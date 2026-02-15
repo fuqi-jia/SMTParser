@@ -44,8 +44,8 @@ static bool isAbsolutePath(const std::string& path) {
 
 /** [nl2smt] keys whose values are prompt file paths (relative → resolve against config dir). */
 static bool isPromptPathKey(const std::string& key) {
-    return key == "prompt_file" || key == "prompt_ld" || key == "prompt_apt" || key == "prompt_repair"
-        || key == "NL2SMT_PROMPT_FILE" || key == "NL2SMT_PROMPT_LD"
+    return key == "prompt_direct" || key == "prompt_ld" || key == "prompt_apt" || key == "prompt_repair"
+        || key == "NL2SMT_PROMPT_DIRECT" || key == "NL2SMT_PROMPT_LD"
         || key == "NL2SMT_PROMPT_APT" || key == "NL2SMT_PROMPT_REPAIR";
 }
 
@@ -148,7 +148,7 @@ static const char* nl2smtKeyToEnv(const std::string& key) {
     if (key == "reasoning_effort") return "NL2SMT_REASONING_EFFORT";
     if (key == "max_retries") return "NL2SMT_MAX_RETRIES";
     if (key == "debug") return "NL2SMT_DEBUG";
-    if (key == "prompt_file") return "NL2SMT_PROMPT_FILE";
+    if (key == "prompt_direct") return "NL2SMT_PROMPT_DIRECT";
     if (key == "prompt_ld") return "NL2SMT_PROMPT_LD";
     if (key == "prompt_apt") return "NL2SMT_PROMPT_APT";
     if (key == "prompt_repair") return "NL2SMT_PROMPT_REPAIR";

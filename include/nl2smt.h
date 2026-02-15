@@ -31,7 +31,7 @@ struct NL2SMTOptions {
     std::string prompt_ld_path;
     std::string prompt_apt_path;
     std::string prompt_repair_path;
-    std::string prompt_legacy_path;
+    std::string prompt_direct_path;
 
     std::string artifact_dir;
     bool dump_smt2 = true;

@@ -74,7 +74,7 @@ smtlib::NL2SMTOptions buildOptions(
     opt.prompt_ld_path    = getConfigOrEnv(config_nl2smt, "prompt_ld",   "NL2SMT_PROMPT_LD",   "");
     opt.prompt_apt_path   = getConfigOrEnv(config_nl2smt, "prompt_apt",  "NL2SMT_PROMPT_APT",  "");
     opt.prompt_repair_path= getConfigOrEnv(config_nl2smt, "prompt_repair","NL2SMT_PROMPT_REPAIR","");
-    opt.prompt_legacy_path= getConfigOrEnv(config_nl2smt, "prompt_file",  "NL2SMT_PROMPT_FILE",  "");
+    opt.prompt_direct_path= getConfigOrEnv(config_nl2smt, "prompt_direct", "NL2SMT_PROMPT_DIRECT", "");
     opt.artifact_dir = cli.artifact_dir.empty()
         ? getConfigOrEnv(config_nl2smt, "artifact_dir", nullptr, "") : cli.artifact_dir;
     opt.quiet = cli.quiet;

@@ -1,0 +1,4 @@
+Translate the following natural language into valid SMT-LIB2. Output ONLY SMT-LIB2. No markdown, no explanations.
+Include (set-logic ...), (declare-fun ...), (assert ...), (check-sat), (exit).
+
+<<<USER_INPUT>>>

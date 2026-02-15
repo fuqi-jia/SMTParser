@@ -1,5 +1,6 @@
 # NL2SMT / LiteLLM Proxy — example config. Copy to .config/llm.conf and edit; do not commit.
 # Paths are relative to this file's directory (.config/); prompts live under .config/prompts/nl2smt/
+# strategy: Structured (LD+APT+build) or DirectTextual (single prompt NL->SMT2). Override with --nl-strategy=DirectTextual.
 
 [nl2smt]
 endpoint = http://127.0.0.1:4000
@@ -10,9 +11,10 @@ timeout_sec = 90
 max_repair = 3
 strategy = Structured
 
-prompt_ld   = prompts/nl2smt/prompt_ld.txt
-prompt_apt  = prompts/nl2smt/prompt_apt.txt
+prompt_ld     = prompts/nl2smt/prompt_ld.txt
+prompt_apt    = prompts/nl2smt/prompt_apt.txt
 prompt_repair = prompts/nl2smt/prompt_repair.txt
+prompt_direct = prompts/nl2smt/prompt_direct.txt
 
 # api_key optional (for Proxy auth); or use env NL2SMT_API_KEY / OPENAI_API_KEY
 # api_key = your-token

@@ -32,7 +32,7 @@ expand_recursive_functions = false
 # timeout_sec = 90
 # max_repair = 3
 # strategy = Structured | DirectTextual
-# prompt_ld / prompt_apt / prompt_repair paths are relative to this config file's directory
+# prompt_ld / prompt_apt / prompt_repair / prompt_direct paths are relative to this config file's directory
 # api_key: prefer env NL2SMT_API_KEY or OPENAI_API_KEY, or set in llm.conf (do not commit)
 
 [solver]
