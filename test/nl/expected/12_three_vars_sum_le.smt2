@@ -1,0 +1,8 @@
+(set-logic QF_LIA)
+(declare-fun u () Int)
+(declare-fun v () Int)
+(declare-fun w () Int)
+(assert (<= (+ u v w) 20))
+(check-sat)
+(get-model)
+(exit)

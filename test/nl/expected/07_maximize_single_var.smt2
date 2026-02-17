@@ -1,0 +1,8 @@
+(set-logic QF_LIA)
+(declare-fun x () Int)
+(assert (<= x 100))
+(maximize x)
+(check-sat)
+(get-model)
+(get-objectives)
+(exit)

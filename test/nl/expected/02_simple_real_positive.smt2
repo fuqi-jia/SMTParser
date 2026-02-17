@@ -1,0 +1,6 @@
+(set-logic QF_LRA)
+(declare-fun y () Real)
+(assert (> y 0.0))
+(check-sat)
+(get-model)
+(exit)

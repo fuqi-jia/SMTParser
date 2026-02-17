@@ -1,0 +1,6 @@
+(set-logic QF_LIA)
+(declare-fun n () Int)
+(assert (or (< n 0) (> n 10)))
+(check-sat)
+(get-model)
+(exit)
