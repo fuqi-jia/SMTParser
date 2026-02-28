@@ -3602,12 +3602,17 @@ namespace SMTParser{
     }
     // ARRAY
     /*
-    (select Array Int), return Int
+    (select a i): a has sort (Array IndexSort ElemSort), i must have IndexSort, result is ElemSort.
     */
     std::shared_ptr<DAGNode> Parser::mkSelect(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r){
         
         if(!isArrayParam(l)) {
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in select", line_number);
+            return mkUnknown();
+        }
+        std::shared_ptr<Sort> index_sort = l->getSort()->getIndexSort();
+        if(!r->getSort() || *r->getSort() != *index_sort) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in select: index sort must match array index sort", line_number);
             return mkUnknown();
         }
 
@@ -3616,12 +3621,22 @@ namespace SMTParser{
         return simplifyArray(select_node);
     }
     /*
-    (store Array Int Int), return Array
+    (store a i v): a has sort (Array IndexSort ElemSort), i must have IndexSort, v must have ElemSort, result is (Array IndexSort ElemSort).
     */
     std::shared_ptr<DAGNode> Parser::mkStore(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> v){
         if(l->isErr() || r->isErr() || v->isErr()) return l->isErr()?l:r;
-        if(!isArrayParam(l) || !isIntParam(r)) {
+        if(!isArrayParam(l)) {
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in store", line_number);
+            return mkUnknown();
+        }
+        std::shared_ptr<Sort> index_sort = l->getSort()->getIndexSort();
+        std::shared_ptr<Sort> elem_sort = l->getSort()->getElemSort();
+        if(!r->getSort() || *r->getSort() != *index_sort) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in store: index sort must match array index sort", line_number);
+            return mkUnknown();
+        }
+        if(!v->getSort() || *v->getSort() != *elem_sort) {
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in store: value sort must match array element sort", line_number);
             return mkUnknown();
         }
 
