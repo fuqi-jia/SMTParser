@@ -63,8 +63,8 @@ namespace SMTParser{
             }
         }
         std::shared_ptr<DAGNode> assert_expr = parseExpr();
-        size_t index = soft_assertions.size();
-        soft_assertions.emplace_back(assert_expr);
+        size_t index = context_.soft_assertions.size();
+        context_.soft_assertions.emplace_back(assert_expr);
         
         for(size_t i=0;i<params_size;i++){
             key = attemptParseKeywords();
@@ -86,26 +86,26 @@ namespace SMTParser{
         // add the weight
         if(weight != ""){
             if(TypeChecker::isInt(weight)){
-                soft_weights.emplace_back(mkConstInt(weight));
+                context_.soft_weights.emplace_back(mkConstInt(weight));
             }
             else if(TypeChecker::isReal(weight)){
-                soft_weights.emplace_back(mkConstReal(weight));
+                context_.soft_weights.emplace_back(mkConstReal(weight));
             }
             else{
                 err_param_nnum("Weight", key_ln);
             }
         }
         else{
-            soft_weights.emplace_back(mkConstInt(1));
+            context_.soft_weights.emplace_back(mkConstInt(1));
         }
         // add the group id
         if(grp_id != ""){
-            if(soft_assertion_groups.find(grp_id) == soft_assertion_groups.end()){
-                soft_assertion_groups.insert(std::pair<std::string, std::unordered_set<size_t>>(grp_id, {index}));
+            if(context_.soft_assertion_groups.find(grp_id) == context_.soft_assertion_groups.end()){
+                context_.soft_assertion_groups.insert(std::pair<std::string, std::unordered_set<size_t>>(grp_id, {index}));
             }
-        }
-        else{
-            soft_assertion_groups[grp_id].insert(index);
+            else{
+                context_.soft_assertion_groups[grp_id].insert(index);
+            }
         }
     }
     // (maximize <expr> [:comp <symbol>] [:epsilon <symbol>] [:M <symbol>] [:id <symbol>])
@@ -198,7 +198,7 @@ namespace SMTParser{
         std::shared_ptr<Objective> objective = std::make_shared<Objective>(opt_type, grp_id);
         objective->addObjective(obj);
 
-        objectives.emplace_back(objective);
+        context_.objectives.emplace_back(objective);
 
         return objective;
     }
@@ -256,7 +256,7 @@ namespace SMTParser{
             objective->addObjective(objective_map[obj_name]);
         }
 
-        objectives.emplace_back(objective);
+        context_.objectives.emplace_back(objective);
 
         return objective;
     }

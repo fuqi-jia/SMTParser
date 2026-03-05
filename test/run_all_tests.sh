@@ -11,6 +11,8 @@ PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_ROOT"
 
 # Create build directory
+echo -e "${YELLOW}Creating build directory...${NC}"
+rm -rf build
 mkdir -p build
 cd build
 
@@ -61,6 +63,7 @@ if [ -z "$TEST_EXES" ]; then
         "./test_array_simplify"
         "./test_node_api"
         "./test_visitor_api"
+        "./test_context_dispatcher"
     )
     
     # Check each potential test

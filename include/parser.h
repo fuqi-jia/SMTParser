@@ -35,6 +35,9 @@
 #include "model.h"
 #include "node.h"
 #include "visitor.h"
+#include "op_utils.h"
+#include "context.h"
+#include "op_dispatcher.h"
 
 namespace SMTParser{
     #undef assert
@@ -233,19 +236,8 @@ namespace SMTParser{
         std::shared_ptr<DAGNode>                      result_node;
         std::shared_ptr<Model>                        result_model;
 
-    public:
-        std::vector<std::shared_ptr<DAGNode>>               assertions;
-        std::unordered_map<std::string, std::unordered_set<size_t>> 
-                                                            assertion_groups;
-        //:named
-        std::unordered_map<std::string, std::shared_ptr<DAGNode>> named_assertions;
-        std::vector<std::vector<std::shared_ptr<DAGNode>>>  assumptions;
-        std::vector<std::shared_ptr<DAGNode>>               soft_assertions;
-        std::vector<std::shared_ptr<DAGNode>>               soft_weights;
-        std::unordered_map<std::string, std::unordered_set<size_t>> 
-                                                            soft_assertion_groups;
-        std::vector<std::shared_ptr<Objective>>             objectives;
-        std::vector<std::shared_ptr<DAGNode>>               split_lemmas;
+        /** Context holding assertions, assumptions, objectives, etc. */
+        ParserContext                                 context_;
 
     public:
         
@@ -325,6 +317,13 @@ namespace SMTParser{
         std::shared_ptr<DAGNode> mkExpr(const std::string& expression);
 
         // to solver
+        /**
+         * @brief Get the context (assertions, assumptions, objectives, etc.)
+         * @return Reference to the parser context (base class); pass to Dispatcher or use get* below.
+         */
+        Context& context();
+        const Context& context() const;
+
         /**
          * @brief Get all assertions
          * 
@@ -3947,16 +3946,16 @@ namespace SMTParser{
         };
         
         // Collect store chain from an array term
-        StoreChain                                 collectStoreChain(std::shared_ptr<DAGNode> arrayTerm);
+        StoreChain                              collectStoreChain(std::shared_ptr<DAGNode> arrayTerm);
         
         // Canonicalize an array to canonical form (base, writes)
-        ArrayCanonicalForm                         canonicalizeArray(std::shared_ptr<DAGNode> array);
+        ArrayCanonicalForm                      canonicalizeArray(std::shared_ptr<DAGNode> array);
         
         // Check if two arrays are equal using canonical form
-        bool                                      areArraysEqual(const std::shared_ptr<DAGNode>& a, const std::shared_ptr<DAGNode>& b);
+        bool                                    areArraysEqual(const std::shared_ptr<DAGNode>& a, const std::shared_ptr<DAGNode>& b);
         
         // Check if an array contains variables (that prevent equality determination)
-        bool                                      arrayContainsVar(const std::shared_ptr<DAGNode>& array);
+        bool                                    arrayContainsVar(const std::shared_ptr<DAGNode>& array);
         
         // Rewrite select(store(...), index) to value or select(base, index)
         std::shared_ptr<DAGNode>                rewriteSelect(std::shared_ptr<DAGNode> selectNode);
@@ -3968,7 +3967,7 @@ namespace SMTParser{
         std::shared_ptr<DAGNode>                simplifyArray(std::shared_ptr<DAGNode> node);
         
         // Check if two nodes are definitely equal (for index comparison)
-        bool                                      areDefinitelyEqual(const std::shared_ptr<DAGNode>& a, const std::shared_ptr<DAGNode>& b);
+        bool                                    areDefinitelyEqual(const std::shared_ptr<DAGNode>& a, const std::shared_ptr<DAGNode>& b);
         
         std::shared_ptr<DAGNode>                splitOp(std::shared_ptr<DAGNode> expr, 
                                                         const std::unordered_set<NODE_KIND>& op_set, 

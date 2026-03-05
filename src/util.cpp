@@ -407,7 +407,7 @@ namespace SMTParser{
     }
 
     std::string BitVectorUtils::bvNeg(const std::string& bv){
-        condAssert(bv.starts_with("#b"), "invalid bitvector");
+        condAssert(bv.size() >= 2 && bv[0] == '#' && bv[1] == 'b', "invalid bitvector");
     
         std::string res = bv;
     

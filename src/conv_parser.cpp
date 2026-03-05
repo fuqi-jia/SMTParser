@@ -1596,7 +1596,7 @@ namespace SMTParser {
     std::shared_ptr<DAGNode> Parser::splitOp(std::shared_ptr<DAGNode> expr, const std::unordered_set<NODE_KIND>& op_set){
         bool is_changed = false;
         std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> visited;
-        split_lemmas.clear();
+        context_.split_lemmas.clear();
         return splitOp(expr, op_set, is_changed, visited);
     }
 
@@ -1616,7 +1616,7 @@ namespace SMTParser {
                 std::shared_ptr<DAGNode> right = expr->getChild(1);
                 std::shared_ptr<DAGNode> gt = mkGt(left, right);
                 std::shared_ptr<DAGNode> eq = mkEq(left, right);
-                split_lemmas.emplace_back(mkOr({
+                context_.split_lemmas.emplace_back(mkOr({
                     mkNot(gt),
                     mkNot(eq)
                 }));
@@ -1631,7 +1631,7 @@ namespace SMTParser {
                 std::shared_ptr<DAGNode> right = expr->getChild(1);
                 std::shared_ptr<DAGNode> lt = mkLt(left, right);
                 std::shared_ptr<DAGNode> eq = mkEq(left, right);
-                split_lemmas.emplace_back(mkOr({
+                context_.split_lemmas.emplace_back(mkOr({
                     mkNot(lt),
                     mkNot(eq)
                 }));
@@ -1646,7 +1646,7 @@ namespace SMTParser {
                 std::shared_ptr<DAGNode> right = expr->getChild(1);
                 std::shared_ptr<DAGNode> lt = mkLt(left, right);
                 std::shared_ptr<DAGNode> gt = mkGt(left, right);
-                split_lemmas.emplace_back(mkOr({
+                context_.split_lemmas.emplace_back(mkOr({
                     mkNot(lt),
                     mkNot(gt)
                 }));
@@ -1681,7 +1681,7 @@ namespace SMTParser {
     }
 
     std::vector<std::shared_ptr<DAGNode>> Parser::getSplitLemmas(){
-        return split_lemmas;
+        return context_.getSplitLemmas();
     }
 
     // remove all the nodes in the expression

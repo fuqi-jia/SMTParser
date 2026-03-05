@@ -388,7 +388,7 @@ namespace SMTParser{
                              std::string name = getSymbol();
                             // Store the named formula for unsat core functionality
                             // This could be stored in a separate map for named assertions
-                            named_assertions[name] = formula;
+                            context_.named_assertions[name] = formula;
                         }
     
                         frame.result = formula;

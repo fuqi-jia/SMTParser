@@ -127,7 +127,7 @@ namespace SMTParser{
 
 		// simple check
 		bool all_true = true;
-		for(auto& assertion : assertions){
+		for(auto& assertion : context_.assertions){
 			if(assertion->isErr()){
 				result_type = RESULT_TYPE::RT_ERROR;
 				return result_type;
@@ -161,30 +161,30 @@ namespace SMTParser{
 		// only count the nodes in assertions, assumptions, soft_assertions, soft_weights, objectives
 		std::unordered_set<std::shared_ptr<DAGNode>> visited;
 		std::queue<std::shared_ptr<DAGNode>> q;
-		for(size_t i=0;i<assertions.size();i++){
-			auto node = assertions[i];
+		for(size_t i=0;i<context_.assertions.size();i++){
+			auto node = context_.assertions[i];
 			q.push(node);
 			visited.insert(node);
 		}
-		for(size_t i=0;i<assumptions.size();i++){
-			for(size_t j=0;j<assumptions[i].size();j++){
-				auto node = assumptions[i][j];
+		for(size_t i=0;i<context_.assumptions.size();i++){
+			for(size_t j=0;j<context_.assumptions[i].size();j++){
+				auto node = context_.assumptions[i][j];
 				q.push(node);
 				visited.insert(node);
 			}
 		}
-		for(size_t i=0;i<soft_assertions.size();i++){
-			auto node = soft_assertions[i];
+		for(size_t i=0;i<context_.soft_assertions.size();i++){
+			auto node = context_.soft_assertions[i];
 			q.push(node);
 			visited.insert(node);
 		}
-		for(size_t i=0;i<soft_weights.size();i++){
-			auto node = soft_weights[i];
+		for(size_t i=0;i<context_.soft_weights.size();i++){
+			auto node = context_.soft_weights[i];
 			q.push(node);
 			visited.insert(node);
 		}
-		for(size_t i=0;i<objectives.size();i++){
-			auto node = objectives[i]->getObjectiveTerm();
+		for(size_t i=0;i<context_.objectives.size();i++){
+			auto node = context_.objectives[i]->getObjectiveTerm();
 			q.push(node);
 			visited.insert(node);
 		}
@@ -203,26 +203,33 @@ namespace SMTParser{
 	}
 	
 	// to solver
+	Context& Parser::context() {
+		return context_;
+	}
+	const Context& Parser::context() const {
+		return context_;
+	}
+
 	std::vector<std::shared_ptr<DAGNode>> Parser::getAssertions() const{
-		return assertions;
+		return context_.getAssertions();
 	}
 	std::unordered_map<std::string, std::unordered_set<size_t>> Parser::getGroupedAssertions() const{
-		return assertion_groups;
+		return context_.getGroupedAssertions();
 	}
 	std::vector<std::vector<std::shared_ptr<DAGNode>>> Parser::getAssumptions() const{
-		return assumptions;
+		return context_.getAssumptions();
 	}
 	std::vector<std::shared_ptr<DAGNode>> Parser::getSoftAssertions() const{
-		return soft_assertions;
+		return context_.getSoftAssertions();
 	}
 	std::vector<std::shared_ptr<DAGNode>> Parser::getSoftWeights() const{
-		return soft_weights;
+		return context_.getSoftWeights();
 	}
 	std::unordered_map<std::string, std::unordered_set<size_t>> Parser::getGroupedSoftAssertions() const{
-		return soft_assertion_groups;
+		return context_.getGroupedSoftAssertions();
 	}
 	std::vector<std::shared_ptr<Objective>> Parser::getObjectives() const{
-		return objectives;
+		return context_.getObjectives();
 	}
 	
 	void Parser::setOption(const std::string& key, const std::string& value){
@@ -676,12 +683,12 @@ namespace SMTParser{
 	bool Parser::assert(const std::string& constraint) {
 		parsing_file = false;
 		std::shared_ptr<DAGNode> expr = mkExpr(constraint);
-		assertions.emplace_back(expr);
+		context_.assertions.emplace_back(expr);
 		return true;
 	}
 
 	bool Parser::assert(std::shared_ptr<DAGNode> node) {
-		assertions.emplace_back(node);
+		context_.assertions.emplace_back(node);
 		return true;
 	}
 
@@ -754,8 +761,8 @@ namespace SMTParser{
 				grp_id = getSymbol();
 			}
 			std::shared_ptr<DAGNode> assert_expr = parseExpr();
-			size_t index = assertions.size();
-			assertions.emplace_back(assert_expr);
+			size_t index = context_.assertions.size();
+			context_.assertions.emplace_back(assert_expr);
 			// 
 			if(grp_id == ""){
 				KEYWORD key_ = attemptParseKeywords();
@@ -773,16 +780,16 @@ namespace SMTParser{
 			}
 			// if grp_id is not empty, insert to assertion_groups
 			if(grp_id != ""){
-				if(assertion_groups.find(grp_id) == assertion_groups.end()){
-					assertion_groups.insert(std::pair<std::string, std::unordered_set<size_t>>(grp_id, {index}));
+				if(context_.assertion_groups.find(grp_id) == context_.assertion_groups.end()){
+					context_.assertion_groups.insert(std::pair<std::string, std::unordered_set<size_t>>(grp_id, {index}));
 				}
 				else{
-					assertion_groups[grp_id].insert(index);
+					context_.assertion_groups[grp_id].insert(index);
 				}
 			}
 			//if named_name is not empty, insert to named_assertions
 			if (named_name != ""){
-				named_assertions[named_name] = assert_expr;
+				context_.named_assertions[named_name] = assert_expr;
 			}
 			skipToRpar();
 			return CMD_TYPE::CT_ASSERT;
@@ -810,7 +817,7 @@ namespace SMTParser{
 				std::shared_ptr<DAGNode> assump = parseExpr();
 				cur_assumptions.emplace_back(assump);
 			}
-			assumptions.emplace_back(cur_assumptions);
+			context_.assumptions.emplace_back(cur_assumptions);
 			skipToRpar();
 			return CMD_TYPE::CT_CHECK_SAT_ASSUMING;
 		}
@@ -2850,7 +2857,7 @@ namespace SMTParser{
 		}
 	}
 		// constraints
-		for(auto& constraint : assertions){
+		for(auto& constraint : context_.assertions){
 			ss << "(assert " << dumpSMTLIB2(constraint) << ")" << std::endl;
 		}
 		ss << "(check-sat)" << std::endl;
