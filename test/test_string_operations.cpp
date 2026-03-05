@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include "../include/parser.h"
+#include <cassert>
 
 // Test string constants
 void test_string_constants(SMTParser::ParserPtr& parser) {
@@ -40,12 +41,9 @@ cvc5:
     std::cout << "=== Testing String Constants ===" << std::endl;
     for (const auto& expr : expressions) {
         std::cout << "Expression: " << expr << std::endl;
-        try {
-            std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
-            std::cout << "  Result: " << parser->toString(result) << std::endl;
-        } catch (const std::exception& e) {
-            std::cout << "  Exception: " << e.what() << std::endl;
-        }
+        std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
+        assert(result && !result->isErr());
+        std::cout << "  Result: " << parser->toString(result) << std::endl;
         std::cout << std::endl;
     }
 }
@@ -67,12 +65,9 @@ void test_string_operations(SMTParser::ParserPtr& parser) {
     std::cout << "=== Testing String Operations ===" << std::endl;
     for (const auto& expr : expressions) {
         std::cout << "Expression: " << expr << std::endl;
-        try {
-            std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
-            std::cout << "  Result: " << parser->toString(result) << std::endl;
-        } catch (const std::exception& e) {
-            std::cout << "  Exception: " << e.what() << std::endl;
-        }
+        std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
+        assert(result && !result->isErr());
+        std::cout << "  Result: " << parser->toString(result) << std::endl;
         std::cout << std::endl;
     }
 }
@@ -91,12 +86,10 @@ void test_string_comparisons(SMTParser::ParserPtr& parser) {
     std::cout << "=== Testing String Comparison Operations ===" << std::endl;
     for (const auto& expr : expressions) {
         std::cout << "Expression: " << expr << std::endl;
-        try {
-            std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
-            std::cout << "  Result: " << parser->toString(result) << std::endl;
-        } catch (const std::exception& e) {
-            std::cout << "  Exception: " << e.what() << std::endl;
-        }
+        std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
+        assert(result && !result->isErr());
+        assert(result->isTrue() || result->isFalse());
+        std::cout << "  Result: " << parser->toString(result) << std::endl;
         std::cout << std::endl;
     }
 }
@@ -114,12 +107,9 @@ void test_regex_operations(SMTParser::ParserPtr& parser) {
     std::cout << "=== Testing Regular Expression Operations ===" << std::endl;
     for (const auto& expr : expressions) {
         std::cout << "Expression: " << expr << std::endl;
-        try {
-            std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
-            std::cout << "  Result: " << parser->toString(result) << std::endl;
-        } catch (const std::exception& e) {
-            std::cout << "  Exception: " << e.what() << std::endl;
-        }
+        std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
+        assert(result && !result->isErr());
+        std::cout << "  Result: " << parser->toString(result) << std::endl;
         std::cout << std::endl;
     }
 }

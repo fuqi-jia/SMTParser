@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include "../include/parser.h"
+#include <cassert>
 
 // Test bitvector constants
 void test_bitvector_constants(SMTParser::ParserPtr& parser) {
@@ -15,12 +16,9 @@ void test_bitvector_constants(SMTParser::ParserPtr& parser) {
     std::cout << "=== Testing Bitvector Constants ===" << std::endl;
     for (const auto& expr : expressions) {
         std::cout << "Expression: " << expr << std::endl;
-        try {
-            std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
-            std::cout << "  Result: " << parser->toString(result) << std::endl;
-        } catch (const std::exception& e) {
-            std::cout << "  Exception: " << e.what() << std::endl;
-        }
+        std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
+        assert(result && !result->isErr());
+        std::cout << "  Result: " << parser->toString(result) << std::endl;
         std::cout << std::endl;
     }
 }
@@ -40,12 +38,9 @@ void test_bv_logical_operations(SMTParser::ParserPtr& parser) {
     std::cout << "=== Testing Bitvector Logical Operations ===" << std::endl;
     for (const auto& expr : expressions) {
         std::cout << "Expression: " << expr << std::endl;
-        try {
-            std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
-            std::cout << "  Result: " << parser->toString(result) << std::endl;
-        } catch (const std::exception& e) {
-            std::cout << "  Exception: " << e.what() << std::endl;
-        }
+        std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
+        assert(result && !result->isErr());
+        std::cout << "  Result: " << parser->toString(result) << std::endl;
         std::cout << std::endl;
     }
 }
@@ -67,12 +62,9 @@ void test_bv_arithmetic_operations(SMTParser::ParserPtr& parser) {
     std::cout << "=== Testing Bitvector Arithmetic Operations ===" << std::endl;
     for (const auto& expr : expressions) {
         std::cout << "Expression: " << expr << std::endl;
-        try {
-            std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
-            std::cout << "  Result: " << parser->toString(result) << std::endl;
-        } catch (const std::exception& e) {
-            std::cout << "  Exception: " << e.what() << std::endl;
-        }
+        std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
+        assert(result && !result->isErr());
+        std::cout << "  Result: " << parser->toString(result) << std::endl;
         std::cout << std::endl;
     }
 }
@@ -93,12 +85,9 @@ void test_bv_comparison_operations(SMTParser::ParserPtr& parser) {
     std::cout << "=== Testing Bitvector Comparison Operations ===" << std::endl;
     for (const auto& expr : expressions) {
         std::cout << "Expression: " << expr << std::endl;
-        try {
-            std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
-            std::cout << "  Result: " << parser->toString(result) << std::endl;
-        } catch (const std::exception& e) {
-            std::cout << "  Exception: " << e.what() << std::endl;
-        }
+        std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
+        assert(result && (result->isTrue() || result->isFalse()));
+        std::cout << "  Result: " << parser->toString(result) << std::endl;
         std::cout << std::endl;
     }
 }

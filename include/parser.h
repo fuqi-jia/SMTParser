@@ -332,6 +332,18 @@ namespace SMTParser{
         std::vector<std::shared_ptr<DAGNode>> getAssertions() const;
 
         /**
+         * @brief Get the node manager (for Rewriter, etc.)
+         * @return Raw pointer to the parser's NodeManager
+         */
+        NodeManager* getNodeManager() { return node_manager.get(); }
+
+        /**
+         * @brief Get the node manager as shared_ptr (for Rewriter, etc.)
+         * @return shared_ptr to the parser's NodeManager
+         */
+        std::shared_ptr<NodeManager> getNodeManagerShared() { return node_manager; }
+
+        /**
          * @brief Get grouped assertions
          *
          * Returns assertion groups map. Use (assert expr :id group_name) to assign 

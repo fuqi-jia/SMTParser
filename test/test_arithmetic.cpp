@@ -2,80 +2,77 @@
 #include <string>
 #include <vector>
 #include "../include/parser.h"
+#include <cassert>
 
 // Test integer arithmetic operations
 void test_integer_arithmetic(SMTParser::ParserPtr& parser) {
-    std::vector<std::string> expressions = {
-        "42",
-        "-15",
-        "(+ 10 20)",
-        "(- 50 30)",
-        "(* 6 7)",
-        "(div 20 5)",
-        "(mod 17 5)",
-        "(abs -42)"
+    std::vector<std::pair<std::string, std::string>> cases = {
+        {"42", "42"},
+        {"-15", "-15"},
+        {"(+ 10 20)", "30"},
+        {"(- 50 30)", "20"},
+        {"(* 6 7)", "42"},
+        {"(div 20 5)", "4"},
+        {"(mod 17 5)", "2"},
+        {"(abs -42)", "42"}
     };
     
     std::cout << "=== Testing Integer Arithmetic ===" << std::endl;
-    for (const auto& expr : expressions) {
-        std::cout << "Expression: " << expr << std::endl;
-        try {
-            std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
-            std::cout << "  Result: " << parser->toString(result) << std::endl;
-        } catch (const std::exception& e) {
-            std::cout << "  Exception: " << e.what() << std::endl;
-        }
+    for (const auto& p : cases) {
+        std::cout << "Expression: " << p.first << std::endl;
+        std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(p.first);
+        assert(result);
+        std::string got = parser->toString(result);
+        std::cout << "  Result: " << got << std::endl;
+        assert(got == p.second && "integer arithmetic result mismatch");
         std::cout << std::endl;
     }
 }
 
 // Test real number arithmetic operations
 void test_real_arithmetic(SMTParser::ParserPtr& parser) {
-    std::vector<std::string> expressions = {
-        "3.14159",
-        "-2.71828",
-        "(+ 3.5 2.7)",
-        "(- 10.5 4.2)",
-        "(* 2.5 4.0)",
-        "(/ 15.0 3.0)",
-        "(^ 2.0 3.0)",      // 2.0^3.0
-        "(sqrt 16.0)",
-        "(abs -9.81)"
+    std::vector<std::pair<std::string, std::string>> cases = {
+        {"3.14159", "3.14159"},
+        {"-2.71828", "-2.71828"},
+        {"(+ 3.5 2.7)", "6.2"},
+        {"(- 10.5 4.2)", "6.3"},
+        {"(* 2.5 4.0)", "10"},
+        {"(/ 15.0 3.0)", "5"},
+        {"(^ 2.0 3.0)", "8"},
+        {"(sqrt 16.0)", "4"},
+        {"(abs -9.81)", "9.81"}
     };
     
     std::cout << "=== Testing Real Number Arithmetic ===" << std::endl;
-    for (const auto& expr : expressions) {
-        std::cout << "Expression: " << expr << std::endl;
-        try {
-            std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
-            std::cout << "  Result: " << parser->toString(result) << std::endl;
-        } catch (const std::exception& e) {
-            std::cout << "  Exception: " << e.what() << std::endl;
-        }
+    for (const auto& p : cases) {
+        std::cout << "Expression: " << p.first << std::endl;
+        std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(p.first);
+        assert(result);
+        std::string got = parser->toString(result);
+        std::cout << "  Result: " << got << std::endl;
+        assert(got == p.second && "real arithmetic result mismatch");
         std::cout << std::endl;
     }
 }
 
 // Test arithmetic comparison operations
 void test_comparisons(SMTParser::ParserPtr& parser) {
-    std::vector<std::string> expressions = {
-        "(< 5 10)",
-        "(<= 7 7)",
-        "(> 15 5)",
-        "(>= 12 12)",
-        "(= 42 42)",
-        "(distinct 3 5 7)"
+    std::vector<std::pair<std::string, bool>> cases = {
+        {"(< 5 10)", true},
+        {"(<= 7 7)", true},
+        {"(> 15 5)", true},
+        {"(>= 12 12)", true},
+        {"(= 42 42)", true},
+        {"(distinct 3 5 7)", true}
     };
     
     std::cout << "=== Testing Arithmetic Comparisons ===" << std::endl;
-    for (const auto& expr : expressions) {
-        std::cout << "Expression: " << expr << std::endl;
-        try {
-            std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
-            std::cout << "  Result: " << parser->toString(result) << std::endl;
-        } catch (const std::exception& e) {
-            std::cout << "  Exception: " << e.what() << std::endl;
-        }
+    for (const auto& p : cases) {
+        std::cout << "Expression: " << p.first << std::endl;
+        std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(p.first);
+        assert(result);
+        std::cout << "  Result: " << parser->toString(result) << std::endl;
+        assert(result->isTrue() == p.second && "comparison should evaluate to expected bool");
         std::cout << std::endl;
     }
 }
@@ -85,26 +82,39 @@ void test_precision(SMTParser::ParserPtr& parser) {
     
     // Default precision (128 bits)
     std::cout << "=== Default Precision (128 bits) ===" << std::endl;
+    auto r1 = parser->mkExpr("(+ 3.5 2.7)");
+    auto r2 = parser->mkExpr("(- 10.5 4.2)");
+    assert(r1 && r2);
     std::cout << "Expression: (+ 3.5 2.7)" << std::endl;
-    std::cout << "  Result: " << parser->toString(parser->mkExpr("(+ 3.5 2.7)")) << std::endl;
+    std::cout << "  Result: " << parser->toString(r1) << std::endl;
+    assert(parser->toString(r1) == "6.2");
     std::cout << "Expression: (- 10.5 4.2)" << std::endl;
-    std::cout << "  Result: " << parser->toString(parser->mkExpr("(- 10.5 4.2)")) << std::endl;
+    std::cout << "  Result: " << parser->toString(r2) << std::endl;
+    assert(parser->toString(r2) == "6.3");
     
     // Set higher precision (256 bits)
     parser->setEvaluatePrecision(256);
     std::cout << "\n=== Higher Precision (256 bits) ===" << std::endl;
+    auto r3 = parser->mkExpr("(+ 3.5 2.7)");
+    auto r4 = parser->mkExpr("(- 10.5 4.2)");
+    assert(r3 && r4);
     std::cout << "Expression: (+ 3.5 2.7)" << std::endl;
-    std::cout << "  Result: " << parser->toString(parser->mkExpr("(+ 3.5 2.7)")) << std::endl;
+    std::cout << "  Result: " << parser->toString(r3) << std::endl;
     std::cout << "Expression: (- 10.5 4.2)" << std::endl;
-    std::cout << "  Result: " << parser->toString(parser->mkExpr("(- 10.5 4.2)")) << std::endl;
+    std::cout << "  Result: " << parser->toString(r4) << std::endl;
+    assert(parser->toString(r3) == "6.2" && parser->toString(r4) == "6.3");
     
     // Disable floating point mode
     parser->setEvaluateUseFloating(false);
     std::cout << "\n=== Disable Floating Point Mode ===" << std::endl;
+    auto r5 = parser->mkExpr("(+ 3.5 2.7)");
+    auto r6 = parser->mkExpr("(- 10.5 4.2)");
+    assert(r5 && r6);
     std::cout << "Expression: (+ 3.5 2.7)" << std::endl;
-    std::cout << "  Result: " << parser->toString(parser->mkExpr("(+ 3.5 2.7)")) << std::endl;
+    std::cout << "  Result: " << parser->toString(r5) << std::endl;
     std::cout << "Expression: (- 10.5 4.2)" << std::endl;
-    std::cout << "  Result: " << parser->toString(parser->mkExpr("(- 10.5 4.2)")) << std::endl;
+    std::cout << "  Result: " << parser->toString(r6) << std::endl;
+    assert(parser->toString(r5) == "6.2" && parser->toString(r6) == "6.3");
 }
 
 int main() {

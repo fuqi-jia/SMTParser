@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include "../include/parser.h"
+#include <cassert>
 
 // Test strings of different lengths
 void test_string_lengths(SMTParser::ParserPtr& parser) {
@@ -16,12 +17,9 @@ void test_string_lengths(SMTParser::ParserPtr& parser) {
     
     for (const auto& str : test_strings) {
         std::cout << "Testing string length: " << str.length() << std::endl;
-        try {
-            std::shared_ptr<SMTParser::DAGNode> result = parser->mkConstStr(str);
-            std::cout << "  Result: " << (result->isErr() ? "Error" : parser->toString(result)) << std::endl;
-        } catch (const std::exception& e) {
-            std::cout << "  Exception: " << e.what() << std::endl;
-        }
+        std::shared_ptr<SMTParser::DAGNode> result = parser->mkConstStr(str);
+        assert(result && !result->isErr());
+        std::cout << "  Result: " << parser->toString(result) << std::endl;
     }
 }
 
@@ -36,12 +34,9 @@ void test_special_chars(SMTParser::ParserPtr& parser) {
     
     for (const auto& str : test_strings) {
         std::cout << "Testing special character: " << str << std::endl;
-        try {
-            std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(str);
-            std::cout << "  Result: " << (result->isErr() ? "Error" : parser->toString(result)) << std::endl;
-        } catch (const std::exception& e) {
-            std::cout << "  Exception: " << e.what() << std::endl;
-        }
+        std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(str);
+        assert(result && !result->isErr());
+        std::cout << "  Result: " << parser->toString(result) << std::endl;
     }
 }
 

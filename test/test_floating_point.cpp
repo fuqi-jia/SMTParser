@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include "../include/parser.h"
+#include <cassert>
 
 // 测试基本的浮点数常量和表示
 void test_fp_constants(SMTParser::ParserPtr& parser) {
@@ -18,12 +19,9 @@ void test_fp_constants(SMTParser::ParserPtr& parser) {
     std::cout << "=== 测试浮点数常量 ===" << std::endl;
     for (const auto& expr : expressions) {
         std::cout << "表达式: " << expr << std::endl;
-        try {
-            std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
-            std::cout << "  结果: " << parser->toString(result) << std::endl;
-        } catch (const std::exception& e) {
-            std::cout << "  异常: " << e.what() << std::endl;
-        }
+        std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
+        assert(result && !result->isErr());
+        std::cout << "  结果: " << parser->toString(result) << std::endl;
         std::cout << std::endl;
     }
 }
@@ -46,12 +44,9 @@ void test_fp_arithmetic(SMTParser::ParserPtr& parser) {
     std::cout << "=== 测试浮点数算术运算 ===" << std::endl;
     for (const auto& expr : expressions) {
         std::cout << "表达式: " << expr << std::endl;
-        try {
-            std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
-            std::cout << "  结果: " << parser->toString(result) << std::endl;
-        } catch (const std::exception& e) {
-            std::cout << "  异常: " << e.what() << std::endl;
-        }
+        std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
+        assert(result && !result->isErr());
+        std::cout << "  结果: " << parser->toString(result) << std::endl;
         std::cout << std::endl;
     }
 }
@@ -76,12 +71,9 @@ void test_fp_comparisons(SMTParser::ParserPtr& parser) {
     std::cout << "=== 测试浮点数比较操作 ===" << std::endl;
     for (const auto& expr : expressions) {
         std::cout << "表达式: " << expr << std::endl;
-        try {
-            std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
-            std::cout << "  结果: " << parser->toString(result) << std::endl;
-        } catch (const std::exception& e) {
-            std::cout << "  异常: " << e.what() << std::endl;
-        }
+        std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
+        assert(result && !result->isErr());
+        std::cout << "  结果: " << parser->toString(result) << std::endl;
         std::cout << std::endl;
     }
 }
@@ -112,12 +104,9 @@ void test_fp_conversions(SMTParser::ParserPtr& parser) {
     std::cout << "=== 测试浮点数转换操作 ===" << std::endl;
     for (const auto& expr : expressions) {
         std::cout << "表达式: " << expr << std::endl;
-        try {
-            std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
-            std::cout << "  结果: " << parser->toString(result) << std::endl;
-        } catch (const std::exception& e) {
-            std::cout << "  异常: " << e.what() << std::endl;
-        }
+        std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
+        assert(result && !result->isErr());
+        std::cout << "  结果: " << parser->toString(result) << std::endl;
         std::cout << std::endl;
     }
 }

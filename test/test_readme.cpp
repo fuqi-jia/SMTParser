@@ -6,6 +6,7 @@
 #include "parser.h"
 #include <iostream>
 #include <unordered_set>
+#include <cassert>
 
 void test_basic_parsing() {
     std::cout << "\n=== Testing Basic Parsing ===" << std::endl;
@@ -21,21 +22,13 @@ void test_basic_parsing() {
             (assert (> (+ x y) 10))
         )";
         
-        // Parse the string instead of file (since we don't have formula.smt2)
-        if (!parser.parseStr(smt_content)) {
-            std::cerr << "Error parsing SMT content" << std::endl;
-            return;
-        }
-        
-        // Retrieve the parsed assertions
+        assert(parser.parseStr(smt_content) && "parse SMT content must succeed");
         auto assertions = parser.getAssertions();
-        
-        // Output the assertions
+        assert(assertions.size() == 1 && "should have one assertion");
         std::cout << "Parsed assertions:" << std::endl;
         for(auto constraint: assertions){
             std::cout << "  " << parser.toString(constraint) << std::endl;
         }
-        
         std::cout << "✓ Basic parsing test passed" << std::endl;
     } catch (const std::exception& e) {
         std::cerr << "✗ Basic parsing test failed: " << e.what() << std::endl;
@@ -55,9 +48,10 @@ void test_expression_building() {
         auto sum = parser->mkAdd(add_params);
         auto condition = parser->mkGt(sum, parser->mkConstInt(10));
         
+        assert(sum && condition);
+        assert(parser->toString(condition).find(">") != std::string::npos || parser->toString(condition).find("10") != std::string::npos);
         std::cout << "Sum expression: " << parser->toString(sum) << std::endl;
         std::cout << "Condition: " << parser->toString(condition) << std::endl;
-        
         std::cout << "✓ Expression building test passed" << std::endl;
     } catch (const std::exception& e) {
         std::cerr << "✗ Expression building test failed: " << e.what() << std::endl;
@@ -92,9 +86,9 @@ void test_formula_analysis() {
         parser->collectAtoms(formula, atoms);
         parser->collectVars(formula, vars);
         
+        assert(atoms.size() > 0 && vars.size() >= 2 && "formula should have atoms and variables");
         std::cout << "Formula: " << parser->toString(formula) << std::endl;
         std::cout << "Found " << atoms.size() << " atoms and " << vars.size() << " variables" << std::endl;
-        
         std::cout << "✓ Formula analysis test passed" << std::endl;
     } catch (const std::exception& e) {
         std::cerr << "✗ Formula analysis test failed: " << e.what() << std::endl;
@@ -124,11 +118,11 @@ void test_formula_conversions() {
         auto cnf = parser->toCNF(formula_vec);
         auto dnf = parser->toDNF(formula);
         
+        assert(nnf && cnf && dnf);
         std::cout << "Original: " << parser->toString(formula) << std::endl;
         std::cout << "NNF: " << parser->toString(nnf) << std::endl;
         std::cout << "CNF: " << parser->toString(cnf) << std::endl;
         std::cout << "DNF: " << parser->toString(dnf) << std::endl;
-        
         std::cout << "✓ Formula conversions test passed" << std::endl;
     } catch (const std::exception& e) {
         std::cerr << "✗ Formula conversions test failed: " << e.what() << std::endl;
@@ -165,9 +159,9 @@ void test_model_evaluation() {
         model->add(z, parser->mkTrue());                          // x + y = 3.5 > 3 ✓
         
         auto result = parser->evaluate(formula, model);
+        assert(result && result->isTrue() && "evaluate with given model should yield true");
         std::cout << "Formula: " << parser->toString(formula) << std::endl;
-        std::cout << "Result: " << parser->toString(result) << std::endl;  // true
-        
+        std::cout << "Result: " << parser->toString(result) << std::endl;
         std::cout << "✓ Model evaluation test passed" << std::endl;
     } catch (const std::exception& e) {
         std::cerr << "✗ Model evaluation test failed: " << e.what() << std::endl;
@@ -185,9 +179,10 @@ void test_let_expression_expansion() {
         auto let_expr = parser->mkExpr("(let ((temp (+ x 1))) (> temp y))");
         auto expanded = parser->expandLet(let_expr);
         
+        assert(let_expr && expanded);
+        assert(parser->toString(expanded).find("temp") == std::string::npos || parser->toString(expanded).size() >= 5);
         std::cout << "Let expression: " << parser->toString(let_expr) << std::endl;
         std::cout << "Expanded: " << parser->toString(expanded) << std::endl;
-        
         std::cout << "✓ Let expression expansion test passed" << std::endl;
     } catch (const std::exception& e) {
         std::cerr << "✗ Let expression expansion test failed: " << e.what() << std::endl;
@@ -212,12 +207,12 @@ void test_enhanced_omt() {
         auto soft_assertions = parser->getSoftAssertions();
         auto soft_weights = parser->getSoftWeights();
         
+        assert(soft_assertions.size() == 2 && soft_weights.size() == 2);
         std::cout << "Found " << soft_assertions.size() << " soft assertions" << std::endl;
         for (size_t i = 0; i < soft_assertions.size(); ++i) {
-            std::cout << "Soft assertion " << i << " (weight " << parser->toString(soft_weights[i]) << "): " 
+            std::cout << "Soft assertion " << i << " (weight " << parser->toString(soft_weights[i]) << "): "
                       << parser->toString(soft_assertions[i]) << std::endl;
         }
-        
         std::cout << "✓ Enhanced OMT test passed" << std::endl;
     } catch (const std::exception& e) {
         std::cerr << "✗ Enhanced OMT test failed: " << e.what() << std::endl;
@@ -257,7 +252,8 @@ void test_comprehensive_features() {
         
         auto eval_arithmetic = parser->evaluate(arithmetic_expr, model);
         auto eval_conditional = parser->evaluate(conditional_expr, model);
-        
+        assert(eval_arithmetic && parser->toString(eval_arithmetic) == "13");
+        assert(eval_conditional && parser->toString(eval_conditional) == "8");
         std::cout << "Arithmetic expression evaluated: " << parser->toString(eval_arithmetic) << std::endl;
         std::cout << "Conditional expression evaluated: " << parser->toString(eval_conditional) << std::endl;
         

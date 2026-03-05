@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include "../include/parser.h"
+#include <cassert>
 
 // Test combination of arithmetic and boolean logic
 void test_arithmetic_boolean_combination(SMTParser::ParserPtr& parser) {
@@ -32,12 +33,9 @@ void test_arithmetic_boolean_combination(SMTParser::ParserPtr& parser) {
         
         for (const auto& expr : expressions) {
             std::cout << "Expression: " << expr << std::endl;
-            try {
-                std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
-                std::cout << "  Result: " << parser->toString(result) << std::endl;
-            } catch (const std::exception& e) {
-                std::cout << "  Exception: " << e.what() << std::endl;
-            }
+            std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
+            assert(result && !result->isErr());
+            std::cout << "  Result: " << parser->toString(result) << std::endl;
             std::cout << std::endl;
         }
     } catch (const std::exception& e) {
@@ -76,12 +74,9 @@ void test_array_arithmetic_combination(SMTParser::ParserPtr& parser) {
         
         for (const auto& expr : expressions) {
             std::cout << "Expression: " << expr << std::endl;
-            try {
-                std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
-                std::cout << "  Result: " << parser->toString(result) << std::endl;
-            } catch (const std::exception& e) {
-                std::cout << "  Exception: " << e.what() << std::endl;
-            }
+            std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
+            assert(result && !result->isErr());
+            std::cout << "  Result: " << parser->toString(result) << std::endl;
             std::cout << std::endl;
         }
     } catch (const std::exception& e) {
@@ -121,12 +116,9 @@ void test_bitvector_combination(SMTParser::ParserPtr& parser) {
         
         for (const auto& expr : expressions) {
             std::cout << "Expression: " << expr << std::endl;
-            try {
-                std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
-                std::cout << "  Result: " << parser->toString(result) << std::endl;
-            } catch (const std::exception& e) {
-                std::cout << "  Exception: " << e.what() << std::endl;
-            }
+            std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
+            assert(result && !result->isErr());
+            std::cout << "  Result: " << parser->toString(result) << std::endl;
             std::cout << std::endl;
         }
     } catch (const std::exception& e) {
@@ -169,12 +161,9 @@ void test_string_combination(SMTParser::ParserPtr& parser) {
         
         for (const auto& expr : expressions) {
             std::cout << "Expression: " << expr << std::endl;
-            try {
-                std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
-                std::cout << "  Result: " << parser->toString(result) << std::endl;
-            } catch (const std::exception& e) {
-                std::cout << "  Exception: " << e.what() << std::endl;
-            }
+            std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
+            assert(result && !result->isErr());
+            std::cout << "  Result: " << parser->toString(result) << std::endl;
             std::cout << std::endl;
         }
     } catch (const std::exception& e) {
@@ -215,12 +204,9 @@ void test_quantifier_combinations(SMTParser::ParserPtr& parser) {
         
         for (const auto& expr : expressions) {
             std::cout << "Expression: " << expr << std::endl;
-            try {
-                std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
-                std::cout << "  Result: " << parser->toString(result) << std::endl;
-            } catch (const std::exception& e) {
-                std::cout << "  Exception: " << e.what() << std::endl;
-            }
+            std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
+            assert(result && !result->isErr());
+            std::cout << "  Result: " << parser->toString(result) << std::endl;
             std::cout << std::endl;
         }
     } catch (const std::exception& e) {
@@ -267,12 +253,9 @@ void test_real_world_examples(SMTParser::ParserPtr& parser) {
         
         for (const auto& expr : expressions) {
             std::cout << "Expression: " << expr << std::endl;
-            try {
-                std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
-                std::cout << "  Result: " << parser->toString(result) << std::endl;
-            } catch (const std::exception& e) {
-                std::cout << "  Exception: " << e.what() << std::endl;
-            }
+            std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
+            assert(result && !result->isErr());
+            std::cout << "  Result: " << parser->toString(result) << std::endl;
             std::cout << std::endl;
         }
     } catch (const std::exception& e) {

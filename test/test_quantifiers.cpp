@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include "../include/parser.h"
+#include <cassert>
 
 // Test basic quantifier operations (forall and exists)
 void test_basic_quantifiers(SMTParser::ParserPtr& parser) {
@@ -17,12 +18,9 @@ void test_basic_quantifiers(SMTParser::ParserPtr& parser) {
     std::cout << "=== Testing Basic Quantifiers ===" << std::endl;
     for (const auto& expr : expressions) {
         std::cout << "Expression: " << expr << std::endl;
-        try {
-            std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
-            std::cout << "  Result: " << parser->toString(result) << std::endl;
-        } catch (const std::exception& e) {
-            std::cout << "  Exception: " << e.what() << std::endl;
-        }
+        std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
+        assert(result && !result->isErr());
+        std::cout << "  Result: " << parser->toString(result) << std::endl;
         std::cout << std::endl;
     }
 }
@@ -40,12 +38,9 @@ void test_nested_quantifiers(SMTParser::ParserPtr& parser) {
     std::cout << "=== Testing Nested Quantifiers ===" << std::endl;
     for (const auto& expr : expressions) {
         std::cout << "Expression: " << expr << std::endl;
-        try {
-            std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
-            std::cout << "  Result: " << parser->toString(result) << std::endl;
-        } catch (const std::exception& e) {
-            std::cout << "  Exception: " << e.what() << std::endl;
-        }
+        std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
+        assert(result && !result->isErr());
+        std::cout << "  Result: " << parser->toString(result) << std::endl;
         std::cout << std::endl;
     }
 }
@@ -70,12 +65,9 @@ void test_quantifiers_with_arrays(SMTParser::ParserPtr& parser) {
         
         for (const auto& expr : expressions) {
             std::cout << "Expression: " << expr << std::endl;
-            try {
-                std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
-                std::cout << "  Result: " << parser->toString(result) << std::endl;
-            } catch (const std::exception& e) {
-                std::cout << "  Exception: " << e.what() << std::endl;
-            }
+            std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
+            assert(result && !result->isErr());
+            std::cout << "  Result: " << parser->toString(result) << std::endl;
             std::cout << std::endl;
         }
     } catch (const std::exception& e) {
@@ -103,14 +95,12 @@ void test_manual_quantifier_creation(SMTParser::ParserPtr& parser) {
         std::vector<std::shared_ptr<SMTParser::DAGNode>> forall_params = {x_var, y_var, x_gt_y};
         std::shared_ptr<SMTParser::DAGNode> forall_formula = parser->mkForall(forall_params);
         
+        assert(forall_formula && parser->toString(forall_formula).find("forall") != std::string::npos);
         std::cout << "Manually created forall formula: " << parser->toString(forall_formula) << std::endl;
-        
-        // Create an exists formula: exists x,y. x > y
         std::vector<std::shared_ptr<SMTParser::DAGNode>> exists_params = {x_var, y_var, x_gt_y};
         std::shared_ptr<SMTParser::DAGNode> exists_formula = parser->mkExists(exists_params);
-        
+        assert(exists_formula && parser->toString(exists_formula).find("exists") != std::string::npos);
         std::cout << "Manually created exists formula: " << parser->toString(exists_formula) << std::endl;
-        
     } catch (const std::exception& e) {
         std::cout << "Exception: " << e.what() << std::endl;
     }
@@ -160,12 +150,9 @@ void test_practical_quantifier_examples(SMTParser::ParserPtr& parser) {
         
         for (const auto& expr : expressions) {
             std::cout << "Expression: " << expr << std::endl;
-            try {
-                std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
-                std::cout << "  Result: " << parser->toString(result) << std::endl;
-            } catch (const std::exception& e) {
-                std::cout << "  Exception: " << e.what() << std::endl;
-            }
+            std::shared_ptr<SMTParser::DAGNode> result = parser->mkExpr(expr);
+            assert(result && !result->isErr());
+            std::cout << "  Result: " << parser->toString(result) << std::endl;
             std::cout << std::endl;
         }
     } catch (const std::exception& e) {
