@@ -3,7 +3,7 @@
 #include <vector>
 #include <cstdio>
 #include <algorithm>
-#include "../include/parser.h"
+#include "smtparser/frontend/parser.h"
 #include <cassert>
 
 // Test function to check file existence

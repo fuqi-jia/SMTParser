@@ -1,6 +1,6 @@
 #include <iostream>
 #include <string>
-#include "../include/parser.h"
+#include "smtparser/frontend/parser.h"
 #include <cassert>
 
 int main() {

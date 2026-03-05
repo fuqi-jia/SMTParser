@@ -2,8 +2,8 @@
  * Test Rewriter: fixpoint rewrite with default NOT/AND/ADD rules.
  * Parses (assert (and true (not (not p)))), rewrites, asserts result == p.
  */
-#include "parser.h"
-#include "rewriter.h"
+#include "smtparser/frontend/parser.h"
+#include "smtparser/passes/rewriter.h"
 #include <cassert>
 #include <iostream>
 

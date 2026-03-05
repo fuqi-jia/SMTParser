@@ -1,3 +1,5 @@
+# Used by root CMakeLists.txt when BUILD_TESTS=ON (add_subdirectory(test)).
+# Builds one executable per test/*.cpp and test/FP/*.cpp, linked with smtparser.
 cmake_minimum_required(VERSION 3.10)
 project(SMTParser_Tests)
 

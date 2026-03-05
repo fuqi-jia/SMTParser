@@ -2,8 +2,8 @@
  * Test Context + OpDispatcher: get* delegation, context(), dispatch(Node, Context&), dispatch(Node),
  * and a recursive tree visitor (max-depth) using fluent + sugar API.
  */
-#include "parser.h"
-#include "op_dispatcher.h"
+#include "smtparser/frontend/parser.h"
+#include "smtparser/passes/op_dispatcher.h"
 #include <algorithm>
 #include <cassert>
 #include <iostream>

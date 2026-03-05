@@ -2,7 +2,7 @@
  * Test optimization / OMT: minimize, maximize, getObjectives, define-objective, lex-optimize.
  */
 
-#include "parser.h"
+#include "smtparser/frontend/parser.h"
 #include <iostream>
 #include <cassert>
 

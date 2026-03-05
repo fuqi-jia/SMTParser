@@ -7,7 +7,7 @@
  * Copyright (C) 2025 Fuqi Jia
  */
 
-#include "parser.h"
+#include "smtparser/frontend/parser.h"
 #include <iostream>
 #include <cassert>
 

@@ -3,7 +3,7 @@
  * Validates all C++ code examples shown in the README
  */
 
-#include "parser.h"
+#include "smtparser/frontend/parser.h"
 #include <iostream>
 #include <unordered_set>
 #include <cassert>

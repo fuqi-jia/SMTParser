@@ -55,11 +55,11 @@ if(NOT MPFR_FOUND)
     endif()
 endif()
 
-# collect all source files, excluding test directory
+# collect all source files under src/ (mirrors include/smtparser/)
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 
-# collect all header files
-file(GLOB_RECURSE HEADERS "include/*.h")
+# collect all header files under include/smtparser/
+file(GLOB_RECURSE HEADERS "include/smtparser/*.h")
 
 # create library
 if(BUILD_BOTH_LIBS)
@@ -74,7 +74,7 @@ if(BUILD_BOTH_LIBS)
         target_compile_options(smtparser_static PRIVATE -g -O0)
     endif()
     
-    # set static library include directories
+    # set static library include directories (include root so that #include <smtparser/...> works)
     target_include_directories(smtparser_static PUBLIC 
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${GMP_INCLUDE_DIRS}
@@ -150,8 +150,8 @@ else()
     )
 endif()
 
-# install header files
-install(DIRECTORY include/ DESTINATION include/smtparser)
+# install header files only (no .cpp)
+install(DIRECTORY include/smtparser DESTINATION include FILES_MATCHING PATTERN "*.h")
 
 # if needed, add test subdirectory
 if(BUILD_TESTS)

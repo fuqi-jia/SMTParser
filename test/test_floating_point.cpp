@@ -1,7 +1,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include "../include/parser.h"
+#include "smtparser/frontend/parser.h"
 #include <cassert>
 
 // 测试基本的浮点数常量和表示

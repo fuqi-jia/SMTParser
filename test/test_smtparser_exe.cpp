@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 #include <chrono>
-#include "../include/parser.h"
+#include "smtparser/frontend/parser.h"
 #include <fstream>
 #include <filesystem>
 #include <algorithm>

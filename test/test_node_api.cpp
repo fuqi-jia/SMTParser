@@ -2,8 +2,8 @@
  * Phase 1: Node API and NodeRange unit test.
  * Exercises kind(), sort(), numChildren(), child(), children() and range-for.
  */
-#include "node.h"
-#include "parser.h"
+#include "smtparser/ir/node.h"
+#include "smtparser/frontend/parser.h"
 #include <cassert>
 #include <iostream>
 

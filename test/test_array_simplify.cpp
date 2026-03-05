@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 #include <cassert>
-#include "../include/parser.h"
+#include "smtparser/frontend/parser.h"
 
 // Restore assert after parser.h may have undefined it
 #ifdef assert

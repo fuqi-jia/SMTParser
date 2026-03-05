@@ -1,7 +1,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include "../include/parser.h"
+#include "smtparser/frontend/parser.h"
 #include <cassert>
 
 // Test strings of different lengths
