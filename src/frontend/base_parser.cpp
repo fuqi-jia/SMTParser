@@ -1771,14 +1771,16 @@ namespace SMTParser{
 				stateStack.emplace_back(LetContext(currentState.nesting_level + 1));
 			}
 			else{
+				std::shared_ptr<DAGNode> completedResult;
 				if(*bufptr != ')'){
 					currentState.result = parseExpr();
+					completedResult = currentState.result;
 				} else {
-					// Empty let body is invalid; ensure result is always initialized for -Wmaybe-uninitialized
+					// Empty let body is invalid
 					currentState.result = mkErr(ERROR_TYPE::ERR_UNEXP_EOF);
+					completedResult = currentState.result;
 				}
-				// Save result before pop_back to avoid using dangling reference
-				std::shared_ptr<DAGNode> completedResult = currentState.result;
+				// Save result already in completedResult; pop_back invalidates currentState
 
 				// Remove all variable bindings for the current state
 				getSymbolManager()->popLetScope(key_list);
