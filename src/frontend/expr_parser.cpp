@@ -611,6 +611,13 @@ namespace SMTParser{
 			scope.in_quantifier_scope = in_quantifier_scope;
 			std::shared_ptr<DAGNode> var = getSymbolManager()->resolveTerm(s, scope);
 			if (var) return var;
+			// 0-arity defined/declared functions (e.g. define-fun ref!3 () ...) are stored in fun_key_map;
+			// resolveTerm does not look there. Build application node without expanding to avoid
+			// applyFunPostOrder and potential performance issues on large files.
+			std::shared_ptr<DAGNode> func = getSymbolManager()->resolveFun(s);
+			if (func && func->getFuncParamsSize() == 0) {
+				return mkApplyFunc(func, std::vector<std::shared_ptr<DAGNode>>{});
+			}
 		}
 		// otherwise, it is a constant
 		if(s == "pi"){

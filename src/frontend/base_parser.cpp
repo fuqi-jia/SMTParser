@@ -1951,6 +1951,9 @@ namespace SMTParser{
 				} else if (current->isConst()) {
 					// Constants remain unchanged
 					results[current] = current;
+				} else if (current->isVar()) {
+					// Variables (NT_VAR, NT_TEMP_VAR, etc.) are leaves, keep unchanged
+					results[current] = current;
 				} else {
 					// All other cases: operators, function applications, UF applications, etc.
 					// Mark the node for revisit after processing children
@@ -2718,7 +2721,7 @@ namespace SMTParser{
 	// unknown symbol
 	void Parser::err_unkwn_sym(const std::string nm, const size_t ln) const {
 		if (nm == "") err_unexp_eof();
-		std::cout << "error: Unknown or unexptected symbol \"" << nm << "\" in line " << ln << '.' << std::endl;
+		std::cout << "error: Unknown or unexpected symbol \"" << nm << "\" in line " << ln << '.' << std::endl;
 		throw ParseErrorException();
 	}
 
