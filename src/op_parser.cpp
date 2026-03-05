@@ -80,6 +80,7 @@ namespace SMTParser{
         return false;
     }
     std::shared_ptr<Sort> Parser::getSort(const std::vector<std::shared_ptr<DAGNode>>& params){
+        if (params.empty()) return nullptr;
         std::shared_ptr<Sort> sort = nullptr;
         // use the maximum sort only for int/real
         bool is_int_real_sort = params[0]->getSort()->isInt() || params[0]->getSort()->isReal() 

@@ -326,7 +326,7 @@ namespace SMTParser{
 
 	// parse smt-lib2 file
 	std::string Parser::getSymbol() {
-
+		condAssert(!buffer || (bufptr >= buffer && bufptr <= buffer + buflen), "getSymbol: buffer bounds");
 		char *beg = bufptr;
 		bool in_scientific_notation = false;
 		bool has_open_bracket = false;
@@ -474,7 +474,7 @@ namespace SMTParser{
 	}
 
 	void Parser::scanToNextSymbol() {
-
+		condAssert(!buffer || (bufptr >= buffer && bufptr <= buffer + buflen), "scanToNextSymbol: buffer bounds");
 		// init scan mode
 		scan_mode = SCAN_MODE::SM_COMMON;
 
@@ -587,7 +587,8 @@ namespace SMTParser{
 		std::ifstream fin(filename, std::ifstream::binary);
 
 		if (!fin) {
-			err_open_file(filename);
+			std::cout << "error: Cannot open file \"" << filename << "\"." << std::endl;
+			return false;
 		}
 
 		fin.seekg(0, std::ios::end);
@@ -600,7 +601,6 @@ namespace SMTParser{
 
 		fin.close();
 
-
 		/*
 		parse command
 		*/
@@ -608,13 +608,19 @@ namespace SMTParser{
 		bufptr = buffer;
 		if (buflen > 0) line_number = 1;
 
-		// skip to first symbol;
 		scanToNextSymbol();
 
-		while (*bufptr) {
-			parseLpar();
-			if (parseCommand() == CMD_TYPE::CT_EXIT) break;
-			parseRpar();
+		try {
+			while (*bufptr) {
+				parseLpar();
+				if (parseCommand() == CMD_TYPE::CT_EXIT) break;
+				parseRpar();
+			}
+		} catch (const ParseErrorException&) {
+			bufptr = nullptr;
+			if (buffer) { delete[] buffer; buffer = nullptr; }
+			buflen = 0;
+			return false;
 		}
 		bufptr = nullptr;
 		delete[] buffer;
@@ -633,15 +639,24 @@ namespace SMTParser{
 	}
 
 	bool Parser::parseStr(const std::string& constraint) {
+		if (constraint.empty()) return true;
 		buffer = safe_strdup(constraint);
+		if (!buffer) return false;
 		buflen = constraint.length();
 		bufptr = buffer;
 		if (buflen > 0) line_number = 1;
 		scanToNextSymbol();
-		while (*bufptr) {
-			parseLpar();
-			if (parseCommand() == CMD_TYPE::CT_EXIT) break;
-			parseRpar();
+		try {
+			while (*bufptr) {
+				parseLpar();
+				if (parseCommand() == CMD_TYPE::CT_EXIT) break;
+				parseRpar();
+			}
+		} catch (const ParseErrorException&) {
+			bufptr = nullptr;
+			if (buffer) { delete[] buffer; buffer = nullptr; }
+			buflen = 0;
+			return false;
 		}
 		bufptr = nullptr;
 		delete[] buffer;
@@ -1759,7 +1774,9 @@ namespace SMTParser{
 				if(*bufptr != ')'){
 					currentState.result = parseExpr();
 				}
-				
+				// Save result before pop_back to avoid using dangling reference
+				std::shared_ptr<DAGNode> completedResult = currentState.result;
+
 				// Remove all variable bindings for the current state
 				getSymbolManager()->popLetScope(key_list);
 
@@ -1768,13 +1785,13 @@ namespace SMTParser{
 
 				// If stack is empty, return the result directly
 				if (stateStack.empty()) {
-					return currentState.result;
+					return completedResult;
 				}
 				else{
 					// Consume the closing parenthesis
 					parseRpar();
 					// Store the result in the parent context
-					stateStack.back().result = currentState.result;
+					stateStack.back().result = completedResult;
 					stateStack.back().is_complete = true;
 				}
 			}
@@ -2576,9 +2593,47 @@ namespace SMTParser{
 	}
 
 
-	// error operations
+	// error operations: store ERROR_TYPE in error node's name for correct err_all(DAGNode) dispatch
+	static std::string errorTypeToName(ERROR_TYPE t) {
+		switch (t) {
+			case ERROR_TYPE::ERR_UNEXP_EOF: return "ERR_UNEXP_EOF";
+			case ERROR_TYPE::ERR_SYM_MIS: return "ERR_SYM_MIS";
+			case ERROR_TYPE::ERR_UNKWN_SYM: return "ERR_UNKWN_SYM";
+			case ERROR_TYPE::ERR_PARAM_MIS: return "ERR_PARAM_MIS";
+			case ERROR_TYPE::ERR_PARAM_NBOOL: return "ERR_PARAM_NBOOL";
+			case ERROR_TYPE::ERR_PARAM_NNUM: return "ERR_PARAM_NNUM";
+			case ERROR_TYPE::ERR_PARAM_NSAME: return "ERR_PARAM_NSAME";
+			case ERROR_TYPE::ERR_LOGIC: return "ERR_LOGIC";
+			case ERROR_TYPE::ERR_MUL_DECL: return "ERR_MUL_DECL";
+			case ERROR_TYPE::ERR_MUL_DEF: return "ERR_MUL_DEF";
+			case ERROR_TYPE::ERR_ZERO_DIVISOR: return "ERR_ZERO_DIVISOR";
+			case ERROR_TYPE::ERR_FUN_LOCAL_VAR: return "ERR_FUN_LOCAL_VAR";
+			case ERROR_TYPE::ERR_ARI_MIS: return "ERR_ARI_MIS";
+			case ERROR_TYPE::ERR_TYPE_MIS: return "ERR_TYPE_MIS";
+			case ERROR_TYPE::ERR_NEG_PARAM: return "ERR_NEG_PARAM";
+		}
+		return "ERR_UNKWN_SYM";
+	}
+	static ERROR_TYPE errorNameToType(const std::string& name) {
+		if (name == "ERR_UNEXP_EOF") return ERROR_TYPE::ERR_UNEXP_EOF;
+		if (name == "ERR_SYM_MIS") return ERROR_TYPE::ERR_SYM_MIS;
+		if (name == "ERR_UNKWN_SYM") return ERROR_TYPE::ERR_UNKWN_SYM;
+		if (name == "ERR_PARAM_MIS") return ERROR_TYPE::ERR_PARAM_MIS;
+		if (name == "ERR_PARAM_NBOOL") return ERROR_TYPE::ERR_PARAM_NBOOL;
+		if (name == "ERR_PARAM_NNUM") return ERROR_TYPE::ERR_PARAM_NNUM;
+		if (name == "ERR_PARAM_NSAME") return ERROR_TYPE::ERR_PARAM_NSAME;
+		if (name == "ERR_LOGIC") return ERROR_TYPE::ERR_LOGIC;
+		if (name == "ERR_MUL_DECL") return ERROR_TYPE::ERR_MUL_DECL;
+		if (name == "ERR_MUL_DEF") return ERROR_TYPE::ERR_MUL_DEF;
+		if (name == "ERR_ZERO_DIVISOR") return ERROR_TYPE::ERR_ZERO_DIVISOR;
+		if (name == "ERR_FUN_LOCAL_VAR") return ERROR_TYPE::ERR_FUN_LOCAL_VAR;
+		if (name == "ERR_ARI_MIS") return ERROR_TYPE::ERR_ARI_MIS;
+		if (name == "ERR_TYPE_MIS") return ERROR_TYPE::ERR_TYPE_MIS;
+		if (name == "ERR_NEG_PARAM") return ERROR_TYPE::ERR_NEG_PARAM;
+		return ERROR_TYPE::ERR_UNKWN_SYM;
+	}
 	std::shared_ptr<DAGNode> Parser::mkErr(const ERROR_TYPE t){
-		return getNodeManager()->createNode(NODE_KIND::NT_ERROR);
+		return getNodeManager()->createNode(NODE_KIND::NT_ERROR, errorTypeToName(t));
 	}
 	void Parser::err_all(const ERROR_TYPE e, const std::string s, const size_t ln) const {
 		switch (e) {
@@ -2631,106 +2686,110 @@ namespace SMTParser{
 	}
 
 	void Parser::err_all(const std::shared_ptr<DAGNode> e, const std::string s, const size_t ln) const {
-		err_all((ERROR_TYPE)e->getKind(), s, ln);
+		if (e->getKind() != NODE_KIND::NT_ERROR) {
+			err_all(ERROR_TYPE::ERR_TYPE_MIS, s, ln);
+			return;
+		}
+		err_all(errorNameToType(e->getName()), s, ln);
 	}
 
 	// unexpected end of file
 	void Parser::err_unexp_eof() const {
 		std::cout << "error: Unexpected end of file found." << std::endl;
-		exit(0);
+		throw ParseErrorException();
 	}
 
 	// symbol missing
 	void Parser::err_sym_mis(const std::string mis, const size_t ln) const {
 		std::cout << "error: \"" << mis << "\" missing in line " << ln << '.' << std::endl;
-		exit(0);
+		throw ParseErrorException();
 	}
 
 	void Parser::err_sym_mis(const std::string mis, const std::string nm, const size_t ln) const {
 		std::cout << "error: \"" << mis << "\" missing before \"" << nm << "\" in line " << ln << '.' << std::endl;
-		exit(0);
+		throw ParseErrorException();
 	}
 
 	// unknown symbol
 	void Parser::err_unkwn_sym(const std::string nm, const size_t ln) const {
 		if (nm == "") err_unexp_eof();
 		std::cout << "error: Unknown or unexptected symbol \"" << nm << "\" in line " << ln << '.' << std::endl;
-		exit(0);
+		throw ParseErrorException();
 	}
 
 	// wrong number of parameters
 	void Parser::err_param_mis(const std::string nm, const size_t ln) const {
 		std::cout << "error: Wrong number of parameters of \"" << nm << "\" in line " << ln << '.' << std::endl;
-		exit(0);
+		throw ParseErrorException();
 	}
 
 	// paramerter type error
 	void Parser::err_param_nbool(const std::string nm, const size_t ln) const {
 		std::cout << "error: Invalid command \"" << nm << "\" in line "
 			<< ln << ", paramerter is not a boolean." << std::endl;
-		exit(0);
+		throw ParseErrorException();
 	}
 
 	void Parser::err_param_nnum(const std::string nm, const size_t ln) const {
 		std::cout << "error: Invalid command \"" << nm << "\" in line "
 			<< ln << ", paramerter is not an integer or a real." << std::endl;
-		exit(0);
+		throw ParseErrorException();
 	}
 
 	// paramerters are not in same type
 	void Parser::err_param_nsame(const std::string nm, const size_t ln) const {
 		std::cout << "error: Invalid command \"" << nm << "\" in line "
 			<< ln << ", paramerters are not in same type." << std::endl;
-		exit(0);
+		throw ParseErrorException();
 	}
 
 	// logic doesnt support
 	void Parser::err_logic(const std::string nm, const size_t ln) const {
 		std::cout << "error: Logic does not support \"" << nm << "\" in line " << ln << '.' << std::endl;
-		exit(0);
+		throw ParseErrorException();
 	}
 
 	// multiple declaration
 	void Parser::err_mul_decl(const std::string nm, const size_t ln) const {
 		std::cout << "error: Multiple declarations of \"" << nm << "\" in line " << ln << '.' << std::endl;
-		exit(0);
+		throw ParseErrorException();
 	}
 
 	// multiple definition
 	void Parser::err_mul_def(const std::string nm, const size_t ln) const {
 		std::cout << "error: Multiple definitions or keybindings of \""
 			<< nm << "\" in line " << ln << '.' << std::endl;
-		exit(0);
+		throw ParseErrorException();
 	}
 
 	// divisor is zero
 	void Parser::err_zero_divisor(const size_t ln) const {
 		std::cout << "error: Divisor is zero in line " << ln << '.' << std::endl;
-		exit(0);
+		throw ParseErrorException();
 	}
 
 	// arity mismatch
 	void Parser::err_arity_mis(const std::string nm, const size_t ln) const{
 		std::cout << "error: Arity mismatch of command \"" << nm << "\" in line " << ln << '.' << std::endl;
-		exit(0);
+		throw ParseErrorException();
 	}
 
 	// kind mismatch
 	void Parser::err_type_mis(const std::string nm, const size_t ln) const{
 		std::cout << "error: Kind mismatch of command \"" << nm << "\" in line " << ln << '.' << std::endl;
-		exit(0);
+		throw ParseErrorException();
 	}
 
 
 	void Parser::err_neg_param(const size_t ln) const{
 		std::cout << "error: Negative parameter in line " << ln << '.' << std::endl;
-		exit(0);
+		throw ParseErrorException();
 	}
 
 	// keyword error
 	void Parser::err_keyword(const std::string nm, const size_t ln) const{
 		std::cout << "error: keyword mismatch of command \"" << nm << "\" in line " << ln << '.' << std::endl;
-		exit(0);
+		throw ParseErrorException();
 	}
 
 	/*
@@ -2739,7 +2798,7 @@ namespace SMTParser{
 	// cannot open file
 	void Parser::err_open_file(const std::string filename) const {
 		std::cout << "error: Cannot open file \"" << filename << "\"." << std::endl;
-		exit(0);
+		throw ParseErrorException();
 	}
 
 	std::shared_ptr<DAGNode> Parser::rename(std::shared_ptr<DAGNode> expr, const std::string& new_name){

@@ -75,8 +75,8 @@ int main() {
     test_parse_file("../test/instances/error_kind_mismatch.smt2", parser, true);
 
     parser = SMTParser::newParser();
-    // Test 2: error_unknown_symbol.smt2 — 含 :named，可能失败
-    test_parse_file("../test/instances/error_unknown_symbol.smt2", parser, false);
+    // Test 2: error_unknown_symbol.smt2 — 含 :named，解析器支持 :named 故期望成功
+    test_parse_file("../test/instances/error_unknown_symbol.smt2", parser, true);
 
     parser = SMTParser::newParser();
     // Test 3: error_unknown_symbol_2.smt2 — 含 (declare-sort S 1) 等，可能成功或失败，按当前行为断言

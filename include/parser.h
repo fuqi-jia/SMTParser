@@ -39,6 +39,7 @@
 #include "context.h"
 #include "op_dispatcher.h"
 #include "symbol_manager.h"
+#include <exception>
 
 namespace SMTParser{
     #undef assert
@@ -109,6 +110,11 @@ namespace SMTParser{
         RT_ERROR
     };
 
+    /** Thrown when parsing fails so that parse() can return false instead of exit(0). */
+    class ParseErrorException : public std::exception {
+    public:
+        const char* what() const noexcept override { return "parse error"; }
+    };
 
     /*
     Parser
