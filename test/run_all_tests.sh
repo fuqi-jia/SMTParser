@@ -60,6 +60,7 @@ if [ -z "$TEST_EXES" ]; then
         "./test_options_config"
         "./test_array_simplify"
         "./test_node_api"
+        "./test_visitor_api"
     )
     
     # Check each potential test

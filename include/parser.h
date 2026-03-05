@@ -33,6 +33,8 @@
 #include "options.h"
 #include "objective.h"
 #include "model.h"
+#include "node.h"
+#include "visitor.h"
 
 namespace SMTParser{
     #undef assert
