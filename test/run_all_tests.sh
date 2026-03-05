@@ -65,6 +65,7 @@ if [ -z "$TEST_EXES" ]; then
         "./test_visitor_api"
         "./test_context_dispatcher"
         "./test_rewriter"
+        "./test_optimization"
     )
     
     # Check each potential test

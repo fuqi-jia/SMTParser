@@ -235,96 +235,61 @@ namespace SMTParser{
 
     // mk function
     std::shared_ptr<DAGNode> Parser::mkFuncDec(const std::string &name, const std::vector<std::shared_ptr<Sort>> &params, std::shared_ptr<Sort> out_sort){
-        if(fun_key_map.find(name)!=fun_key_map.end()){
-            // multiple declarations
+        if(symbol_manager->getFun(name)){
             err_all(ERROR_TYPE::ERR_MUL_DECL, "Multiple declarations of function", line_number);
             return mkUnknown();
         }
-        else{
-            // create a new function
-            // children: params
-            // out_sort: return sort
-            std::vector<std::shared_ptr<DAGNode>> children;
-            for(auto &param: params){
-                // TODO, a random name and not record it.
-                std::shared_ptr <DAGNode> param_node = node_manager->createNode(param, NODE_KIND::NT_FUNC_PARAM, param->toString());
-                children.emplace_back(param_node);
-            }
-            // add a NodeManager::NULL_NODE to represent the function body.
-            children.insert(children.begin(), NodeManager::NULL_NODE);
-
-            std::shared_ptr<DAGNode> func = node_manager->createNode(out_sort, NODE_KIND::NT_FUNC_DEC, name, children);
-            fun_key_map.insert(std::pair<std::string, std::shared_ptr<DAGNode>>(name, func));
-            return func;
+        std::vector<std::shared_ptr<DAGNode>> children;
+        for(auto &param: params){
+            std::shared_ptr <DAGNode> param_node = node_manager->createNode(param, NODE_KIND::NT_FUNC_PARAM, param->toString());
+            children.emplace_back(param_node);
         }
+        children.insert(children.begin(), NodeManager::NULL_NODE);
+        std::shared_ptr<DAGNode> func = node_manager->createNode(out_sort, NODE_KIND::NT_FUNC_DEC, name, children);
+        symbol_manager->registerFun(name, func);
+        return func;
     }
 
     std::shared_ptr<DAGNode> Parser::mkFuncDef(const std::string &name, const std::vector<std::shared_ptr<DAGNode>> &params, std::shared_ptr<Sort> out_sort, std::shared_ptr<DAGNode> body){
-        std::shared_ptr<DAGNode> func = nullptr;
-        if(fun_key_map.find(name)!=fun_key_map.end()){
-            func = fun_key_map[name];
+        std::shared_ptr<DAGNode> func = symbol_manager->getFun(name);
+        if(func){
             condAssert(func->getKind() == NODE_KIND::NT_FUNC_DEC, "mkFuncDef: func is not a function declaration");
-            // NOTE: we still check it, even if it is not necessary.
             if(func->getKind() == NODE_KIND::NT_FUNC_DEC){
-                // update the function
-                func = fun_key_map[name];
                 func->updateFuncDef(out_sort, body, params);
                 return func;
             }
-            else{
-                // multiple definitions
-                err_all(ERROR_TYPE::ERR_MUL_DEF, "Multiple definitions of function", line_number);
-                return mkUnknown();
-            }
+            err_all(ERROR_TYPE::ERR_MUL_DEF, "Multiple definitions of function", line_number);
+            return mkUnknown();
         }
-        else{
-            // create a new function
-            // children: params
-            // out_sort: return sort
-            // body: function body
-            std::vector<std::shared_ptr<DAGNode>> children;
-            children.emplace_back(body);
-            for(auto &param: params){
-                children.emplace_back(param);
-            }
-            std::shared_ptr<DAGNode> func = node_manager->createNode(out_sort, NODE_KIND::NT_FUNC_DEF, name, children);
-            fun_key_map.insert(std::pair<std::string, std::shared_ptr<DAGNode>>(name, func));
-            return func;
+        std::vector<std::shared_ptr<DAGNode>> children;
+        children.emplace_back(body);
+        for(auto &param: params){
+            children.emplace_back(param);
         }
+        func = node_manager->createNode(out_sort, NODE_KIND::NT_FUNC_DEF, name, children);
+        symbol_manager->registerFun(name, func);
+        return func;
     }
 
     std::shared_ptr<DAGNode> Parser::mkFuncRec(const std::string &name, const std::vector<std::shared_ptr<DAGNode>> &params, std::shared_ptr<Sort> out_sort, std::shared_ptr<DAGNode> body){
-        std::shared_ptr<DAGNode> func = nullptr;
-        if(fun_key_map.find(name)!=fun_key_map.end()){
-            func = fun_key_map[name];
+        std::shared_ptr<DAGNode> func = symbol_manager->getFun(name);
+        if(func){
             condAssert(func->getKind() == NODE_KIND::NT_FUNC_DEC, "mkFuncRec: func is not a function declaration");
-            // NOTE: we still check it, even if it is not necessary.
             if(func->getKind() == NODE_KIND::NT_FUNC_DEC){
-                // update the function to recursive function
-                func = fun_key_map[name];
                 func->updateFuncDef(out_sort, body, params, true);
                 return func;
             }
-            else{
-                // multiple definitions
-                err_all(ERROR_TYPE::ERR_MUL_DEF, "Multiple definitions of recursive function", line_number);
-                return mkUnknown();
-            }
+            err_all(ERROR_TYPE::ERR_MUL_DEF, "Multiple definitions of recursive function", line_number);
+            return mkUnknown();
         }
-        else{
-            // create a new recursive function
-            // children: params
-            // out_sort: return sort
-            // body: function body
-            std::vector<std::shared_ptr<DAGNode>> children;
-            children.emplace_back(body);
-            for(auto &param: params){
-                children.emplace_back(param);
-            }
-            std::shared_ptr<DAGNode> func = node_manager->createNode(out_sort, NODE_KIND::NT_FUNC_REC, name, children);
-            fun_key_map.insert(std::pair<std::string, std::shared_ptr<DAGNode>>(name, func));
-            return func;
+        std::vector<std::shared_ptr<DAGNode>> children;
+        children.emplace_back(body);
+        for(auto &param: params){
+            children.emplace_back(param);
         }
+        func = node_manager->createNode(out_sort, NODE_KIND::NT_FUNC_REC, name, children);
+        symbol_manager->registerFun(name, func);
+        return func;
     }
 
     std::shared_ptr<Sort> Parser::mkSortDec(const std::string &name, const size_t &arity){
@@ -569,7 +534,9 @@ namespace SMTParser{
     }
     // CONST
     std::shared_ptr<DAGNode> Parser::declareVar(const std::string &name, const std::string &sort){
-        return mkVar(sort_key_map[sort], name);
+        std::shared_ptr<Sort> s = symbol_manager->resolveSort(sort);
+        condAssert(s, "declareVar: sort not found");
+        return mkVar(s, name);
     }
     std::shared_ptr<DAGNode> Parser::declareVar(const std::string &name, const std::shared_ptr<Sort> &sort){
         return mkVar(sort, name);
@@ -577,18 +544,14 @@ namespace SMTParser{
 
     // LET
     std::shared_ptr<DAGNode> Parser::mkLetBindVar(const std::string& name, const std::shared_ptr<DAGNode>& expr){
-        
-        if(preserving_let_key_map.find(name)!=preserving_let_key_map.end()){
-            // multiple declarations
-            return preserving_let_key_map[name];
+        if(symbol_manager->hasPreservingLet(name)){
+            return symbol_manager->getPreservingLet(name);
         }
-        else{
-            std::vector<std::shared_ptr<DAGNode>> children;
-            children.emplace_back(expr);
-            std::shared_ptr<DAGNode> new_var = node_manager->createNode(expr->getSort(), NODE_KIND::NT_LET_BIND_VAR, name, children);
-            preserving_let_key_map.insert(std::pair<std::string, std::shared_ptr<DAGNode>>(name, new_var));
-            return new_var;
-        }
+        std::vector<std::shared_ptr<DAGNode>> children;
+        children.emplace_back(expr);
+        std::shared_ptr<DAGNode> new_var = node_manager->createNode(expr->getSort(), NODE_KIND::NT_LET_BIND_VAR, name, children);
+        symbol_manager->registerPreservingLet(name, new_var);
+        return new_var;
     }
 
     std::shared_ptr<DAGNode> Parser::mkLetBindVarList(const std::vector<std::shared_ptr<DAGNode>>& bind_vars){
@@ -660,26 +623,20 @@ namespace SMTParser{
     }
     std::shared_ptr<DAGNode> Parser::mkConstBv(const std::string &v, const size_t& width){
         std::string sort_key_name = "BV_" + std::to_string(width);
-        std::shared_ptr<Sort> sort = nullptr;
-        if(sort_key_map.find(sort_key_name) == sort_key_map.end()){
+        std::shared_ptr<Sort> sort = symbol_manager->resolveSort(sort_key_name);
+        if(!sort){
             sort = sort_manager->createBVSort(width);
-            sort_key_map.insert(std::pair<std::string, std::shared_ptr<Sort>>(sort_key_name, sort));
-        }
-        else{
-            sort = sort_key_map[sort_key_name];
+            symbol_manager->registerSort(sort_key_name, sort);
         }
         std::string bv_v = BitVectorUtils::natToBv(v, width);
         return node_manager->createNode(sort, NODE_KIND::NT_CONST, bv_v);
     }
     std::shared_ptr<DAGNode> Parser::mkConstFp(const std::string &v, const size_t& e, const size_t& s){
         std::string sort_key_name = "FP_" + std::to_string(e) + "_" + std::to_string(s);
-        std::shared_ptr<Sort> sort = nullptr;
-        if(sort_key_map.find(sort_key_name) == sort_key_map.end()){
+        std::shared_ptr<Sort> sort = symbol_manager->resolveSort(sort_key_name);
+        if(!sort){
             sort = sort_manager->createFPSort(e, s);
-            sort_key_map.insert(std::pair<std::string, std::shared_ptr<Sort>>(sort_key_name, sort));
-        }
-        else{
-            sort = sort_key_map[sort_key_name];
+            symbol_manager->registerSort(sort_key_name, sort);
         }
         return node_manager->createNode(sort, NODE_KIND::NT_CONST, v);
     }
@@ -698,40 +655,31 @@ namespace SMTParser{
     
     // VAR
     std::shared_ptr<DAGNode> Parser::mkTempVar(const std::shared_ptr<Sort>& sort){
-        std::string temp_var_name = "temp_" + std::to_string(temp_var_counter++);
-        if(temp_var_names.find(temp_var_name) != temp_var_names.end()){
+        std::string temp_var_name = "temp_" + std::to_string(symbol_manager->nextTempVarCounter());
+        if(symbol_manager->getTempVar(temp_var_name)){
             err_all(ERROR_TYPE::ERR_PARAM_MIS, "Temp variable name already exists", line_number);
             return mkUnknown();
         }
         std::shared_ptr<DAGNode> newvar = node_manager->createNode(sort, NODE_KIND::NT_TEMP_VAR, temp_var_name);
-        temp_var_names.insert(std::pair<std::string, size_t>(temp_var_name, node_manager->getIndex(newvar)));
+        symbol_manager->registerTempVar(temp_var_name, newvar);
         return newvar;
     }
     std::shared_ptr<DAGNode> Parser::mkVar(const std::shared_ptr<Sort>& sort, const std::string &name){
-        if(var_names.find(name)!=var_names.end()){
-            // multiple declarations
-            return node_manager->getNode(var_names[name]);
-        }
-        else{
-            std::shared_ptr<DAGNode> newvar = node_manager->createNode(sort, NODE_KIND::NT_VAR, name);
-            var_names.insert(std::pair<std::string, size_t>(name, node_manager->getIndex(newvar)));
-            return newvar;
-        }
+        std::shared_ptr<DAGNode> v = symbol_manager->getVar(name);
+        if(v) return v;
+        std::shared_ptr<DAGNode> newvar = node_manager->createNode(sort, NODE_KIND::NT_VAR, name);
+        symbol_manager->registerVar(name, newvar);
+        return newvar;
     }
 
     std::shared_ptr<DAGNode> Parser::mkPlaceholderVar(const std::string &name){
-        if(placeholder_var_names.find(name) != placeholder_var_names.end()){
-            // placeholder variable already exists
-            return node_manager->getNode(placeholder_var_names[name]);
-        }
-        else{
-            // Create new placeholder variable with the specified sort
-            std::shared_ptr<Sort> sort = placeholder_var_sort ? placeholder_var_sort : SortManager::REAL_SORT;
-            std::shared_ptr<DAGNode> newvar = node_manager->createNode(sort, NODE_KIND::NT_PLACEHOLDER_VAR, name);
-            condAssert(newvar->isPlaceholderVar(), "Created placeholder variable is not a placeholder variable");
-            placeholder_var_names.insert(std::pair<std::string, size_t>(name, node_manager->getIndex(newvar)));
-            return newvar;
-        }
+        std::shared_ptr<DAGNode> v = symbol_manager->getPlaceholderVar(name);
+        if(v) return v;
+        std::shared_ptr<Sort> sort = placeholder_var_sort ? placeholder_var_sort : SortManager::REAL_SORT;
+        std::shared_ptr<DAGNode> newvar = node_manager->createNode(sort, NODE_KIND::NT_PLACEHOLDER_VAR, name);
+        condAssert(newvar->isPlaceholderVar(), "Created placeholder variable is not a placeholder variable");
+        symbol_manager->registerPlaceholderVar(name, newvar);
+        return newvar;
     }
     std::shared_ptr<DAGNode> Parser::mkVarBool(const std::string &name){
         return mkVar(SortManager::BOOL_SORT, name);
@@ -744,25 +692,19 @@ namespace SMTParser{
     }
     std::shared_ptr<DAGNode> Parser::mkVarBv(const std::string &name, const size_t& width){
         std::string sort_key_name = "BV_" + std::to_string(width);
-        std::shared_ptr<Sort> sort = nullptr;
-        if(sort_key_map.find(sort_key_name) == sort_key_map.end()){
+        std::shared_ptr<Sort> sort = symbol_manager->resolveSort(sort_key_name);
+        if(!sort){
             sort = sort_manager->createBVSort(width);
-            sort_key_map.insert(std::pair<std::string, std::shared_ptr<Sort>>(sort_key_name, sort));
-        }
-        else{
-            sort = sort_key_map[sort_key_name];
+            symbol_manager->registerSort(sort_key_name, sort);
         }
         return mkVar(sort, name);
     }
     std::shared_ptr<DAGNode> Parser::mkVarFp(const std::string &name, const size_t& e, const size_t& s){
         std::string sort_key_name = "FP_" + std::to_string(e) + "_" + std::to_string(s);
-        std::shared_ptr<Sort> sort = nullptr;
-        if(sort_key_map.find(sort_key_name) == sort_key_map.end()){
+        std::shared_ptr<Sort> sort = symbol_manager->resolveSort(sort_key_name);
+        if(!sort){
             sort = sort_manager->createFPSort(e, s);
-            sort_key_map.insert(std::pair<std::string, std::shared_ptr<Sort>>(sort_key_name, sort));
-        }
-        else{
-            sort = sort_key_map[sort_key_name];
+            symbol_manager->registerSort(sort_key_name, sort);
         }
         return mkVar(sort, name);
     }
@@ -786,13 +728,10 @@ namespace SMTParser{
     // ARRAY
     std::shared_ptr<DAGNode> Parser::mkArray(const std::string &name, std::shared_ptr<Sort> index, std::shared_ptr<Sort> elem){
         std::string sort_key_name = "ARRAY_" + index->toString() + "_" + elem->toString();
-        std::shared_ptr<Sort> sort = nullptr;
-        if(sort_key_map.find(sort_key_name) == sort_key_map.end()){
+        std::shared_ptr<Sort> sort = symbol_manager->resolveSort(sort_key_name);
+        if(!sort){
             sort = sort_manager->createArraySort(index, elem);
-            sort_key_map.insert(std::pair<std::string, std::shared_ptr<Sort>>(sort_key_name, sort));
-        }
-        else{
-            sort = sort_key_map[sort_key_name];
+            symbol_manager->registerSort(sort_key_name, sort);
         }
         return mkVar(sort, name);
     }

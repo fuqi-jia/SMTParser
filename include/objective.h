@@ -30,6 +30,9 @@
 
 #include "dag.h"
 
+#include <unordered_map>
+#include <vector>
+
 namespace SMTParser{
     enum class OPT_KIND{
         // single objective
@@ -237,6 +240,36 @@ namespace SMTParser{
     };
 
     OPT_KIND getOptKind(const std::string& symbol);
+
+    /**
+     * Manager for OMT objectives: named registry (define-objective) and ordered list (minimize/maximize/lex-optimize etc.).
+     */
+    class ObjectiveManager {
+    public:
+        ObjectiveManager() = default;
+
+        /** Register a named objective (define-objective <name> ...). */
+        void registerNamed(const std::string& name, const std::shared_ptr<Objective>& obj);
+        /** Append an objective to the ordered list (minimize/maximize/...). */
+        void addObjective(const std::shared_ptr<Objective>& obj);
+        /** Get objective by name (for multi-objective references). */
+        std::shared_ptr<Objective> getObjective(const std::string& name) const;
+        /** Get the ordered list of objectives. */
+        std::vector<std::shared_ptr<Objective>> getObjectives() const;
+
+        /** Create an empty Objective (for multi-objective; caller adds sub-objectives then addObjective). */
+        std::shared_ptr<Objective> createObjective(OPT_KIND opt_type, const std::string& grp_id);
+        /** Add a single objective (maxsat/minsat) to the list and return it. */
+        std::shared_ptr<Objective> addSingleObjective(OPT_KIND opt_type, const std::string& grp_id);
+        /** Add a single objective (minimize/maximize) to the list and return it. */
+        std::shared_ptr<Objective> addSingleObjective(OPT_KIND opt_type, const std::shared_ptr<DAGNode>& term,
+            COMP_KIND comp_op, const std::shared_ptr<DAGNode>& epsilon, const std::shared_ptr<DAGNode>& M,
+            const std::string& grp_id);
+
+    private:
+        std::unordered_map<std::string, std::shared_ptr<Objective>> objective_map_;
+        std::vector<std::shared_ptr<Objective>> objectives_;
+    };
 
     // smart pointers
     typedef std::shared_ptr<MetaObjective> MetaObjectivePtr;

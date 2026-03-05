@@ -64,9 +64,10 @@ public:
     std::vector<std::shared_ptr<DAGNode>> soft_assertions;
     std::vector<std::shared_ptr<DAGNode>> soft_weights;
     std::unordered_map<std::string, std::unordered_set<size_t>> soft_assertion_groups;
-    std::vector<std::shared_ptr<Objective>> objectives;
+    std::shared_ptr<ObjectiveManager> objective_manager_;
     std::vector<std::shared_ptr<DAGNode>> split_lemmas;
 
+    void setObjectiveManager(std::shared_ptr<ObjectiveManager> om) { objective_manager_ = std::move(om); }
     std::vector<std::shared_ptr<DAGNode>> getAssertions() const;
     std::unordered_map<std::string, std::unordered_set<size_t>> getGroupedAssertions() const;
     std::unordered_map<std::string, std::shared_ptr<DAGNode>> getNamedAssertions() const;

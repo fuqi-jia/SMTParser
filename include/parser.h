@@ -38,6 +38,7 @@
 #include "op_utils.h"
 #include "context.h"
 #include "op_dispatcher.h"
+#include "symbol_manager.h"
 
 namespace SMTParser{
     #undef assert
@@ -139,37 +140,11 @@ namespace SMTParser{
         std::shared_ptr<NodeManager>            node_manager;
         // sort manager
         std::shared_ptr<SortManager>            sort_manager;
+        std::shared_ptr<SymbolManager>          symbol_manager;
 
-        std::unordered_map<std::string, std::shared_ptr<DAGNode>> 
-                                                let_key_map; // local variables, no need to hash store
-        std::unordered_map<std::string, std::shared_ptr<DAGNode>> 
-                                                preserving_let_key_map; // global variables, no need to hash store
-        std::unordered_map<std::string, std::shared_ptr<DAGNode>> 
-                                                fun_key_map; 
-        std::unordered_map<std::string, std::shared_ptr<DAGNode>> 
-                                                fun_var_map; // variables are not the same, no need to hash store
-        std::unordered_map<std::string, std::shared_ptr<Sort>>
-                                                sort_key_map;
-        std::unordered_map<std::string, std::shared_ptr<DAGNode>>
-                                                quant_var_map;
-        std::vector<std::shared_ptr<DAGNode>>   static_functions; // static functions without substitution
-
-        // variable name list
-        std::unordered_map<std::string, size_t>       var_names;
-        // temp var
-        size_t temp_var_counter;
-        std::unordered_map<std::string, size_t>       temp_var_names;
-        // placeholder variables
-        std::unordered_map<std::string, size_t>       placeholder_var_names;
-
-        // temp var name list
-        // function name list
-        std::vector<std::string>                      function_names;
         // global options
         std::shared_ptr<GlobalOptions>                  options;
-        // (define-objective name single_opt)
-        std::unordered_map<std::string, std::shared_ptr<Objective>> 
-                                                        objective_map;
+        std::shared_ptr<ObjectiveManager>              objective_manager;
         // conversion map
         std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>
                                                         cnf_map;

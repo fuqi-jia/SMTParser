@@ -603,70 +603,17 @@ namespace SMTParser{
 		else if (s == "false") {
 			return mkFalse();
 		}
-		else if(allow_placeholder_vars && placeholder_var_names.find(s) != placeholder_var_names.end()){
-			// placeholder variable name (only when placeholder mode is enabled)
-            auto var = node_manager->getNode(placeholder_var_names[s]);
-            var->incUseCount();
-            return var;
-		}
-		
-		// these have the highest priority
-		std::string preserving_let_name = s + PRESERVING_LET_BIND_VAR_SUFFIX + std::to_string(preserving_let_counter);
-		if(options->parsing_preserve_let && current_let_mode != LET_MODE::LM_NON_LET && preserving_let_key_map.find(preserving_let_name) != preserving_let_key_map.end()){
-			auto key_var = preserving_let_key_map[preserving_let_name];
-            key_var->incUseCount();
-            return key_var;
-		}
-		else if(!options->parsing_preserve_let && current_let_mode != LET_MODE::LM_NON_LET && let_key_map.find(s) != let_key_map.end()){
-			auto key_var = let_key_map[s];
-            key_var->incUseCount();
-            return key_var;
-		}
-		else if(fun_key_map.find(s) != fun_key_map.end()){
-			// function name
-            auto fun_var = fun_key_map[s];
-            fun_var->incUseCount();
-            return fun_var;
-		}
-		else if(fun_var_map.find(s) != fun_var_map.end()){
-			// function variable name
-            auto fun_var = fun_var_map[s];
-            fun_var->incUseCount();
-            return fun_var;
-		}
-		else if(in_quantifier_scope && quant_var_map.find(s) != quant_var_map.end()){
-            // in quantifier scope, first use quantifier variable name
-			// quantifier variable name
-            auto quant_var = quant_var_map[s];
-            quant_var->incUseCount();
-            return quant_var;
-		}
-		else if(var_names.find(s) != var_names.end()){
-			// the last one, global variable name
-            auto var = node_manager->getNode(var_names[s]);
-            var->incUseCount();
-            return var;
-		}
-		// following Common Lisp's conventions, enclosing
-		// a simple symbol in vertical bars does not produce a new symbol.
-		else if(s.size() > 2 && 
-				s[0] == '|'  && 
-				s[s.size() - 1] == '|' &&
-				var_names.find(s.substr(1, s.size() - 2)) != var_names.end()){
-			// string
-			auto var = node_manager->getNode(var_names[s.substr(1, s.size() - 2)]);
-            var->incUseCount();
-            return var;
-		}
-		else if(!TypeChecker::isNumber(s) && 
-				var_names.find('|' + s + '|') != var_names.end()){
-			// string
-			auto var = node_manager->getNode(var_names['|' + s + '|']);
-            var->incUseCount();
-            return var;
+		{
+			ResolveScope scope;
+			scope.preserving_let_name = s + PRESERVING_LET_BIND_VAR_SUFFIX + std::to_string(preserving_let_counter);
+			scope.check_preserving_let = (options->parsing_preserve_let && current_let_mode != LET_MODE::LM_NON_LET);
+			scope.check_let = (!options->parsing_preserve_let && current_let_mode != LET_MODE::LM_NON_LET);
+			scope.in_quantifier_scope = in_quantifier_scope;
+			std::shared_ptr<DAGNode> var = symbol_manager->resolveTerm(s, scope);
+			if (var) return var;
 		}
 		// otherwise, it is a constant
-		else if(s == "pi"){
+		if(s == "pi"){
 			return mkPi();
 		}
 		else if(s == "e"){
@@ -771,7 +718,7 @@ namespace SMTParser{
 
     NODE_KIND Parser::getKind(const std::string& s){
         auto kind = SMTParser::getOperKind(s);
-        if(kind == NODE_KIND::NT_UNKNOWN && fun_key_map.find(s) != fun_key_map.end()){
+        if(kind == NODE_KIND::NT_UNKNOWN && symbol_manager->resolveFun(s)){
             kind = NODE_KIND::NT_FUNC_APPLY;
         }
         return kind;
@@ -779,9 +726,9 @@ namespace SMTParser{
     
 	std::shared_ptr<DAGNode> Parser::parseOper(const std::string& s, const std::vector<std::shared_ptr<DAGNode>>& func_args, const std::vector<std::shared_ptr<DAGNode>> &oper_params){
 		TIME_FUNC();
-        if(fun_key_map.find(s) != fun_key_map.end()){
+        auto func = symbol_manager->resolveFun(s);
+        if(func){
             // Found a function definition or declaration, apply it with parameters
-            auto func = fun_key_map[s];
             return applyFun(func, oper_params);
         }
         

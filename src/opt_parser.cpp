@@ -182,25 +182,13 @@ namespace SMTParser{
             }
         }
 
-        std::shared_ptr<SingleObjective> obj = nullptr;
         if(opt_type == OPT_KIND::OPT_MAXSAT || opt_type == OPT_KIND::OPT_MINSAT){
-            // only for maxsat and minsat
-            obj = std::make_shared<SingleObjective>(opt_type, grp_id);
+            return objective_manager->addSingleObjective(opt_type, grp_id);
         }
-        else{
-            // minimize or maximize
-            COMP_KIND comp_op = comp == "" ? getDefaultCompareOperator(options->logic, opt_type) : getCompareOperator(comp);
-            std::shared_ptr<DAGNode> epsilon_node = epsilon == "" ? NodeManager::NULL_NODE : NodeManager::EPSILON_NODE;
-            std::shared_ptr<DAGNode> M_node = M == "" ? NodeManager::NULL_NODE : NodeManager::INT_INF_NODE;
-            obj = std::make_shared<SingleObjective>(opt_type, min_expr, comp_op, epsilon_node, M_node, grp_id);
-        }
-
-        std::shared_ptr<Objective> objective = std::make_shared<Objective>(opt_type, grp_id);
-        objective->addObjective(obj);
-
-        context_.objectives.emplace_back(objective);
-
-        return objective;
+        COMP_KIND comp_op = comp == "" ? getDefaultCompareOperator(options->logic, opt_type) : getCompareOperator(comp);
+        std::shared_ptr<DAGNode> epsilon_node = epsilon == "" ? NodeManager::NULL_NODE : NodeManager::EPSILON_NODE;
+        std::shared_ptr<DAGNode> M_node = M == "" ? NodeManager::NULL_NODE : NodeManager::INT_INF_NODE;
+        return objective_manager->addSingleObjective(opt_type, min_expr, comp_op, epsilon_node, M_node, grp_id);
     }
     // NOTE: the most internal id will be used
     // (define-objective <symbol> signle_opt [:id <symbol>])
@@ -227,7 +215,7 @@ namespace SMTParser{
         }
         parseRpar();
         // mk objective
-        objective_map.insert(std::pair<std::string, std::shared_ptr<Objective>>(obj_name, objective));
+        objective_manager->registerNamed(obj_name, objective);
         return objective;
     }
 
@@ -251,13 +239,11 @@ namespace SMTParser{
         }
         
         // mk multi-objective
-        std::shared_ptr<Objective> objective = std::make_shared<Objective>(opt_type, grp_id);
+        std::shared_ptr<Objective> objective = objective_manager->createObjective(opt_type, grp_id);
         for(auto& obj_name : obj_names){
-            objective->addObjective(objective_map[obj_name]);
+            objective->addObjective(objective_manager->getObjective(obj_name));
         }
-
-        context_.objectives.emplace_back(objective);
-
+        objective_manager->addObjective(objective);
         return objective;
     }
     // (lex-optimize (<symbol>+) [:id <symbol>])
@@ -330,10 +316,11 @@ namespace SMTParser{
             }
         }
 
-        // mk multi-objective
-        std::shared_ptr<Objective> objective = std::make_shared<Objective>(opt_kind == "" ? OPT_KIND::OPT_LEX_OPTIMIZE : getOptKind(opt_kind), grp_id);
+        // mk multi-objective (not added to list; caller may use returned objective)
+        std::shared_ptr<Objective> objective = objective_manager->createObjective(
+            opt_kind == "" ? OPT_KIND::OPT_LEX_OPTIMIZE : getOptKind(opt_kind), grp_id);
         for(auto& obj_name : obj_names){
-            objective->addObjective(objective_map[obj_name]);
+            objective->addObjective(objective_manager->getObjective(obj_name));
         }
         return objective;
     }

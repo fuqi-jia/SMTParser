@@ -41,7 +41,6 @@ namespace SMTParser{
 		scan_mode = SCAN_MODE::SM_COMMON;
 		preserving_let_counter = 0;
 		let_nesting_depth = 0;
-		temp_var_counter = 0;
 		parsing_file = false;
 		in_quantifier_scope = false;
 		allow_placeholder_vars = false;
@@ -49,20 +48,12 @@ namespace SMTParser{
 		quant_nesting_depth = 0;
 		node_manager = std::make_shared<NodeManager>();
 		sort_manager = std::make_shared<SortManager>();
+		symbol_manager = std::make_shared<SymbolManager>();
+		symbol_manager->reserve(1024);
+		objective_manager = std::make_shared<ObjectiveManager>();
+		context_.setObjectiveManager(objective_manager);
 		options = std::make_shared<GlobalOptions>();
 
-		// reverse
-		let_key_map.reserve(1024);
-		preserving_let_key_map.reserve(1024);
-		fun_key_map.reserve(1024);
-		fun_var_map.reserve(1024);
-		sort_key_map.reserve(1024);
-		quant_var_map.reserve(1024);
-		static_functions.reserve(1024);
-		var_names.reserve(1024);
-		temp_var_names.reserve(1024);
-		function_names.reserve(1024);
-		
 		// array cache
 		array_select_cache.reserve(1024);
 		array_normalize_cache.reserve(1024);
@@ -81,7 +72,6 @@ namespace SMTParser{
 		scan_mode = SCAN_MODE::SM_COMMON;
 		preserving_let_counter = 0;
 		let_nesting_depth = 0;
-		temp_var_counter = 0;
 		parsing_file = true;
 		in_quantifier_scope = false;
 		allow_placeholder_vars = false;
@@ -89,20 +79,12 @@ namespace SMTParser{
 		quant_nesting_depth = 0;
 		node_manager = std::make_shared<NodeManager>();
 		sort_manager = std::make_shared<SortManager>();
+		symbol_manager = std::make_shared<SymbolManager>();
+		symbol_manager->reserve(1024);
+		objective_manager = std::make_shared<ObjectiveManager>();
+		context_.setObjectiveManager(objective_manager);
 		options = std::make_shared<GlobalOptions>();
 
-		// reverse
-		let_key_map.reserve(1024);
-		preserving_let_key_map.reserve(1024);
-		fun_key_map.reserve(1024);
-		fun_var_map.reserve(1024);
-		sort_key_map.reserve(1024);
-		quant_var_map.reserve(1024);
-		static_functions.reserve(1024);
-		var_names.reserve(1024);
-		temp_var_names.reserve(1024);
-		function_names.reserve(1024);
-		
 		// array cache
 		array_select_cache.reserve(1024);
 		array_normalize_cache.reserve(1024);
@@ -183,8 +165,8 @@ namespace SMTParser{
 			q.push(node);
 			visited.insert(node);
 		}
-		for(size_t i=0;i<context_.objectives.size();i++){
-			auto node = context_.objectives[i]->getObjectiveTerm();
+		for (const auto& obj : context_.getObjectives()) {
+			auto node = obj->getObjectiveTerm();
 			q.push(node);
 			visited.insert(node);
 		}
@@ -249,36 +231,26 @@ namespace SMTParser{
 	}
 	std::vector<std::shared_ptr<DAGNode>> Parser::getVariables() const{
 		std::vector<std::shared_ptr<DAGNode>> vars;
-		for(auto& var : var_names){
-			vars.emplace_back(node_manager->getNode(var.second));
-		}
-		for(auto& var : temp_var_names){
-			vars.emplace_back(node_manager->getNode(var.second));
-		}
+		for(const auto& var : symbol_manager->getVarNames())
+			vars.emplace_back(var.second);
+		for(const auto& var : symbol_manager->getTempVarNames())
+			vars.emplace_back(var.second);
 		return vars;
 	}
 	std::vector<std::shared_ptr<DAGNode>> Parser::getDeclaredVariables() const{
 		std::vector<std::shared_ptr<DAGNode>> vars;
-		for(auto& var : var_names){
-			vars.emplace_back(node_manager->getNode(var.second));
-		}
+		for(const auto& var : symbol_manager->getVarNames())
+			vars.emplace_back(var.second);
 		return vars;
 	}
 	std::shared_ptr<DAGNode> Parser::getVariable(const std::string& var_name){
-		if(var_names.find(var_name) != var_names.end()){
-			return node_manager->getNode(var_names.at(var_name));
-		}
-		else if(temp_var_names.find(var_name) != temp_var_names.end()){
-			return node_manager->getNode(temp_var_names.at(var_name));
-		}
-		return NodeManager::NULL_NODE;
+		std::shared_ptr<DAGNode> v = symbol_manager->getVar(var_name);
+		if(v) return v;
+		v = symbol_manager->getTempVar(var_name);
+		return v ? v : NodeManager::NULL_NODE;
 	}
 	std::vector<std::shared_ptr<DAGNode>> Parser::getFunctions() const{
-		std::vector<std::shared_ptr<DAGNode>> funs;
-		for(auto fun : function_names){
-			funs.emplace_back(fun_key_map.at(fun));
-		}
-		return funs;
+		return symbol_manager->getFunctions();
 	}
 	void Parser::setEvaluatePrecision(mpfr_prec_t precision){
 		options->setEvaluatePrecision(precision);
@@ -870,7 +842,7 @@ namespace SMTParser{
 				std::shared_ptr<Sort> out_sort = parseSort();
 				res = mkFuncDec(name, params, out_sort);
 				if(!res->isErr()){
-					function_names.emplace_back(name);
+					symbol_manager->addFunctionName(name);
 				}
 			}
 
@@ -892,7 +864,7 @@ namespace SMTParser{
 
 			// make sort
 			std::shared_ptr<Sort> sort = mkSortDec(name, num);
-			sort_key_map.insert(std::pair<std::string, std::shared_ptr<Sort>>(name, sort));
+			symbol_manager->registerSort(name, sort);
 			skipToRpar();
 
 			return CMD_TYPE::CT_DECLARE_SORT;
@@ -904,15 +876,15 @@ namespace SMTParser{
 			size_t name_ln = line_number;
 			std::string name = getSymbol();
 
-			if(fun_key_map.find(name) != fun_key_map.end()){
-				std::shared_ptr<DAGNode> check_fun = fun_key_map[name];
-				if(check_fun->getKind() == NODE_KIND::NT_FUNC_DEF){
-					err_mul_def(name, name_ln);
-				}
+			std::shared_ptr<DAGNode> check_fun = symbol_manager->getFun(name);
+			if(check_fun && check_fun->getKind() == NODE_KIND::NT_FUNC_DEF){
+				err_mul_def(name, name_ln);
+			}
+			if(check_fun){
 				return CMD_TYPE::CT_DEFINE_FUN;
 			}
 			// keep the function name with the same order
-			function_names.emplace_back(name);
+			symbol_manager->addFunctionName(name);
 
 			// get returned type and body
 			std::shared_ptr<Sort> out_sort = parseSort();
@@ -931,15 +903,15 @@ namespace SMTParser{
 			size_t name_ln = line_number;
 			std::string name = getSymbol();
 
-			if(fun_key_map.find(name) != fun_key_map.end()){
-				std::shared_ptr<DAGNode> check_fun = fun_key_map[name];
-				if(check_fun->getKind() == NODE_KIND::NT_FUNC_DEF){
-					err_mul_def(name, name_ln);
-				}
+			std::shared_ptr<DAGNode> check_fun = symbol_manager->getFun(name);
+			if(check_fun && check_fun->getKind() == NODE_KIND::NT_FUNC_DEF){
+				err_mul_def(name, name_ln);
+			}
+			if(check_fun){
 				return CMD_TYPE::CT_DEFINE_FUN;
 			}
 			// keep the function name with the same order
-			function_names.emplace_back(name);
+			symbol_manager->addFunctionName(name);
 
 			// parse ((x Int))
 			//       ^
@@ -956,11 +928,11 @@ namespace SMTParser{
 				std::shared_ptr<DAGNode> expr = nullptr;
 				expr = mkFunParamVar(ptype, pname);
 				// multiple declarations
-				if(fun_var_map.find(pname) != fun_var_map.end()){
+				if(symbol_manager->hasFunVar(pname)){
 					err_mul_decl(pname, line_number);
 				}
 				else{
-					fun_var_map.insert(std::pair<std::string, std::shared_ptr<DAGNode>>(pname, expr));
+					symbol_manager->registerFunVar(pname, expr);
 					params.emplace_back(expr);
 				}
 				// (x Int)
@@ -980,7 +952,7 @@ namespace SMTParser{
 
 			//remove key bindings: for let uses local variables. 
 			while (key_list.size() > 0) {
-				fun_var_map.erase(key_list.back());
+				symbol_manager->eraseFunVar(key_list.back());
 				key_list.pop_back();
 			}
 			
@@ -994,15 +966,15 @@ namespace SMTParser{
 			size_t name_ln = line_number;
 			std::string name = getSymbol();
 
-			if(fun_key_map.find(name) != fun_key_map.end()){
-				std::shared_ptr<DAGNode> check_fun = fun_key_map[name];
-				if(check_fun->getKind() == NODE_KIND::NT_FUNC_DEF){
-					err_mul_def(name, name_ln);
-				}
+			std::shared_ptr<DAGNode> check_fun = symbol_manager->getFun(name);
+			if(check_fun && check_fun->getKind() == NODE_KIND::NT_FUNC_DEF){
+				err_mul_def(name, name_ln);
+			}
+			if(check_fun){
 				return CMD_TYPE::CT_DEFINE_FUN_REC;
 			}
 			// keep the function name with the same order
-			function_names.emplace_back(name);
+			symbol_manager->addFunctionName(name);
 
 			// parse ((x Int))
 			//       ^
@@ -1021,11 +993,11 @@ namespace SMTParser{
 				std::shared_ptr<DAGNode> expr = nullptr;
 				expr = mkFunParamVar(ptype, pname);
 				// multiple declarations
-				if(fun_var_map.find(pname) != fun_var_map.end()){
+				if(symbol_manager->hasFunVar(pname)){
 					err_mul_decl(pname, line_number);
 				}
 				else{
-					fun_var_map.insert(std::pair<std::string, std::shared_ptr<DAGNode>>(pname, expr));
+					symbol_manager->registerFunVar(pname, expr);
 					params.emplace_back(expr);
 				}
 				// (x Int)
@@ -1051,7 +1023,7 @@ namespace SMTParser{
 
 			//remove key bindings: for let uses local variables. 
 			while (key_list.size() > 0) {
-				fun_var_map.erase(key_list.back());
+				symbol_manager->eraseFunVar(key_list.back());
 				key_list.pop_back();
 			}
 			
@@ -1074,17 +1046,17 @@ namespace SMTParser{
 				parseLpar();
 				std::string name = getSymbol();
 				
-				if(fun_key_map.find(name) != fun_key_map.end()){
-					std::shared_ptr<DAGNode> check_fun = fun_key_map[name];
-					if(check_fun->getKind() == NODE_KIND::NT_FUNC_DEF){
-						err_mul_def(name, line_number);
-					}
+				std::shared_ptr<DAGNode> check_fun = symbol_manager->getFun(name);
+				if(check_fun && check_fun->getKind() == NODE_KIND::NT_FUNC_DEF){
+					err_mul_def(name, line_number);
+				}
+				if(check_fun){
 					skipToRpar();
 					continue;
 				}
 				
 				func_names.emplace_back(name);
-				function_names.emplace_back(name);
+				symbol_manager->addFunctionName(name);
 				
 				// Parse parameters: ((param1 type1)...)
 				parseLpar();
@@ -1127,8 +1099,7 @@ namespace SMTParser{
 			for(size_t i = 0; i < func_names.size(); i++) {
 				// Add parameter bindings for this function
 				for(size_t j = 0; j < all_key_lists[i].size(); j++) {
-					fun_var_map.insert(std::pair<std::string, std::shared_ptr<DAGNode>>(
-						all_key_lists[i][j], all_params[i][j]));
+					symbol_manager->registerFunVar(all_key_lists[i][j], all_params[i][j]);
 				}
 				
 				// Parse function body
@@ -1137,7 +1108,7 @@ namespace SMTParser{
 				
 				// Remove parameter bindings for this function
 				for(const auto& key : all_key_lists[i]) {
-					fun_var_map.erase(key);
+					symbol_manager->eraseFunVar(key);
 				}
 			}
 			parseRpar(); // end of function bodies list
@@ -1173,11 +1144,11 @@ namespace SMTParser{
 			std::shared_ptr<Sort> out_sort = parseSort();
 			if(params.size() == 0){
 				// it means an alias of the out sort
-				sort_key_map.insert(std::pair<std::string, std::shared_ptr<Sort>>(name, out_sort));
+				symbol_manager->registerSort(name, out_sort);
 			}
 			else{
 				std::shared_ptr<Sort> sort = mkSortDef(name, params, out_sort);
-				sort_key_map.insert(std::pair<std::string, std::shared_ptr<Sort>>(name, sort));
+				symbol_manager->registerSort(name, sort);
 			}
 			skipToRpar();
 			return CMD_TYPE::CT_DEFINE_SORT;
@@ -1461,10 +1432,11 @@ namespace SMTParser{
 				return basic_it->second;
 			}
 			// then check the user-defined type
-			else if(sort_key_map.find(s) != sort_key_map.end()){
-				return sort_key_map[s];
+			else {
+				std::shared_ptr<Sort> usort = symbol_manager->resolveSort(s);
+				if(usort) return usort;
+				err_unkwn_sym(s, expr_ln);
 			}
-			else err_unkwn_sym(s, expr_ln);
 		}
 		// (<identifier> <sort>+)
 		// (_ <identifier> <param>+)
@@ -1481,12 +1453,10 @@ namespace SMTParser{
 			std::shared_ptr<Sort> sortS = parseSort();
 			std::shared_ptr<Sort> sortT = parseSort();
 			std::string sort_key_name = "ARRAY_" + sortS->toString() + "_" + sortT->toString();
-			if(sort_key_map.find(sort_key_name) != sort_key_map.end()){
-				sort = sort_key_map[sort_key_name];
-			}
-			else{
+			sort = symbol_manager->resolveSort(sort_key_name);
+			if(!sort){
 				sort = sort_manager->createArraySort(sortS, sortT);
-				sort_key_map.insert(std::pair<std::string, std::shared_ptr<Sort>>(sort_key_name, sort));
+				symbol_manager->registerSort(sort_key_name, sort);
 			}
 		}
 		else if(s == "Datatype"){}
@@ -1519,12 +1489,10 @@ namespace SMTParser{
 				// n: bit-width
 				std::string n = getSymbol();
 				std::string sort_key_name = "BV_" + n;
-				if(sort_key_map.find(sort_key_name) != sort_key_map.end()){
-					sort = sort_key_map[sort_key_name];
-				}
-				else{
+				sort = symbol_manager->resolveSort(sort_key_name);
+				if(!sort){
 					sort = sort_manager->createBVSort(std::stoi(n));
-					sort_key_map.insert(std::pair<std::string, std::shared_ptr<Sort>>(sort_key_name, sort));
+					symbol_manager->registerSort(sort_key_name, sort);
 				}
 			}
 			else if(id == "FloatingPoint"){
@@ -1534,12 +1502,10 @@ namespace SMTParser{
 				std::string e = getSymbol();
 				std::string s = getSymbol();
 				std::string sort_key_name = "FP_" + e + "_" + s;
-				if(sort_key_map.find(sort_key_name) != sort_key_map.end()){
-					sort = sort_key_map[sort_key_name];
-				}
-				else{
+				sort = symbol_manager->resolveSort(sort_key_name);
+				if(!sort){
 					sort = sort_manager->createFPSort(std::stoi(e), std::stoi(s));
-					sort_key_map.insert(std::pair<std::string, std::shared_ptr<Sort>>(sort_key_name, sort));
+					symbol_manager->registerSort(sort_key_name, sort);
 				}
 			}
 			else err_unkwn_sym(s, expr_ln);
@@ -1551,10 +1517,10 @@ namespace SMTParser{
 				sort = basic_it->second;
 			}
 			// then check the user-defined type
-			else if(sort_key_map.find(s) != sort_key_map.end()){
-				sort = sort_key_map[s];
+			else {
+				sort = symbol_manager->resolveSort(s);
+				if(!sort) err_unkwn_sym(s, expr_ln);
 			}
-			else err_unkwn_sym(s, expr_ln);
 
 			if (sort->arity > 0 ){
 				for (size_t i = 0; i < sort->arity; i++){
@@ -1639,12 +1605,10 @@ namespace SMTParser{
 					std::string prefixed_name = name + preserving_let_bind_var_suffix;
 					
 					// Check for duplicate key bindings
-					if (preserving_let_key_map.find(prefixed_name) != preserving_let_key_map.end()) {
+					if (symbol_manager->hasPreservingLet(prefixed_name)) {
 						// Clean up all variable bindings in the state stack
 						for (auto &state : stateStack) {
-							for (const auto &key : state.key_list) {
-								preserving_let_key_map.erase(key);
-							}
+							symbol_manager->erasePreservingLetKeys(state.key_list);
 						}
 						err_sym_mis("Duplicate variable binding: " + name, name_ln);
 					}
@@ -1655,9 +1619,7 @@ namespace SMTParser{
 					if (expr->isErr()) {
 						// Clean up all variable bindings in the state stack
 						for (auto &state : stateStack) {
-							for (const auto &key : state.key_list) {
-								preserving_let_key_map.erase(key);
-							}
+							symbol_manager->erasePreservingLetKeys(state.key_list);
 						}
 						err_all(expr, name, name_ln);
 					}
@@ -1754,12 +1716,10 @@ namespace SMTParser{
 					std::string name = getSymbol();
 					
 					// Check for duplicate key bindings
-					if (let_key_map.find(name) != let_key_map.end()) {
+					if (symbol_manager->hasLet(name)) {
 						// Clean up all variable bindings in the state stack
 						for (auto &state : stateStack) {
-							for (const auto &key : state.key_list) {
-								let_key_map.erase(key);
-							}
+							symbol_manager->popLetScope(state.key_list);
 						}
 						err_sym_mis("Duplicate variable binding: " + name, name_ln);
 					}
@@ -1770,15 +1730,13 @@ namespace SMTParser{
 					if (expr->isErr()) {
 						// Clean up all variable bindings in the state stack
 						for (auto &state : stateStack) {
-							for (const auto &key : state.key_list) {
-								let_key_map.erase(key);
-							}
+							symbol_manager->popLetScope(state.key_list);
 						}
 						err_all(expr, name, name_ln);
 					}
 					
 					// Add the binding
-					let_key_map.insert(std::pair<std::string, std::shared_ptr<DAGNode>>(name, expr));
+					symbol_manager->registerLet(name, expr);
 					params.emplace_back(expr);
 					key_list.emplace_back(name);
 					
@@ -1806,9 +1764,7 @@ namespace SMTParser{
 				}
 				
 				// Remove all variable bindings for the current state
-				for (const auto &key : key_list) {
-					let_key_map.erase(key);
-				}
+				symbol_manager->popLetScope(key_list);
 
 				// State processing complete, pop from stack
 				stateStack.pop_back();
@@ -2001,7 +1957,7 @@ namespace SMTParser{
 	std::shared_ptr<DAGNode> Parser::mkApplyFunc(std::shared_ptr<DAGNode> fun, const std::vector<std::shared_ptr<DAGNode>> &params){
 		std::shared_ptr<DAGNode> res = std::shared_ptr<DAGNode>(new DAGNode(fun->getSort(), NODE_KIND::NT_FUNC_APPLY, fun->getName()));
 		res->updateApplyFunc(fun->getSort(), fun, params);
-		static_functions.emplace_back(res);
+		symbol_manager->addStaticFunction(res);
 		return res;
 	}
 
@@ -2011,7 +1967,7 @@ namespace SMTParser{
         // Store function definition in children[0] and params in children[1..]
         std::shared_ptr<DAGNode> res = std::shared_ptr<DAGNode>(new DAGNode(fun->getSort(), NODE_KIND::NT_FUNC_REC_APPLY, fun->getName()));
         res->updateApplyFunc(fun->getSort(), fun, params, true);
-        static_functions.emplace_back(res);
+        symbol_manager->addStaticFunction(res);
         return res;
     }
 
@@ -2023,14 +1979,11 @@ namespace SMTParser{
 	// QUANTIFIERS
 	// (quantifier ((<identifier> <sort>)+） <expr>)
 	std::shared_ptr<DAGNode> Parser::mkQuantVar(const std::string& name, std::shared_ptr<Sort> sort){
-		if(quant_var_map.find(name) != quant_var_map.end()){
-			return quant_var_map[name];
-		}
-		else{
-			std::shared_ptr<DAGNode> var = node_manager->createNode(sort, NODE_KIND::NT_QUANT_VAR, name);
-			quant_var_map.insert(std::pair<std::string, std::shared_ptr<DAGNode>>(name, var));
-			return var;
-		}
+		std::shared_ptr<DAGNode> var = symbol_manager->getQuantVar(name);
+		if(var) return var;
+		var = node_manager->createNode(sort, NODE_KIND::NT_QUANT_VAR, name);
+		symbol_manager->registerQuantVar(name, var);
+		return var;
 	}
 	std::shared_ptr<DAGNode> Parser::parseQuant(const std::string& type){
 		// (quantifier ((<identifier> <sort>)+） <expr>)
@@ -2064,9 +2017,7 @@ namespace SMTParser{
 		else{
 			condAssert(false, "Invalid quantifier");
 		}
-		for(auto& name : quant_var_names){
-			quant_var_map.erase(name);
-		}
+		symbol_manager->popQuantScope(quant_var_names);
 		return res;
 	}
 
@@ -2504,9 +2455,8 @@ namespace SMTParser{
 				if (!param_sorts.empty()) {
 					// Function with parameters - declare it
 					mkFuncDec(func_name, param_sorts, return_sort);
-					if (fun_key_map.find(func_name) == fun_key_map.end() || 
-					    std::find(function_names.begin(), function_names.end(), func_name) == function_names.end()) {
-						function_names.emplace_back(func_name);
+					if (!symbol_manager->getFun(func_name) || !symbol_manager->hasFunctionName(func_name)) {
+						symbol_manager->addFunctionName(func_name);
 					}
 				}
 				
@@ -2622,10 +2572,10 @@ namespace SMTParser{
 	}
 
 	bool Parser::isDeclaredVariable(const std::string& var_name) const{
-		return var_names.find(var_name) != var_names.end();
+		return symbol_manager->hasVar(var_name);
 	}
 	bool Parser::isDeclaredFunction(const std::string& func_name) const{
-		return fun_key_map.find(func_name) != fun_key_map.end();
+		return symbol_manager->getFun(func_name) != nullptr;
 	}
 
 
@@ -2799,12 +2749,10 @@ namespace SMTParser{
 		condAssert(expr->isVar(), "Only variable can be renamed");
 		std::string old_name = expr->getName();
 		if(expr->isTempVar()){
-			size_t old_index = temp_var_names[old_name];
-			temp_var_names[new_name] = old_index;
+			symbol_manager->renameTempVar(old_name, new_name);
 		}
 		else{
-			size_t old_index = var_names[old_name];
-			var_names[new_name] = old_index;
+			symbol_manager->renameVar(old_name, new_name);
 		}
 		expr->rename(new_name);
 
@@ -2831,7 +2779,7 @@ namespace SMTParser{
 		std::stringstream ss;
 		ss << "(set-logic " << options->getLogic() << ")" << std::endl;
 		// custom sorts
-		for(auto& sort_pair : sort_key_map){
+		for(const auto& sort_pair : symbol_manager->getSortKeyMap()){
 			if(sort_pair.second->isDec()){
 				ss << "(declare-sort " << sort_pair.first << " " << sort_pair.second->arity << ")" << std::endl;
 			}
@@ -2876,18 +2824,9 @@ namespace SMTParser{
 		size_t removedCount = 0;
 		
 		for(const auto& funcName : funcNames){
-			// Check if function exists in fun_key_map
-			auto funIt = fun_key_map.find(funcName);
-			if(funIt != fun_key_map.end()){
-				// Remove from fun_key_map
-				fun_key_map.erase(funIt);
+			if(symbol_manager->getFun(funcName)){
+				symbol_manager->removeFun(funcName);
 				removedCount++;
-				
-				// Remove from function_names vector
-				auto nameIt = std::find(function_names.begin(), function_names.end(), funcName);
-				if(nameIt != function_names.end()){
-					function_names.erase(nameIt);
-				}
 			}
 		}
 		

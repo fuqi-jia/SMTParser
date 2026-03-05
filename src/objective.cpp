@@ -322,4 +322,45 @@ namespace SMTParser{
             return opt_type == OPT_KIND::OPT_MINIMIZE ? COMP_KIND::COMP_LT : COMP_KIND::COMP_GT;
         }
     }
+
+    // --- ObjectiveManager ---
+
+    void ObjectiveManager::registerNamed(const std::string& name, const std::shared_ptr<Objective>& obj) {
+        objective_map_[name] = obj;
+    }
+
+    void ObjectiveManager::addObjective(const std::shared_ptr<Objective>& obj) {
+        objectives_.emplace_back(obj);
+    }
+
+    std::shared_ptr<Objective> ObjectiveManager::getObjective(const std::string& name) const {
+        auto it = objective_map_.find(name);
+        return it != objective_map_.end() ? it->second : nullptr;
+    }
+
+    std::vector<std::shared_ptr<Objective>> ObjectiveManager::getObjectives() const {
+        return objectives_;
+    }
+
+    std::shared_ptr<Objective> ObjectiveManager::createObjective(OPT_KIND opt_type, const std::string& grp_id) {
+        return std::make_shared<Objective>(opt_type, grp_id);
+    }
+
+    std::shared_ptr<Objective> ObjectiveManager::addSingleObjective(OPT_KIND opt_type, const std::string& grp_id) {
+        std::shared_ptr<SingleObjective> obj = std::make_shared<SingleObjective>(opt_type, grp_id);
+        std::shared_ptr<Objective> objective = std::make_shared<Objective>(opt_type, grp_id);
+        objective->addObjective(obj);
+        objectives_.emplace_back(objective);
+        return objective;
+    }
+
+    std::shared_ptr<Objective> ObjectiveManager::addSingleObjective(OPT_KIND opt_type, const std::shared_ptr<DAGNode>& term,
+            COMP_KIND comp_op, const std::shared_ptr<DAGNode>& epsilon, const std::shared_ptr<DAGNode>& M,
+            const std::string& grp_id) {
+        std::shared_ptr<SingleObjective> obj = std::make_shared<SingleObjective>(opt_type, term, comp_op, epsilon, M, grp_id);
+        std::shared_ptr<Objective> objective = std::make_shared<Objective>(opt_type, grp_id);
+        objective->addObjective(obj);
+        objectives_.emplace_back(objective);
+        return objective;
+    }
 }
