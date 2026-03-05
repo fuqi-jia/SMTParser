@@ -2,10 +2,9 @@
  *
  * Context base and implementations for IR / Dispatcher
  *
- * Context: minimal abstraction for Dispatcher (virtual dtor only); no parser-specific
- *   interfaces; get* are only on ParserContext.
- * ParserContext: holds actual data and all get* (getAssertions, getAssumptions, etc.).
- * NullContext: empty context for dispatch(Node) default; no get*.
+ * Context: base holding managers (NodeManager, SortManager, SymbolManager, ObjectiveManager, Options).
+ * ParserContext: extends Context with assertions, assumptions, etc.
+ * NullContext: empty context for dispatch(Node) default; managers remain nullptr.
  *
  * Author: Fuqi Jia <jiafq@ios.ac.cn>
  *
@@ -35,6 +34,8 @@
 
 #include "dag.h"
 #include "objective.h"
+#include "options.h"
+#include "symbol_manager.h"
 
 #include <unordered_map>
 #include <unordered_set>
@@ -43,17 +44,41 @@
 namespace SMTParser {
 
 /**
- * Base context: polymorphic base for Dispatcher; handlers take (Node, Context&).
- * No parser-specific getters here; use ParserContext& when get* are needed.
+ * Base context: holds managers and options; polymorphic base for Dispatcher.
+ * Handlers take (Node, Context&); get* for managers are here.
  */
 class Context {
+protected:
+    std::shared_ptr<NodeManager>   node_manager_;
+    std::shared_ptr<SortManager>    sort_manager_;
+    std::shared_ptr<SymbolManager>  symbol_manager_;
+    std::shared_ptr<ObjectiveManager> objective_manager_;
+    std::shared_ptr<GlobalOptions>  options_;
+
 public:
     virtual ~Context() = default;
+
+    void setNodeManager(std::shared_ptr<NodeManager> nm) { node_manager_ = std::move(nm); }
+    void setSortManager(std::shared_ptr<SortManager> sm) { sort_manager_ = std::move(sm); }
+    void setSymbolManager(std::shared_ptr<SymbolManager> sm) { symbol_manager_ = std::move(sm); }
+    void setObjectiveManager(std::shared_ptr<ObjectiveManager> om) { objective_manager_ = std::move(om); }
+    void setOptions(std::shared_ptr<GlobalOptions> opt) { options_ = std::move(opt); }
+
+    std::shared_ptr<NodeManager> getNodeManager() { return node_manager_; }
+    std::shared_ptr<NodeManager> getNodeManager() const { return node_manager_; }
+    std::shared_ptr<SortManager> getSortManager() { return sort_manager_; }
+    std::shared_ptr<SortManager> getSortManager() const { return sort_manager_; }
+    std::shared_ptr<SymbolManager> getSymbolManager() { return symbol_manager_; }
+    std::shared_ptr<SymbolManager> getSymbolManager() const { return symbol_manager_; }
+    std::shared_ptr<ObjectiveManager> getObjectiveManager() { return objective_manager_; }
+    std::shared_ptr<ObjectiveManager> getObjectiveManager() const { return objective_manager_; }
+    std::shared_ptr<GlobalOptions> getOptions() { return options_; }
+    std::shared_ptr<GlobalOptions> getOptions() const { return options_; }
 };
 
 /**
- * Context implementation that holds actual data (assertions, assumptions, etc.).
- * Used by Parser; parsing writes into this.
+ * Context implementation that holds parser data (assertions, assumptions, etc.).
+ * Inherits managers and options from Context; used by Parser.
  */
 class ParserContext : public Context {
 public:
@@ -64,10 +89,8 @@ public:
     std::vector<std::shared_ptr<DAGNode>> soft_assertions;
     std::vector<std::shared_ptr<DAGNode>> soft_weights;
     std::unordered_map<std::string, std::unordered_set<size_t>> soft_assertion_groups;
-    std::shared_ptr<ObjectiveManager> objective_manager_;
     std::vector<std::shared_ptr<DAGNode>> split_lemmas;
 
-    void setObjectiveManager(std::shared_ptr<ObjectiveManager> om) { objective_manager_ = std::move(om); }
     std::vector<std::shared_ptr<DAGNode>> getAssertions() const;
     std::unordered_map<std::string, std::unordered_set<size_t>> getGroupedAssertions() const;
     std::unordered_map<std::string, std::shared_ptr<DAGNode>> getNamedAssertions() const;

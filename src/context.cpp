@@ -37,7 +37,8 @@ std::unordered_map<std::string, std::unordered_set<size_t>> ParserContext::getGr
 }
 
 std::vector<std::shared_ptr<Objective>> ParserContext::getObjectives() const {
-    return objective_manager_ ? objective_manager_->getObjectives() : std::vector<std::shared_ptr<Objective>>{};
+    auto om = getObjectiveManager();
+    return om ? om->getObjectives() : std::vector<std::shared_ptr<Objective>>{};
 }
 
 std::vector<std::shared_ptr<DAGNode>> ParserContext::getSplitLemmas() const {

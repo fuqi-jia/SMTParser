@@ -231,7 +231,7 @@ namespace SMTParser{
                             size_t eb = std::stoul(eb_str);
                             size_t sb = std::stoul(sb_str);
                             
-                            std::shared_ptr<Sort> fp_sort = sort_manager->createFPSort(eb, sb);
+                            std::shared_ptr<Sort> fp_sort = getSortManager()->createFPSort(eb, sb);
                             
                             // Use the appropriate mk* function which will create nodes with full names
                             if (second == "NaN" || second == "+NaN" || second == "-NaN") {
@@ -243,7 +243,7 @@ namespace SMTParser{
                             } else {
                                 // For +zero and -zero, create as NT_CONST with full name
                                 std::string const_name = "(_ " + second + " " + eb_str + " " + sb_str + ")";
-                                frame.result = node_manager->createNode(fp_sort, NODE_KIND::NT_CONST, const_name);
+                                frame.result = getNodeManager()->createNode(fp_sort, NODE_KIND::NT_CONST, const_name);
                             }
                             
                             parseRpar();
@@ -364,7 +364,7 @@ namespace SMTParser{
                         let_nesting_depth++;
 
                         std::shared_ptr<DAGNode> res;
-                        if(options->parsing_preserve_let){
+                        if(getOptions()->parsing_preserve_let){
                             res = parsePreservingLet();
                         }else{
                             res = parseLet();
@@ -606,10 +606,10 @@ namespace SMTParser{
 		{
 			ResolveScope scope;
 			scope.preserving_let_name = s + PRESERVING_LET_BIND_VAR_SUFFIX + std::to_string(preserving_let_counter);
-			scope.check_preserving_let = (options->parsing_preserve_let && current_let_mode != LET_MODE::LM_NON_LET);
-			scope.check_let = (!options->parsing_preserve_let && current_let_mode != LET_MODE::LM_NON_LET);
+			scope.check_preserving_let = (getOptions()->parsing_preserve_let && current_let_mode != LET_MODE::LM_NON_LET);
+			scope.check_let = (!getOptions()->parsing_preserve_let && current_let_mode != LET_MODE::LM_NON_LET);
 			scope.in_quantifier_scope = in_quantifier_scope;
-			std::shared_ptr<DAGNode> var = symbol_manager->resolveTerm(s, scope);
+			std::shared_ptr<DAGNode> var = getSymbolManager()->resolveTerm(s, scope);
 			if (var) return var;
 		}
 		// otherwise, it is a constant
@@ -620,13 +620,13 @@ namespace SMTParser{
 			return mkE();
 		}
 		else if(s == "inf"){
-			return mkInfinity(options->isIntTheory()? SortManager::INT_SORT : SortManager::REAL_SORT);
+			return mkInfinity(getOptions()->isIntTheory()? SortManager::INT_SORT : SortManager::REAL_SORT);
 		}
 		else if(s == "+inf"){
-			return mkPosInfinity(options->isIntTheory()? SortManager::INT_SORT : SortManager::REAL_SORT);
+			return mkPosInfinity(getOptions()->isIntTheory()? SortManager::INT_SORT : SortManager::REAL_SORT);
 		}
 		else if(s == "-inf"){
-			return mkNegInfinity(options->isIntTheory()? SortManager::INT_SORT : SortManager::REAL_SORT);
+			return mkNegInfinity(getOptions()->isIntTheory()? SortManager::INT_SORT : SortManager::REAL_SORT);
 		}
 		else if(s == "epsion"){
 			return mkEpsilon();
@@ -718,7 +718,7 @@ namespace SMTParser{
 
     NODE_KIND Parser::getKind(const std::string& s){
         auto kind = SMTParser::getOperKind(s);
-        if(kind == NODE_KIND::NT_UNKNOWN && symbol_manager->resolveFun(s)){
+        if(kind == NODE_KIND::NT_UNKNOWN && getSymbolManager()->resolveFun(s)){
             kind = NODE_KIND::NT_FUNC_APPLY;
         }
         return kind;
@@ -726,7 +726,7 @@ namespace SMTParser{
     
 	std::shared_ptr<DAGNode> Parser::parseOper(const std::string& s, const std::vector<std::shared_ptr<DAGNode>>& func_args, const std::vector<std::shared_ptr<DAGNode>> &oper_params){
 		TIME_FUNC();
-        auto func = symbol_manager->resolveFun(s);
+        auto func = getSymbolManager()->resolveFun(s);
         if(func){
             // Found a function definition or declaration, apply it with parameters
             return applyFun(func, oper_params);

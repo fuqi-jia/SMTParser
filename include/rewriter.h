@@ -58,7 +58,7 @@ public:
      */
     Node rebuildLike(Node old, const std::vector<Node>& newKids) const;
 
-    NodeManager* getNodeManager() const noexcept { return node_manager_ ? node_manager_.get() : nullptr; }
+    std::shared_ptr<NodeManager> getNodeManager() const noexcept { return node_manager_; }
 
 private:
     std::shared_ptr<NodeManager> node_manager_;

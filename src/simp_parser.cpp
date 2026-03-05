@@ -893,7 +893,7 @@ namespace SMTParser{
                     return mkUnknown();
                 }
                 if((l->isCReal() && r->isCReal()) || (l->isCInt() && r->isCReal()) || (l->isCReal() && r->isCInt()) || (l->isCInt() && r->isCInt())){
-                    if(options->keep_division_if_not_divisible){
+                    if(getOptions()->keep_division_if_not_divisible){
                         if((toReal(l) / toReal(r)).isInteger()){
                             return mkConstInt((toReal(l) / toReal(r)).floor().toInt());
                         }

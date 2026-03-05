@@ -1915,7 +1915,7 @@ namespace SMTParser{
     }
 
     std::shared_ptr<DAGNode> Parser::expandLet(std::shared_ptr<DAGNode> expr){
-        if(options->parsing_preserve_let && (expr->isLet() || expr->isLetChain())){
+        if(getOptions()->parsing_preserve_let && (expr->isLet() || expr->isLetChain())){
             // Determine the body based on the structure type
             std::shared_ptr<DAGNode> body;
             if(expr->isLet()){

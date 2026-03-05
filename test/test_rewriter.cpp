@@ -23,7 +23,7 @@ int main() {
     Node origVar = child(child(child(root, 1), 0), 0);  // p inside (not (not p))
     assert(origVar && kind(origVar) == NODE_KIND::NT_VAR);
 
-    Rewriter rewriter(parser.getNodeManagerShared());
+    Rewriter rewriter(parser.getNodeManager());
     installDefaultRewriteRules(rewriter);
 
     Node result = rewriter.rewrite(root);  // default fixpoint true

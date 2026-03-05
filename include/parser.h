@@ -136,15 +136,6 @@ namespace SMTParser{
 
         bool                                    parsing_file;
 
-        // node manager
-        std::shared_ptr<NodeManager>            node_manager;
-        // sort manager
-        std::shared_ptr<SortManager>            sort_manager;
-        std::shared_ptr<SymbolManager>          symbol_manager;
-
-        // global options
-        std::shared_ptr<GlobalOptions>                  options;
-        std::shared_ptr<ObjectiveManager>              objective_manager;
         // conversion map
         std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>
                                                         cnf_map;
@@ -308,15 +299,17 @@ namespace SMTParser{
 
         /**
          * @brief Get the node manager (for Rewriter, etc.)
-         * @return Raw pointer to the parser's NodeManager
-         */
-        NodeManager* getNodeManager() { return node_manager.get(); }
-
-        /**
-         * @brief Get the node manager as shared_ptr (for Rewriter, etc.)
          * @return shared_ptr to the parser's NodeManager
          */
-        std::shared_ptr<NodeManager> getNodeManagerShared() { return node_manager; }
+        std::shared_ptr<NodeManager> getNodeManager() { return context_.getNodeManager(); }
+        std::shared_ptr<NodeManager> getNodeManager() const { return context_.getNodeManager(); }
+
+        std::shared_ptr<SortManager> getSortManager() { return context_.getSortManager(); }
+        std::shared_ptr<SortManager> getSortManager() const { return context_.getSortManager(); }
+        std::shared_ptr<SymbolManager> getSymbolManager() { return context_.getSymbolManager(); }
+        std::shared_ptr<SymbolManager> getSymbolManager() const { return context_.getSymbolManager(); }
+        std::shared_ptr<ObjectiveManager> getObjectiveManager() { return context_.getObjectiveManager(); }
+        std::shared_ptr<ObjectiveManager> getObjectiveManager() const { return context_.getObjectiveManager(); }
 
         /**
          * @brief Get grouped assertions
@@ -385,7 +378,7 @@ namespace SMTParser{
          * 
          * @return Pointer to global options
          */
-        std::shared_ptr<GlobalOptions> getOptions() const;
+        std::shared_ptr<GlobalOptions> getOptions() const { return context_.getOptions(); }
 
         /**
          * @brief Get variables

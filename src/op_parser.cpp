@@ -230,28 +230,28 @@ namespace SMTParser{
         if(isCommutative(t)){
             params = sortParams(p);
         }
-        return node_manager->createNode(sort, t, kindToString(t), params);
+        return getNodeManager()->createNode(sort, t, kindToString(t), params);
     }
 
     // mk function
     std::shared_ptr<DAGNode> Parser::mkFuncDec(const std::string &name, const std::vector<std::shared_ptr<Sort>> &params, std::shared_ptr<Sort> out_sort){
-        if(symbol_manager->getFun(name)){
+        if(getSymbolManager()->getFun(name)){
             err_all(ERROR_TYPE::ERR_MUL_DECL, "Multiple declarations of function", line_number);
             return mkUnknown();
         }
         std::vector<std::shared_ptr<DAGNode>> children;
         for(auto &param: params){
-            std::shared_ptr <DAGNode> param_node = node_manager->createNode(param, NODE_KIND::NT_FUNC_PARAM, param->toString());
+            std::shared_ptr <DAGNode> param_node = getNodeManager()->createNode(param, NODE_KIND::NT_FUNC_PARAM, param->toString());
             children.emplace_back(param_node);
         }
         children.insert(children.begin(), NodeManager::NULL_NODE);
-        std::shared_ptr<DAGNode> func = node_manager->createNode(out_sort, NODE_KIND::NT_FUNC_DEC, name, children);
-        symbol_manager->registerFun(name, func);
+        std::shared_ptr<DAGNode> func = getNodeManager()->createNode(out_sort, NODE_KIND::NT_FUNC_DEC, name, children);
+        getSymbolManager()->registerFun(name, func);
         return func;
     }
 
     std::shared_ptr<DAGNode> Parser::mkFuncDef(const std::string &name, const std::vector<std::shared_ptr<DAGNode>> &params, std::shared_ptr<Sort> out_sort, std::shared_ptr<DAGNode> body){
-        std::shared_ptr<DAGNode> func = symbol_manager->getFun(name);
+        std::shared_ptr<DAGNode> func = getSymbolManager()->getFun(name);
         if(func){
             condAssert(func->getKind() == NODE_KIND::NT_FUNC_DEC, "mkFuncDef: func is not a function declaration");
             if(func->getKind() == NODE_KIND::NT_FUNC_DEC){
@@ -266,13 +266,13 @@ namespace SMTParser{
         for(auto &param: params){
             children.emplace_back(param);
         }
-        func = node_manager->createNode(out_sort, NODE_KIND::NT_FUNC_DEF, name, children);
-        symbol_manager->registerFun(name, func);
+        func = getNodeManager()->createNode(out_sort, NODE_KIND::NT_FUNC_DEF, name, children);
+        getSymbolManager()->registerFun(name, func);
         return func;
     }
 
     std::shared_ptr<DAGNode> Parser::mkFuncRec(const std::string &name, const std::vector<std::shared_ptr<DAGNode>> &params, std::shared_ptr<Sort> out_sort, std::shared_ptr<DAGNode> body){
-        std::shared_ptr<DAGNode> func = symbol_manager->getFun(name);
+        std::shared_ptr<DAGNode> func = getSymbolManager()->getFun(name);
         if(func){
             condAssert(func->getKind() == NODE_KIND::NT_FUNC_DEC, "mkFuncRec: func is not a function declaration");
             if(func->getKind() == NODE_KIND::NT_FUNC_DEC){
@@ -287,17 +287,17 @@ namespace SMTParser{
         for(auto &param: params){
             children.emplace_back(param);
         }
-        func = node_manager->createNode(out_sort, NODE_KIND::NT_FUNC_REC, name, children);
-        symbol_manager->registerFun(name, func);
+        func = getNodeManager()->createNode(out_sort, NODE_KIND::NT_FUNC_REC, name, children);
+        getSymbolManager()->registerFun(name, func);
         return func;
     }
 
     std::shared_ptr<Sort> Parser::mkSortDec(const std::string &name, const size_t &arity){
-        return sort_manager->createSortDec(name, arity);
+        return getSortManager()->createSortDec(name, arity);
     }
 
     std::shared_ptr<Sort> Parser::mkSortDef(const std::string &name, const std::vector<std::shared_ptr<Sort>> &params, std::shared_ptr<Sort> out_sort){
-        return sort_manager->createSortDef(name, params, out_sort);
+        return getSortManager()->createSortDef(name, params, out_sort);
     }
     std::shared_ptr<Sort> Parser::mkIntSort(){
         return SortManager::INT_SORT;
@@ -321,13 +321,13 @@ namespace SMTParser{
         return SortManager::NAT_SORT;
     }
     std::shared_ptr<Sort> Parser::mkBVSort(const size_t &width){
-        return sort_manager->createBVSort(width);
+        return getSortManager()->createBVSort(width);
     }
     std::shared_ptr<Sort> Parser::mkFPSort(const size_t &e, const size_t &s){
-        return sort_manager->createFPSort(e, s);
+        return getSortManager()->createFPSort(e, s);
     }
     std::shared_ptr<Sort> Parser::mkArraySort(std::shared_ptr<Sort> index, std::shared_ptr<Sort> elem){
-        return sort_manager->createArraySort(index, elem);
+        return getSortManager()->createArraySort(index, elem);
     }
 
     // CORE OPERATORS
@@ -422,7 +422,7 @@ namespace SMTParser{
         else{
             if(new_params.size() > 100){
                 // [OPTIMIZE] have not use mkOper, because it will sort parameters
-                return node_manager->createNode(SortManager::BOOL_SORT, NODE_KIND::NT_EQ, "eq", new_params);
+                return getNodeManager()->createNode(SortManager::BOOL_SORT, NODE_KIND::NT_EQ, "eq", new_params);
             }
             else{
                 return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_EQ, new_params);
@@ -526,7 +526,7 @@ namespace SMTParser{
             // the semantics of distinct does not depend on the order of parameters, and sorting is too expensive
             if(new_params.size() > 100) {
                 // [OPTIMIZE] have not use mkOper, because it will sort parameters
-                return node_manager->createNode(SortManager::BOOL_SORT, NODE_KIND::NT_DISTINCT, "distinct", new_params);
+                return getNodeManager()->createNode(SortManager::BOOL_SORT, NODE_KIND::NT_DISTINCT, "distinct", new_params);
             } else {
                 return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_DISTINCT, new_params);
             }
@@ -534,7 +534,7 @@ namespace SMTParser{
     }
     // CONST
     std::shared_ptr<DAGNode> Parser::declareVar(const std::string &name, const std::string &sort){
-        std::shared_ptr<Sort> s = symbol_manager->resolveSort(sort);
+        std::shared_ptr<Sort> s = getSymbolManager()->resolveSort(sort);
         condAssert(s, "declareVar: sort not found");
         return mkVar(s, name);
     }
@@ -544,13 +544,13 @@ namespace SMTParser{
 
     // LET
     std::shared_ptr<DAGNode> Parser::mkLetBindVar(const std::string& name, const std::shared_ptr<DAGNode>& expr){
-        if(symbol_manager->hasPreservingLet(name)){
-            return symbol_manager->getPreservingLet(name);
+        if(getSymbolManager()->hasPreservingLet(name)){
+            return getSymbolManager()->getPreservingLet(name);
         }
         std::vector<std::shared_ptr<DAGNode>> children;
         children.emplace_back(expr);
-        std::shared_ptr<DAGNode> new_var = node_manager->createNode(expr->getSort(), NODE_KIND::NT_LET_BIND_VAR, name, children);
-        symbol_manager->registerPreservingLet(name, new_var);
+        std::shared_ptr<DAGNode> new_var = getNodeManager()->createNode(expr->getSort(), NODE_KIND::NT_LET_BIND_VAR, name, children);
+        getSymbolManager()->registerPreservingLet(name, new_var);
         return new_var;
     }
 
@@ -559,7 +559,7 @@ namespace SMTParser{
         
         // Use the sort of the first binding variable for the list
         std::shared_ptr<Sort> list_sort = bind_vars[0]->getSort();
-        return node_manager->createNode(list_sort, NODE_KIND::NT_LET_BIND_VAR_LIST, "", bind_vars);
+        return getNodeManager()->createNode(list_sort, NODE_KIND::NT_LET_BIND_VAR_LIST, "", bind_vars);
     }
 
     std::shared_ptr<DAGNode> Parser::mkLetChain(const std::vector<std::shared_ptr<DAGNode>>& bind_var_lists, const std::shared_ptr<DAGNode>& body){
@@ -574,12 +574,12 @@ namespace SMTParser{
         }
         children.emplace_back(body);
         
-        return node_manager->createNode(body->getSort(), NODE_KIND::NT_LET_CHAIN, "", children);
+        return getNodeManager()->createNode(body->getSort(), NODE_KIND::NT_LET_CHAIN, "", children);
     }
 
     std::shared_ptr<DAGNode> Parser::mkConstInt(const Integer &v){
         std::string v_str = ConversionUtils::toString(v);
-        return node_manager->createNode(SortManager::INTOREAL_SORT, NODE_KIND::NT_CONST, v_str);
+        return getNodeManager()->createNode(SortManager::INTOREAL_SORT, NODE_KIND::NT_CONST, v_str);
     }
     std::shared_ptr<DAGNode> Parser::mkConstInt(const std::string &v){
         return mkConstInt(Integer(v));
@@ -594,19 +594,19 @@ namespace SMTParser{
         condAssert(TypeChecker::isReal(v) || v == "e" || v == "pi", "mkConstReal: invalid real constant");
         if(v == "e") return NodeManager::E_NODE;
         if(v == "pi") return NodeManager::PI_NODE;
-        return node_manager->createNode(SortManager::REAL_SORT, NODE_KIND::NT_CONST, v);
+        return getNodeManager()->createNode(SortManager::REAL_SORT, NODE_KIND::NT_CONST, v);
     }
     std::shared_ptr<DAGNode> Parser::mkConstReal(const Real &v){
         std::string v_str = ConversionUtils::toString(v);
-        return node_manager->createNode(SortManager::REAL_SORT, NODE_KIND::NT_CONST, v_str);
+        return getNodeManager()->createNode(SortManager::REAL_SORT, NODE_KIND::NT_CONST, v_str);
     }
     std::shared_ptr<DAGNode> Parser::mkConstReal(const double &v){
         std::string v_str = std::to_string(v);
-        return node_manager->createNode(SortManager::REAL_SORT, NODE_KIND::NT_CONST, v_str);
+        return getNodeManager()->createNode(SortManager::REAL_SORT, NODE_KIND::NT_CONST, v_str);
     }
     std::shared_ptr<DAGNode> Parser::mkConstReal(const Integer &v){
         std::string v_str = ConversionUtils::toString(v);
-        return node_manager->createNode(SortManager::REAL_SORT, NODE_KIND::NT_CONST, v_str);
+        return getNodeManager()->createNode(SortManager::REAL_SORT, NODE_KIND::NT_CONST, v_str);
     }
     std::shared_ptr<DAGNode> Parser::mkConstReal(const Number& v){
         return mkConstReal(v.toReal());
@@ -619,66 +619,66 @@ namespace SMTParser{
             processed_v = ConversionUtils::unescapeString(v.substr(1, v.length()-2));
             processed_v = "\"" + ConversionUtils::escapeString(processed_v) + "\"";
         }
-        return node_manager->createNode(SortManager::STR_SORT, NODE_KIND::NT_CONST, processed_v);
+        return getNodeManager()->createNode(SortManager::STR_SORT, NODE_KIND::NT_CONST, processed_v);
     }
     std::shared_ptr<DAGNode> Parser::mkConstBv(const std::string &v, const size_t& width){
         std::string sort_key_name = "BV_" + std::to_string(width);
-        std::shared_ptr<Sort> sort = symbol_manager->resolveSort(sort_key_name);
+        std::shared_ptr<Sort> sort = getSymbolManager()->resolveSort(sort_key_name);
         if(!sort){
-            sort = sort_manager->createBVSort(width);
-            symbol_manager->registerSort(sort_key_name, sort);
+            sort = getSortManager()->createBVSort(width);
+            getSymbolManager()->registerSort(sort_key_name, sort);
         }
         std::string bv_v = BitVectorUtils::natToBv(v, width);
-        return node_manager->createNode(sort, NODE_KIND::NT_CONST, bv_v);
+        return getNodeManager()->createNode(sort, NODE_KIND::NT_CONST, bv_v);
     }
     std::shared_ptr<DAGNode> Parser::mkConstFp(const std::string &v, const size_t& e, const size_t& s){
         std::string sort_key_name = "FP_" + std::to_string(e) + "_" + std::to_string(s);
-        std::shared_ptr<Sort> sort = symbol_manager->resolveSort(sort_key_name);
+        std::shared_ptr<Sort> sort = getSymbolManager()->resolveSort(sort_key_name);
         if(!sort){
-            sort = sort_manager->createFPSort(e, s);
-            symbol_manager->registerSort(sort_key_name, sort);
+            sort = getSortManager()->createFPSort(e, s);
+            getSymbolManager()->registerSort(sort_key_name, sort);
         }
-        return node_manager->createNode(sort, NODE_KIND::NT_CONST, v);
+        return getNodeManager()->createNode(sort, NODE_KIND::NT_CONST, v);
     }
     std::shared_ptr<DAGNode> Parser::mkConstFP(const std::string &fp_expr){
-        return node_manager->createNode(nullptr, NODE_KIND::NT_CONST, fp_expr);
+        return getNodeManager()->createNode(nullptr, NODE_KIND::NT_CONST, fp_expr);
     }
     std::shared_ptr<DAGNode> Parser::mkConstReg(const std::string &v){
-        return node_manager->createNode(SortManager::REG_SORT, NODE_KIND::NT_CONST, v);
+        return getNodeManager()->createNode(SortManager::REG_SORT, NODE_KIND::NT_CONST, v);
     }
     
     std::shared_ptr<DAGNode> Parser::mkRoundingMode(const std::string &mode){
         // Create a special sort for rounding mode
         std::shared_ptr<Sort> rounding_mode_sort = std::make_shared<Sort>(SORT_KIND::SK_ROUNDING_MODE, "RoundingMode", 0);
-        return node_manager->createNode(rounding_mode_sort, NODE_KIND::NT_CONST, mode);
+        return getNodeManager()->createNode(rounding_mode_sort, NODE_KIND::NT_CONST, mode);
     }
     
     // VAR
     std::shared_ptr<DAGNode> Parser::mkTempVar(const std::shared_ptr<Sort>& sort){
-        std::string temp_var_name = "temp_" + std::to_string(symbol_manager->nextTempVarCounter());
-        if(symbol_manager->getTempVar(temp_var_name)){
+        std::string temp_var_name = "temp_" + std::to_string(getSymbolManager()->nextTempVarCounter());
+        if(getSymbolManager()->getTempVar(temp_var_name)){
             err_all(ERROR_TYPE::ERR_PARAM_MIS, "Temp variable name already exists", line_number);
             return mkUnknown();
         }
-        std::shared_ptr<DAGNode> newvar = node_manager->createNode(sort, NODE_KIND::NT_TEMP_VAR, temp_var_name);
-        symbol_manager->registerTempVar(temp_var_name, newvar);
+        std::shared_ptr<DAGNode> newvar = getNodeManager()->createNode(sort, NODE_KIND::NT_TEMP_VAR, temp_var_name);
+        getSymbolManager()->registerTempVar(temp_var_name, newvar);
         return newvar;
     }
     std::shared_ptr<DAGNode> Parser::mkVar(const std::shared_ptr<Sort>& sort, const std::string &name){
-        std::shared_ptr<DAGNode> v = symbol_manager->getVar(name);
+        std::shared_ptr<DAGNode> v = getSymbolManager()->getVar(name);
         if(v) return v;
-        std::shared_ptr<DAGNode> newvar = node_manager->createNode(sort, NODE_KIND::NT_VAR, name);
-        symbol_manager->registerVar(name, newvar);
+        std::shared_ptr<DAGNode> newvar = getNodeManager()->createNode(sort, NODE_KIND::NT_VAR, name);
+        getSymbolManager()->registerVar(name, newvar);
         return newvar;
     }
 
     std::shared_ptr<DAGNode> Parser::mkPlaceholderVar(const std::string &name){
-        std::shared_ptr<DAGNode> v = symbol_manager->getPlaceholderVar(name);
+        std::shared_ptr<DAGNode> v = getSymbolManager()->getPlaceholderVar(name);
         if(v) return v;
         std::shared_ptr<Sort> sort = placeholder_var_sort ? placeholder_var_sort : SortManager::REAL_SORT;
-        std::shared_ptr<DAGNode> newvar = node_manager->createNode(sort, NODE_KIND::NT_PLACEHOLDER_VAR, name);
+        std::shared_ptr<DAGNode> newvar = getNodeManager()->createNode(sort, NODE_KIND::NT_PLACEHOLDER_VAR, name);
         condAssert(newvar->isPlaceholderVar(), "Created placeholder variable is not a placeholder variable");
-        symbol_manager->registerPlaceholderVar(name, newvar);
+        getSymbolManager()->registerPlaceholderVar(name, newvar);
         return newvar;
     }
     std::shared_ptr<DAGNode> Parser::mkVarBool(const std::string &name){
@@ -692,19 +692,19 @@ namespace SMTParser{
     }
     std::shared_ptr<DAGNode> Parser::mkVarBv(const std::string &name, const size_t& width){
         std::string sort_key_name = "BV_" + std::to_string(width);
-        std::shared_ptr<Sort> sort = symbol_manager->resolveSort(sort_key_name);
+        std::shared_ptr<Sort> sort = getSymbolManager()->resolveSort(sort_key_name);
         if(!sort){
-            sort = sort_manager->createBVSort(width);
-            symbol_manager->registerSort(sort_key_name, sort);
+            sort = getSortManager()->createBVSort(width);
+            getSymbolManager()->registerSort(sort_key_name, sort);
         }
         return mkVar(sort, name);
     }
     std::shared_ptr<DAGNode> Parser::mkVarFp(const std::string &name, const size_t& e, const size_t& s){
         std::string sort_key_name = "FP_" + std::to_string(e) + "_" + std::to_string(s);
-        std::shared_ptr<Sort> sort = symbol_manager->resolveSort(sort_key_name);
+        std::shared_ptr<Sort> sort = getSymbolManager()->resolveSort(sort_key_name);
         if(!sort){
-            sort = sort_manager->createFPSort(e, s);
-            symbol_manager->registerSort(sort_key_name, sort);
+            sort = getSortManager()->createFPSort(e, s);
+            getSymbolManager()->registerSort(sort_key_name, sort);
         }
         return mkVar(sort, name);
     }
@@ -720,7 +720,7 @@ namespace SMTParser{
         return mkVar(rounding_mode_sort, name);
     }
     std::shared_ptr<DAGNode> Parser::mkFunParamVar(std::shared_ptr<Sort> sort, const std::string &name){
-        std::shared_ptr<DAGNode> newvar = node_manager->createNode(sort, NODE_KIND::NT_FUNC_PARAM, name);
+        std::shared_ptr<DAGNode> newvar = getNodeManager()->createNode(sort, NODE_KIND::NT_FUNC_PARAM, name);
         // do not insert into variables
         // it is a function parameter
         return newvar;
@@ -728,10 +728,10 @@ namespace SMTParser{
     // ARRAY
     std::shared_ptr<DAGNode> Parser::mkArray(const std::string &name, std::shared_ptr<Sort> index, std::shared_ptr<Sort> elem){
         std::string sort_key_name = "ARRAY_" + index->toString() + "_" + elem->toString();
-        std::shared_ptr<Sort> sort = symbol_manager->resolveSort(sort_key_name);
+        std::shared_ptr<Sort> sort = getSymbolManager()->resolveSort(sort_key_name);
         if(!sort){
-            sort = sort_manager->createArraySort(index, elem);
-            symbol_manager->registerSort(sort_key_name, sort);
+            sort = getSortManager()->createArraySort(index, elem);
+            getSymbolManager()->registerSort(sort_key_name, sort);
         }
         return mkVar(sort, name);
     }
@@ -750,7 +750,7 @@ namespace SMTParser{
         std::shared_ptr<Sort> elem_sort = sort->getElemSort();
         std::shared_ptr<Sort> value_sort = value->getSort();
         
-        return node_manager->createNode(sort, NODE_KIND::NT_CONST_ARRAY, "const_array", {value});
+        return getNodeManager()->createNode(sort, NODE_KIND::NT_CONST_ARRAY, "const_array", {value});
     }
     
     // BOOLEAN
@@ -1075,10 +1075,10 @@ namespace SMTParser{
         // checking
         if(new_params.size() == 0){
             // all 0 constant
-            if(options->isRealTheory()){
+            if(getOptions()->isRealTheory()){
                 return mkConstReal(0.0);
             }
-            else if(options->isIntTheory()){
+            else if(getOptions()->isIntTheory()){
                 return mkConstInt(0);
             }
             else{
@@ -1092,10 +1092,10 @@ namespace SMTParser{
         }
         else{
             if(sort == nullptr){
-                if(options->isRealTheory()){
+                if(getOptions()->isRealTheory()){
                     sort = SortManager::REAL_SORT;
                 }
-                else if(options->isIntTheory()){
+                else if(getOptions()->isIntTheory()){
                     sort = SortManager::INT_SORT;
                 }
                 else{
@@ -1136,10 +1136,10 @@ namespace SMTParser{
                 }
             }
             if(isZero(params[i])){
-                if(options->isIntTheory()){
+                if(getOptions()->isIntTheory()){
                     return mkConstInt(0);
                 }
-                else if(options->isRealTheory()){
+                else if(getOptions()->isRealTheory()){
                     return mkConstReal(0.0);
                 }
             }
@@ -1153,10 +1153,10 @@ namespace SMTParser{
 
         if(new_params.size() == 0){
             // all 1 constant
-            if(options->isIntTheory()){
+            if(getOptions()->isIntTheory()){
                 return mkConstInt(1);
             }
-            else if(options->isRealTheory()){
+            else if(getOptions()->isRealTheory()){
                 return mkConstReal(1.0);
             }
             else{
@@ -1170,10 +1170,10 @@ namespace SMTParser{
         }
         else{
             if(sort == nullptr){
-                if(options->isRealTheory()){
+                if(getOptions()->isRealTheory()){
                     sort = SortManager::REAL_SORT;
                 }
-                else if(options->isIntTheory()){
+                else if(getOptions()->isIntTheory()){
                     sort = SortManager::INT_SORT;
                 }
                 else{
@@ -1224,10 +1224,10 @@ namespace SMTParser{
         }
 
         if(sort == nullptr){
-            if(options->isRealTheory()){
+            if(getOptions()->isRealTheory()){
                 sort = SortManager::REAL_SORT;
             }
-            else if(options->isIntTheory()){
+            else if(getOptions()->isIntTheory()){
                 sort = SortManager::INT_SORT;
             }
             else{
@@ -1287,10 +1287,10 @@ namespace SMTParser{
             new_params.emplace_back(params[i]);
         }
         if(sort == nullptr){
-            if(options->isRealTheory()){
+            if(getOptions()->isRealTheory()){
                 sort = SortManager::REAL_SORT;
             }
-            else if(options->isIntTheory()){
+            else if(getOptions()->isIntTheory()){
                 sort = SortManager::INT_SORT;
             }
             else{
@@ -1982,7 +1982,7 @@ namespace SMTParser{
             size_t eb = sort->getExponentWidth();
             size_t sb = sort->getSignificandWidth();
             std::string const_name = "(_ +oo " + std::to_string(eb) + " " + std::to_string(sb) + ")";
-            return node_manager->createNode(sort, NODE_KIND::NT_POS_INFINITY, const_name);
+            return getNodeManager()->createNode(sort, NODE_KIND::NT_POS_INFINITY, const_name);
         }
         else if(sort->isEqTo(SortManager::STR_SORT)){
             return NodeManager::STR_POS_INF_NODE;
@@ -2007,7 +2007,7 @@ namespace SMTParser{
             size_t eb = sort->getExponentWidth();
             size_t sb = sort->getSignificandWidth();
             std::string const_name = "(_ -oo " + std::to_string(eb) + " " + std::to_string(sb) + ")";
-            return node_manager->createNode(sort, NODE_KIND::NT_NEG_INFINITY, const_name);
+            return getNodeManager()->createNode(sort, NODE_KIND::NT_NEG_INFINITY, const_name);
         }
         else if(sort->isEqTo(SortManager::STR_SORT)){
             return NodeManager::STR_NEG_INF_NODE;
@@ -2032,7 +2032,7 @@ namespace SMTParser{
             size_t eb = sort->getExponentWidth();
             size_t sb = sort->getSignificandWidth();
             std::string const_name = "(_ NaN " + std::to_string(eb) + " " + std::to_string(sb) + ")";
-            return node_manager->createNode(sort, NODE_KIND::NT_NAN, const_name);
+            return getNodeManager()->createNode(sort, NODE_KIND::NT_NAN, const_name);
         }
         else{
             return NodeManager::NAN_NODE;
@@ -2360,7 +2360,7 @@ namespace SMTParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in bv_comp", line_number);
             return mkUnknown();
         }
-        std::shared_ptr<Sort> sort = sort_manager->createBVSort(1);
+        std::shared_ptr<Sort> sort = getSortManager()->createBVSort(1);
 
         return mkOper(sort, NODE_KIND::NT_BV_COMP, l, r);
     }
@@ -2617,7 +2617,7 @@ namespace SMTParser{
             width += params[i]->getSort()->getBitWidth();
             new_params.emplace_back(params[i]);
         }
-        std::shared_ptr<Sort> new_sort = sort_manager->createBVSort(width);
+        std::shared_ptr<Sort> new_sort = getSortManager()->createBVSort(width);
 
         return mkOper(new_sort, NODE_KIND::NT_BV_CONCAT, new_params);
     }
@@ -2631,7 +2631,7 @@ namespace SMTParser{
             return mkUnknown();
         }
         size_t width = toInt(r).toULong() - toInt(s).toULong() + 1;
-        std::shared_ptr<Sort> new_sort = sort_manager->createBVSort(width);
+        std::shared_ptr<Sort> new_sort = getSortManager()->createBVSort(width);
 
         return mkOper(new_sort, NODE_KIND::NT_BV_EXTRACT, l, r, s);
     }
@@ -2645,7 +2645,7 @@ namespace SMTParser{
             return mkUnknown();
         }
         size_t width = l->getSort()->getBitWidth() * toInt(r).toULong();
-        std::shared_ptr<Sort> new_sort = sort_manager->createBVSort(width);
+        std::shared_ptr<Sort> new_sort = getSortManager()->createBVSort(width);
 
         return mkOper(new_sort, NODE_KIND::NT_BV_REPEAT, l, r);
     }
@@ -2659,7 +2659,7 @@ namespace SMTParser{
             return mkUnknown();
         }
         size_t width = toInt(r).toULong();
-        std::shared_ptr<Sort> new_sort = sort_manager->createBVSort(width);
+        std::shared_ptr<Sort> new_sort = getSortManager()->createBVSort(width);
         return mkOper(new_sort, NODE_KIND::NT_BV_ZERO_EXT, l, r);
     }
     /*
@@ -2672,7 +2672,7 @@ namespace SMTParser{
             return mkUnknown();
         }
         size_t width = toInt(r).toULong();
-        std::shared_ptr<Sort> new_sort = sort_manager->createBVSort(width);
+        std::shared_ptr<Sort> new_sort = getSortManager()->createBVSort(width);
 
         return mkOper(new_sort, NODE_KIND::NT_BV_SIGN_EXT, l, r);
     }
@@ -2687,7 +2687,7 @@ namespace SMTParser{
         }
 
         size_t width = l->getSort()->getBitWidth();
-        std::shared_ptr<Sort> new_sort = sort_manager->createBVSort(width);
+        std::shared_ptr<Sort> new_sort = getSortManager()->createBVSort(width);
 
         return mkOper(new_sort, NODE_KIND::NT_BV_ROTATE_LEFT, l, r);
     }
@@ -2701,7 +2701,7 @@ namespace SMTParser{
             return mkUnknown();
         }
         size_t width = l->getSort()->getBitWidth();
-        std::shared_ptr<Sort> new_sort = sort_manager->createBVSort(width);
+        std::shared_ptr<Sort> new_sort = getSortManager()->createBVSort(width);
 
         return mkOper(new_sort, NODE_KIND::NT_BV_ROTATE_RIGHT, l, r);
     }
@@ -2882,7 +2882,7 @@ namespace SMTParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in nat_to_bv", line_number);
             return mkUnknown();
         }
-        std::shared_ptr<Sort> new_sort = sort_manager->createBVSort(toInt(size).toULong());
+        std::shared_ptr<Sort> new_sort = getSortManager()->createBVSort(toInt(size).toULong());
         return mkOper(new_sort, NODE_KIND::NT_NAT_TO_BV, param, size);
     }
     /*
@@ -2905,7 +2905,7 @@ namespace SMTParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in int_to_bv", line_number);
             return mkUnknown();
         }
-        std::shared_ptr<Sort> new_sort = sort_manager->createBVSort(toInt(size).toULong());
+        std::shared_ptr<Sort> new_sort = getSortManager()->createBVSort(toInt(size).toULong());
         return mkOper(new_sort, NODE_KIND::NT_INT_TO_BV, param, size);
     }
 
@@ -3296,7 +3296,7 @@ namespace SMTParser{
             return mkConstBv(FloatingPointUtils::fpToUbv(param->toString(), toInt(size)), toInt(size).toULong());
         }
 
-        std::shared_ptr<Sort> new_sort = sort_manager->createBVSort(toInt(size).toULong());
+        std::shared_ptr<Sort> new_sort = getSortManager()->createBVSort(toInt(size).toULong());
 
         return mkOper(new_sort, NODE_KIND::NT_FP_TO_UBV, rm, param, size);
     }
@@ -3311,7 +3311,7 @@ namespace SMTParser{
             return mkConstBv(FloatingPointUtils::fpToSbv(param->toString(), toInt(size)), toInt(size).toULong());
         }
 
-        std::shared_ptr<Sort> new_sort = sort_manager->createBVSort(toInt(size).toULong());
+        std::shared_ptr<Sort> new_sort = getSortManager()->createBVSort(toInt(size).toULong());
 
         return mkOper(new_sort, NODE_KIND::NT_FP_TO_SBV, rm, param, size);
     }
@@ -3353,7 +3353,7 @@ namespace SMTParser{
         // Get floating point sort
         size_t exponent_width = toInt(eb).toULong();
         size_t significand_width = toInt(sb).toULong();
-        std::shared_ptr<Sort> sort = sort_manager->createFPSort(exponent_width, significand_width);
+        std::shared_ptr<Sort> sort = getSortManager()->createFPSort(exponent_width, significand_width);
 
         // Validate param type
         if(!isRealParam(param) && !isBvParam(param) && !isFpParam(param)) {
@@ -3381,7 +3381,7 @@ namespace SMTParser{
         // Get floating point sort
         size_t exponent_width = toInt(eb).toULong();
         size_t significand_width = toInt(sb).toULong();
-        std::shared_ptr<Sort> sort = sort_manager->createFPSort(exponent_width, significand_width);
+        std::shared_ptr<Sort> sort = getSortManager()->createFPSort(exponent_width, significand_width);
 
         // Validate param type (must be BitVec for this overload)
         if(!isBvParam(param)) {
@@ -3408,7 +3408,7 @@ namespace SMTParser{
 
         size_t exponent_width = toInt(eb).toULong();
         size_t significand_width = toInt(sb).toULong();
-        std::shared_ptr<Sort> sort = sort_manager->createFPSort(exponent_width, significand_width);
+        std::shared_ptr<Sort> sort = getSortManager()->createFPSort(exponent_width, significand_width);
 
         if(!rm->getSort()->isRoundingMode()) {
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Third parameter must be a rounding mode in to_fp_unsigned", line_number);
@@ -3443,9 +3443,9 @@ namespace SMTParser{
             return mkUnknown();
         }
 
-        std::shared_ptr<Sort> sort = sort_manager->createFPSort(exp_width, mant_width + 1);
+        std::shared_ptr<Sort> sort = getSortManager()->createFPSort(exp_width, mant_width + 1);
         std::vector<std::shared_ptr<DAGNode>> children = {sign, exp, mant};
-        return node_manager->createNode(sort, NODE_KIND::NT_CONST, "(fp_bit_representation)", children);
+        return getNodeManager()->createNode(sort, NODE_KIND::NT_CONST, "(fp_bit_representation)", children);
     }
     // FLOATING POINT PROPERTIES
     /*
@@ -3795,7 +3795,7 @@ namespace SMTParser{
             err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in str_split", line_number);
             return mkUnknown();
         }
-        return mkOper(sort_manager->createArraySort(SortManager::INT_SORT, SortManager::STR_SORT), NODE_KIND::NT_STR_SPLIT, l, r);
+        return mkOper(getSortManager()->createArraySort(SortManager::INT_SORT, SortManager::STR_SORT), NODE_KIND::NT_STR_SPLIT, l, r);
     }
     std::shared_ptr<DAGNode> Parser::mkStrSplitAt(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> s){
         if(!isStrParam(l) || !isStrParam(r) || !isIntParam(s)) {
@@ -4696,7 +4696,7 @@ namespace SMTParser{
         std::string name = "root-obj(" + toString(expr) + "," + std::to_string(index) + ")";
         std::vector<std::shared_ptr<DAGNode>> children = {expr, index_node};
         
-        return node_manager->createNode(sort, NODE_KIND::NT_ROOT_OBJ, name, children);
+        return getNodeManager()->createNode(sort, NODE_KIND::NT_ROOT_OBJ, name, children);
     }
 
 
@@ -4727,7 +4727,7 @@ namespace SMTParser{
         children.push_back(lower_bound);
         children.push_back(upper_bound);
         
-        return node_manager->createNode(sort, NODE_KIND::NT_ROOT_OF_WITH_INTERVAL, name, children);
+        return getNodeManager()->createNode(sort, NODE_KIND::NT_ROOT_OF_WITH_INTERVAL, name, children);
     }
 
     std::shared_ptr<DAGNode> Parser::mkRealAlgebraicNumber(std::shared_ptr<DAGNode> polynomial, std::shared_ptr<DAGNode> lower_bound, std::shared_ptr<DAGNode> upper_bound) {
@@ -4747,6 +4747,6 @@ namespace SMTParser{
         children.push_back(lower_bound);
         children.push_back(upper_bound);
         
-        return node_manager->createNode(sort, NODE_KIND::NT_REAL_ALGEBRAIC_NUMBER, name, children);
+        return getNodeManager()->createNode(sort, NODE_KIND::NT_REAL_ALGEBRAIC_NUMBER, name, children);
     }
 }

@@ -46,13 +46,13 @@ namespace SMTParser{
 		allow_placeholder_vars = false;
 		placeholder_var_sort = nullptr;
 		quant_nesting_depth = 0;
-		node_manager = std::make_shared<NodeManager>();
-		sort_manager = std::make_shared<SortManager>();
-		symbol_manager = std::make_shared<SymbolManager>();
-		symbol_manager->reserve(1024);
-		objective_manager = std::make_shared<ObjectiveManager>();
-		context_.setObjectiveManager(objective_manager);
-		options = std::make_shared<GlobalOptions>();
+		context_.setNodeManager(std::make_shared<NodeManager>());
+		context_.setSortManager(std::make_shared<SortManager>());
+		auto sym_mgr = std::make_shared<SymbolManager>();
+		sym_mgr->reserve(1024);
+		context_.setSymbolManager(std::move(sym_mgr));
+		context_.setObjectiveManager(std::make_shared<ObjectiveManager>());
+		context_.setOptions(std::make_shared<GlobalOptions>());
 
 		// array cache
 		array_select_cache.reserve(1024);
@@ -77,13 +77,13 @@ namespace SMTParser{
 		allow_placeholder_vars = false;
 		placeholder_var_sort = nullptr;
 		quant_nesting_depth = 0;
-		node_manager = std::make_shared<NodeManager>();
-		sort_manager = std::make_shared<SortManager>();
-		symbol_manager = std::make_shared<SymbolManager>();
-		symbol_manager->reserve(1024);
-		objective_manager = std::make_shared<ObjectiveManager>();
-		context_.setObjectiveManager(objective_manager);
-		options = std::make_shared<GlobalOptions>();
+		context_.setNodeManager(std::make_shared<NodeManager>());
+		context_.setSortManager(std::make_shared<SortManager>());
+		auto sym_mgr = std::make_shared<SymbolManager>();
+		sym_mgr->reserve(1024);
+		context_.setSymbolManager(std::move(sym_mgr));
+		context_.setObjectiveManager(std::make_shared<ObjectiveManager>());
+		context_.setOptions(std::make_shared<GlobalOptions>());
 
 		// array cache
 		array_select_cache.reserve(1024);
@@ -138,7 +138,7 @@ namespace SMTParser{
 	}
 
 	size_t Parser::getNodeCount(){
-		// return node_manager->size();
+		// return getNodeManager()->size();
 		// BFS to count the number of nodes
 		// only count the nodes in assertions, assumptions, soft_assertions, soft_weights, objectives
 		std::unordered_set<std::shared_ptr<DAGNode>> visited;
@@ -215,54 +215,51 @@ namespace SMTParser{
 	}
 	
 	void Parser::setOption(const std::string& key, const std::string& value){
-		options->setOption(key, value);
+		getOptions()->setOption(key, value);
 	}
 	void Parser::setOption(const std::string& key, const int& value){
-		options->setOption(key, std::to_string(value));
+		getOptions()->setOption(key, std::to_string(value));
 	}
 	void  Parser::setOption(const std::string& key, const double& value){
-		options->setOption(key, std::to_string(value));
+		getOptions()->setOption(key, std::to_string(value));
 	}
 	void Parser::setOption(const std::string& key, const bool& value){
-		options->setOption(key, value?"true":"false");
-	}
-	std::shared_ptr<GlobalOptions> Parser::getOptions() const{
-		return options;
+		getOptions()->setOption(key, value?"true":"false");
 	}
 	std::vector<std::shared_ptr<DAGNode>> Parser::getVariables() const{
 		std::vector<std::shared_ptr<DAGNode>> vars;
-		for(const auto& var : symbol_manager->getVarNames())
+		for(const auto& var : getSymbolManager()->getVarNames())
 			vars.emplace_back(var.second);
-		for(const auto& var : symbol_manager->getTempVarNames())
+		for(const auto& var : getSymbolManager()->getTempVarNames())
 			vars.emplace_back(var.second);
 		return vars;
 	}
 	std::vector<std::shared_ptr<DAGNode>> Parser::getDeclaredVariables() const{
 		std::vector<std::shared_ptr<DAGNode>> vars;
-		for(const auto& var : symbol_manager->getVarNames())
+		for(const auto& var : getSymbolManager()->getVarNames())
 			vars.emplace_back(var.second);
 		return vars;
 	}
 	std::shared_ptr<DAGNode> Parser::getVariable(const std::string& var_name){
-		std::shared_ptr<DAGNode> v = symbol_manager->getVar(var_name);
+		std::shared_ptr<DAGNode> v = getSymbolManager()->getVar(var_name);
 		if(v) return v;
-		v = symbol_manager->getTempVar(var_name);
+		v = getSymbolManager()->getTempVar(var_name);
 		return v ? v : NodeManager::NULL_NODE;
 	}
 	std::vector<std::shared_ptr<DAGNode>> Parser::getFunctions() const{
-		return symbol_manager->getFunctions();
+		return getSymbolManager()->getFunctions();
 	}
 	void Parser::setEvaluatePrecision(mpfr_prec_t precision){
-		options->setEvaluatePrecision(precision);
+		getOptions()->setEvaluatePrecision(precision);
 	}
 	mpfr_prec_t Parser::getEvaluatePrecision() const{
-		return options->getEvaluatePrecision();
+		return getOptions()->getEvaluatePrecision();
 	}
 	void Parser::setEvaluateUseFloating(bool use_floating){
-		options->setEvaluateUseFloating(use_floating);
+		getOptions()->setEvaluateUseFloating(use_floating);
 	}
 	bool Parser::getEvaluateUseFloating() const{
-		return options->getEvaluateUseFloating();
+		return getOptions()->getEvaluateUseFloating();
 	}
 	Real Parser::toReal(std::shared_ptr<DAGNode> expr){
 		ensureNumberValue(expr);
@@ -775,7 +772,7 @@ namespace SMTParser{
 
 		// (check-sat)
 		if (command == "check-sat") {
-			options->check_sat = true;
+			getOptions()->check_sat = true;
 			skipToRpar();
 			return CMD_TYPE::CT_CHECK_SAT;
 		}
@@ -842,7 +839,7 @@ namespace SMTParser{
 				std::shared_ptr<Sort> out_sort = parseSort();
 				res = mkFuncDec(name, params, out_sort);
 				if(!res->isErr()){
-					symbol_manager->addFunctionName(name);
+					getSymbolManager()->addFunctionName(name);
 				}
 			}
 
@@ -864,7 +861,7 @@ namespace SMTParser{
 
 			// make sort
 			std::shared_ptr<Sort> sort = mkSortDec(name, num);
-			symbol_manager->registerSort(name, sort);
+			getSymbolManager()->registerSort(name, sort);
 			skipToRpar();
 
 			return CMD_TYPE::CT_DECLARE_SORT;
@@ -876,7 +873,7 @@ namespace SMTParser{
 			size_t name_ln = line_number;
 			std::string name = getSymbol();
 
-			std::shared_ptr<DAGNode> check_fun = symbol_manager->getFun(name);
+			std::shared_ptr<DAGNode> check_fun = getSymbolManager()->getFun(name);
 			if(check_fun && check_fun->getKind() == NODE_KIND::NT_FUNC_DEF){
 				err_mul_def(name, name_ln);
 			}
@@ -884,7 +881,7 @@ namespace SMTParser{
 				return CMD_TYPE::CT_DEFINE_FUN;
 			}
 			// keep the function name with the same order
-			symbol_manager->addFunctionName(name);
+			getSymbolManager()->addFunctionName(name);
 
 			// get returned type and body
 			std::shared_ptr<Sort> out_sort = parseSort();
@@ -903,7 +900,7 @@ namespace SMTParser{
 			size_t name_ln = line_number;
 			std::string name = getSymbol();
 
-			std::shared_ptr<DAGNode> check_fun = symbol_manager->getFun(name);
+			std::shared_ptr<DAGNode> check_fun = getSymbolManager()->getFun(name);
 			if(check_fun && check_fun->getKind() == NODE_KIND::NT_FUNC_DEF){
 				err_mul_def(name, name_ln);
 			}
@@ -911,7 +908,7 @@ namespace SMTParser{
 				return CMD_TYPE::CT_DEFINE_FUN;
 			}
 			// keep the function name with the same order
-			symbol_manager->addFunctionName(name);
+			getSymbolManager()->addFunctionName(name);
 
 			// parse ((x Int))
 			//       ^
@@ -928,11 +925,11 @@ namespace SMTParser{
 				std::shared_ptr<DAGNode> expr = nullptr;
 				expr = mkFunParamVar(ptype, pname);
 				// multiple declarations
-				if(symbol_manager->hasFunVar(pname)){
+				if(getSymbolManager()->hasFunVar(pname)){
 					err_mul_decl(pname, line_number);
 				}
 				else{
-					symbol_manager->registerFunVar(pname, expr);
+					getSymbolManager()->registerFunVar(pname, expr);
 					params.emplace_back(expr);
 				}
 				// (x Int)
@@ -952,7 +949,7 @@ namespace SMTParser{
 
 			//remove key bindings: for let uses local variables. 
 			while (key_list.size() > 0) {
-				symbol_manager->eraseFunVar(key_list.back());
+				getSymbolManager()->eraseFunVar(key_list.back());
 				key_list.pop_back();
 			}
 			
@@ -966,7 +963,7 @@ namespace SMTParser{
 			size_t name_ln = line_number;
 			std::string name = getSymbol();
 
-			std::shared_ptr<DAGNode> check_fun = symbol_manager->getFun(name);
+			std::shared_ptr<DAGNode> check_fun = getSymbolManager()->getFun(name);
 			if(check_fun && check_fun->getKind() == NODE_KIND::NT_FUNC_DEF){
 				err_mul_def(name, name_ln);
 			}
@@ -974,7 +971,7 @@ namespace SMTParser{
 				return CMD_TYPE::CT_DEFINE_FUN_REC;
 			}
 			// keep the function name with the same order
-			symbol_manager->addFunctionName(name);
+			getSymbolManager()->addFunctionName(name);
 
 			// parse ((x Int))
 			//       ^
@@ -993,11 +990,11 @@ namespace SMTParser{
 				std::shared_ptr<DAGNode> expr = nullptr;
 				expr = mkFunParamVar(ptype, pname);
 				// multiple declarations
-				if(symbol_manager->hasFunVar(pname)){
+				if(getSymbolManager()->hasFunVar(pname)){
 					err_mul_decl(pname, line_number);
 				}
 				else{
-					symbol_manager->registerFunVar(pname, expr);
+					getSymbolManager()->registerFunVar(pname, expr);
 					params.emplace_back(expr);
 				}
 				// (x Int)
@@ -1023,7 +1020,7 @@ namespace SMTParser{
 
 			//remove key bindings: for let uses local variables. 
 			while (key_list.size() > 0) {
-				symbol_manager->eraseFunVar(key_list.back());
+				getSymbolManager()->eraseFunVar(key_list.back());
 				key_list.pop_back();
 			}
 			
@@ -1046,7 +1043,7 @@ namespace SMTParser{
 				parseLpar();
 				std::string name = getSymbol();
 				
-				std::shared_ptr<DAGNode> check_fun = symbol_manager->getFun(name);
+				std::shared_ptr<DAGNode> check_fun = getSymbolManager()->getFun(name);
 				if(check_fun && check_fun->getKind() == NODE_KIND::NT_FUNC_DEF){
 					err_mul_def(name, line_number);
 				}
@@ -1056,7 +1053,7 @@ namespace SMTParser{
 				}
 				
 				func_names.emplace_back(name);
-				symbol_manager->addFunctionName(name);
+				getSymbolManager()->addFunctionName(name);
 				
 				// Parse parameters: ((param1 type1)...)
 				parseLpar();
@@ -1099,7 +1096,7 @@ namespace SMTParser{
 			for(size_t i = 0; i < func_names.size(); i++) {
 				// Add parameter bindings for this function
 				for(size_t j = 0; j < all_key_lists[i].size(); j++) {
-					symbol_manager->registerFunVar(all_key_lists[i][j], all_params[i][j]);
+					getSymbolManager()->registerFunVar(all_key_lists[i][j], all_params[i][j]);
 				}
 				
 				// Parse function body
@@ -1108,7 +1105,7 @@ namespace SMTParser{
 				
 				// Remove parameter bindings for this function
 				for(const auto& key : all_key_lists[i]) {
-					symbol_manager->eraseFunVar(key);
+					getSymbolManager()->eraseFunVar(key);
 				}
 			}
 			parseRpar(); // end of function bodies list
@@ -1137,18 +1134,18 @@ namespace SMTParser{
 			// convert param names to Sort parameters
 			std::vector<std::shared_ptr<Sort>> params;
 			for(const auto& name : param_names) {
-				params.push_back(sort_manager->createSort(name));
+				params.push_back(getSortManager()->createSort(name));
 			}
 
 			// get out sort
 			std::shared_ptr<Sort> out_sort = parseSort();
 			if(params.size() == 0){
 				// it means an alias of the out sort
-				symbol_manager->registerSort(name, out_sort);
+				getSymbolManager()->registerSort(name, out_sort);
 			}
 			else{
 				std::shared_ptr<Sort> sort = mkSortDef(name, params, out_sort);
-				symbol_manager->registerSort(name, sort);
+				getSymbolManager()->registerSort(name, sort);
 			}
 			skipToRpar();
 			return CMD_TYPE::CT_DEFINE_SORT;
@@ -1199,7 +1196,7 @@ namespace SMTParser{
 
 		if (command == "get-model") {
 			//ignore
-			options->get_model = true;
+			getOptions()->get_model = true;
 			skipToRpar();
 			return CMD_TYPE::CT_GET_MODEL;
 		}
@@ -1278,7 +1275,7 @@ namespace SMTParser{
 		if (command == "set-logic") {
 			size_t type_ln = line_number;
 			std::string type = getSymbol();
-			bool is_valid = options->setLogic(type);
+			bool is_valid = getOptions()->setLogic(type);
 			if(!is_valid){
 				err_unkwn_sym(type, type_ln);
 			}
@@ -1320,7 +1317,7 @@ namespace SMTParser{
 
 		// optimization
 		if(command == "get-objectives"){
-			options->get_objectives = true;
+			getOptions()->get_objectives = true;
 			skipToRpar();
 			return CMD_TYPE::CT_GET_OBJECTIVES;
 		}
@@ -1433,7 +1430,7 @@ namespace SMTParser{
 			}
 			// then check the user-defined type
 			else {
-				std::shared_ptr<Sort> usort = symbol_manager->resolveSort(s);
+				std::shared_ptr<Sort> usort = getSymbolManager()->resolveSort(s);
 				if(usort) return usort;
 				err_unkwn_sym(s, expr_ln);
 			}
@@ -1453,10 +1450,10 @@ namespace SMTParser{
 			std::shared_ptr<Sort> sortS = parseSort();
 			std::shared_ptr<Sort> sortT = parseSort();
 			std::string sort_key_name = "ARRAY_" + sortS->toString() + "_" + sortT->toString();
-			sort = symbol_manager->resolveSort(sort_key_name);
+			sort = getSymbolManager()->resolveSort(sort_key_name);
 			if(!sort){
-				sort = sort_manager->createArraySort(sortS, sortT);
-				symbol_manager->registerSort(sort_key_name, sort);
+				sort = getSortManager()->createArraySort(sortS, sortT);
+				getSymbolManager()->registerSort(sort_key_name, sort);
 			}
 		}
 		else if(s == "Datatype"){}
@@ -1489,10 +1486,10 @@ namespace SMTParser{
 				// n: bit-width
 				std::string n = getSymbol();
 				std::string sort_key_name = "BV_" + n;
-				sort = symbol_manager->resolveSort(sort_key_name);
+				sort = getSymbolManager()->resolveSort(sort_key_name);
 				if(!sort){
-					sort = sort_manager->createBVSort(std::stoi(n));
-					symbol_manager->registerSort(sort_key_name, sort);
+					sort = getSortManager()->createBVSort(std::stoi(n));
+					getSymbolManager()->registerSort(sort_key_name, sort);
 				}
 			}
 			else if(id == "FloatingPoint"){
@@ -1502,10 +1499,10 @@ namespace SMTParser{
 				std::string e = getSymbol();
 				std::string s = getSymbol();
 				std::string sort_key_name = "FP_" + e + "_" + s;
-				sort = symbol_manager->resolveSort(sort_key_name);
+				sort = getSymbolManager()->resolveSort(sort_key_name);
 				if(!sort){
-					sort = sort_manager->createFPSort(std::stoi(e), std::stoi(s));
-					symbol_manager->registerSort(sort_key_name, sort);
+					sort = getSortManager()->createFPSort(std::stoi(e), std::stoi(s));
+					getSymbolManager()->registerSort(sort_key_name, sort);
 				}
 			}
 			else err_unkwn_sym(s, expr_ln);
@@ -1518,7 +1515,7 @@ namespace SMTParser{
 			}
 			// then check the user-defined type
 			else {
-				sort = symbol_manager->resolveSort(s);
+				sort = getSymbolManager()->resolveSort(s);
 				if(!sort) err_unkwn_sym(s, expr_ln);
 			}
 
@@ -1605,10 +1602,10 @@ namespace SMTParser{
 					std::string prefixed_name = name + preserving_let_bind_var_suffix;
 					
 					// Check for duplicate key bindings
-					if (symbol_manager->hasPreservingLet(prefixed_name)) {
+					if (getSymbolManager()->hasPreservingLet(prefixed_name)) {
 						// Clean up all variable bindings in the state stack
 						for (auto &state : stateStack) {
-							symbol_manager->erasePreservingLetKeys(state.key_list);
+							getSymbolManager()->erasePreservingLetKeys(state.key_list);
 						}
 						err_sym_mis("Duplicate variable binding: " + name, name_ln);
 					}
@@ -1619,7 +1616,7 @@ namespace SMTParser{
 					if (expr->isErr()) {
 						// Clean up all variable bindings in the state stack
 						for (auto &state : stateStack) {
-							symbol_manager->erasePreservingLetKeys(state.key_list);
+							getSymbolManager()->erasePreservingLetKeys(state.key_list);
 						}
 						err_all(expr, name, name_ln);
 					}
@@ -1716,10 +1713,10 @@ namespace SMTParser{
 					std::string name = getSymbol();
 					
 					// Check for duplicate key bindings
-					if (symbol_manager->hasLet(name)) {
+					if (getSymbolManager()->hasLet(name)) {
 						// Clean up all variable bindings in the state stack
 						for (auto &state : stateStack) {
-							symbol_manager->popLetScope(state.key_list);
+							getSymbolManager()->popLetScope(state.key_list);
 						}
 						err_sym_mis("Duplicate variable binding: " + name, name_ln);
 					}
@@ -1730,13 +1727,13 @@ namespace SMTParser{
 					if (expr->isErr()) {
 						// Clean up all variable bindings in the state stack
 						for (auto &state : stateStack) {
-							symbol_manager->popLetScope(state.key_list);
+							getSymbolManager()->popLetScope(state.key_list);
 						}
 						err_all(expr, name, name_ln);
 					}
 					
 					// Add the binding
-					symbol_manager->registerLet(name, expr);
+					getSymbolManager()->registerLet(name, expr);
 					params.emplace_back(expr);
 					key_list.emplace_back(name);
 					
@@ -1764,7 +1761,7 @@ namespace SMTParser{
 				}
 				
 				// Remove all variable bindings for the current state
-				symbol_manager->popLetScope(key_list);
+				getSymbolManager()->popLetScope(key_list);
 
 				// State processing complete, pop from stack
 				stateStack.pop_back();
@@ -1819,7 +1816,7 @@ namespace SMTParser{
 		// For declare-fun (uninterpreted functions), create a function application node
 		if(fun->getFuncBody()->isNull()){
 			// Create a function application node with proper structure
-			std::shared_ptr<DAGNode> result = node_manager->createNode(fun->getSort(), NODE_KIND::NT_UF_APPLY, fun->getName(), params);
+			std::shared_ptr<DAGNode> result = getNodeManager()->createNode(fun->getSort(), NODE_KIND::NT_UF_APPLY, fun->getName(), params);
 			return result;
 		}
 
@@ -1827,7 +1824,7 @@ namespace SMTParser{
 	// If expand_recursive_functions is true, expand it like define-fun
 	// If false (default), create a recursive function application node to avoid infinite recursion
 	if(fun->isFuncRec()){
-		if(!options->getExpandRecursiveFunctions()){
+		if(!getOptions()->getExpandRecursiveFunctions()){
 			// Don't expand recursive functions (default behavior)
 			return mkApplyRecFunc(fun, params);
 		}
@@ -1840,7 +1837,7 @@ namespace SMTParser{
 
 	// For regular functions (define-fun), check expand_functions option
 	if(fun->isFuncDef()){
-		if(!options->getExpandFunctions()){
+		if(!getOptions()->getExpandFunctions()){
 			// Don't expand functions, create a function application node
 			return mkApplyFunc(fun, params);
 		}
@@ -1901,11 +1898,11 @@ namespace SMTParser{
 				if (current->isUFApplication()) {
 					// NT_UF_APPLY: Must preserve function name when recreating node
 					result = mkApplyUF(current->getSort(), current->getName(), childResults);
-				} else if (current->isFuncRecApplication() && !options->getExpandRecursiveFunctions()) {
+				} else if (current->isFuncRecApplication() && !getOptions()->getExpandRecursiveFunctions()) {
 					// NT_FUNC_REC_APPLY: Recursive function call when not expanding
 					// Must preserve function name when recreating node
 					result = mkApplyRecFunc(current, childResults);
-				} else if (current->isFuncApplication() || (current->isFuncRecApplication() && options->getExpandRecursiveFunctions())) {
+				} else if (current->isFuncApplication() || (current->isFuncRecApplication() && getOptions()->getExpandRecursiveFunctions())) {
 					// NT_FUNC_APPLY or NT_FUNC_REC_APPLY (when expanding)
 					// Parameters have been processed, now expand the function
 					std::vector<std::shared_ptr<DAGNode>> funcParams;
@@ -1940,7 +1937,7 @@ namespace SMTParser{
 					// For function applications that will be expanded, skip the first child (function definition itself)
 					// For all other nodes, process all children
 					bool isFuncAppToExpand = current->isFuncApplication() || 
-					                        (current->isFuncRecApplication() && options->getExpandRecursiveFunctions());
+					                        (current->isFuncRecApplication() && getOptions()->getExpandRecursiveFunctions());
 					int startIdx = isFuncAppToExpand ? 1 : 0;
 					
 					// Push all children onto the stack in reverse order
@@ -1957,7 +1954,7 @@ namespace SMTParser{
 	std::shared_ptr<DAGNode> Parser::mkApplyFunc(std::shared_ptr<DAGNode> fun, const std::vector<std::shared_ptr<DAGNode>> &params){
 		std::shared_ptr<DAGNode> res = std::shared_ptr<DAGNode>(new DAGNode(fun->getSort(), NODE_KIND::NT_FUNC_APPLY, fun->getName()));
 		res->updateApplyFunc(fun->getSort(), fun, params);
-		symbol_manager->addStaticFunction(res);
+		getSymbolManager()->addStaticFunction(res);
 		return res;
 	}
 
@@ -1967,22 +1964,22 @@ namespace SMTParser{
         // Store function definition in children[0] and params in children[1..]
         std::shared_ptr<DAGNode> res = std::shared_ptr<DAGNode>(new DAGNode(fun->getSort(), NODE_KIND::NT_FUNC_REC_APPLY, fun->getName()));
         res->updateApplyFunc(fun->getSort(), fun, params, true);
-        symbol_manager->addStaticFunction(res);
+        getSymbolManager()->addStaticFunction(res);
         return res;
     }
 
     std::shared_ptr<DAGNode> Parser::mkApplyUF(const std::shared_ptr<Sort>& sort, const std::string &name, const std::vector<std::shared_ptr<DAGNode>> &params){
-        return node_manager->createNode(sort, NODE_KIND::NT_UF_APPLY, name, params);
+        return getNodeManager()->createNode(sort, NODE_KIND::NT_UF_APPLY, name, params);
     }
 
 
 	// QUANTIFIERS
 	// (quantifier ((<identifier> <sort>)+） <expr>)
 	std::shared_ptr<DAGNode> Parser::mkQuantVar(const std::string& name, std::shared_ptr<Sort> sort){
-		std::shared_ptr<DAGNode> var = symbol_manager->getQuantVar(name);
+		std::shared_ptr<DAGNode> var = getSymbolManager()->getQuantVar(name);
 		if(var) return var;
-		var = node_manager->createNode(sort, NODE_KIND::NT_QUANT_VAR, name);
-		symbol_manager->registerQuantVar(name, var);
+		var = getNodeManager()->createNode(sort, NODE_KIND::NT_QUANT_VAR, name);
+		getSymbolManager()->registerQuantVar(name, var);
 		return var;
 	}
 	std::shared_ptr<DAGNode> Parser::parseQuant(const std::string& type){
@@ -2017,7 +2014,7 @@ namespace SMTParser{
 		else{
 			condAssert(false, "Invalid quantifier");
 		}
-		symbol_manager->popQuantScope(quant_var_names);
+		getSymbolManager()->popQuantScope(quant_var_names);
 		return res;
 	}
 
@@ -2081,7 +2078,7 @@ namespace SMTParser{
 			   current->isFuncRecApplication() ||
 			   current->isArray()) {
 				// Create node with original name preserved
-				newNode = node_manager->createNode(current->getSort(), current->getKind(), current->getName(), newChildren);
+				newNode = getNodeManager()->createNode(current->getSort(), current->getKind(), current->getName(), newChildren);
 			} else {
 				// Use standard mkOper for other node types
 				newNode = mkOper(current->getSort(), current->getKind(), newChildren);
@@ -2198,7 +2195,7 @@ namespace SMTParser{
 					node->isFuncRecApplication() ||
 					node->isArray()) {
 					// Create node with original name preserved
-					new_node = node_manager->createNode(node->getSort(), node->getKind(), node->getName(), new_children);
+					new_node = getNodeManager()->createNode(node->getSort(), node->getKind(), node->getName(), new_children);
 				} else {
 					// Use standard mkOper for other node types
 					new_node = mkOper(node->getSort(), node->getKind(), new_children);
@@ -2455,8 +2452,8 @@ namespace SMTParser{
 				if (!param_sorts.empty()) {
 					// Function with parameters - declare it
 					mkFuncDec(func_name, param_sorts, return_sort);
-					if (!symbol_manager->getFun(func_name) || !symbol_manager->hasFunctionName(func_name)) {
-						symbol_manager->addFunctionName(func_name);
+					if (!getSymbolManager()->getFun(func_name) || !getSymbolManager()->hasFunctionName(func_name)) {
+						getSymbolManager()->addFunctionName(func_name);
 					}
 				}
 				
@@ -2572,16 +2569,16 @@ namespace SMTParser{
 	}
 
 	bool Parser::isDeclaredVariable(const std::string& var_name) const{
-		return symbol_manager->hasVar(var_name);
+		return getSymbolManager()->hasVar(var_name);
 	}
 	bool Parser::isDeclaredFunction(const std::string& func_name) const{
-		return symbol_manager->getFun(func_name) != nullptr;
+		return getSymbolManager()->getFun(func_name) != nullptr;
 	}
 
 
 	// error operations
 	std::shared_ptr<DAGNode> Parser::mkErr(const ERROR_TYPE t){
-		return node_manager->createNode(NODE_KIND::NT_ERROR);
+		return getNodeManager()->createNode(NODE_KIND::NT_ERROR);
 	}
 	void Parser::err_all(const ERROR_TYPE e, const std::string s, const size_t ln) const {
 		switch (e) {
@@ -2749,10 +2746,10 @@ namespace SMTParser{
 		condAssert(expr->isVar(), "Only variable can be renamed");
 		std::string old_name = expr->getName();
 		if(expr->isTempVar()){
-			symbol_manager->renameTempVar(old_name, new_name);
+			getSymbolManager()->renameTempVar(old_name, new_name);
 		}
 		else{
-			symbol_manager->renameVar(old_name, new_name);
+			getSymbolManager()->renameVar(old_name, new_name);
 		}
 		expr->rename(new_name);
 
@@ -2772,14 +2769,14 @@ namespace SMTParser{
 	}
 
 	std::string Parser::optionToString(){
-		return options->toString();
+		return getOptions()->toString();
 	}
 
 	std::string Parser::dumpSMT2(){
 		std::stringstream ss;
-		ss << "(set-logic " << options->getLogic() << ")" << std::endl;
+		ss << "(set-logic " << getOptions()->getLogic() << ")" << std::endl;
 		// custom sorts
-		for(const auto& sort_pair : symbol_manager->getSortKeyMap()){
+		for(const auto& sort_pair : getSymbolManager()->getSortKeyMap()){
 			if(sort_pair.second->isDec()){
 				ss << "(declare-sort " << sort_pair.first << " " << sort_pair.second->arity << ")" << std::endl;
 			}
@@ -2824,8 +2821,8 @@ namespace SMTParser{
 		size_t removedCount = 0;
 		
 		for(const auto& funcName : funcNames){
-			if(symbol_manager->getFun(funcName)){
-				symbol_manager->removeFun(funcName);
+			if(getSymbolManager()->getFun(funcName)){
+				getSymbolManager()->removeFun(funcName);
 				removedCount++;
 			}
 		}
