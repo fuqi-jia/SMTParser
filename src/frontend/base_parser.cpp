@@ -1759,6 +1759,21 @@ namespace SMTParser{
 				parseRpar();
 			}
 			
+			// Body was already parsed by a nested let; we're at ')' closing this let
+			if (currentState.is_complete && *bufptr == ')') {
+				getSymbolManager()->popLetScope(key_list);
+				std::shared_ptr<DAGNode> result = currentState.result;
+				stateStack.pop_back();
+				if (stateStack.empty()) {
+					// Caller (expr_parser) will parseRpar() to consume this ')'
+					return result;
+				}
+				parseRpar();
+				stateStack.back().result = result;
+				stateStack.back().is_complete = true;
+				continue;
+			}
+
 			// Process the body of the let expression
 			if (*bufptr == '(' && peekSymbol() == "let") {
 				// If the body is another let expression, we don't recursively call parseLet
