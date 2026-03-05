@@ -1773,6 +1773,9 @@ namespace SMTParser{
 			else{
 				if(*bufptr != ')'){
 					currentState.result = parseExpr();
+				} else {
+					// Empty let body is invalid; ensure result is always initialized for -Wmaybe-uninitialized
+					currentState.result = mkErr(ERROR_TYPE::ERR_UNEXP_EOF);
 				}
 				// Save result before pop_back to avoid using dangling reference
 				std::shared_ptr<DAGNode> completedResult = currentState.result;
