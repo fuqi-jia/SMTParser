@@ -603,6 +603,18 @@ namespace SMTParser{
 		else if (s == "false") {
 			return mkFalse();
 		}
+		// numerals must be parsed as constants before symbol lookup; otherwise e.g. (>= 486 x)
+		// would resolve "486" as symbol |486| (declare-fun |486| () Bool) via resolveTerm bar fallback
+		if(TypeChecker::isInt(s)){
+			return mkConstInt(s);
+		}
+		else if(TypeChecker::isReal(s)){
+			return mkConstReal(s);
+		}
+		else if(TypeChecker::isScientificNotation(s)){
+			std::string parsed = ConversionUtils::parseScientificNotation(s);
+			return mkConstReal(parsed);
+		}
 		{
 			ResolveScope scope;
 			scope.preserving_let_name = s + PRESERVING_LET_BIND_VAR_SUFFIX + std::to_string(preserving_let_counter);
@@ -646,20 +658,6 @@ namespace SMTParser{
 		}
 		else if(s == "NaN" || s == "+NaN" || s == "-NaN"){
 			return mkNaN();
-		}
-		// support -3 (before only - 3)
-		else if(TypeChecker::isInt(s)){
-			// additional process -> constant can be real or integer
-			// 0 -> Int or Real?
-			return mkConstInt(s);
-		}
-		else if(TypeChecker::isReal(s)){
-			return mkConstReal(s);
-		}
-		else if(TypeChecker::isScientificNotation(s)){
-			// parse scientific notation and convert to real
-			std::string parsed = ConversionUtils::parseScientificNotation(s);
-			return mkConstReal(parsed);
 		}
 		else if(TypeChecker::isBV(s)){
 			size_t width;
