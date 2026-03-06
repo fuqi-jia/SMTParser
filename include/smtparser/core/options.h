@@ -68,9 +68,9 @@ namespace SMTParser{
         bool parsing_preserve_let = true;
 
         // whether to expand function applications (define-fun, define-fun-rec)
-        // if true (default), function calls are inlined with their definitions
-        // if false, function calls are preserved as function applications
-        bool expand_functions = true;
+        // if true, function calls are inlined with their definitions
+        // if false (default), function calls are preserved as function applications
+        bool expand_functions = false;
 
         // whether to expand recursive functions (define-fun-rec)
         // if true, recursive functions will be expanded like define-fun

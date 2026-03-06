@@ -814,6 +814,7 @@ namespace SMTParser{
         
 
         std::vector<std::shared_ptr<DAGNode>> new_params;
+        new_params.reserve(params.size());
 
         for(size_t i=0;i<params.size();i++){
             if(!isBoolParam(params[i])) {
@@ -837,13 +838,17 @@ namespace SMTParser{
             }
         }
 
-        // Remove duplicate literals (keep only one copy of equivalent nodes)
+        // Remove duplicates cheaply.
+        // NodeManager already interns structurally equivalent nodes in almost all cases,
+        // so pointer-identity de-dup is usually sufficient and much faster for huge n-ary ANDs.
         if (new_params.size() > 1) {
-            std::unordered_set<std::shared_ptr<DAGNode>, NodeHash, NodeEqual> seen;
+            std::unordered_set<const DAGNode*> seen;
+            seen.reserve(new_params.size());
             std::vector<std::shared_ptr<DAGNode>> deduplicated_params;
+            deduplicated_params.reserve(new_params.size());
             for (const auto& param : new_params) {
-                if (seen.find(param) == seen.end()) {
-                    seen.insert(param);
+                const DAGNode* p = param.get();
+                if (seen.insert(p).second) {
                     deduplicated_params.emplace_back(param);
                 }
             }
@@ -882,6 +887,7 @@ namespace SMTParser{
         }
             
         std::vector<std::shared_ptr<DAGNode>> new_params;
+        new_params.reserve(params.size());
 
         for(size_t i=0;i<params.size();i++){
             if(!isBoolParam(params[i])) {
@@ -905,13 +911,15 @@ namespace SMTParser{
             }
         }
 
-        // Remove duplicate literals (keep only one copy of equivalent nodes)
+        // Remove duplicates cheaply (pointer identity).
         if (new_params.size() > 1) {
-            std::unordered_set<std::shared_ptr<DAGNode>, NodeHash, NodeEqual> seen;
+            std::unordered_set<const DAGNode*> seen;
+            seen.reserve(new_params.size());
             std::vector<std::shared_ptr<DAGNode>> deduplicated_params;
+            deduplicated_params.reserve(new_params.size());
             for (const auto& param : new_params) {
-                if (seen.find(param) == seen.end()) {
-                    seen.insert(param);
+                const DAGNode* p = param.get();
+                if (seen.insert(p).second) {
                     deduplicated_params.emplace_back(param);
                 }
             }

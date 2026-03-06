@@ -252,7 +252,7 @@ std::cout << parser->optionToString() << std::endl;
 | **float_evaluate** | bool | `true` | Use floating-point (true) or exact rational (false) arithmetic |
 | **keep_division** | bool | `true` | Preserve division if not exact (e.g., `(/ 5 2)` stays as-is) |
 | **keep_let** | bool | `true` | Preserve let-bindings instead of expanding inline |
-| **expand_functions** | bool | `true` | Inline function calls with definitions (when false, preserve as function applications) |
+| **expand_functions** | bool | `false` | When true, inline function calls with definitions; when false (default), preserve as function applications |
 | **Command Flags** | bool | `false` | Tracks encountered SMT-LIB2 commands: `check_sat`, `get_model`, `get_assertions`, `get_proof`, `get_unsat_core`, `get_objectives`, etc. |
 
 <!-- 

@@ -1992,20 +1992,27 @@ namespace SMTParser{
 	}
 	
 	std::shared_ptr<DAGNode> Parser::mkApplyFunc(std::shared_ptr<DAGNode> fun, const std::vector<std::shared_ptr<DAGNode>> &params){
-		std::shared_ptr<DAGNode> res = std::shared_ptr<DAGNode>(new DAGNode(fun->getSort(), NODE_KIND::NT_FUNC_APPLY, fun->getName()));
-		res->updateApplyFunc(fun->getSort(), fun, params);
+		// Intern function applications through NodeManager to avoid creating大量重复 NT_FUNC_APPLY 节点
+		// when expand_functions=false and the same function call appears many times.
+		std::vector<std::shared_ptr<DAGNode>> children;
+		children.reserve(params.size() + 1);
+		children.emplace_back(fun);
+		for(const auto& p : params) children.emplace_back(p);
+		auto res = getNodeManager()->createNode(fun->getSort(), NODE_KIND::NT_FUNC_APPLY, fun->getName(), std::move(children));
 		getSymbolManager()->addStaticFunction(res);
 		return res;
 	}
 
 	
     std::shared_ptr<DAGNode> Parser::mkApplyRecFunc(std::shared_ptr<DAGNode> fun, const std::vector<std::shared_ptr<DAGNode>> &params){
-        // Create a recursive function application node (similar to mkApplyFunc)
-        // Store function definition in children[0] and params in children[1..]
-        std::shared_ptr<DAGNode> res = std::shared_ptr<DAGNode>(new DAGNode(fun->getSort(), NODE_KIND::NT_FUNC_REC_APPLY, fun->getName()));
-        res->updateApplyFunc(fun->getSort(), fun, params, true);
-        getSymbolManager()->addStaticFunction(res);
-        return res;
+        // Intern recursive function applications through NodeManager as well.
+		std::vector<std::shared_ptr<DAGNode>> children;
+		children.reserve(params.size() + 1);
+		children.emplace_back(fun);
+		for(const auto& p : params) children.emplace_back(p);
+		auto res = getNodeManager()->createNode(fun->getSort(), NODE_KIND::NT_FUNC_REC_APPLY, fun->getName(), std::move(children));
+		getSymbolManager()->addStaticFunction(res);
+		return res;
     }
 
     std::shared_ptr<DAGNode> Parser::mkApplyUF(const std::shared_ptr<Sort>& sort, const std::string &name, const std::vector<std::shared_ptr<DAGNode>> &params){
