@@ -28,9 +28,9 @@ Use the headers matching the API you need:
 #include <somtparser/translation/translate.h>
 ```
 
-The historical C++ namespaces (`SOMTParser::Uir::Hir`, `SOMTParser::Uir`
-and `SOMTParser::Lang`) and public Python APIs are unchanged. The installed
-`somtparser/uir/*.h` files are forwarding headers for existing clients; new
-code uses `hir/` and `translation/`. There is no implementation in `src/uir/`.
+The C++ namespaces (`SOMTParser::Uir::Hir`, `SOMTParser::Uir`
+and `SOMTParser::Lang`) and public Python APIs are unchanged. Header paths use
+`hir/` and `translation/` exclusively; update existing includes to these paths.
+There are no forwarding headers or implementation under `uir/`.
 Module tests live in `test/hir/` and `test/translation/`; existing test executable
 names are retained so CI filters and historical records still identify them.

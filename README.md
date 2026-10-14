@@ -11,7 +11,7 @@
 The multi-language constraint model lives in `hir/`; its translation pipeline
 lives in `translation/`. The existing SMT expression DAG remains in `ir/`.
 See [the module layout](docs/source-layout.md) for their responsibilities and
-compatible header paths.
+current header paths.
 
 - **Frontend**: Command and term parsing, type checking, OMT-oriented input, and API-level expression construction feeding the same IR pipeline.
 - **IR core**: A unified typed DAG representation with structure sharing and canonicalization via `NodeManager`; equal subterms are stored once.

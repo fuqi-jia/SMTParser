@@ -10,9 +10,9 @@ The former `uir/` implementation is organized into `hir/` (the constraint
 representation and construction APIs) and `translation/` (the translation
 pipeline). For example, replace `somtparser/uir/hir.h` with
 `somtparser/hir/hir.h`, and `somtparser/uir/translate.h` with
-`somtparser/translation/translate.h`. The old headers forward to the new ones
-and may be included alongside them. C++ namespaces, signatures and Python
-APIs are unchanged. See [the module layout](source-layout.md) for the complete
+`somtparser/translation/translate.h`. The old header paths have been removed;
+callers must use the new paths. C++ namespaces, signatures and Python APIs
+are unchanged. See [the module layout](source-layout.md) for the complete
 division of responsibilities.
 
 ## Floating-point values to bit vectors
