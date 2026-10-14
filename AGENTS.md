@@ -28,10 +28,18 @@ policy in that library implementation and Python bindings limited to adapters.
 
 ## Build and validation
 
-After each code change, run the relevant tests and fix failures before treating
-the task as complete. Once the tests pass, commit and push the finished change
-to the user's requested branch and remote. This checkout currently uses
-`develop` on `origin`; do not force-push over unrelated remote changes.
+Before committing or pushing a change, run the full build-and-test job defined
+in `.github/workflows/ci.yml`: `test/run_all_tests.sh` with its CI configuration
+(Debug, all C++ tests and tools enabled, warnings as errors, two build/test
+workers). A filtered CTest run or selected pytest files do not satisfy this
+requirement. When Python code or bindings change, also build/install the
+package and run the full Python suite with CI dependencies, warnings as errors
+and `pytest -n 2 --dist loadscope`, covering the CI Python-version matrix.
+Fix failures and rerun the affected full job before committing. Only after
+these checks pass should the change be committed and pushed to the requested
+branch and remote. This checkout uses `develop` on `origin`; do not force-push
+over unrelated remote changes. Report exactly which full jobs passed and any
+environment differences; do not describe focused checks as CI validation.
 
 Dependencies: C++17 compiler, CMake 3.16+, GMP and MPFR. Python bindings also
 require Python 3.9+ and pybind11; packaging uses scikit-build-core.
@@ -43,14 +51,14 @@ experiment, feature, date, retry or Python build. Serialize writers sharing a
 build directory and preserve its generator and relevant configuration.
 
 ```bash
-# Configure/build/test with the existing directory; cap local WSL concurrency.
-SOMTPARSER_BUILD_JOBS=2 ./test/run_all_tests.sh
+# Required CI C++ gate: full Debug build and complete CTest suite.
+CMAKE_BUILD_TYPE=Debug SOMTPARSER_WARNINGS_AS_ERRORS=ON SOMTPARSER_BUILD_JOBS=2 ./test/run_all_tests.sh
 
 # Focused C++ check; substitute the existing directory and test name.
 ctest --test-dir "${SOMTPARSER_BUILD_DIR:-build}" -R 'SOMTParser.test_name$' --output-on-failure
 
-# Python checks after building the matching extension for this checkout.
-PYTHONPATH=python python -m pytest test/python/test_name.py -q
+# Required Python gate after building/installing the current package.
+python -W error -m pytest test/python -q -n 2 --dist loadscope
 ```
 
 `run_all_tests.sh` enables tests, tools and warnings as errors; its build type
@@ -60,8 +68,8 @@ to an extension built from the current source before trusting Python results.
 
 C++ tests are discovered from `test/**/*.cpp` and registered as
 `SOMTParser.<file_basename>`. Run standalone test binaries from the repository
-root because fixtures use relative paths. Use focused checks during changes;
-run the relevant broader checks before completion. Language documentation
+root because fixtures use relative paths. Focused checks are useful during
+development but never replace the full CI gates above. Language documentation
 citations can be checked with `python scripts/check-doc-citations.py`.
 
 ## Implementation invariants
