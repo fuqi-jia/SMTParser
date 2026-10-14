@@ -31,12 +31,12 @@ policy in that library implementation and Python bindings limited to adapters.
 Before committing or pushing a change, run the full build-and-test job defined
 in `.github/workflows/ci.yml`: `test/run_all_tests.sh` with its CI configuration
 (Debug, all C++ tests and tools enabled, warnings as errors, two build/test
-workers). A filtered CTest run or selected pytest files do not satisfy this
-requirement. When Python code or bindings change, also build/install the
-package and run the full Python suite with CI dependencies, warnings as errors
-and `pytest -n 2 --dist loadscope`, covering the CI Python-version matrix.
-Fix failures and rerun the affected full job before committing. Only after
-these checks pass should the change be committed and pushed to the requested
+workers). A filtered CTest run does not satisfy this requirement. The user's
+routine completion gate is the C++ `CI Tests` job only. Do not additionally
+build/install Python packages, run Python-version matrices, or dispatch/wait
+for wheel builds unless the user explicitly requests them for the current task.
+Fix failures and rerun the full C++ job before committing. Only after
+this check passes should the change be committed and pushed to the requested
 branch and remote. This checkout uses `develop` on `origin`; do not force-push
 over unrelated remote changes. Report exactly which full jobs passed and any
 environment differences; do not describe focused checks as CI validation.
@@ -57,8 +57,6 @@ CMAKE_BUILD_TYPE=Debug SOMTPARSER_WARNINGS_AS_ERRORS=ON SOMTPARSER_BUILD_JOBS=2 
 # Focused C++ check; substitute the existing directory and test name.
 ctest --test-dir "${SOMTPARSER_BUILD_DIR:-build}" -R 'SOMTParser.test_name$' --output-on-failure
 
-# Required Python gate after building/installing the current package.
-python -W error -m pytest test/python -q -n 2 --dist loadscope
 ```
 
 `run_all_tests.sh` enables tests, tools and warnings as errors; its build type
@@ -69,7 +67,7 @@ to an extension built from the current source before trusting Python results.
 C++ tests are discovered from `test/**/*.cpp` and registered as
 `SOMTParser.<file_basename>`. Run standalone test binaries from the repository
 root because fixtures use relative paths. Focused checks are useful during
-development but never replace the full CI gates above. Language documentation
+development but never replace the full C++ CI gate above. Language documentation
 citations can be checked with `python scripts/check-doc-citations.py`.
 
 ## Implementation invariants
