@@ -51,6 +51,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <array>
+#include <atomic>
 
 namespace SOMTParser{
 
@@ -105,7 +106,22 @@ std::string smtSymbol(const std::string& name);
         mutable uint64_t                        cached_print_hash = 0;
         mutable uint64_t                        cached_print_len = 0;
 
+        // Non-semantic scratch for allocation-free final release. A queued
+        // node owns a temporary self-reference, but its live child links are
+        // untouched. Copies must never inherit another node's queue entry.
+        struct ReclamationLink {
+            std::atomic_flag busy = ATOMIC_FLAG_INIT;
+            DAGNode* next = nullptr;
+            std::shared_ptr<DAGNode> owner;
+            ReclamationLink() noexcept = default;
+            ReclamationLink(const ReclamationLink&) noexcept {}
+            ReclamationLink& operator=(const ReclamationLink&) noexcept { return *this; }
+        };
+        ReclamationLink reclamation;
+
     public:
+        ~DAGNode() noexcept;
+
         DAGNode(std::shared_ptr<Sort> sort, NODE_KIND kind, std::string name, std::vector<std::shared_ptr<DAGNode>> children): sort(sort), kind(kind), name(name), value(nullptr), children(children){
             // value is not used for hash
             if(!children.empty()) {

@@ -40,6 +40,53 @@
 #include <unordered_set>
 
 namespace SOMTParser{
+    namespace {
+        struct DAGReleaseQueue {
+            DAGNode* head = nullptr;
+        };
+        // The outer destructor owns the queue; nested destructors only append
+        // their edges. Independent threads drain their own queues.
+        thread_local DAGReleaseQueue* releasingNodes = nullptr;
+    }
+
+    DAGNode::~DAGNode() noexcept {
+        if (children.empty()) return;
+        DAGReleaseQueue local;
+        const bool outer = releasingNodes == nullptr;
+        if (outer) releasingNodes = &local;
+        auto& queue = *releasingNodes;
+        for (auto& child : children) {
+            if (!child) continue;
+            auto& link = child->reclamation;
+            while (link.busy.test_and_set(std::memory_order_acquire)) {}
+            if (link.owner) {
+                // A queue already pins this node. Release the duplicate edge
+                // under the lock, before that queue can remove its pin.
+                child.reset();
+            } else {
+                link.owner = std::move(child);
+                link.next = queue.head;
+                queue.head = link.owner.get();
+            }
+            link.busy.clear(std::memory_order_release);
+        }
+        if (!outer) return;
+        while (queue.head) {
+            auto& link = queue.head->reclamation;
+            while (link.busy.test_and_set(std::memory_order_acquire)) {}
+            queue.head = link.next;
+            link.next = nullptr;
+            auto child = std::move(link.owner);
+            link.busy.clear(std::memory_order_release);
+            // Only a true final release enters the child's destructor. That
+            // destructor enqueues its children and returns, so nesting stays
+            // constant even with deep, shared, or branching DAGs. No allocation
+            // or use_count snapshot is needed; weak_ptr::lock remains safe.
+            child.reset();
+        }
+        releasingNodes = nullptr;
+    }
+
     using AliasMap = std::unordered_map<DAGNode*, std::string>;
     struct AliasPlan;
     struct AliasEnv {
