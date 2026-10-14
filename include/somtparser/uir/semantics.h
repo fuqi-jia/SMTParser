@@ -120,7 +120,7 @@ struct SymbolPatternRange {
     SymbolKind kind = SymbolKind::CONSTANT;
     std::vector<Hir::Sort> domain;
     Hir::Sort codomain = Hir::Sort::boolean();
-    std::string suffix;
+    std::string suffix{};
     std::string name(std::uint64_t offset) const;
 };
 
@@ -277,8 +277,8 @@ struct SymbolRangeMapping {
     std::uint64_t source_first = 1;
     std::uint64_t target_first = 1;
     std::uint64_t count = 0;
-    std::string source_suffix;
-    std::string target_suffix;
+    std::string source_suffix{};
+    std::string target_suffix{};
 };
 
 /** Object-language sort component of Phi. It is explicit because symbol names
@@ -356,7 +356,7 @@ struct GrammarChoiceNode {
 struct GrammarChoiceObservable {
     std::string source_name;
     std::string prefix;
-    std::string suffix;
+    std::string suffix{};
     std::vector<GrammarChoiceNode> nodes;
     std::size_t root_node = 0;
 };
@@ -369,8 +369,8 @@ struct ObservableRange {
     std::uint64_t target_first = 1;
     std::uint64_t count = 0;
     ProjectionKind projection = ProjectionKind::DIRECT;
-    std::string source_suffix;
-    std::string target_suffix;
+    std::string source_suffix{};
+    std::string target_suffix{};
 };
 
 struct ModelProjection {
@@ -507,7 +507,7 @@ struct ProofObligation {
     std::string         rationale;
     /** Concrete test, proof, or implementation artifact references. Count
      *  preservation requires at least one reference in addition to a rationale. */
-    std::vector<std::string> evidence_refs;
+    std::vector<std::string> evidence_refs{};
 
 };
 

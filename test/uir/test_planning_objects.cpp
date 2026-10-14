@@ -73,6 +73,20 @@ struct Fixture {
 };
 
 int main(int argc,char** argv) {
+    {
+        P::ObjectUniverse universe;
+        constexpr std::size_t depth=20000;
+        for(std::size_t i=0;i<depth;++i) {
+            universe.types.push_back({"type"+std::to_string(i),
+                {i+1==depth ? "object" : "type"+std::to_string(i+1)}});
+        }
+        // Multiple children sharing a completed ancestor are not a cycle.
+        universe.types.push_back({"diamond", {"type0", "type1"}});
+        U::Diagnostics diagnostics;
+        VERIFY(P::validateObjectUniverse(universe,diagnostics));
+        universe.types[depth-1].parents={"type0"};
+        VERIFY(!P::validateObjectUniverse(universe,diagnostics));
+    }
     const std::filesystem::path dir=argc==2?argv[1]:"";
     if(!dir.empty())std::filesystem::create_directories(dir);
     std::vector<std::string> refusals;

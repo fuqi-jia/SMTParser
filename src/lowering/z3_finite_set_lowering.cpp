@@ -86,7 +86,8 @@ void flattenAnd(const std::vector<Token>& t,Range r,std::vector<Range>& out) {
 void addBound(const std::vector<Token>& t,Range assert_r,BoundMap& bounds) {
     if(!listHead(t,assert_r.first,"assert") || t[assert_r.first].mate+1!=assert_r.second) return;
     std::size_t q=assert_r.first+2;
-    if(!listHead(t,q,"forall")) return; const auto qclose=t[q].mate;
+    if(!listHead(t,q,"forall")) return;
+    const auto qclose=t[q].mate;
     std::size_t bindlist=q+2; if(!is(t,bindlist,"(")) return;
     std::size_t bind=bindlist+1; if(!is(t,bind,"(") || next(t,bind)!=t[bindlist].mate || t[bind].mate!=bind+3 || !is(t,bind+2,"Int")) return;
     const std::string var(symbolIdentity(t[bind+1])); std::size_t body=t[bindlist].mate+1;
@@ -211,7 +212,7 @@ void findBounds(const std::vector<Token>& t,Range r,BoundMap& b) {
             // establish a global carrier for cardinality or Set lowering.
             std::vector<Range> conjuncts;
             flattenAnd(t,{p+2,t[p].mate},conjuncts);
-            for(const auto conjunct:conjuncts) addEqualityBound(t,conjunct,b);
+            for(const auto& conjunct:conjuncts) addEqualityBound(t,conjunct,b);
         }
         p=q;
     }
@@ -247,7 +248,7 @@ void findIntBounds(const std::vector<Token>& t,IntBoundMap& bounds) {
         const auto q=next(t,p); if(q<=p) return;
         if(listHead(t,p,"assert") && t[p].mate+1==q) {
             std::vector<Range> conjuncts; flattenAnd(t,{p+2,t[p].mate},conjuncts);
-            for(const auto c:conjuncts) addIntBoundsFromConjunct(t,c,bounds);
+            for(const auto& c:conjuncts) addIntBoundsFromConjunct(t,c,bounds);
         }
         p=q;
     }
@@ -703,12 +704,12 @@ struct Rewriter {
         }
         if(r.first<r.second && listHead(t,r.first,"Array") && t[r.first].mate+1==r.second) {
             out+="(";
-            for(std::size_t p=r.first+1;p<t[r.first].mate;) { if(p>r.first+1) out+=' '; auto q=next(t,p); sortExpr({p,q},out); p=q; }
+            for(std::size_t p=r.first+1;p<t[r.first].mate;) { if(p>r.first+1) { out+=' '; } auto q=next(t,p); sortExpr({p,q},out); p=q; }
             out+=')'; return;
         }
         if(r.first<r.second && t[r.first].list && t[r.first].text=="(" && t[r.first].mate+1==r.second) {
             out+="(";
-            for(std::size_t p=r.first+1;p<t[r.first].mate;) { if(p>r.first+1) out+=' '; auto q=next(t,p); sortExpr({p,q},out); p=q; }
+            for(std::size_t p=r.first+1;p<t[r.first].mate;) { if(p>r.first+1) { out+=' '; } auto q=next(t,p); sortExpr({p,q},out); p=q; }
             out+=')'; return;
         }
         appendRange(t,r,out);
@@ -718,7 +719,7 @@ struct Rewriter {
         out+="(";
         for(std::size_t c=r.first+1;c<t[r.first].mate;) {
             const auto ce=next(t,c); if(!is(t,c,"(")) throw std::runtime_error("Z3 datatype constructor malformed");
-            if(c>r.first+1) out+=' '; out+='('; appendRange(t,{c+1,next(t,c+1)},out);
+            if(c>r.first+1) { out+=' '; } out+='('; appendRange(t,{c+1,next(t,c+1)},out);
             for(std::size_t f=next(t,c+1);f<t[c].mate;) {
                 const auto fe=next(t,f); if(!is(t,f,"(")) throw std::runtime_error("Z3 datatype selector malformed");
                 std::size_t name=f+1, sort=next(t,name); if(next(t,sort)!=t[f].mate) throw std::runtime_error("Z3 datatype selector sort malformed");
@@ -934,7 +935,7 @@ struct Rewriter {
             for(std::size_t p=binders+1;p<t[binders].mate;) {
                 const auto q=next(t,p); if(!is(t,p,"(")) throw std::runtime_error("Z3 quantifier/lambda malformed binder");
                 std::size_t name=p+1, sort=next(t,name); if(next(t,sort)!=t[p].mate) throw std::runtime_error("Z3 quantifier/lambda malformed binder sort");
-                if(p>binders+1) out+=' '; out+='('; appendRange(t,{name,next(t,name)},out); out+=' '; sortExpr({sort,t[p].mate},out); out+=')';
+                if(p>binders+1) { out+=' '; } out+='('; appendRange(t,{name,next(t,name)},out); out+=' '; sortExpr({sort,t[p].mate},out); out+=')';
                 added.emplace_back(symbolIdentity(t[name])); p=q;
             }
             out+=") "; pushNames(added); expr({body,close},out); popNames(added); out+=')'; return;
@@ -948,7 +949,7 @@ struct Rewriter {
             for(std::size_t p=bindings+1;p<t[bindings].mate;) {
                 const auto q=next(t,p); if(!is(t,p,"(")) throw std::runtime_error("Z3 let malformed binding");
                 std::size_t name=p+1, value=next(t,name); if(next(t,value)!=t[p].mate) throw std::runtime_error("Z3 let malformed binding value");
-                if(p>bindings+1) out+=' '; out+='('; appendRange(t,{name,next(t,name)},out); out+=' '; expr({value,t[p].mate},out); out+=')';
+                if(p>bindings+1) { out+=' '; } out+='('; appendRange(t,{name,next(t,name)},out); out+=' '; expr({value,t[p].mate},out); out+=')';
                 const std::string identity(symbolIdentity(t[name]));
                 std::vector<std::string> elements;
                 if(needs_support && finiteSupport({value,t[p].mate},elements)) {
@@ -984,7 +985,7 @@ struct Rewriter {
         if(top_level && keyword(t,h,"declare-fun")) {
             std::size_t name=h+1, args=next(t,name), result=next(t,args); if(next(t,result)!=close || !is(t,args,"(")) throw std::runtime_error("Z3 declare-fun malformed arity");
             out+="(declare-fun "; appendRange(t,{name,next(t,name)},out); out+=" (";
-            for(std::size_t p=args+1;p<t[args].mate;) { if(p>args+1) out+=' '; auto q=next(t,p); sortExpr({p,q},out); p=q; }
+            for(std::size_t p=args+1;p<t[args].mate;) { if(p>args+1) { out+=' '; } auto q=next(t,p); sortExpr({p,q},out); p=q; }
             out+=") "; sortExpr({result,close},out); out+=')'; return;
         }
         if(top_level && (keyword(t,h,"define-fun") || keyword(t,h,"define-fun-rec"))) {
@@ -994,7 +995,7 @@ struct Rewriter {
             for(std::size_t p=binders+1;p<t[binders].mate;) { auto q=next(t,p);
                 if(!is(t,p,"(")) throw std::runtime_error("Z3 define-fun malformed formal");
                 std::size_t formal_name=p+1, formal_sort=next(t,formal_name); if(next(t,formal_sort)!=t[p].mate) throw std::runtime_error("Z3 define-fun malformed formal sort");
-                if(p>binders+1) out+=' '; out+='('; appendRange(t,{formal_name,next(t,formal_name)},out); out+=' '; sortExpr({formal_sort,t[p].mate},out); out+=')'; added.emplace_back(symbolIdentity(t[formal_name])); p=q;
+                if(p>binders+1) { out+=' '; } out+='('; appendRange(t,{formal_name,next(t,formal_name)},out); out+=' '; sortExpr({formal_sort,t[p].mate},out); out+=')'; added.emplace_back(symbolIdentity(t[formal_name])); p=q;
             }
             out+=") "; sortExpr({result,next(t,result)},out); out+=' '; pushNames(added); expr({body,close},out); popNames(added); out+=')'; return;
         }
@@ -1009,18 +1010,18 @@ struct Rewriter {
                 std::size_t name=p+1, formals=next(t,name), result=next(t,formals);
                 if(!is(t,formals,"(") || next(t,result)!=t[p].mate) throw std::runtime_error("Z3 define-funs-rec malformed signature fields");
                 std::vector<std::string> added;
-                if(p>signatures+1) out+=' '; out+='('; appendRange(t,{name,next(t,name)},out); out+=" (";
+                if(p>signatures+1) { out+=' '; } out+='('; appendRange(t,{name,next(t,name)},out); out+=" (";
                 for(std::size_t f=formals+1;f<t[formals].mate;) {
                     const auto formal_end=next(t,f); if(!is(t,f,"(")) throw std::runtime_error("Z3 define-funs-rec malformed formal");
                     std::size_t formal_name=f+1, formal_sort=next(t,formal_name);
                     if(next(t,formal_sort)!=t[f].mate) throw std::runtime_error("Z3 define-funs-rec malformed formal sort");
-                    if(f>formals+1) out+=' '; out+='('; appendRange(t,{formal_name,next(t,formal_name)},out); out+=' '; sortExpr({formal_sort,t[f].mate},out); out+=')'; added.emplace_back(symbolIdentity(t[formal_name])); f=formal_end;
+                    if(f>formals+1) { out+=' '; } out+='('; appendRange(t,{formal_name,next(t,formal_name)},out); out+=' '; sortExpr({formal_sort,t[f].mate},out); out+=')'; added.emplace_back(symbolIdentity(t[formal_name])); f=formal_end;
                 }
                 out+=") "; sortExpr({result,t[p].mate},out); out+=')'; function_formals.push_back(std::move(added)); p=sig_end;
             }
             out+=") (";
             std::size_t index=0;
-            for(std::size_t p=bodies+1;p<t[bodies].mate;) { const auto q=next(t,p); if(p>bodies+1) out+=' '; if(index>=function_formals.size()) throw std::runtime_error("Z3 define-funs-rec body count mismatch"); pushNames(function_formals[index]); expr({p,q},out); popNames(function_formals[index]); p=q; ++index; }
+            for(std::size_t p=bodies+1;p<t[bodies].mate;) { const auto q=next(t,p); if(p>bodies+1) { out+=' '; } if(index>=function_formals.size()) throw std::runtime_error("Z3 define-funs-rec body count mismatch"); pushNames(function_formals[index]); expr({p,q},out); popNames(function_formals[index]); p=q; ++index; }
             if(index!=function_formals.size()) throw std::runtime_error("Z3 define-funs-rec body count mismatch");
             out+="))"; return;
         }
@@ -1037,7 +1038,7 @@ struct Rewriter {
         if(top_level && (keyword(t,h,"declare-datatypes") || keyword(t,h,"declare-codatatypes"))) {
             std::size_t names=h+1, defs=next(t,names); if(!is(t,names,"(") || !is(t,defs,"(") || next(t,defs)!=close) throw std::runtime_error("Z3 declare-datatypes malformed arity");
             out+='('; appendRange(t,{h,h+1},out); out+=" ("; appendRange(t,{names+1,t[names].mate},out); out+=") (";
-            for(std::size_t p=defs+1;p<t[defs].mate;) { const auto q=next(t,p); if(p>defs+1) out+=' '; datatypeDefinition({p,q},out); p=q; }
+            for(std::size_t p=defs+1;p<t[defs].mate;) { const auto q=next(t,p); if(p>defs+1) { out+=' '; } datatypeDefinition({p,q},out); p=q; }
             out+="))"; return;
         }
         if(keyword(t,h,"as") && h+3<close && (is(t,h+1,"set.empty")||is(t,h+1,"set.universe"))) {
@@ -1088,7 +1089,7 @@ struct Rewriter {
             std::size_t a=h+1,ae=next(t,a),b=ae,be=next(t,b); if(be!=close) throw std::runtime_error("Z3 set.subset malformed arity");
             out+="(forall (("+subset_name+" Int)) (=> (select "; expr({a,ae},out); out+=" "+subset_name+") (select "; expr({b,be},out); out+=" "+subset_name+")))"; return;
         }
-        out+='('; for(std::size_t p=r.first+1;p<close;) { if(p>r.first+1) out+=' '; auto q=next(t,p); expr({p,q},out); p=q; } out+=')';
+        out+='('; for(std::size_t p=r.first+1;p<close;) { if(p>r.first+1) { out+=' '; } auto q=next(t,p); expr({p,q},out); p=q; } out+=')';
     }
 };
 

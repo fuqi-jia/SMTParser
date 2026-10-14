@@ -37,7 +37,7 @@ struct EncodingChoice {
     Fidelity    fidelity;
     std::string rationale;
     /** Required when this local choice claims count preservation. */
-    std::optional<CountEvidence> count_evidence;
+    std::optional<CountEvidence> count_evidence{};
 };
 
 /** Everything needed to reproduce this translation later. Without it an

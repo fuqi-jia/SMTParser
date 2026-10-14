@@ -5059,16 +5059,22 @@ namespace SOMTParser{
         // re.none, even if the other endpoint is symbolic. Count characters,
         // not UTF-8 bytes. Normalizing this case also avoids solver parsers
         // that reject non-singleton constants in re.range.
-        const auto loCount = l->isCStr()
-            ? ConversionUtils::utf8CodePointCount(l->getStringLiteral())
-            : std::optional<size_t>{};
-        const auto hiCount = r->isCStr()
-            ? ConversionUtils::utf8CodePointCount(r->getStringLiteral())
-            : std::optional<size_t>{};
-        if ((loCount && *loCount != 1) || (hiCount && *hiCount != 1)) {
-            return mkRegNone();
+        bool loSingleton = false, hiSingleton = false;
+        if (l->isCStr()) {
+            const auto count = ConversionUtils::utf8CodePointCount(l->getStringLiteral());
+            if (count) {
+                if (*count != 1) { return mkRegNone(); }
+                loSingleton = true;
+            }
         }
-        if (loCount && hiCount && *loCount == 1 && *hiCount == 1) {
+        if (r->isCStr()) {
+            const auto count = ConversionUtils::utf8CodePointCount(r->getStringLiteral());
+            if (count) {
+                if (*count != 1) { return mkRegNone(); }
+                hiSingleton = true;
+            }
+        }
+        if (loSingleton && hiSingleton) {
             const auto lo = l->getStringLiteral();
             const auto hi = r->getStringLiteral();
             // Valid UTF-8 preserves code point order under unsigned-byte

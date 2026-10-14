@@ -32,7 +32,7 @@ REQUIRED_SOURCE = {
     'allocations': 'array[JOBS] of var ENGS: allocations;',
     'new_skills': 'array[ENGS,TRAINING] of var 0..0 union SKILLS: new_skills;',
     'allEng_default': 'bool: allEng = false;',
-    'skill_matching': '''constraint if allEng then true else forall(i in JOBS)(
+    'skill_matching': r'''constraint if allEng then true else forall(i in JOBS)(
         let { set of int: POSENGS = {e | e in ENGS where engineer_skills[e,jobs[i,1]] == 1}, }
         in (allocations[i] in POSENGS)
         \/ exists(e in ENGS, t in TRAINING)(jobs[i,1] == new_skills[e,t] /\ allocations[i]==e)

@@ -3049,7 +3049,7 @@ private:
                 std::string target = assigned;
                 const auto f = std::find_if(
                     callee.ins.begin(), callee.ins.end(),
-                    [&assigned](const std::pair<std::string, VarType>& formal) {
+                    [&assigned = assigned](const std::pair<std::string, VarType>& formal) {
                         return formal.first == assigned;
                     });
                 if (f != callee.ins.end()) {

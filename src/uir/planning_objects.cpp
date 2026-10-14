@@ -94,10 +94,26 @@ bool validateObjectUniverse(const ObjectUniverse& u,Diagnostics& d) {
     for(const auto& t:u.types){std::set<std::string> seen;for(const auto& a:t.parents)
         if(!p.count(a)||!seen.insert(a).second)return fail(d,"unknown or duplicate supertype");}
     std::map<std::string,int> color;
-    std::function<bool(const std::string&)> visit=[&](const std::string& n){
-        if(color[n]==1)return false;if(color[n]==2)return true;color[n]=1;
-        for(const auto& a:p.at(n))if(!visit(a))return false;color[n]=2;return true;};
-    for(const auto& t:p)if(!visit(t.first))return fail(d,"cyclic type hierarchy");
+    struct Frame { std::string name; std::size_t next = 0; };
+    for(const auto& t:p) {
+        if(color[t.first]==2) continue;
+        std::vector<Frame> pending{{t.first}};
+        color[t.first]=1;
+        while(!pending.empty()) {
+            auto& frame=pending.back();
+            const auto& ancestors=p.at(frame.name);
+            if(frame.next==ancestors.size()) {
+                color[frame.name]=2;
+                pending.pop_back();
+                continue;
+            }
+            const auto& ancestor=ancestors[frame.next++];
+            if(color[ancestor]==1) return fail(d,"cyclic type hierarchy");
+            if(color[ancestor]==2) continue;
+            color[ancestor]=1;
+            pending.push_back({ancestor});
+        }
+    }
     names.clear();for(const auto& o:u.objects)
         if(o.name.empty()||o.name=="undefined"||!names.insert(o.name).second||!p.count(o.type))return fail(d,"invalid, duplicate or untyped object");
     return true;
@@ -109,7 +125,12 @@ std::optional<bool> objectSubtype(const ObjectUniverse& u,const ObjectType& a,co
 std::optional<std::vector<std::size_t>> objectCarrier(const ObjectUniverse& u,const ObjectType& t,Diagnostics& d) {
     if(!validateObjectUniverse(u,d)||!type(u,t,d))return std::nullopt;
     const auto p=parents(u);std::vector<std::size_t> out;
-    for(std::size_t i=0;i<u.objects.size();++i)for(const auto& a:t.alternatives)if(sub(p,u.objects[i].type,a)){out.push_back(i);break;}return out;
+    for(std::size_t i=0;i<u.objects.size();++i) {
+        for(const auto& a:t.alternatives) {
+            if(sub(p,u.objects[i].type,a)){out.push_back(i);break;}
+        }
+    }
+    return out;
 }
 std::optional<ObjectValue> objectConstant(const ObjectUniverse& u,const std::string& name,Diagnostics& d) {
     if(!validateObjectUniverse(u,d))return std::nullopt;
@@ -165,7 +186,8 @@ std::optional<ObjectValue> objectLookup(const ConstraintModel& context,const Obj
         if(!s||!*s||!shape(u,v,d)){fail(d,"object table result type mismatch");return std::nullopt;}
         const auto chosen=all({dispatch->matches[i],v.defined});defs.push_back(chosen);out.value=mkOp(Op::ITE,{chosen,v.value,out.value});
         append(out.reads,v.reads,dispatch->matches[i]);obligations(u,v,out.constraints);valueTerms(v,terms);}
-    if(!typed(context,terms,d))return std::nullopt;out.defined=any(std::move(defs));return out;
+    if(!typed(context,terms,d))return std::nullopt;
+    out.defined=any(std::move(defs));return out;
 }
 std::optional<ObjectCondition> objectPredicate(const ConstraintModel& context,const ObjectUniverse& u,
     const ObjectTable& table,const std::vector<ObjectValue>& args,const std::vector<ExprPtr>& values,
@@ -184,8 +206,10 @@ std::optional<ObjectNumericValue> objectNumericLookup(const ConstraintModel& con
     for(std::size_t i=0;i<values.size();++i){const auto& v=values[i];if(!sorted(v.value,SortKind::REAL)||!sorted(v.defined,SortKind::BOOL)){fail(d,"numeric row must have Real/Bool fields");return std::nullopt;}
         const auto chosen=all({dispatch->matches[i],v.defined});defs.push_back(chosen);out.numeric.value=mkOp(Op::ITE,{chosen,v.value,out.numeric.value});
         out.numeric.reads.insert(out.numeric.reads.end(),v.reads.begin(),v.reads.end());
-        for(const auto index:v.reads)out.numeric_reads.push_back({index,dispatch->matches[i]});terms.push_back(v.value);terms.push_back(v.defined);}
-    if(!typed(context,terms,d))return std::nullopt;out.numeric.defined=any(std::move(defs));
+        for(const auto index:v.reads) { out.numeric_reads.push_back({index,dispatch->matches[i]}); }
+        terms.push_back(v.value);terms.push_back(v.defined);}
+    if(!typed(context,terms,d))return std::nullopt;
+    out.numeric.defined=any(std::move(defs));
     std::sort(out.numeric.reads.begin(),out.numeric.reads.end());out.numeric.reads.erase(std::unique(out.numeric.reads.begin(),out.numeric.reads.end()),out.numeric.reads.end());return out;
 }
 std::optional<ObjectAddress> objectAddress(const ConstraintModel& context,const ObjectUniverse& u,

@@ -92,13 +92,15 @@ jobs:
           CIBW_ARCHS_WINDOWS: AMD64
           # manylinux containers are yum-based
           CIBW_BEFORE_ALL_LINUX: yum install -y gmp-devel mpfr-devel
+          CIBW_ENVIRONMENT_LINUX: CMAKE_ARGS="-DSOMTPARSER_WARNINGS_AS_ERRORS=ON"
           # no CMAKE_PREFIX_PATH here: FindGMP/FindMPFR query `brew --prefix`
           # themselves, and a -D override would clobber the pybind11 search
           # path that scikit-build-core injects
           CIBW_ENVIRONMENT_MACOS: >-
             MACOSX_DEPLOYMENT_TARGET=${{ matrix.macos-target }}
+            CMAKE_ARGS="-DSOMTPARSER_WARNINGS_AS_ERRORS=ON"
           CIBW_ENVIRONMENT_WINDOWS: >-
-            CMAKE_ARGS="-DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
+            CMAKE_ARGS="-DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DSOMTPARSER_WARNINGS_AS_ERRORS=ON"
           CIBW_BEFORE_BUILD_WINDOWS: pip install delvewheel
           # gmp/mpfr DLLs live in the vcpkg tree, which is not on PATH
           CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: >-
@@ -108,7 +110,7 @@ jobs:
           # Full regression runs on Python 3.9/3.12 in ci.yml. Each wheel
           # validates its installed extension and representative public APIs.
           CIBW_TEST_COMMAND: >-
-            cd "{project}" && python -m pytest -q
+            cd "{project}" && python -W error -m pytest -q
             test/python/test_parse.py test/python/test_node.py
             test/python/test_model_eval.py test/python/test_hir_api.py
             test/python/test_dump_omt_roundtrip.py test/python/test_fp_bv_rounding.py

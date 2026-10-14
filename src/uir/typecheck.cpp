@@ -1159,7 +1159,7 @@ private:
             const ExprPtr* expression;
             const SourceLoc* fallback;
             std::size_t next_argument = 0;
-            std::unique_ptr<QuantifierScope> quantifier;
+            std::unique_ptr<QuantifierScope> quantifier{};
         };
         std::vector<Pending> pending;
         pending.push_back({&e, &fallback});

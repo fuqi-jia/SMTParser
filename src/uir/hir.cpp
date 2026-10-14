@@ -540,7 +540,7 @@ ExprPtr substituteIdents(const ExprPtr& e,
         std::size_t inner;
         bool entered = false;
         bool changed = false;
-        std::vector<ExprPtr> args;
+        std::vector<ExprPtr> args{};
     };
     std::vector<Frame> stack{{e, 0, 0}};
     while (!stack.empty()) {
@@ -1479,7 +1479,7 @@ SetSolverRequirements ConstraintModel::setSolverRequirements() const {
             std::size_t depth;
             std::size_t next = 0;
             bool entered = false;
-            Sort result;
+            Sort result{};
         };
         std::vector<Frame> pending{{&root, 0}};
         Sort result;
@@ -1536,8 +1536,8 @@ SetSolverRequirements ConstraintModel::setSolverRequirements() const {
             bool result = true;
             bool all_fields = false;
             std::size_t next = 0;
-            std::string key;
-            std::vector<std::shared_ptr<const Sort>> children;
+            std::string key{};
+            std::vector<std::shared_ptr<const Sort>> children{};
         };
         std::vector<Frame> pending{{root, 0}};
         bool result = false;
@@ -1584,7 +1584,7 @@ SetSolverRequirements ConstraintModel::setSolverRequirements() const {
                     if (dt.coinductive || dt.constructors.empty() || s.args.size() != dt.params.size()) {
                         finish(false); continue;
                     }
-                    std::string key;
+                    std::string key{};
                     if (!structuralKey(s, key)) {
                         classification_limited = true;
                         finish(false); continue;
@@ -1657,7 +1657,7 @@ SetSolverRequirements ConstraintModel::setSolverRequirements() const {
                 continue;
             }
             if (task.depth > MAX_SORT_DEPTH) { classification_limited = true; continue; }
-            std::string key;
+            std::string key{};
             if (!structuralKey(s, key)) { classification_limited = true; continue; }
             if (inspected_sorts.count(key)) continue;
             if (inspected_sorts.size() >= MAX_INSPECTED_SORTS) { classification_limited = true; continue; }

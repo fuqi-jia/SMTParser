@@ -985,7 +985,7 @@ public:
     Mark mark() const { return {pos_, line_, column_}; }
     void reset(const Mark& m) { pos_ = m.pos; line_ = m.line; column_ = m.column; }
 
-    /** True once a `/*` ran to end of file. The token stream simply ends, so
+    /** True once a block comment ran to end of file. The token stream ends, so
      *  without this the parser cannot tell a finished model from a truncated
      *  one. */
     bool unterminatedComment() const { return unterminated_; }

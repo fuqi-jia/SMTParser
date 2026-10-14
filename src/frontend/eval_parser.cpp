@@ -111,9 +111,9 @@ namespace SOMTParser{
             bool entered = false;
             bool dynamic_ready = false;
             bool arguments_changed = false;
-            EvalNode dynamic;
-            std::unordered_set<EvalNode> distinct_constants;
-            std::vector<EvalNode> distinct_datatypes;
+            EvalNode dynamic{};
+            std::unordered_set<EvalNode> distinct_constants{};
+            std::vector<EvalNode> distinct_datatypes{};
         };
         std::vector<Frame> pending{{expr}};
         std::unordered_set<const DAGNode*> active{expr.get()};

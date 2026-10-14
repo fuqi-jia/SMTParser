@@ -817,7 +817,9 @@ private:
                 return false;
             }
         }
-        for (const auto& [name, function] : numeric_functions_) {
+        for (const auto& entry : numeric_functions_) {
+            const auto& name = entry.first;
+            const auto& function = entry.second;
             if (!validateTyped(function.params, "numeric function '" + name + "'")) { return false; }
         }
         for (const auto& [name, function] : object_functions_) {
@@ -2025,7 +2027,9 @@ private:
                 return false;
             }
         }
-        for (const auto& [name, function] : numeric_functions_) {
+        for (const auto& entry : numeric_functions_) {
+            const auto& name = entry.first;
+            const auto& function = entry.second;
             Environment environment;
             bool ok = true;
             enumerate(function.params, 0, environment, [&](Environment& bound) {

@@ -77,6 +77,11 @@ int main() {
     // alone and reporting success on a problem it never fully read.
     assert(e->acceptsDataFiles());
 
+    // The language declaration ends at its newline. A stray statement on the
+    // next line must not be swallowed while searching for a known keyword.
+    assert(run("language ESSENCE' 1.0\nfind x : int(1..2)\nsuch that x = 1").ok());
+    assert(!run("language ESSENCE' 1.0\nnot_a_statement\nfind x : int(1..2)").ok());
+
     // ---- Obligation 1: a sparse domain is a set. ---------------------------
     {
         const Translation t = runFile("languages/essence/instances/ok/sparse.eprime");

@@ -31,7 +31,7 @@ def example(aggregate_first, total_first, reverse):
     return [w,v,total], clauses, (total,x,y), value
 
 
-@pytest.mark.parametrize('aggregate_first,total_first,reverse', itertools.product([False,True],repeat=3))
+@pytest.mark.parametrize('aggregate_first,total_first,reverse', list(itertools.product([False,True],repeat=3)))
 def test_aggregate_and_scalar_equation_order_has_no_residual_witness(aggregate_first,total_first,reverse):
     variables,clauses,(total,x,y),value = example(aggregate_first,total_first,reverse)
     original = z3.Exists(variables,z3.And(*clauses,total>=0,y>=total))

@@ -255,8 +255,9 @@ public:
 
         while (tok_.kind != Token::END) {
             if (is("language")) {
+                const auto declaration_line = tok_.line;
                 eat();
-                while (tok_.kind != Token::END && tok_.line == tok_.line
+                while (tok_.kind != Token::END && tok_.line == declaration_line
                        && !is("given") && !is("letting") && !is("find")
                        && !is("such") && !is("where") && !is("minimising")
                        && !is("maximising")) {

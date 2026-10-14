@@ -448,7 +448,7 @@ private:
         struct Frame {
             std::shared_ptr<Sort> sort;
             std::size_t constructor = 0;
-            std::vector<std::shared_ptr<DAGNode>> args;
+            std::vector<std::shared_ptr<DAGNode>> args{};
             bool entered = false;
             bool awaiting = false;
         };

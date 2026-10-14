@@ -2895,8 +2895,6 @@ private:
     }
 
     /**
-
-    /**
      * `while (c) invariant I; { body }` -- the INVARIANT strategy of
      * `boogie.md` §4.3, which is Boogie's own and the one the corpus is
      * annotated for.

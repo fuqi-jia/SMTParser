@@ -14,6 +14,16 @@ option(BUILD_PYTHON "Build the Python bindings module" OFF)
 option(SOMTPARSER_BUILD_LANGUAGES "Build the multi-language frontend library" ON)
 option(SOMTPARSER_BUILD_TOOLS "Build command line tools" OFF)
 
+# Apply to every project target (core, languages, tools, tests and bindings),
+# without exporting compiler policy to applications linking the library.
+if(SOMTPARSER_WARNINGS_AS_ERRORS)
+    if(MSVC)
+        add_compile_options(/WX)
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        add_compile_options(-Werror)
+    endif()
+endif()
+
 if(PROJECT_IS_TOP_LEVEL AND NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
     set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release RelWithDebInfo MinSizeRel)
@@ -51,9 +61,6 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
         -Wno-unused-but-set-variable
         -Wno-unused-value
         -Wno-unused-local-typedefs)
-    if(SOMTPARSER_WARNINGS_AS_ERRORS)
-        target_compile_options(somtparser PRIVATE -Werror)
-    endif()
 endif()
 
 if(SOMTPARSER_BUILD_LANGUAGES)

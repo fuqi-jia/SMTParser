@@ -549,7 +549,7 @@ std::shared_ptr<DAGNode> HirToParser::lowerExpr(const H::ExprPtr& e,
     struct Pending {
         const H::ExprPtr* expression;
         std::size_t next_argument = 0;
-        std::unique_ptr<QuantifierScope> quantifier;
+        std::unique_ptr<QuantifierScope> quantifier{};
     };
     std::vector<Pending> pending;
     pending.push_back({&e});
@@ -926,6 +926,9 @@ std::shared_ptr<DAGNode> HirToParser::lowerExprUncached(const H::ExprPtr& e,
                 return lowerCorrectedDivision(e->op, args[0], args[1]);
             default:         return nullptr;
             }
+        default:
+            // Other theories are dispatched by the handlers below.
+            break;
         }
 
         // ---- Bit-vectors ---------------------------------------------------

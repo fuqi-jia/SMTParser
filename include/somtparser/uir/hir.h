@@ -114,8 +114,8 @@ struct Sort {
     SortKind kind = SortKind::BOOL;
     // Only for ARRAY. shared_ptr because a Sort is a value passed by value and
     // an array sort is recursive.
-    std::shared_ptr<const Sort> index;
-    std::shared_ptr<const Sort> elem;
+    std::shared_ptr<const Sort> index{};
+    std::shared_ptr<const Sort> elem{};
     /** BITVEC. A width is part of the sort, not of each operation -- which is
      *  what both BTOR2 and SMT-LIB say, so putting it on operators instead
      *  would give every other sort a field that means nothing
@@ -129,7 +129,7 @@ struct Sort {
     /** UNINTERPRETED and DATATYPE. The sort's declared name. Two uninterpreted
      *  sorts are the same sort exactly when their names AND their arguments
      *  match -- see `args`. */
-    std::string name;
+    std::string name{};
     /** UNINTERPRETED, when the name is a sort CONSTRUCTOR applied to arguments.
      *
      *  `(declare-sort S 1)` does not declare a sort; it declares a function
@@ -140,7 +140,7 @@ struct Sort {
      *  Kept as a vector of shared_ptr for the reason `index` and `elem` are: a
      *  Sort is a value passed by value, and this makes it recursive --
      *  `(S (S Int))` is legal. */
-    std::vector<std::shared_ptr<const Sort>> args;
+    std::vector<std::shared_ptr<const Sort>> args{};
 
     // Non-semantic scratch for allocation-free final release. A queued sort
     // owns one temporary self-reference; its other owners can still read the
@@ -154,7 +154,7 @@ struct Sort {
         ReclamationLink(const ReclamationLink&) noexcept {}
         ReclamationLink& operator=(const ReclamationLink&) noexcept { return *this; }
     };
-    mutable ReclamationLink reclamation;
+    mutable ReclamationLink reclamation{};
 
     static Sort boolean() { return Sort{SortKind::BOOL, nullptr, nullptr}; }
     static Sort integer() { return Sort{SortKind::INT,  nullptr, nullptr}; }
@@ -687,7 +687,7 @@ using ExprPtr = std::shared_ptr<const Expr>;
 
 /** A variable introduced by a quantifier. */
 struct Binder {
-    std::string name;
+    std::string name{};
     Sort        sort;
 };
 
@@ -897,24 +897,24 @@ struct FunDecl {
      *  `body` is present, this list must match `params` in length and sort;
      *  BOUND_VAR occurrences in the body refer to these binders. Appended to
      *  preserve existing aggregate initializers. */
-    std::vector<Binder> binders;
+    std::vector<Binder> binders{};
     /** Null means uninterpreted declaration; otherwise this function's exact
      *  body. Cycles are rejected unless every member of the recursive call
      *  component has the same non-empty `recursive_group` label. Such a group
      *  denotes equations in SMT-LIB `define-funs-rec`; this API does not prove
      *  structural termination or uniqueness of a total function. */
-    ExprPtr           body;
+    ExprPtr           body{};
     /** A target-only helper: it is defined in the target signature but is not
      *  an observable/source symbol in translation contracts or projections. */
     bool              auxiliary = false;
     /** Explicit opt-in label for one mutually recursive equation group.
      *  Empty preserves the default acyclic-definition contract. */
-    std::string       recursive_group;
+    std::string       recursive_group{};
 };
 
 /** One field of a constructor: SMT-LIB's selector. */
 struct DtSelector {
-    std::string name;
+    std::string name{};
     Sort        sort;
 };
 
@@ -952,13 +952,13 @@ struct DatatypeDecl {
  *  undeclared/inferred sort for legacy frontends, while this record preserves
  *  an explicit declaration even when no term mentions it. */
 struct UninterpretedSortDecl {
-    std::string name;
+    std::string name{};
     std::size_t arity = 0;
     SourceLoc   loc;
 };
 
 struct VarDecl {
-    std::string name;
+    std::string name{};
     Sort        sort;
     ExprPtr     lower_bound;   // optional
     ExprPtr     upper_bound;   // optional
@@ -1022,7 +1022,7 @@ const char* objectiveCombinationName(ObjectiveCombination c);
 struct Objective {
     ObjKind     kind = ObjKind::MINIMIZE;
     ExprPtr     term;
-    std::string name;
+    std::string name{};
     SourceLoc   loc;
 };
 
