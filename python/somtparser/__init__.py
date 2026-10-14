@@ -51,6 +51,7 @@ from ._somtparser import (
     Bound,
     CarrierEmptiness,
     CarrierSemantics,
+    ConvertResult,
     DecisionKind,
     Diagnostic,
     DivisionSemantics,
@@ -81,6 +82,36 @@ from ._somtparser import (
     source_semantics,
 )
 from ._somtparser import translate as _translate_raw
+from ._somtparser import convert as _convert_raw
+
+
+def convert(path="", *, source="", language="", profile=None, dialect=None,
+            data=(), options=None, report="", module=False, stdin=None,
+            output=None, diagnostics=None):
+    """Convert a file or inline model to SMT/OMT and return a ConvertResult.
+
+    The result contains exit_code (0 success, 1 translation failure, 2 invalid
+    settings, 3 I/O failure), smt2 and formatted diagnostics. No process is
+    spawned and conversion failures do not raise SystemExit.
+
+    Pass caller-owned text streams as output/diagnostics to stream rather than
+    capture that channel; its corresponding result string will then be empty.
+    Streams are flushed, never closed. For byte-stable file output, open with
+    encoding="utf-8", newline="". path="-" reads stdin (default sys.stdin) and
+    requires language. source supplies an inline model without reading stdin.
+
+    dialect accepts an OmtDialect or "gomt", "smtlib-omt-2025", "z3",
+    "optimathsat", "none". Unset profile/dialect use "default"/"gomt".
+    module=True exports a query-free module; explicitly selecting profile or
+    dialect in that mode is an invalid setting. report writes the translation
+    report, or the exported module's interface, as JSON with a final newline.
+    """
+    return _convert_raw(
+        path=os.fspath(path), source=source, language=language, profile=profile,
+        dialect=dialect, data=[os.fspath(p) for p in data],
+        options=dict(options or {}), report=os.fspath(report), module=module,
+        stdin=stdin, output=output, diagnostics=diagnostics,
+    )
 
 
 class TranslationError(RuntimeError):
@@ -256,6 +287,7 @@ __all__ = [
     "CarrierSemantics",
     "CmdType",
     "ConstructionLimits",
+    "ConvertResult",
     "CandidateSizeLimits",
     "Command",
     "DecisionKind",
@@ -298,6 +330,7 @@ __all__ = [
     "UndefinedSemantics",
     "backend_path",
     "coverage",
+    "convert",
     "languages",
     "parse",
     "parse_file",

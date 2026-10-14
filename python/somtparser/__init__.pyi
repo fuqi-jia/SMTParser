@@ -2,7 +2,8 @@
 
 from enum import Enum
 from fractions import Fraction
-from typing import Iterator, List, Mapping, Optional, Sequence, Tuple, Union, overload
+from os import PathLike
+from typing import Iterator, List, Mapping, Optional, Sequence, TextIO, Tuple, Union, overload
 
 __version__: str
 
@@ -962,6 +963,23 @@ class Translation:
     def to_smt2(self, dialect: OmtDialect = ...) -> str: ...
     def _native_smt2(self) -> str: ...
     def write_smt2(self, path: str, dialect: OmtDialect = ...) -> None: ...
+
+class ConvertResult:
+    @property
+    def exit_code(self) -> int: ...
+    @property
+    def smt2(self) -> str: ...
+    @property
+    def diagnostics(self) -> str: ...
+
+def convert(path: Union[str, PathLike[str]] = ..., *, source: str = ...,
+            language: str = ..., profile: Optional[str] = ...,
+            dialect: Optional[Union[str, OmtDialect]] = ...,
+            data: Sequence[Union[str, PathLike[str]]] = ...,
+            options: Optional[Mapping[str, str]] = ...,
+            report: Union[str, PathLike[str]] = ..., module: bool = ...,
+            stdin: Optional[TextIO] = ..., output: Optional[TextIO] = ...,
+            diagnostics: Optional[TextIO] = ...) -> ConvertResult: ...
 
 class Result:
     status: str

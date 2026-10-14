@@ -206,10 +206,13 @@ invariant support follows the earlier SyGuS-COMP'15 extension described in the
 
 ## Usage And Validation
 
-```bash
-./build/tools/somt-convert --from sygus --profile bmc \
-  --opt grammar_depth=2 languages/sygus/instances/ok/max2.sl
-./build/test/test_sygus
+```python
+import somtparser as sp
+
+result = sp.convert("languages/sygus/instances/ok/max2.sl",
+                    language="sygus", profile="bmc",
+                    options={"grammar_depth": "2"})
+assert result.exit_code == 0, result.diagnostics
 ```
 
 Tests pin universal closure, depth-one incompleteness, `(Variable Sort)`, target

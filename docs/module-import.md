@@ -74,9 +74,15 @@ assert module.ok, module.diagnostics
 smt = module.to_smt2()
 ```
 
-```sh
-somt-convert --module --report interface.json system.moxi > system.smt2
-somt-convert --module external.fzn > external.smt2
+```python
+with open("system.smt2", "w", encoding="utf-8", newline="") as output:
+    result = sp.convert("system.moxi", module=True,
+                        report="interface.json", output=output)
+assert result.exit_code == 0, result.diagnostics
+
+result = sp.convert("external.fzn", module=True)
+assert result.exit_code == 0, result.diagnostics
+smt = result.smt2
 ```
 
 C++ callers use `Lang::exportModule(*imported.module)`. `ModuleExport` contains

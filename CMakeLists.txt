@@ -129,6 +129,7 @@ if(BUILD_PYTHON)
     # NO_EXTRAS disables pybind11's automatic LTO for this wrapper module only.
     pybind11_add_module(_somtparser NO_EXTRAS
         python/bindings.cpp
+        python/convert_bindings.cpp
         python/hir_bindings.cpp
         python/planning_numeric_bindings.cpp
         python/planning_trajectory_bindings.cpp

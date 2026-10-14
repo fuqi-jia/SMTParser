@@ -25,6 +25,7 @@
 #include "planning_objects_bindings.h"
 #include "planning_trajectory_bindings.h"
 #include "module_bindings.h"
+#include "convert_bindings.h"
 
 #include "somtparser/languages/register_all.h"
 #include "somtparser/translation/translate.h"
@@ -1904,5 +1905,6 @@ PYBIND11_MODULE(_somtparser, m) {
     SomtPythonPlanningContinuous::bind(m);
     SomtPythonPlanningObjects::bind(m);
     SomtPythonModule::bind(m);
+    SomtPythonConvert::bind(m);
 
 }

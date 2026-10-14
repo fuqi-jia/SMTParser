@@ -241,7 +241,7 @@ Two mitigations, both cheap and neither affecting fidelity:
 
 ### 4.5 Compact clause storage
 
-Use `options={"packed": "1"}` in Python or `--opt packed=1` with `somt-convert`
+Use `options={"packed": "1"}` with `somtparser.convert` or `somtparser.translate`
 to retain signed literals, clause offsets and one source line per clause in
 `PackedBoolClauseBatch`. A `BoolVarRange` retains the complete header vocabulary,
 including unused variables. All clauses remain hard; an empty clause emits

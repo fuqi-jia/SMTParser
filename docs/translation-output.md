@@ -31,8 +31,9 @@ for dialect, path in [(sp.OmtDialect.Z3, "z3.smt2"),
     parser.dump_smt2(path, dialect=dialect)
 ```
 
-`somt-convert --dialect z3|optimathsat|gomt FILE` selects the same
-dialects for language translation. `Parser.dump_smt2()` defaults to Z3;
+`somtparser.convert(path, dialect="z3")` selects the same dialects for
+language translation; see [the conversion API](convert.md).
+`Parser.dump_smt2()` defaults to Z3;
 `Translation.to_smt2()` retains the dialect selected at translation time.
 
 Z3 uses `minimize`, `maximize`, `assert-soft`, and `check-sat`. OptiMathSAT

@@ -258,10 +258,14 @@ cmake --build build --target test_pddl test_semantic_core
 
 Example:
 
-```sh
-somt-convert languages/pddl/instances/ok/fond-retry.pddl \
-  --data languages/pddl/instances/ok/fond-retry.problem.pddl \
-  --profile bmc --opt fond_policy=strong-cyclic --opt policy_size=2
+```python
+import somtparser as sp
+
+result = sp.convert("languages/pddl/instances/ok/fond-retry.pddl",
+                    data=["languages/pddl/instances/ok/fond-retry.problem.pddl"],
+                    profile="bmc",
+                    options={"fond_policy": "strong-cyclic", "policy_size": "2"})
+assert result.exit_code == 0, result.diagnostics
 ```
 
 `fond_policy=strong` requires reaching a goal under adversarial outcomes.

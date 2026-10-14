@@ -171,7 +171,7 @@ You can also use the provided test script from the project root:
 | `BUILD_SHARED_LIBS` | Build a shared rather than static library | OFF |
 | `SOMTPARSER_BUILD_TESTS` | Build and register test executables with CTest | OFF |
 | `SOMTPARSER_BUILD_LANGUAGES` | Build the language frontends and translation pipeline | ON |
-| `SOMTPARSER_BUILD_TOOLS` | Build and install the `somt-convert` command | OFF |
+| `SOMTPARSER_BUILD_TOOLS` | Build optional PDDL and semantic-check helpers | OFF |
 | `BUILD_PYTHON` | Build the Python extension; requires the language frontends | OFF |
 | `SOMTPARSER_WARNINGS_AS_ERRORS` | Treat warnings in SOMTParser sources as errors | OFF |
 | `SOMTPARSER_ENABLE_TIMING` | Enable the timing profiler | OFF |
@@ -217,6 +217,26 @@ parsing, expression-building, transformation, model-evaluation and OMT API.
 ```bash
 pip install somtparser
 ```
+
+Convert a model through the library API:
+
+```python
+import somtparser as sp
+
+result = sp.convert("model.mzn", language="minizinc", dialect="z3")
+if result.exit_code == 0:
+    smt2 = result.smt2
+else:
+    print(result.diagnostics)
+```
+
+`convert` also accepts companion data files, frontend options, report paths,
+module exports and caller-owned output streams. It is available in the Python
+package and in C++ through `somtparser/translation/convert.h`, linked with
+`SOMTParser::languages`. There is no `somt-convert` executable or pip command.
+See [conversion and experiment migration](docs/convert.md) for examples and
+the status-code contract. `translate` continues to return the richer
+`Translation` object for inspecting the model and its structured report.
 
 Prebuilt wheels are published on [PyPI](https://pypi.org/project/somtparser/) for
 CPython 3.9–3.13 on Linux x86_64 (manylinux), macOS (Intel needs macOS 15+,

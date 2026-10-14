@@ -114,9 +114,12 @@ are given in Rozier et al., Sections 3.2–3.3 (reference 1).
 One `ConstraintModel` represents one question. Multiple `:query` attributes can be handled
 with `query=<name>`; multiple check commands additionally require `check_index=<n>`:
 
-```bash
-somt-convert --from moxi --profile bmc --opt bmc_depth=20 \
-  --opt check_index=1 --opt query=q2 model.moxi
+```python
+import somtparser as sp
+
+result = sp.convert("model.moxi", language="moxi", profile="bmc",
+                    options={"bmc_depth": "20", "check_index": "1", "query": "q2"})
+assert result.exit_code == 0, result.diagnostics
 ```
 
 The translator validates all condition/query references before selecting one. It never
@@ -146,9 +149,10 @@ conflicts with strict parsing. The default still rejects the flattened spelling.
 The normalization appears in query reports or the module's `source_rewrites`
 interface entries, including original/normalized declaration and source location.
 
-```bash
-somt-convert --module --opt flat_datatype_constructors=true \
-  languages/moxi/instances/upstream/QF_LRA_LossyIntChannelX.moxi
+```python
+result = sp.convert("languages/moxi/instances/upstream/QF_LRA_LossyIntChannelX.moxi",
+                    module=True, options={"flat_datatype_constructors": "true"})
+assert result.exit_code == 0, result.diagnostics
 ```
 
 This is an explicit dialect for that unchanged upstream source, not a claim that

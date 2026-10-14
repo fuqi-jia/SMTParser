@@ -10,11 +10,9 @@
 //     $ somt-convert bad.mzn 2>/dev/null
 //     error: Kind mismatch of command "Type mismatch in add" in line 0.
 //
-// tools/test/cli_contract_test.cmake checks the CLI end of this, but its only
-// failing fixture raises a diagnostic from the frontend, which never went
-// through Parser::err_* at all -- so the polluting path was the one path that
-// check could not reach. This file checks the mechanism itself instead of an
-// input that happens to exercise it.
+// test/python/test_file_conversion_api.py checks conversion outcomes, including
+// frontend rejection. This file also checks Parser::err_* directly, so that
+// frontend-only fixtures cannot leave the underlying parser path untested.
 
 #include "somtparser/frontend/parser.h"
 
