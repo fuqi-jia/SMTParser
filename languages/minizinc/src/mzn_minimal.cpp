@@ -8757,11 +8757,12 @@ private:
                 return true;
             }
             if (e->op == H::Op::MOD_TRUNC) {
-                const auto magnitude = [] (long long value) -> __int128 {
-                    return value < 0 ? -static_cast<__int128>(value) : value;
+                const auto magnitude = [] (long long value) -> unsigned long long {
+                    const auto bits = static_cast<unsigned long long>(value);
+                    return value < 0 ? 0ULL - bits : bits;
                 };
                 const auto radius = std::max(magnitude(divisor.lo), magnitude(divisor.hi)) - 1;
-                if (radius < 0 || radius > std::numeric_limits<long long>::max()) { return false; }
+                if (radius > static_cast<unsigned long long>(std::numeric_limits<long long>::max())) { return false; }
                 out = {-static_cast<long long>(radius), static_cast<long long>(radius)};
                 return true;
             }
@@ -8778,10 +8779,8 @@ private:
             for (long long a : {numerator.lo, numerator.hi}) {
                 for (long long b : divisors) {
                     if (b == 0) { continue; }
-                    const __int128 quotient = static_cast<__int128>(a) / b;
-                    if (quotient < std::numeric_limits<long long>::min()
-                        || quotient > std::numeric_limits<long long>::max()) { return false; }
-                    const auto value = static_cast<long long>(quotient);
+                    if (a == std::numeric_limits<long long>::min() && b == -1) { return false; }
+                    const auto value = a / b;
                     if (first) { out = {value, value}; first = false; }
                     else { out.lo = std::min(out.lo, value); out.hi = std::max(out.hi, value); }
                 }

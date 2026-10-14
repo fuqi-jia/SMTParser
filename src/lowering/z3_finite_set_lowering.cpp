@@ -1,4 +1,5 @@
 #include "somtparser/lowering/z3_finite_set_lowering.h"
+#include "somtparser/core/checked_integer.h"
 #include <algorithm>
 #include <cctype>
 #include <cstdint>
@@ -251,10 +252,6 @@ void findIntBounds(const std::vector<Token>& t,IntBoundMap& bounds) {
         p=q;
     }
 }
-bool checkedIntervalValue(__int128 value,std::int64_t& out) {
-    if(value<std::numeric_limits<std::int64_t>::min() || value>std::numeric_limits<std::int64_t>::max()) return false;
-    out=static_cast<std::int64_t>(value); return true;
-}
 bool integerInterval(const std::vector<Token>& t,Range term,const IntBoundMap& known,IntInterval& out) {
     const auto found=known.find(proofKey(t,term));
     if(found!=known.end() && found->second.has_lo && found->second.has_hi && found->second.lo<=found->second.hi) {
@@ -272,7 +269,7 @@ bool integerInterval(const std::vector<Token>& t,Range term,const IntBoundMap& k
     if(subtraction && args.size()==1) {
         IntInterval a; if(!integerInterval(t,args[0],known,a)) return false;
         std::int64_t lo=0,hi=0;
-        if(!checkedIntervalValue(-static_cast<__int128>(a.hi),lo) || !checkedIntervalValue(-static_cast<__int128>(a.lo),hi)) return false;
+        if(detail::subOverflow(std::int64_t{0},a.hi,&lo) || detail::subOverflow(std::int64_t{0},a.lo,&hi)) return false;
         out={lo,hi,true,true}; return true;
     }
     if(!integerInterval(t,args[0],known,acc)) return false;
@@ -280,16 +277,17 @@ bool integerInterval(const std::vector<Token>& t,Range term,const IntBoundMap& k
         IntInterval b; if(!integerInterval(t,args[i],known,b)) return false;
         std::int64_t lo=0,hi=0;
         if(is(t,term.first+1,"+")) {
-            if(!checkedIntervalValue(static_cast<__int128>(acc.lo)+b.lo,lo) ||
-               !checkedIntervalValue(static_cast<__int128>(acc.hi)+b.hi,hi)) return false;
+            if(detail::addOverflow(acc.lo,b.lo,&lo) ||
+               detail::addOverflow(acc.hi,b.hi,&hi)) return false;
         } else if(subtraction) {
-            if(!checkedIntervalValue(static_cast<__int128>(acc.lo)-b.hi,lo) ||
-               !checkedIntervalValue(static_cast<__int128>(acc.hi)-b.lo,hi)) return false;
+            if(detail::subOverflow(acc.lo,b.hi,&lo) ||
+               detail::subOverflow(acc.hi,b.lo,&hi)) return false;
         } else {
-            const __int128 products[]={static_cast<__int128>(acc.lo)*b.lo,static_cast<__int128>(acc.lo)*b.hi,
-                                       static_cast<__int128>(acc.hi)*b.lo,static_cast<__int128>(acc.hi)*b.hi};
+            std::int64_t products[4];
+            if(detail::mulOverflow(acc.lo,b.lo,&products[0]) || detail::mulOverflow(acc.lo,b.hi,&products[1]) ||
+               detail::mulOverflow(acc.hi,b.lo,&products[2]) || detail::mulOverflow(acc.hi,b.hi,&products[3])) return false;
             const auto limits=std::minmax_element(std::begin(products),std::end(products));
-            if(!checkedIntervalValue(*limits.first,lo) || !checkedIntervalValue(*limits.second,hi)) return false;
+            lo=*limits.first; hi=*limits.second;
         }
         acc={lo,hi,true,true};
     }
@@ -394,8 +392,10 @@ bool directArrayOfSetIntSort(const std::vector<Token>& t,Range sort) {
 }
 bool indexIntervalCovered(const std::map<std::int64_t,Bounds>& cells,std::int64_t lo,std::int64_t hi,Bounds& carrier) {
     if(lo>hi) return false;
-    const __int128 width=static_cast<__int128>(hi)-lo+1;
-    if(width<=0 || width>static_cast<__int128>(cells.size())) return false;
+    // Unsigned subtraction gives the exact distance for ordered signed endpoints.
+    // Compare before adding one, including the full 2^64-element interval.
+    const std::uint64_t distance=static_cast<std::uint64_t>(hi)-static_cast<std::uint64_t>(lo);
+    if(distance>=cells.size()) return false;
     auto cell=cells.lower_bound(lo);
     std::int64_t expected=lo;
     bool first=true;
@@ -409,7 +409,7 @@ bool indexIntervalCovered(const std::map<std::int64_t,Bounds>& cells,std::int64_
         if(expected==hi) break;
         ++expected;
     }
-    if(first || static_cast<__int128>(count)!=width) return false;
+    if(first || count-1!=distance) return false;
     carrier={carrier_lo,carrier_hi}; return true;
 }
 bool containsSetSort(const std::vector<Token>& t,Range sort,const std::unordered_set<std::string>& aliases) {
@@ -750,7 +750,7 @@ struct Rewriter {
     }
     static std::string intTerm(std::int64_t value) {
         if(value>=0) return std::to_string(value);
-        const __int128 magnitude=-static_cast<__int128>(value);
+        const std::uint64_t magnitude=std::uint64_t{0}-static_cast<std::uint64_t>(value);
         return "(- "+std::to_string(static_cast<unsigned long long>(magnitude))+")";
     }
     static bool intLiteral(std::string_view text,std::int64_t& value) {
@@ -791,11 +791,12 @@ struct Rewriter {
         if(!operandUsesShadowedName(r)) {
             const auto proof=bounds.find(key);
             if(proof!=bounds.end()) {
-                const __int128 width=static_cast<__int128>(proof->second.hi)-proof->second.lo+1;
-                if(width>0) {
-                    if(width>static_cast<__int128>(values.max_size()-values.size()))
+                if(proof->second.lo<=proof->second.hi) {
+                    const std::uint64_t distance=static_cast<std::uint64_t>(proof->second.hi)
+                        -static_cast<std::uint64_t>(proof->second.lo);
+                    if(distance>=values.max_size()-values.size())
                         throw std::length_error("Z3 set.card exact interval support exceeds the host vector representation");
-                    const auto count=static_cast<std::size_t>(width);
+                    const auto count=static_cast<std::size_t>(distance)+1;
                     values.reserve(values.size()+count);
                     for(std::int64_t n=proof->second.lo;;++n) { values.push_back(intTerm(n)); if(n==proof->second.hi) break; }
                 }

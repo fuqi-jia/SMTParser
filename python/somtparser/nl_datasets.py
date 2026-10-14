@@ -4,6 +4,8 @@ NL4Opt is interpreted as nonnegative continuous LP. This adapter preserves the
 structured declarations plus separately recorded, content-bound corrections.
 Unknown numbers, operators and aliases are errors, never silently zero-filled.
 """
+
+from __future__ import annotations
 from dataclasses import dataclass
 from fractions import Fraction
 from functools import lru_cache

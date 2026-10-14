@@ -5,6 +5,8 @@ different binding, does no work, and does not mutate. A formula bound to two
 backends is two objects sharing one translation.
 """
 
+from __future__ import annotations
+
 import contextlib
 import threading
 from dataclasses import dataclass, field

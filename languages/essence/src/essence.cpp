@@ -34,6 +34,7 @@
 
 #include "somtparser/languages/essence.h"
 #include "somtparser/uir/typecheck.h"
+#include "somtparser/core/checked_integer.h"
 
 #include <algorithm>
 #include <cctype>
@@ -433,8 +434,8 @@ private:
             long long rhs = 0;
             long long result = 0;
             if (!constProduct(rhs, d)) { return false; }
-            const bool overflow = add ? __builtin_add_overflow(lhs, rhs, &result)
-                                      : __builtin_sub_overflow(lhs, rhs, &result);
+            const bool overflow = add ? SOMTParser::detail::addOverflow(lhs, rhs, &result)
+                                      : SOMTParser::detail::subOverflow(lhs, rhs, &result);
             if (overflow) {
                 d.error(ErrorCode::E_TYPE,
                         "constant expression overflows the Essence integer range", loc());
@@ -457,7 +458,7 @@ private:
             long long rhs = 0, result = 0;
             if (!constUnary(rhs, d)) { return false; }
             if (mul) {
-                if (__builtin_mul_overflow(lhs, rhs, &result)) {
+                if (SOMTParser::detail::mulOverflow(lhs, rhs, &result)) {
                     d.error(ErrorCode::E_TYPE,
                             "constant expression overflows the Essence integer range", loc());
                     return false;
@@ -482,7 +483,7 @@ private:
             eat();
             long long value = 0;
             if (!constUnary(value, d)) { return false; }
-            if (__builtin_sub_overflow(0LL, value, &out)) {
+            if (SOMTParser::detail::subOverflow(0LL, value, &out)) {
                 d.error(ErrorCode::E_TYPE,
                         "constant expression overflows the Essence integer range", loc());
                 return false;
@@ -504,9 +505,9 @@ private:
         long long base = out, result = 1;
         while (exponent != 0) {
             bool overflow = false;
-            if (exponent & 1) { overflow = __builtin_mul_overflow(result, base, &result); }
+            if (exponent & 1) { overflow = SOMTParser::detail::mulOverflow(result, base, &result); }
             exponent >>= 1;
-            if (!overflow && exponent) { overflow = __builtin_mul_overflow(base, base, &base); }
+            if (!overflow && exponent) { overflow = SOMTParser::detail::mulOverflow(base, base, &base); }
             if (overflow) {
                 d.error(ErrorCode::E_TYPE,
                         "constant power overflows the Essence integer range", loc());
@@ -745,23 +746,23 @@ private:
         case H::Op::GE:      if (a.size() != 2) { return false; } out = a[0] >= a[1]; return true;
         case H::Op::ADD: {
             out = 0;
-            for (long long x : a) { if (__builtin_add_overflow(out, x, &out)) { return false; } }
+            for (long long x : a) { if (SOMTParser::detail::addOverflow(out, x, &out)) { return false; } }
             return true;
         }
         case H::Op::MUL: {
             out = 1;
-            for (long long x : a) { if (__builtin_mul_overflow(out, x, &out)) { return false; } }
+            for (long long x : a) { if (SOMTParser::detail::mulOverflow(out, x, &out)) { return false; } }
             return true;
         }
         case H::Op::ABS:
             if (a.size() != 1) { return false; }
-            if (a[0] < 0) { return !__builtin_sub_overflow(0LL, a[0], &out); }
+            if (a[0] < 0) { return !SOMTParser::detail::subOverflow(0LL, a[0], &out); }
             out = a[0]; return true;
         case H::Op::NEG:
-            return a.size() == 1 && !__builtin_sub_overflow(0LL, a[0], &out);
+            return a.size() == 1 && !SOMTParser::detail::subOverflow(0LL, a[0], &out);
         case H::Op::SUB:
-            if (a.size() == 1) { return !__builtin_sub_overflow(0LL, a[0], &out); }
-            return a.size() == 2 && !__builtin_sub_overflow(a[0], a[1], &out);
+            if (a.size() == 1) { return !SOMTParser::detail::subOverflow(0LL, a[0], &out); }
+            return a.size() == 2 && !SOMTParser::detail::subOverflow(a[0], a[1], &out);
         case H::Op::DIV_FLOOR:
         case H::Op::MOD_FLOOR: {
             if (a.size() != 2 || a[1] == 0
@@ -978,7 +979,7 @@ private:
                 eat(); eat();
                 long long high = 0, low = 0;
                 if (!constExpr(high, d) || !expectP(")", d)) { return false; }
-                if (__builtin_sub_overflow(high, extent - 1, &low)) {
+                if (SOMTParser::detail::subOverflow(high, extent - 1, &low)) {
                     d.error(ErrorCode::E_TYPE, "inferred matrix index overflows", loc());
                     return false;
                 }
@@ -994,7 +995,7 @@ private:
                     const std::string upper = tok_.text;
                     eat(); eat();
                     long long high = 0;
-                    if (__builtin_add_overflow(low, extent - 1, &high)) {
+                    if (SOMTParser::detail::addOverflow(low, extent - 1, &high)) {
                         d.error(ErrorCode::E_TYPE, "inferred matrix index overflows", loc());
                         return false;
                     }

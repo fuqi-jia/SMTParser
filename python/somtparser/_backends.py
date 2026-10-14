@@ -10,6 +10,8 @@ is therefore what makes a dialect mismatch unrepresentable -- before this a
 caller could render OptiMathSAT syntax and hand it to z3.
 """
 
+from __future__ import annotations
+
 import os
 import shutil
 import subprocess
