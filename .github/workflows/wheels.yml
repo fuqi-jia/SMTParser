@@ -14,6 +14,11 @@ name: Build Wheels
 
 on:
   workflow_dispatch:
+    inputs:
+      windows_only:
+        description: Recheck Windows wheels without rebuilding other platforms
+        type: boolean
+        default: false
   push:
     tags: [ "v*" ]
 
@@ -57,13 +62,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: ubuntu-latest
-          - os: macos-15-intel   # last free x86_64 macOS runner (until Aug 2027)
-            macos-target: "15.0"
-          - os: macos-14         # arm64
-            macos-target: "14.0"
-          - os: windows-latest
+        # Tagged releases always build all platforms. A manual Windows-only
+        # retry still checks every supported CPython version on that platform.
+        include: ${{ fromJSON(inputs.windows_only && '[{"os":"windows-latest"}]' || '[{"os":"ubuntu-latest"},{"os":"macos-15-intel","macos-target":"15.0"},{"os":"macos-14","macos-target":"14.0"},{"os":"windows-latest"}]') }}
 
     steps:
       - uses: actions/checkout@v7

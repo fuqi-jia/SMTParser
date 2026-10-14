@@ -140,6 +140,12 @@ if(BUILD_PYTHON)
         python/module_bindings.cpp
     )
     set_property(TARGET _somtparser PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
+    # pybind11 registration templates can exceed COFF's 65,279-section limit
+    # even with bindings split into translation units. Use extended objects on
+    # MSVC; this changes object storage, not warning policy or generated APIs.
+    if(MSVC)
+        target_compile_options(_somtparser PRIVATE /bigobj)
+    endif()
     # Numeric/frontend execution remains in the normally optimized core and
     # language libraries; aggressive optimization of registration glue is costly.
     target_compile_options(_somtparser PRIVATE
