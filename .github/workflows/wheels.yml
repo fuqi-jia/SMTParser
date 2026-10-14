@@ -82,6 +82,26 @@ jobs:
           C:\vcpkg\bootstrap-vcpkg.bat -disableMetrics
           vcpkg install gmp:x64-windows mpfr:x64-windows
 
+      - name: Select matching MSVC runtime (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $vs = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if (-not $vs) { throw "Visual C++ installation not found" }
+          $redist = Get-ChildItem "$vs\VC\Redist\MSVC" -Directory |
+            Where-Object { $_.Name -match '^\d+\.\d+\.\d+$' } |
+            Sort-Object { [version]$_.Name } -Descending | Select-Object -First 1
+          if (-not $redist) { throw "MSVC redistributable not found" }
+          $crt = Get-ChildItem "$($redist.FullName)\x64" -Directory -Filter 'Microsoft.VC*.CRT' |
+            Where-Object { Test-Path "$($_.FullName)\msvcp140.dll" } | Select-Object -First 1
+          if (-not $crt) { throw "x64 MSVC runtime not found" }
+          $runtime = "$env:RUNNER_TEMP\somtparser-msvc-runtime"
+          New-Item -ItemType Directory -Force $runtime | Out-Null
+          Copy-Item "$($crt.FullName)\*.dll" $runtime
+          Write-Host "Wheel runtime: $($crt.FullName)"
+          "SOMTPARSER_MSVC_RUNTIME=$runtime" >> $env:GITHUB_ENV
+
       - name: Build wheels
         uses: pypa/cibuildwheel@v4.2.0  # no floating major tag exists
         env:
@@ -105,19 +125,19 @@ jobs:
           CIBW_BEFORE_BUILD_WINDOWS: pip install delvewheel
           # gmp/mpfr DLLs live in the vcpkg tree, which is not on PATH
           CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: >-
-            delvewheel repair -w {dest_dir}
-            --add-path C:/vcpkg/installed/x64-windows/bin {wheel}
+            python -W error -m delvewheel repair -w {dest_dir}
+            --add-path "%SOMTPARSER_MSVC_RUNTIME%;C:/vcpkg/installed/x64-windows/bin" {wheel}
           CIBW_TEST_REQUIRES: "pytest jsonschema>=4.18 z3-solver==5.1.0.0"
           # Full regression runs on Python 3.9/3.12 in ci.yml. Each wheel
           # validates its installed extension and representative public APIs.
           CIBW_TEST_COMMAND: >-
-            cd "{project}" && python -W error -m pytest -q
-            test/python/test_parse.py test/python/test_node.py
-            test/python/test_model_eval.py test/python/test_hir_api.py
-            test/python/test_dump_omt_roundtrip.py test/python/test_fp_bv_rounding.py
-            test/python/test_nl_repair.py test/python/test_nl_datasets.py
-            test/python/test_essence_constant_precedence.py
-            test/python/test_z3_set_carrier_index_bounds.py
+            python -W error -m pytest -q
+            "{project}/test/python/test_parse.py" "{project}/test/python/test_node.py"
+            "{project}/test/python/test_model_eval.py" "{project}/test/python/test_hir_api.py"
+            "{project}/test/python/test_dump_omt_roundtrip.py" "{project}/test/python/test_fp_bv_rounding.py"
+            "{project}/test/python/test_nl_repair.py" "{project}/test/python/test_nl_datasets.py"
+            "{project}/test/python/test_essence_constant_precedence.py"
+            "{project}/test/python/test_z3_set_carrier_index_bounds.py"
 
       - uses: actions/upload-artifact@v7
         with:
