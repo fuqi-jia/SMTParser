@@ -351,6 +351,23 @@ private:
             bind(ch[1], sort(ch[3]), true);
         } else if (head(root, "define-fun") || head(root, "define-fun-rec")) {
             if (ch.size() != 5) fail("invalid function definition");
+            if (head(root, "define-fun-rec")) {
+                // HIR retains large acyclic macros as recursive definitions to
+                // prevent eager expansion. OMS only accepts ordinary macros.
+                // Conservatively reject any occurrence of the defined name;
+                // never erase a real recursive dependency or unroll it finitely.
+                std::vector<Id> pending{ch[4]};
+                const auto name = identity(ch[1]);
+                while (!pending.empty()) {
+                    const auto id = pending.back(); pending.pop_back();
+                    const auto& node = nodes_[id];
+                    if (!node.list && !node.literal && identity(id) == name)
+                        fail("recursive function '" + name + "' requires a supported recursive backend");
+                    for (const auto child : node.children) pending.push_back(child);
+                }
+                nodes_[ch[0]].replacement = "define-fun";
+                changed_ = true;
+            }
             definition(ch[1], ch[2], ch[3], ch[4]);
         } else if (head(root, "define-sort")) {
             if (ch.size() != 4 || !nodes_[ch[2]].children.empty())
@@ -420,6 +437,12 @@ bool needsOptiMathSatArrayLowering(const Parser& parser) {
         if (sort && sort->isArray() && (sort->getIndexSort()->isBool() || sort->getElemSort()->isBool()))
             return true;
     }
+    return false;
+}
+
+bool needsOptiMathSatDefinitionLowering(const Parser& parser) {
+    for (const auto& function : parser.getFunctions())
+        if (function && function->isFuncRec()) return true;
     return false;
 }
 

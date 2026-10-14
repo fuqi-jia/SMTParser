@@ -10,6 +10,8 @@ namespace Lower {
 /** Whether a parser owns an Array sort with a Boolean index or element.
  *  The sort arena is inspected without traversing (potentially huge) formulas. */
 bool needsOptiMathSatArrayLowering(const Parser& parser);
+/** Retained acyclic recursive definitions need ordinary macro syntax in OMS. */
+bool needsOptiMathSatDefinitionLowering(const Parser& parser);
 /** Native Set sorts require finite-set lowering before the Bool-array pass. */
 bool needsOptiMathSatSetLowering(const Parser& parser);
 

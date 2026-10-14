@@ -4030,7 +4030,7 @@ private:
 		const bool lower_sets = dialect == Lower::OmtDialect::OptiMathSAT
 		    && Lower::needsOptiMathSatSetLowering(*this);
 		const bool lower_arrays = dialect == Lower::OmtDialect::OptiMathSAT
-		    && (lower_sets || Lower::needsOptiMathSatArrayLowering(*this));
+		    && (lower_sets || (Lower::needsOptiMathSatArrayLowering(*this) || Lower::needsOptiMathSatDefinitionLowering(*this)));
 		std::ostringstream array_output;
 		std::ostream& out = lower_arrays ? static_cast<std::ostream&>(array_output) : destination;
 		// Dump the current state, followed by the last query and its response
@@ -4486,7 +4486,7 @@ private:
 		// Validate before truncating an existing destination.
 		(void)renderSMT2Objectives(dialect);
 		const bool lower_arrays = dialect == Lower::OmtDialect::OptiMathSAT
-		    && (Lower::needsOptiMathSatSetLowering(*this) || Lower::needsOptiMathSatArrayLowering(*this));
+		    && (Lower::needsOptiMathSatSetLowering(*this) || (Lower::needsOptiMathSatArrayLowering(*this) || Lower::needsOptiMathSatDefinitionLowering(*this)));
 		// Dialect lowering can reject an unsupported array construct. Complete
 		// that work before opening the user's destination with truncation.
 		std::string rendered;

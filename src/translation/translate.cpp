@@ -189,7 +189,7 @@ void Translation::writeSmt2(std::ostream& out, Lower::OmtDialect dialect) const 
     const auto& materialized = packed_smt_ ? packed_base_parser_ : parser_;
     if (dialect == Lower::OmtDialect::OptiMathSAT
         && (set_solver_requirements_.has_sets || (materialized
-            && Lower::needsOptiMathSatArrayLowering(*materialized)))) {
+            && (Lower::needsOptiMathSatArrayLowering(*materialized) || Lower::needsOptiMathSatDefinitionLowering(*materialized))))) {
         std::ostringstream raw;
         writeSmt2Body(raw, omt, dialect, objective_names, preamble);
         out << Lower::lowerBooleanArraysForOptiMathSat(set_solver_requirements_.has_sets
@@ -374,7 +374,7 @@ void Translation::writeSmt2(const std::string& path,
     const auto& materialized = packed_smt_ ? packed_base_parser_ : parser_;
     const bool oms_arrays = dialect == Lower::OmtDialect::OptiMathSAT
         && (set_solver_requirements_.has_sets || (materialized
-            && Lower::needsOptiMathSatArrayLowering(*materialized)));
+            && (Lower::needsOptiMathSatArrayLowering(*materialized) || Lower::needsOptiMathSatDefinitionLowering(*materialized))));
     if (oms_arrays) {
         std::ostringstream raw;
         writeSmt2Body(raw, omt, dialect, objective_names, preamble);

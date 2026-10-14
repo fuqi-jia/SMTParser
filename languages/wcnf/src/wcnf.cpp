@@ -235,15 +235,11 @@ BinaryCliquePlan makeBinaryCliquePlan(std::vector<Clause>& clauses, std::size_t 
 
 class WcnfParser {
 public:
-    WcnfParser(std::string src, std::string file, bool strict)
-        : src_(std::move(src)), file_(std::move(file)), strict_(strict) {}
+    WcnfParser(std::istream& source, std::string file, bool strict)
+        : source_(source), file_(std::move(file)), strict_(strict) {}
 
     H::ConstraintModelPtr parse(Uir::Diagnostics& diags) {
         if (!read(diags)) { return nullptr; }
-        // Parsing has retained every clause and source location. Release the
-        // raw input before allocating the HIR so large files do not coexist
-        // with a second complete representation of their clauses.
-        std::string().swap(src_);
         return build(diags);
     }
 
@@ -265,7 +261,7 @@ private:
     }
 
     bool read(Uir::Diagnostics& diags) {
-        std::istringstream in(src_);
+        auto& in = source_;
         std::string raw;
         int lineno = 0;
 
@@ -387,6 +383,10 @@ private:
                 return false;
             }
             clauses_.push_back(std::move(cl));
+        }
+        if (in.bad()) {
+            diags.error(ErrorCode::E_IO, "failed while reading WCNF input", at(lineno));
+            return false;
         }
         if (!old_format_ && !new_format_ && clauses_.empty()) {
             diags.error(ErrorCode::E_PARSE, "the file has no clauses", at(1));
@@ -602,7 +602,7 @@ private:
         return model;
     }
 
-    std::string src_;
+    std::istream& source_;
     std::string file_;
     bool        strict_ = false;
 
@@ -646,28 +646,30 @@ public:
             }
         }
         ParseOutcome out;
-        std::string src = unit.inline_source;
-        if (src.empty()) {
+        std::ifstream file;
+        std::istringstream inline_input;
+        std::istream* input = &inline_input;
+        if (!unit.inline_source.empty()) {
+            inline_input.str(unit.inline_source);
+        } else {
             std::error_code ec;
             if (std::filesystem::is_directory(unit.main_path, ec)) {
                 out.diagnostics.error(ErrorCode::E_IO,
                                       "'" + unit.main_path + "' is a directory");
                 return out;
             }
-            std::ifstream in(unit.main_path, std::ios::binary);
-            if (!in) {
+            file.open(unit.main_path, std::ios::binary);
+            if (!file) {
                 out.diagnostics.error(ErrorCode::E_IO,
                                       "cannot open '" + unit.main_path + "'");
                 return out;
             }
-            std::ostringstream ss;
-            ss << in.rdbuf();
-            src = ss.str();
+            input = &file;
         }
         const std::string name =
             unit.main_path.empty() ? unit.display_name : unit.main_path;
         try {
-            WcnfParser p(std::move(src), name, opts.strict);
+            WcnfParser p(*input, name, opts.strict);
             out.model = p.parse(out.diagnostics);
             if (out.model) {
                 out.semantics.add(Uir::Sem::directLanguageToRelationalContract(

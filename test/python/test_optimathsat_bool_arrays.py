@@ -102,3 +102,30 @@ def test_stream_and_string_agree_and_keep_responses(tmp_path):
     translated.write_smt2(str(destination), dialect=sp.OmtDialect.OptiMathSAT)
     assert destination.read_text() == translated.to_smt2(dialect=sp.OmtDialect.OptiMathSAT)
     assert "(get-objectives)" in destination.read_text()
+
+
+@pytest.mark.parametrize("route", ["parser", "hir"])
+def test_acyclic_retained_definition_uses_ordinary_oms_macro(route):
+    source = "(define-fun-rec f ((x Int)) Int (+ x 1))(assert (= (f 3) 4))"
+    if route == "hir":
+        # An ordinary source definition exceeds HIR's macro-expansion budget.
+        # Explicit source recursion takes a different, quantified encoding.
+        terms = " ".join(f"(ite (< x {i}) {i} (- {i}))" for i in range(600))
+        source = f"(define-fun f ((x Int)) Int (+ {terms}))(assert (= (f 0) 179700))"
+    result = export(source, route)
+    assert "define-fun-rec" not in result
+    solver = z3.Solver()
+    solver.from_string(result)
+    assert str(solver.check()) == "sat"
+    executable = os.environ.get("SOMTPARSER_OPTIMATHSAT")
+    if executable:
+        process = subprocess.run([executable], input=result, text=True,
+                                 capture_output=True, timeout=20)
+        assert process.returncode == 0, process.stderr
+        assert "sat" in process.stdout.splitlines()
+
+
+def test_true_recursion_is_not_silently_rewritten_as_acyclic():
+    source = "(define-fun-rec f ((x Int)) Int (ite (<= x 0) 0 (+ 1 (f (- x 1)))))"
+    with pytest.raises(RuntimeError, match="recursive"):
+        export(source, "parser")

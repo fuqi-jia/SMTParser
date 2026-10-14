@@ -60,3 +60,14 @@ def test_weights_remain_positive_decimal_integers(packed, token):
                           options={"packed": packed})
     assert not result.ok
     assert any(d.severity == sp.Severity.ERROR for d in result.diagnostics)
+
+
+def test_file_stream_matches_inline_input_and_preserves_parser(tmp_path):
+    source = "c test\r\np wcnf 2 3 9007199254740994\r\n9007199254740994 1 0\r\n9007199254740993 -2 0\r\n2 2 0"
+    path = tmp_path / "stream.wcnf"
+    path.write_bytes(source.encode())
+    inline = sp.translate(source=source, language="wcnf")
+    streamed = sp.translate(path=str(path), language="wcnf")
+    assert inline.ok and streamed.ok
+    assert streamed.has_parser
+    assert inline.to_smt2(sp.OmtDialect.Z3) == streamed.to_smt2(sp.OmtDialect.Z3)
