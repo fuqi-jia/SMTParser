@@ -15,15 +15,26 @@
 
 ## Key Features
 
-- **SMT-LIB2 support**: Compliant with the SMT-LIB2 specification; multiple logics and theories.
+- **SMT-LIB2 support**: Parsing and typed representations for multiple SMT-LIB2 logics and theories; [the reader contract](docs/languages/smtlib2.md) describes the translation interface.
 - **FloatingPoint dialect**: By default the parser accepts small **lenient** extensions (e.g. unary `fp.sqrt` canonicalized to `(fp.sqrt RNE …)` in the IR, and aliases like `fp.=`). For **stricter** surface syntax aligned with the official FloatingPoint theory, enable `strict_smtlib_fp` (`Parser::setStrictSmtlib(true)` or `GlobalOptions::setOption("strict_smtlib_fp", "true")`).
 - **Multi-theory**: Booleans, integer/real arithmetic, bitvectors, IEEE-754 floating point, strings and regular expressions, arrays.
 - **Typed DAG IR**: Structure sharing and canonicalization for a more compact representation and easier analysis/transformation.
 - **OMT support**: Parses intermediate syntax such as `assert-soft`, `maximize`/`minimize`, `define-objective`, `lex-optimize`/`pareto-optimize`/`box-optimize`, `maxsat`/`minsat`, managed by `ObjectiveManager`.
 - **Programmatic construction**: Build terms and formulas via API, sharing the same IR as parsed input.
+- **Natural-language modeling (Python)**: Construct HIR candidates with the live schema and constructor catalog, repair them using located feedback, and compile the selected snapshot to SMT-LIB. The [SOMTParser skill](skills/somtparser-nl-hir/SKILL.md) uses the public API directly; an external model service and MCP are optional. See [the API](docs/natural-language.md) and [dataset/model contracts](docs/nl-datasets-and-model.md).
 - **Formula conversion**: NNF, CNF, DNF; CNF supports theory-atom-to-Boolean abstraction and bidirectional mapping for CDCL(T)-style reasoning.
 - **Model interface**: Parse solver-produced model output and evaluate formulas/terms under full or partial models.
 - **Rewriting and traversal**: Extensible rewrite rules, kind-based dispatcher, visit-once traversal over the DAG.
+
+Optional language frontends translate constraint models through a shared,
+typed HIR. The [language documentation](docs/languages/smtlib2.md) describes
+accepted syntax, lowering behavior and semantic contracts. Natural-language
+modeling supports direct SMT-LIB, HIR and hybrid skill routes; model services
+are configured by the caller.
+
+Whole-problem SMT/OMT output supports Z3, OptiMathSAT and GOMT dialects. See
+[translation output](docs/translation-output.md), [Python modeling APIs](docs/natural-language.md)
+and [API migration notes](docs/api-migration.md).
 
 ## System Requirements
 
@@ -107,7 +118,8 @@ git clone https://github.com/fuqi-jia/SOMTParser.git
 cd SOMTParser
 
 # Configure and build out of tree
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+  -DSOMTPARSER_BUILD_TOOLS=ON
 cmake --build build --parallel
 
 # Install to a selected prefix
@@ -153,6 +165,9 @@ You can also use the provided test script from the project root:
 |--------|-------------|---------|
 | `BUILD_SHARED_LIBS` | Build a shared rather than static library | OFF |
 | `SOMTPARSER_BUILD_TESTS` | Build and register test executables with CTest | OFF |
+| `SOMTPARSER_BUILD_LANGUAGES` | Build the language frontends and translation pipeline | ON |
+| `SOMTPARSER_BUILD_TOOLS` | Build and install the `somt-convert` command | OFF |
+| `BUILD_PYTHON` | Build the Python extension; requires the language frontends | OFF |
 | `SOMTPARSER_WARNINGS_AS_ERRORS` | Treat warnings in SOMTParser sources as errors | OFF |
 | `SOMTPARSER_ENABLE_TIMING` | Enable the timing profiler | OFF |
 
@@ -846,4 +861,3 @@ For technical inquiries or support, please contact:
 **Fuqi Jia**  
 Email: jiafq@ios.ac.cn  
 Institute of Software, Chinese Academy of Sciences
-

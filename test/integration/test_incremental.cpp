@@ -58,7 +58,7 @@ static void test_reset_assertions() {
     std::cout << "--- test_reset_assertions ---" << std::endl;
     Parser parser;
     parser.parseStr("(declare-const x Int) (assert (> x 0)) (reset-assertions)");
-    VERIFY(parser.isDeclaredVariable("x"));
+    VERIFY(!parser.isDeclaredVariable("x"));
     VERIFY(parser.getAssertions().size() == 0);
     std::cout << "PASS" << std::endl;
 }

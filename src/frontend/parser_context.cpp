@@ -71,6 +71,7 @@ void ParserContext::popScope(size_t n) {
         assumptions.resize(frame.assumptions_size);
         soft_assertions.resize(frame.soft_assertions_size);
         soft_weights.resize(frame.soft_weights_size);
+        soft_objective_positions.resize(frame.soft_assertions_size);
         split_lemmas.resize(frame.split_lemmas_size);
 
         // Remove added symbols from SymbolManager
@@ -137,26 +138,27 @@ void ParserContext::resetAssertions() {
     assumptions.clear();
     soft_assertions.clear();
     soft_weights.clear();
+    soft_objective_positions.clear();
     assertion_groups.clear();
     soft_assertion_groups.clear();
     named_assertions.clear();
     assertion_names_.clear();
     split_lemmas.clear();
-    // Note: scope_stack_ is NOT cleared; declarations and options are kept.
+    scope_stack_.clear();
+    if (auto om = getObjectiveManager()) om->clear();
+
+    // reset-assertions removes every assertion level, including declarations
+    // at the base level. Global declarations survive, as do options and logic.
+    auto options = getOptions();
+    if (!options || !options->getGlobalDeclarations()) {
+        if (auto sm = getSymbolManager()) sm->clear();
+    }
 }
 
 void ParserContext::resetAll() {
     resetAssertions();
-    scope_stack_.clear();
-    if (auto sm = getSymbolManager()) {
-        // SymbolManager has no clear() method; we rely on the shared_ptr being reset
-        // by the Parser's init or by creating a new SymbolManager.
-        // For a full reset, we clear all maps manually if accessible.
-        // Since SymbolManager internals are private, the Parser should recreate managers.
-    }
-    if (auto om = getObjectiveManager()) {
-        om->clear();
-    }
+    if (auto sm = getSymbolManager()) sm->clear();
+    if (auto options = getOptions()) *options = GlobalOptions{};
 }
 
 // --- Named assertions ---
@@ -204,17 +206,20 @@ const std::string* ParserContext::getAssertionName(const std::shared_ptr<DAGNode
     return it == assertion_names_.end() ? nullptr : &it->second;
 }
 
-// --- Scope recording helpers (no-op if no active scope) ---
+// --- Scope recording helpers ---
 
 void ParserContext::registerVarInScope(const std::string& name) {
+    if (getOptions() && getOptions()->getGlobalDeclarations()) return;
     if (!scope_stack_.empty()) scope_stack_.back().added_vars.push_back(name);
 }
 
 void ParserContext::registerFunInScope(const std::string& name) {
+    if (getOptions() && getOptions()->getGlobalDeclarations()) return;
     if (!scope_stack_.empty()) scope_stack_.back().added_funs.push_back(name);
 }
 
 void ParserContext::registerSortInScope(const std::string& name) {
+    if (getOptions() && getOptions()->getGlobalDeclarations()) return;
     if (!scope_stack_.empty()) scope_stack_.back().added_sorts.push_back(name);
 }
 

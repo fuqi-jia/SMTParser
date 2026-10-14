@@ -46,6 +46,7 @@
 #include <cstdlib>
 #include <memory>
 #include <functional> // for std::hash
+#include <optional>
 
 #include <unordered_map>
 #include <unordered_set>
@@ -54,8 +55,8 @@
 namespace SOMTParser{
 
 /** A symbol as SMT-LIB can legally spell it: returned unchanged when it is a
- *  valid simple symbol, and wrapped in `|...|` when it is not. See the
- *  definition in dag.cpp for why the choice has to be made when printing. */
+ *  valid simple symbol, and `|...|` when it is not. See the definition in
+ *  dag.cpp for why the choice has to be made at PRINT time. */
 std::string smtSymbol(const std::string& name);
 
     // Forward declaration of DAGNode class
@@ -75,17 +76,26 @@ std::string smtSymbol(const std::string& name);
     };
 
     class DAGNode {
+        friend class NodeManager; // teardown inspects child links without copying them
     // <sort, kind, name> --- <sort, node_kind, name>
     private:
         std::shared_ptr<Sort>                   sort;
         NODE_KIND		                        kind;
+        // Pack cache flags beside the enum instead of adding separate
+        // alignment gaps after the 64-bit cache fields.
+        mutable bool                            hash_computed;
+        mutable bool                            print_hash_computed = false;
         std::string		                        name;
         std::shared_ptr<Value>                  value;
         std::vector<std::shared_ptr<DAGNode>>   children;
 
-        std::string                             children_hash;
+        // Keep the rolling child hash in binary form. The previous string
+        // stored only its decimal spelling so hashCode() could hash that
+        // spelling; reconstruct it on the first hashCode() call instead.
+        // optional preserves the old empty-string sentinel even if children
+        // are later mutated (function declarations are updated in place).
+        std::optional<size_t>                   children_hash = std::nullopt;
         mutable size_t                          cached_hash_code;
-        mutable bool                            hash_computed;
         mutable size_t                          _use_count;
         // Rolling hash of this node's printed form, and that form's length;
         // see orderKey(). The length is what lets a parent fold this subtree in
@@ -94,20 +104,17 @@ std::string smtSymbol(const std::string& name);
         // forgot would silently order operands by stale data.
         mutable uint64_t                        cached_print_hash = 0;
         mutable uint64_t                        cached_print_len = 0;
-        mutable bool                            print_hash_computed = false;
 
     public:
         DAGNode(std::shared_ptr<Sort> sort, NODE_KIND kind, std::string name, std::vector<std::shared_ptr<DAGNode>> children): sort(sort), kind(kind), name(name), value(nullptr), children(children){
             // value is not used for hash
-            if(children.empty()) {
-                children_hash = "";
-            } else {
+            if(!children.empty()) {
                 size_t combined_hash = 0;
                 for(size_t i = 0; i < children.size(); i++) {
                     size_t child_hash = children[i]->hashCode();
                     combined_hash ^= child_hash + 0x9e3779b9 + (combined_hash << 6) + (combined_hash >> 2);
                 }
-                children_hash = std::to_string(combined_hash);
+                children_hash = combined_hash;
             }
             cached_hash_code = 0;
             hash_computed = false;
@@ -151,7 +158,7 @@ std::string smtSymbol(const std::string& name);
             }
         }
         DAGNode(std::shared_ptr<Sort> sort, NODE_KIND kind, std::string name): sort(sort), kind(kind), name(name), value(nullptr) {
-            children_hash = "";
+            children_hash = std::nullopt;
             cached_hash_code = 0;
             hash_computed = false;
             _use_count = 0;
@@ -190,7 +197,7 @@ std::string smtSymbol(const std::string& name);
             }
         }
         DAGNode(std::shared_ptr<Sort> sort, NODE_KIND kind): sort(sort), kind(kind), name(""), value(nullptr) {
-            children_hash = "";
+            children_hash = std::nullopt;
             cached_hash_code = 0;
             hash_computed = false;
             _use_count = 0;
@@ -200,7 +207,7 @@ std::string smtSymbol(const std::string& name);
             }
         }
         DAGNode(std::shared_ptr<Sort> sort): sort(sort), kind(NODE_KIND::NT_UNKNOWN), name(""), value(nullptr) {
-            children_hash = "";
+            children_hash = std::nullopt;
             cached_hash_code = 0;
             hash_computed = false;
             _use_count = 0;
@@ -209,14 +216,14 @@ std::string smtSymbol(const std::string& name);
                 value = newValue(Number());
             }
         }
-        DAGNode(): sort(SortManager::NULL_SORT), kind(NODE_KIND::NT_UNKNOWN), name(""), value(nullptr), children_hash(""), cached_hash_code(0), hash_computed(false), _use_count(1) {
-            children_hash = "";
+        DAGNode(): sort(SortManager::NULL_SORT), kind(NODE_KIND::NT_UNKNOWN), hash_computed(false), name(""), value(nullptr), children_hash(std::nullopt), cached_hash_code(0), _use_count(1) {
+            children_hash = std::nullopt;
         }
-        DAGNode(const DAGNode& other): sort(other.sort), kind(other.kind), name(other.name), value(other.value), children(other.children), children_hash(other.children_hash), cached_hash_code(0), hash_computed(false), _use_count(1) {}
+        DAGNode(const DAGNode& other): sort(other.sort), kind(other.kind), hash_computed(false), name(other.name), value(other.value), children(other.children), children_hash(other.children_hash), cached_hash_code(0), _use_count(1) {}
 
         // other initialization
         DAGNode(NODE_KIND kind, std::string name): sort(SortManager::NULL_SORT), kind(kind), name(name), value(nullptr) {
-            children_hash = "";
+            children_hash = std::nullopt;
             cached_hash_code = 0;
             hash_computed = false;
             _use_count = 0;
@@ -230,7 +237,7 @@ std::string smtSymbol(const std::string& name);
             }
         }
         DAGNode(NODE_KIND kind): sort(SortManager::NULL_SORT), kind(kind), name(""), value(nullptr) {
-            children_hash = "";
+            children_hash = std::nullopt;
             cached_hash_code = 0;
             hash_computed = false;
             _use_count = 0;
@@ -240,35 +247,35 @@ std::string smtSymbol(const std::string& name);
             }
         }
         DAGNode(std::shared_ptr<Sort> sort, const Integer& v): sort(sort), kind(NODE_KIND::NT_CONST), name(""), value(newValue(v)) {
-            children_hash = "";
+            children_hash = std::nullopt;
             cached_hash_code = 0;
             hash_computed = false;
             _use_count = 0;
             name = v.toString();
         }
         DAGNode(std::shared_ptr<Sort> sort, const Real& v): sort(sort), kind(NODE_KIND::NT_CONST), name(""), value(newValue(v)) {
-            children_hash = "";
+            children_hash = std::nullopt;
             cached_hash_code = 0;
             hash_computed = false;
             _use_count = 0;
             name = v.toString();
         }
         DAGNode(std::shared_ptr<Sort> sort, const double& v): sort(sort), kind(NODE_KIND::NT_CONST), name(""), value(newValue(v)) {
-            children_hash = "";
+            children_hash = std::nullopt;
             cached_hash_code = 0;
             hash_computed = false;
             _use_count = 0;
             name = std::to_string(v);
         }
         DAGNode(std::shared_ptr<Sort> sort, const int& v): sort(sort), kind(NODE_KIND::NT_CONST), name(""), value(newValue(v)) {
-            children_hash = "";
+            children_hash = std::nullopt;
             cached_hash_code = 0;
             hash_computed = false;
             _use_count = 0;
             name = std::to_string(v);
         }
         DAGNode(std::shared_ptr<Sort> sort, const bool& v): sort(sort), kind(NODE_KIND::NT_CONST), name(""), value(newValue(v)) {
-            children_hash = "";
+            children_hash = std::nullopt;
             cached_hash_code = 0;
             hash_computed = false;
             _use_count = 0;
@@ -277,7 +284,7 @@ std::string smtSymbol(const std::string& name);
         
         // only constant
         DAGNode(const std::string& n) {
-            children_hash = "";
+            children_hash = std::nullopt;
             cached_hash_code = 0;
             hash_computed = false;
             _use_count = 0;
@@ -327,7 +334,7 @@ std::string smtSymbol(const std::string& name);
         void clear(){
             kind = NODE_KIND::NT_ERROR;
             children.clear();
-            children_hash = "";
+            children_hash = std::nullopt;
             cached_hash_code = 0;
             hash_computed = false;
             cached_print_hash = 0;
@@ -430,9 +437,22 @@ std::string smtSymbol(const std::string& name);
         bool isMatchApp()                   const { return (kind == NODE_KIND::NT_DT_MATCH); };
         bool isDtGroundValue()              const {
             if(kind != NODE_KIND::NT_DT_CONSTRUCTOR) return false;
-            for(size_t i = 0; i < getChildrenSize(); ++i){
-                auto c = getChild(i);
-                if(!c->isConst() && !c->isDtGroundValue()) return false;
+            struct Frame { const DAGNode* node; size_t next = 0; };
+            std::vector<Frame> pending{{this}};
+            std::unordered_set<const DAGNode*> active{this}, completed;
+            while(!pending.empty()) {
+                auto& frame = pending.back();
+                if(frame.next == frame.node->children.size()) {
+                    completed.insert(frame.node);
+                    active.erase(frame.node);
+                    pending.pop_back();
+                    continue;
+                }
+                const auto* child = frame.node->children[frame.next++].get();
+                if(!child) return false;
+                if(child->isConst() || completed.count(child)) continue;
+                if(!child->isConstructorApp() || !active.insert(child).second) return false;
+                pending.push_back({child});
             }
             return true;
         };
@@ -1008,7 +1028,7 @@ std::string smtSymbol(const std::string& name);
             size_t h2 = static_cast<size_t>(kind);
             size_t h3 = name.empty() ? 0 : std::hash<std::string>{}(name);
             size_t h4 = children.size();
-            size_t h5 = children_hash.empty() ? 0 : std::hash<std::string>{}(children_hash);
+            size_t h5 = children_hash ? std::hash<std::string>{}(std::to_string(*children_hash)) : 0;
             
             // use better hash combination algorithm (based on boost::hash_combine)
             size_t seed = 0;
@@ -1095,7 +1115,7 @@ std::string smtSymbol(const std::string& name);
             }
             
             // children_hash check (if both are calculated, this is the fastest deep comparison)
-            if (!children_hash.empty() && !other.children_hash.empty() && 
+            if (children_hash && other.children_hash &&
                 children_hash != other.children_hash) {
                 return false;
             }
@@ -1133,10 +1153,21 @@ std::string smtSymbol(const std::string& name);
         }
     };
 
+    // Stream one expression without allocating an intermediate full-script term.
+    // Throws if the destination stream fails, so callers never mistake a prefix
+    // for a complete SMT-LIB expression.
+    void dumpSMTLIB2(const std::shared_ptr<DAGNode>& node, std::ostream& out);
     std::string dumpSMTLIB2(const std::shared_ptr<DAGNode>& node);
+    // Preserve sharing with local lets in binder-free arithmetic/Boolean terms.
+    // Other terms retain the ordinary printer's lexical scopes and spelling.
+    void dumpSMTLIB2Shared(const std::shared_ptr<DAGNode>& node, std::ostream& out);
+    void dumpFuncDef(const std::shared_ptr<DAGNode>& node, std::ostream& out);
     std::string dumpFuncDef(const std::shared_ptr<DAGNode>& node);
+    void dumpFuncRec(const std::shared_ptr<DAGNode>& node, std::ostream& out);
     std::string dumpFuncRec(const std::shared_ptr<DAGNode>& node);
+    void dumpFuncsRec(const std::vector<std::shared_ptr<DAGNode>>& nodes, std::ostream& out);
     std::string dumpFuncsRec(const std::vector<std::shared_ptr<DAGNode>>& nodes);
+    void dumpFuncDec(const std::shared_ptr<DAGNode>& node, std::ostream& out);
     std::string dumpFuncDec(const std::shared_ptr<DAGNode>& node);
     
     // smart pointer
