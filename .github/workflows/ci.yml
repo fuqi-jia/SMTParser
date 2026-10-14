@@ -1,6 +1,7 @@
 name: CI Tests
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main, master, develop ]
     paths:
@@ -33,6 +34,13 @@ on:
       - 'setup.py'
       - 'requirements.txt'
       - '.github/workflows/**'
+
+permissions:
+  contents: read
+
+env:
+  CMAKE_BUILD_PARALLEL_LEVEL: 2
+  SOMTPARSER_BUILD_JOBS: 2
 
 jobs:
   test:
@@ -108,14 +116,13 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential cmake libgmp-dev libmpfr-dev
+        sudo apt-get install -y build-essential cmake libgmp-dev libmpfr-dev minizinc
 
     - name: Build and install the package
       run: |
         python -m pip install --upgrade pip
-        pip install .
+        python -m pip install ".[test,benchmark]"
 
     - name: Run the Python test suite
       run: |
-        pip install pytest
-        pytest test/python -q
+        python -m pytest test/python -q

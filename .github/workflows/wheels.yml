@@ -17,6 +17,9 @@ on:
   push:
     tags: [ "v*" ]
 
+env:
+  CMAKE_BUILD_PARALLEL_LEVEL: 2
+
 jobs:
   check_version:
     name: Tag matches pyproject version
@@ -101,8 +104,8 @@ jobs:
           CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: >-
             delvewheel repair -w {dest_dir}
             --add-path C:/vcpkg/installed/x64-windows/bin {wheel}
-          CIBW_TEST_REQUIRES: pytest
-          CIBW_TEST_COMMAND: pytest {project}/test/python -q
+          CIBW_TEST_REQUIRES: "pytest jsonschema>=4.18 z3-solver==5.1.0.0"
+          CIBW_TEST_COMMAND: cd "{project}" && python -m pytest test/python -q
 
       - uses: actions/upload-artifact@v7
         with:
