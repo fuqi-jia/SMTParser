@@ -141,7 +141,7 @@ def test_four_selectors_are_exactly_one_for_all_assignments():
             z3.Bool(name) == bool(mask & (1 << index))
             for index, name in enumerate(selector_names)
         ])
-        expected = z3.sat if mask.bit_count() == 1 else z3.unsat
+        expected = z3.sat if bin(mask).count("1") == 1 else z3.unsat
         assert solver.check() == expected, f'selector assignment {mask:04b}'
 
 

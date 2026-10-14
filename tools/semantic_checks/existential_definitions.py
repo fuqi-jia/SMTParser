@@ -9,6 +9,8 @@ from dataclasses import dataclass
 import z3
 from z3 import z3core
 
+from ._integer_compat import bit_count
+
 
 @dataclass(frozen=True)
 class DefinitionProjection:
@@ -86,7 +88,7 @@ class _WitnessDependencyIndex:
         if not sparse:
             return dense
         width = max(dense.bit_length(), max(sparse) + 1)
-        count_bound = dense.bit_count() + len(sparse)
+        count_bound = bit_count(dense) + len(sparse)
         # A high ordinal alone must never allocate a mostly empty bit mask.
         if count_bound >= 64 and width <= 128 * count_bound:
             return dense | cls._mask(sparse)
@@ -133,7 +135,7 @@ class _WitnessDependencyIndex:
         value = self.memo[root_key]
         if isinstance(value, frozenset):
             return {self.identities[i] for i in value if self.identities[i] in identities}
-        if len(identities) < value.bit_count():
+        if len(identities) < bit_count(value):
             return {key for key in identities if value & (1 << self.ordinals[key])}
         return {self.identities[i] for i in self._members(value)
                 if self.identities[i] in identities}

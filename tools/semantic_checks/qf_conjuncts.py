@@ -10,6 +10,8 @@ SAT/unknown for a local obligation is only inconclusive for the full formulas.
 """
 import z3
 from z3 import z3core
+
+from ._integer_compat import bit_count
 from .boolean_structure import structural_equivalence
 from .renamed_unsat_cache import RenamedUnsatCache
 
@@ -67,7 +69,7 @@ def _signatures(roots):
         if not sparse:
             return dense
         width = max(dense.bit_length(), max(sparse) + 1)
-        count_bound = dense.bit_count() + len(sparse)
+        count_bound = bit_count(dense) + len(sparse)
         # A high ordinal alone must not allocate a huge mostly empty bitmask.
         if count_bound >= 64 and width <= 128 * count_bound:
             return dense | mask(sparse)
