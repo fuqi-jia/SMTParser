@@ -28,18 +28,17 @@ policy in that library implementation and Python bindings limited to adapters.
 
 ## Build and validation
 
-Before committing or pushing a change, run the full build-and-test job defined
-in `.github/workflows/ci.yml`: `test/run_all_tests.sh` with its CI configuration
-(Debug, all C++ tests and tools enabled, warnings as errors, two build/test
-workers). A filtered CTest run does not satisfy this requirement. The user's
-routine completion gate is the C++ `CI Tests` job only. Do not additionally
-build/install Python packages, run Python-version matrices, or dispatch/wait
-for wheel builds unless the user explicitly requests them for the current task.
-Fix failures and rerun the full C++ job before committing. Only after
-this check passes should the change be committed and pushed to the requested
-branch and remote. This checkout uses `develop` on `origin`; do not force-push
-over unrelated remote changes. Report exactly which full jobs passed and any
-environment differences; do not describe focused checks as CI validation.
+Once a change is ready and necessary checks give reasonable confidence,
+commit and push it without waiting for a full local build or remote CI.
+Choose checks appropriate to the change; a full C++ suite is not a mandatory
+pre-commit gate. Do not additionally build/install Python packages, run
+Python-version matrices, or dispatch/wait for wheel builds unless the user
+explicitly requests them for the current task. When full C++ validation is
+needed, use the `CI Tests` configuration in `.github/workflows/ci.yml`:
+Debug, all C++ tests and tools enabled, warnings as errors, two workers.
+This checkout uses `develop` on `origin`; do not force-push over unrelated
+remote changes. Report checks actually run and distinguish focused checks
+from full CI validation. Fix known failures before considering work complete.
 
 Dependencies: C++17 compiler, CMake 3.16+, GMP and MPFR. Python bindings also
 require Python 3.9+ and pybind11; packaging uses scikit-build-core.
@@ -51,7 +50,7 @@ experiment, feature, date, retry or Python build. Serialize writers sharing a
 build directory and preserve its generator and relevant configuration.
 
 ```bash
-# Required CI C++ gate: full Debug build and complete CTest suite.
+# Full CI-equivalent C++ validation when needed.
 CMAKE_BUILD_TYPE=Debug SOMTPARSER_WARNINGS_AS_ERRORS=ON SOMTPARSER_BUILD_JOBS=2 ./test/run_all_tests.sh
 
 # Focused C++ check; substitute the existing directory and test name.
@@ -67,7 +66,7 @@ to an extension built from the current source before trusting Python results.
 C++ tests are discovered from `test/**/*.cpp` and registered as
 `SOMTParser.<file_basename>`. Run standalone test binaries from the repository
 root because fixtures use relative paths. Focused checks are useful during
-development but never replace the full C++ CI gate above. Language documentation
+development and may be sufficient for a scoped change. Language documentation
 citations can be checked with `python scripts/check-doc-citations.py`.
 
 ## Implementation invariants
@@ -94,7 +93,8 @@ citations can be checked with `python scripts/check-doc-citations.py`.
 ## Workspace and storage preferences
 
 - Preserve user changes and historical provenance. Use the current requested
-  branch. The user has authorized committing and pushing tested changes.
+  branch. The user has authorized committing and pushing changes once ready
+  after necessary checks, without waiting for full builds or remote CI.
 - Before large operations, check actual Windows C: free space as well as Linux
   free space. WSL virtual disk size is not physical free capacity. Do not impose
   arbitrary cache quotas, move Ubuntu or stop WSL for cleanup.
