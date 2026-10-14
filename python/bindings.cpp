@@ -27,7 +27,7 @@
 #include "module_bindings.h"
 
 #include "somtparser/languages/register_all.h"
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 
 #include <memory>
 #include <string>

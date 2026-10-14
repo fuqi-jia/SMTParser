@@ -5,7 +5,7 @@
 
 #include "somtparser/lowering/omt_emitter.h"
 #include "somtparser/core/asserting.h"
-#include "somtparser/uir/soft_objectives.h"
+#include "somtparser/hir/soft_objectives.h"
 
 #include <algorithm>
 #include <sstream>

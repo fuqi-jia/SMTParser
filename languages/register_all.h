@@ -14,7 +14,7 @@
 #ifndef SOMTPARSER_LANGUAGES_REGISTER_ALL_HEADER
 #define SOMTPARSER_LANGUAGES_REGISTER_ALL_HEADER
 
-#include "somtparser/uir/language.h"
+#include "somtparser/translation/language.h"
 
 namespace SOMTParser::Lang {
 

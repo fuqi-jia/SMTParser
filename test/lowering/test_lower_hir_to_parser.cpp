@@ -3,7 +3,7 @@
 // function and parser.h undefines the macro.
 #include "somtparser/lowering/hir_to_parser.h"
 #include "somtparser/frontend/parser.h"
-#include "uir/bound_semantics.h"
+#include "translation/bound_semantics.h"
 #include <cassert>
 #include <iostream>
 #include <string>

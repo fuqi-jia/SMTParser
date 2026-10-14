@@ -21,7 +21,7 @@
 // `goto`, `if`, labels -- which is one decision (docs/languages/boogie.md
 // §4.3), not five separate gaps.
 
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/register_all.h"
 #include "somtparser/frontend/parser.h"
 

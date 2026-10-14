@@ -234,14 +234,14 @@ model-level differential comparison possible and not just verdict-level — the
 
 ## 3. Construct → HIR mapping
 
-Target: `SOMTParser::Uir::Hir` as it exists at `include/somtparser/uir/hir.h` today.
+Target: `SOMTParser::Uir::Hir` as it exists at `include/somtparser/hir/hir.h` today.
 
 | Construct | HIR representation | New surface | Fidelity |
 |---|---|---|---|
 | continuous column | `VarDecl{Sort::real()}` + implicit `≥ 0` (§2.5) | none for the decl | `exact()` |
 | column inside `INTORG`/`INTEND` | `VarDecl{Sort::integer()}` + implicit `≥ 0` | none | `exact()` |
 | **coefficient** | `ExprKind::LIT_REAL`, exact (landed 2026-08-12) | none | **`lp.md` §4.1** |
-| `N` row (first) | `Objective{kind, term}` (`include/somtparser/uir/hir.h`) | none | `exact()` |
+| `N` row (first) | `Objective{kind, term}` (`include/somtparser/hir/hir.h`) | none | `exact()` |
 | `N` row (subsequent) | dropped, with a warning (§2.2) | none | `exact()` |
 | `L` row | `Constraint{LE(Σ aᵢxᵢ, rhs)}` | none | `exact()` |
 | `G` row | `Constraint{GE(…)}` | none | `exact()` |
@@ -330,7 +330,7 @@ choice. A silent choice here is a result nobody can reproduce from the file alon
 
 This is the clearest case in the batch for a diagnostic that is neither an error nor
 silence, and `Uir::Diagnostics` already has the severity for it
-(`Severity::WARNING`, `include/somtparser/uir/diagnostic.h:42`).
+(`Severity::WARNING`, `include/somtparser/translation/diagnostic.h:42`).
 
 ### 4.3 The integrality marker is positional state
 
@@ -365,9 +365,9 @@ Two additions specific to MPS:
   answer because the argmin is unaffected.
 - **A companion basis or solution file.** `SourceUnit::data_paths` exists for this
   (`docs/languages-scoping.md` §3.2 notes it), and `Language::acceptsDataFiles()` must be
-  overridden if such a file is ever accepted (`include/somtparser/uir/language.h:105`) —
+  overridden if such a file is ever accepted (`include/somtparser/translation/language.h:105`) —
   otherwise `translate()` refuses the pair, which is the correct default
-  (`src/uir/translate.cpp:376-388`).
+  (`src/translation/translate.cpp:376-388`).
 
 ### 4.5 Fixed-format parsing
 
@@ -512,8 +512,8 @@ There is no vendor-independent standard; see §1 and `lp.md` §1.
 7. `docs/languages/dimacs-cnf.md` §3 (verdict-level versus model-level comparison, §2.6).
 8. `docs/known-defects-2026-08-11.md` §4 (why §4.1's and §4.3's fixtures must fail without
    the fix).
-9. `include/somtparser/uir/hir.h`, `include/somtparser/uir/diagnostic.h`,
-   `include/somtparser/uir/language.h`, `src/uir/translate.cpp`.
+9. `include/somtparser/hir/hir.h`, `include/somtparser/translation/diagnostic.h`,
+   `include/somtparser/translation/language.h`, `src/translation/translate.cpp`.
 
 
 ### Trailing comments and marked names (2026-09-23)

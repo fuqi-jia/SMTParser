@@ -21,7 +21,7 @@
 #include "somtparser/lowering/decompose_globals_pass.h"
 #include "somtparser/lowering/hir_to_parser.h"
 #include "somtparser/frontend/parser.h"
-#include "somtparser/uir/typecheck.h"
+#include "somtparser/hir/typecheck.h"
 
 #include <iostream>
 #include <string>

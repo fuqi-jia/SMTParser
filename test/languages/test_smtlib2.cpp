@@ -20,7 +20,7 @@
 // would pass against a frontend that translated one assertion and ignored the
 // rest.
 
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/register_all.h"
 #include "somtparser/frontend/parser.h"
 

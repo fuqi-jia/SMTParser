@@ -20,7 +20,7 @@ partial_constraints = model.known_constraints_smt2()
 ```
 
 The C++ entry point is `SOMTParser::Lang::importModule`, declared in
-`include/somtparser/uir/module.h`. Register the languages before calling it,
+`include/somtparser/translation/module.h`. Register the languages before calling it,
 as for other C++ frontend APIs. Failed imports return diagnostics and no module.
 Python returns `ModuleImport`; dictionaries and lists are value snapshots.
 Mutating a snapshot cannot erase a dependency from the imported artifact.

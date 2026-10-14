@@ -18,7 +18,7 @@
 // a value the model never gave it and one a solver is free to choose.
 
 #include "distinct_scope.h"
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/flatzinc.h"
 #include "somtparser/languages/register_all.h"
 #include "somtparser/frontend/parser.h"

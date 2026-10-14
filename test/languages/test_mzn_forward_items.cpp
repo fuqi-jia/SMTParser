@@ -1,5 +1,5 @@
 // Order-independent MiniZinc finite sets and test/predicate operations.
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/minizinc.h"
 #include "somtparser/languages/register_all.h"
 #include "test_helpers.h"

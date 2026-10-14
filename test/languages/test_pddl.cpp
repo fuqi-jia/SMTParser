@@ -20,11 +20,11 @@
 // length <= k does. `PLAN_HORIZON`, not `BMC_DEPTH` -- both count steps, of
 // different things.
 
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/register_all.h"
 #include "somtparser/languages/pddl_internal.h"
 #include "somtparser/frontend/parser.h"
-#include "somtparser/uir/typecheck.h"
+#include "somtparser/hir/typecheck.h"
 #include "test_helpers.h"
 
 #include <cassert>

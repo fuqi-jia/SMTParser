@@ -23,7 +23,7 @@
 // failure distribution moves and the next gap becomes visible -- and the
 // per-construct cases below are what pins the layer that was fixed.
 
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/register_all.h"
 #include "somtparser/frontend/parser.h"
 

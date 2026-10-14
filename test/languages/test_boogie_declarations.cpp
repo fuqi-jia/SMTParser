@@ -8,7 +8,7 @@
 // requires declare-before-use REJECTS A LEGAL PROGRAM, which is a different
 // class of wrong from declining a construct.
 
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/register_all.h"
 #include "somtparser/frontend/parser.h"
 

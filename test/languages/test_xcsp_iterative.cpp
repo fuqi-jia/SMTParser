@@ -1,7 +1,7 @@
 // Deep XML and expression input must use explicit stacks, including failure
 // unwinding. The expected HIR is checked directly, without a recursive printer.
 #include "somtparser/languages/xcsp3.h"
-#include "somtparser/uir/hir.h"
+#include "somtparser/hir/hir.h"
 #include "test_helpers.h"
 
 #include <string>

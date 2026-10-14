@@ -202,7 +202,7 @@ variables are guaranteed to exist.
 `solve satisfy;`, `solve minimize x;` or `solve maximize x;` — and in FlatZinc the objective
 is **always a single variable**, never an expression, because flattening introduced one.
 The HIR stores this scalar objective as one `ExprPtr` term
-(`Hir::Objective` in `include/somtparser/uir/hir.h`). The shared emitter prints it through
+(`Hir::Objective` in `include/somtparser/hir/hir.h`). The shared emitter prints it through
 the lowered target node (`termText` in `src/lowering/omt_emitter.cpp`), including exact
 numeric spellings. It also renders compound HIR objective terms used by other
 frontends; FlatZinc's own solve-item restrictions remain a frontend contract.
@@ -212,11 +212,11 @@ frontends; FlatZinc's own solve-item restrictions remain a frontend contract.
 
 ## 3. Construct → HIR mapping
 
-Target: `SOMTParser::Uir::Hir` as it exists at `include/somtparser/uir/hir.h` today.
+Target: `SOMTParser::Uir::Hir` as it exists at `include/somtparser/hir/hir.h` today.
 
 | Construct | HIR representation | New surface | Fidelity |
 |---|---|---|---|
-| `var bool: b` | `VarDecl{name, Sort::boolean()}` (`include/somtparser/uir/hir.h`) | none | `exact()` |
+| `var bool: b` | `VarDecl{name, Sort::boolean()}` (`include/somtparser/hir/hir.h`) | none | `exact()` |
 | `var int: x`, `var l..u: x` | `VarDecl` with optional `lower_bound`/`upper_bound` | none | `exact()` |
 | `var float: f` | `VarDecl{Sort::real()}` with `ExprKind::LIT_REAL` for its constants (landed 2026-08-12) | none | `exact()` |
 | `int: n = 4` (parameter) | substituted; no HIR node | none | `exact()` |
@@ -353,7 +353,7 @@ frontend will meet a predicate it does not know.
 |---|---|
 | Ignore the constraint | **Never.** Drops a constraint: the translated problem is weaker, `sound = false`, and it exits 0 |
 | Guess from the name | worse — `int_lin_eq_imp` differs from `int_lin_eq_reif` by one letter and one direction of implication |
-| Refuse with `E_UNSUPPORTED_CONSTRUCT`, naming the predicate | correct; the name lands in the coverage statistic, which is exactly what `include/somtparser/uir/diagnostic.h` says that bucket is for |
+| Refuse with `E_UNSUPPORTED_CONSTRUCT`, naming the predicate | correct; the name lands in the coverage statistic, which is exactly what `include/somtparser/translation/diagnostic.h` says that bucket is for |
 
 The third is the only defensible one, and it is also the one that makes the coverage table
 mean something: `OpCoverage::missing` should carry the predicate names, so the report says
@@ -412,7 +412,7 @@ output variable unconstrained.
 It was expanded pairwise in the frontend until 2026-08-17, on the stated reason that
 "`ExprKind::GLOBAL` takes an *array*; a FlatZinc argument is a list of variables". **The
 premise was false.** `alldifferent` has two shapes — `alldifferent(array, lo, hi)` and
-`alldifferent(t1, …, tn)` — dispatched on the first argument's sort (`src/uir/typecheck.cpp`),
+`alldifferent(t1, …, tn)` — dispatched on the first argument's sort (`src/hir/typecheck.cpp`),
 and the list shape exists precisely because `alldifferent([x, y, z])` has no array to point
 at. The workaround was scrupulous about its cost, recording in the open-questions log that
 the profile axis was unreachable from here; it is worth naming that a *documented* limitation
@@ -520,8 +520,8 @@ before the file existed.
 7. `docs/languages/dimacs-cnf.md` §3 (models-versus-verdicts in differential testing).
 8. `docs/languages/xcsp3.md` §4 (the global-constraint catalogue, enumerated there).
 9. `test/regression/test_int_div_mod_semantics.cpp` (the two laws §4.2 depends on).
-10. `include/somtparser/uir/hir.h`, `include/somtparser/uir/fidelity.h`,
-   `include/somtparser/uir/diagnostic.h`, `include/somtparser/core/kind.h`,
+10. `include/somtparser/hir/hir.h`, `include/somtparser/translation/fidelity.h`,
+   `include/somtparser/translation/diagnostic.h`, `include/somtparser/core/kind.h`,
    `src/lowering/omt_emitter.cpp`.
 
 ### Solve annotations and objectives

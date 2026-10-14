@@ -11,7 +11,7 @@
 // constants and reorder commutative operands (CLAUDE.md invariant 2), so
 // asserting on emitted text would pin something the caller does not choose.
 
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/register_all.h"
 #include "somtparser/frontend/parser.h"
 

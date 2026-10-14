@@ -23,7 +23,7 @@
 // is the binding structure and not a convention; and a CNF clause's variables
 // are implicitly universally quantified even though nothing in the file says so.
 
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/tptp.h"
 #include "somtparser/languages/register_all.h"
 #include "somtparser/frontend/parser.h"

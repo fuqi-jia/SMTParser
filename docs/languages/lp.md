@@ -138,7 +138,7 @@ main source of *real-arithmetic* instances, and the HIR cannot express a real co
 
 ## 3. Construct → HIR mapping
 
-Target: `SOMTParser::Uir::Hir` as it exists at `include/somtparser/uir/hir.h` today.
+Target: `SOMTParser::Uir::Hir` as it exists at `include/somtparser/hir/hir.h` today.
 
 | Construct | HIR representation | New surface | Fidelity |
 |---|---|---|---|
@@ -155,7 +155,7 @@ Target: `SOMTParser::Uir::Hir` as it exists at `include/somtparser/uir/hir.h` to
 | range `l <= e <= u` | `AND(GE(e,l), LE(e,u))` | none | `exact()` |
 | `Bounds` entry | `VarDecl::lower_bound` / `upper_bound` | none | `exact()` |
 | `x free` | both bounds null | none | `exact()` |
-| objective | `Objective{MINIMIZE\|MAXIMIZE, term}` (`include/somtparser/uir/hir.h`) | none | `exact()`, but see §4.3 |
+| objective | `Objective{MINIMIZE\|MAXIMIZE, term}` (`include/somtparser/hir/hir.h`) | none | `exact()`, but see §4.3 |
 | objective constant term | part of the term | none | `exact()` |
 | `SOS1` / `SOS2` | §4.4 | — | `exact()` |
 | quadratic term | §4.5 | none (`Op::MUL` is enough) — but it makes the model non-linear | `exact()` |
@@ -170,7 +170,7 @@ Target: `SOMTParser::Uir::Hir` as it exists at `include/somtparser/uir/hir.h` to
 `docs/languages-scoping.md` §3.1's cluster B is "None (fits `ConstraintModel` today)" and
 lists LP among five members. For LP the claim fails on the first line of any real file.
 
-**The gap, stated exactly.** `Hir::Expr` (`include/somtparser/uir/hir.h`) has
+**The gap, stated exactly.** `Hir::Expr` (`include/somtparser/hir/hir.h`) has
 `bool bool_value` and `long long int_value` and nothing else numeric.
 `ExprKind` (`:43`) has `LIT_BOOL` and `LIT_INT`. `mkInt` takes a `long long` (`:67`). There
 is no constructor, no field and no kind for a non-integer constant.
@@ -247,7 +247,7 @@ The same rule applies to MPS (`mps.md` §4.2), where it is joined by a second bo
 
 ### 4.3 Maximisation, and what `preserves_optimum` means here
 
-`Hir::ObjKind` has `MAXIMIZE` (`include/somtparser/uir/hir.h`) and the emitter renders
+`Hir::ObjKind` has `MAXIMIZE` (`include/somtparser/hir/hir.h`) and the emitter renders
 `(maximize …)` for the Z3 and OptiMathSAT dialects
 (`src/lowering/omt_emitter.cpp`, `emitRenderedObjectives`), so LP's maximization needs no negation trick. Good —
 because the trick (`minimise −f`) is exact for the *argument* but changes the reported
@@ -281,7 +281,7 @@ than the source's usual solver.
 (`[ x^2 + 2 x * y ] / 2`). The HIR expresses them with `Op::MUL` and needs nothing new, and
 `ConstraintModel::features()` already detects them: `hasNonlinearMul` reports
 `feat::nonlinear()` when a product has two non-constant factors
-(`src/uir/hir.cpp`).
+(`src/hir/hir.cpp`).
 
 The divisor is **read from the text, not assumed from the position**. CPLEX conventionally
 writes an objective's form over two and a quadratic *constraint* with no divisor at all, and
@@ -300,7 +300,7 @@ the same objective, which no consistent misreading of either can satisfy.
 The consequence is not a fidelity loss but a **logic change**: QF_LRA becomes QF_NRA, which
 is a different decision problem with different solver support. That belongs in the report
 as a feature count, which is exactly what step 4 of `translate()` records
-(`src/uir/translate.cpp:526-528`), and the profile's `min_fidelity` floor is not the right
+(`src/translation/translate.cpp:526-528`), and the profile's `min_fidelity` floor is not the right
 place to catch it.
 
 Note also the `/ 2` in the quadratic syntax: LP's quadratic sections conventionally write
@@ -431,8 +431,8 @@ There is no vendor-independent standard; see §1.
 8. `docs/languages/mps.md` §2.4 (`RANGES`), §4.2 (the second bound trap).
 9. `docs/known-defects-2026-08-11.md` §4 (why the §4.2 fixture must be one that fails
    without the fix).
-10. `include/somtparser/uir/hir.h`, `include/somtparser/frontend/parser.h`,
-    `src/uir/hir.cpp`, `src/uir/translate.cpp`, `src/lowering/omt_emitter.cpp`.
+10. `include/somtparser/hir/hir.h`, `include/somtparser/frontend/parser.h`,
+    `src/hir/hir.cpp`, `src/translation/translate.cpp`, `src/lowering/omt_emitter.cpp`.
 
 
 ### Reader boundaries verified on 2026-09-23

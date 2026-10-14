@@ -139,7 +139,7 @@ requirements were not re-confirmed against the 2025/2026 rules pages in this pas
 
 ## 3. Construct → HIR mapping
 
-Target: `SOMTParser::Uir::Hir` as it exists at `include/somtparser/uir/hir.h` today.
+Target: `SOMTParser::Uir::Hir` as it exists at `include/somtparser/hir/hir.h` today.
 
 | Construct | HIR representation | New HIR surface required | Fidelity | Notes |
 |---|---|---|---|---|
@@ -157,7 +157,7 @@ Target: `SOMTParser::Uir::Hir` as it exists at `include/somtparser/uir/hir.h` to
 | whole file | `ConstraintModel{decls, constraints, objectives = {}}` | none | `exact()` | Implicit conjunction of the constraints, which is exactly what `HirToParser::lower` produces by asserting each in turn (`hir_to_parser.cpp:157-183`). |
 | compressed input (`.cnf.xz`, `.gz`, `.bz2`) | decompressed before parsing | none | `exact()` | Failure is `E_IO`. Not a language concern, but competition archives are compressed, so a frontend that cannot read them cannot see the corpus. |
 | **non-CNF `p sat` format** (`*`, `+`, `-`, parentheses) | `Op::AND` / `Op::OR` / `Op::NOT` directly | none | `exact()` | Maps *better* than CNF does — no clause structure to flatten. Unused in practice; implement only if a corpus appears. |
-| `c t <track>` / `c p weight` / `c p show` (Model Counting Competition extension) | read and recorded — the weights and the `c p show` projection scope as an `Uir::EncodingChoice` (`strategy = "counting-weights"` / `"counting-projection"`); `c t` is cross-checked against which of those are present | none | `exact()` | `docs/languages-scoping.md` §6.3 records MCC as a *conditional extension of this frontend*, not a language: the headers are read rather than dropped, an unrecognised `c p <directive>` is refused BY NAME (`E_UNSUPPORTED_CONSTRUCT`), and a malformed weight is `E_PARSE`. The lift retains `exact()` on feasibility and objective axes, with model counting unassessed. `Fidelity::count_status` (`include/somtparser/uir/fidelity.h:75`) records that separate assessment; reading a weight or projection header does not establish preservation of its weighted or projected count. |
+| `c t <track>` / `c p weight` / `c p show` (Model Counting Competition extension) | read and recorded — the weights and the `c p show` projection scope as an `Uir::EncodingChoice` (`strategy = "counting-weights"` / `"counting-projection"`); `c t` is cross-checked against which of those are present | none | `exact()` | `docs/languages-scoping.md` §6.3 records MCC as a *conditional extension of this frontend*, not a language: the headers are read rather than dropped, an unrecognised `c p <directive>` is refused BY NAME (`E_UNSUPPORTED_CONSTRUCT`), and a malformed weight is `E_PARSE`. The lift retains `exact()` on feasibility and objective axes, with model counting unassessed. `Fidelity::count_status` (`include/somtparser/translation/fidelity.h:75`) records that separate assessment; reading a weight or projection header does not establish preservation of its weighted or projected count. |
 
 ---
 
@@ -171,7 +171,7 @@ edge case, one policy decision, one non-decision, and one engineering risk.
 `mkOp` opens with
 
 ```cpp
-// src/uir/hir.cpp
+// src/hir/hir.cpp
 condAssert(!args.empty(), "mkOp: no arguments");
 ```
 
@@ -181,10 +181,10 @@ disjunction" — **throws** rather than producing `false`.
 
 - **Correct mapping**: `mkBool(false)`. Semantically identical, `Fidelity::exact()`, O(1).
 - **Failure mode if missed**: `Language::parse()` is contractually required to catch every
-  exception and turn it into a diagnostic (`include/somtparser/uir/language.h:111-113`, and
+  exception and turn it into a diagnostic (`include/somtparser/translation/language.h:111-113`, and
   the design spec §9). An uncaught `condAssert` on a legal input would therefore be a
   frontend bug reported as `E_INTERNAL`, i.e. filed under the wrong bucket of the
-  evaluation's failure-cause breakdown — which `include/somtparser/uir/diagnostic.h:17-19`
+  evaluation's failure-cause breakdown — which `include/somtparser/translation/diagnostic.h:17-19`
   is explicitly designed to keep meaningful. Worth an `instances/ok/` fixture.
 
 ### 4.2 Header/content mismatch: a diagnostic policy, not an encoding
@@ -214,7 +214,7 @@ DIMACS is the only format in Plan 2 for which that is true.
 Recorded here because it is the one way a DIMACS frontend can fail in practice, and
 because it is invisible from the fidelity lattice.
 
-`Hir::Expr` (`include/somtparser/uir/hir.h`) carries a `std::string name`, a
+`Hir::Expr` (`include/somtparser/hir/hir.h`) carries a `std::string name`, a
 `std::vector<ExprPtr> args` and a `SourceLoc` (itself holding a `std::string file`).
 Allocated through `make_shared`, one node costs on the order of 140 bytes before its
 `args` heap buffer. Competition instances routinely reach millions of clauses and tens of
@@ -363,5 +363,5 @@ counting is performed here.
    23rd language).
 7. `docs/superpowers/specs/2026-08-10-languages-design.md` §4.1 (the `Fidelity` lattice),
    §4.7 (HIR).
-8. `include/somtparser/uir/hir.h`, `src/uir/hir.cpp`, `src/lowering/hir_to_parser.cpp`,
-   `include/somtparser/uir/diagnostic.h`, `include/somtparser/uir/language.h`.
+8. `include/somtparser/hir/hir.h`, `src/hir/hir.cpp`, `src/lowering/hir_to_parser.cpp`,
+   `include/somtparser/translation/diagnostic.h`, `include/somtparser/translation/language.h`.

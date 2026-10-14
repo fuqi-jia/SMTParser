@@ -1,5 +1,5 @@
 #include "somtparser/languages/opb.h"
-#include "somtparser/uir/typecheck.h"
+#include "somtparser/hir/typecheck.h"
 #include "test_helpers.h"
 
 #include <string>

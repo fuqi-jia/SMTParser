@@ -17,7 +17,7 @@
 // changes no model. What it must not do is COLLIDE, or be silent -- both are
 // tested below.
 
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/lowering/hir_to_parser.h"
 #include "somtparser/languages/register_all.h"
 #include "somtparser/frontend/parser.h"

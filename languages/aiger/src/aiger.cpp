@@ -43,7 +43,7 @@
  */
 
 #include "somtparser/languages/aiger.h"
-#include "somtparser/uir/module.h"
+#include "somtparser/translation/module.h"
 
 #include <algorithm>
 #include <cerrno>

@@ -14,7 +14,7 @@
 
 #include "somtparser/languages/minizinc.h"
 #include "somtparser/languages/register_all.h"
-#include "somtparser/uir/typecheck.h"
+#include "somtparser/hir/typecheck.h"
 
 #include <iostream>
 #include <string>

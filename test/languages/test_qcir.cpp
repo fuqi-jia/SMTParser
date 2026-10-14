@@ -18,7 +18,7 @@
 // Both formats accept these inputs. Their tests preserve the distinct HIR
 // structures: free declarations in QCIR and bound variables in QDIMACS.
 
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/qcir.h"
 #include "somtparser/languages/register_all.h"
 #include "somtparser/frontend/parser.h"

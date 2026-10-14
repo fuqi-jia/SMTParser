@@ -1,7 +1,7 @@
 // Pure temporal HIR construction; callers explicitly attach returned constraints.
 #pragma once
 #include "hir_bindings.h"
-#include "somtparser/uir/planning_temporal.h"
+#include "somtparser/hir/planning_temporal.h"
 
 namespace SomtPythonPlanningTemporal {
 namespace py = pybind11;

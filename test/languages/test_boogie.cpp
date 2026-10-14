@@ -28,7 +28,7 @@
 // on 2026-09-19 as the two-sided contract at the call site (This is Boogie 2
 // §8.2/§9.9), and their tests live below with the rest of the obligations.
 
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/register_all.h"
 #include "somtparser/frontend/parser.h"
 

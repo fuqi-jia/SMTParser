@@ -9,10 +9,10 @@
  */
 
 #include "somtparser/lowering/hir_to_parser.h"
-#include "somtparser/uir/soft_objectives.h"
+#include "somtparser/hir/soft_objectives.h"
 #include "somtparser/core/asserting.h"
 #include "somtparser/core/root_expression_cache.h"
-#include "somtparser/uir/packed_linear_io.h"
+#include "somtparser/hir/packed_linear_io.h"
 
 #include <algorithm>
 #include <functional>
@@ -936,7 +936,7 @@ std::shared_ptr<DAGNode> HirToParser::lowerExprUncached(const H::ExprPtr& e,
         // guards below are for expressions built by hand and handed straight to
         // lowering. They report rather than abort because the Parser builders
         // throw, and translate()'s contract is a recorded failure per benchmark
-        // (uir/diagnostic.h) rather than an escaped exception.
+        // (translation/diagnostic.h) rather than an escaped exception.
         if (isBitVecOp(e->op)) {
             const auto wrongArity = [&](const char* want) {
                 diagnostics.error(ErrorCode::E_INTERNAL,
@@ -1895,7 +1895,7 @@ bool HirToParser::lowerImpl(const H::ConstraintModel& model,
          constraint_index < model.constraints.size(); ++constraint_index) {
         const auto& c = model.constraints[constraint_index];
         // That c.formula is Bool is a precondition, established by
-        // Uir::Hir::typeCheck before any pass runs (see uir/typecheck.h).
+        // Uir::Hir::typeCheck before any pass runs (see hir/typecheck.h).
         // Parser::assert accepts any node, so an Int formula reaching here
         // becomes a literal `(assert x)` that no solver will read -- which is
         // exactly what happened before that check existed.

@@ -1,7 +1,7 @@
 #ifndef SOMTPARSER_LOWER_POSITIVE_EXISTS_HEADER
 #define SOMTPARSER_LOWER_POSITIVE_EXISTS_HEADER
 
-#include "somtparser/uir/hir.h"
+#include "somtparser/hir/hir.h"
 
 namespace SOMTParser::Lower {
 

@@ -26,7 +26,7 @@
 // change to output nobody asked to move.
 
 #include "distinct_scope.h"
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/register_all.h"
 
 #include <iostream>

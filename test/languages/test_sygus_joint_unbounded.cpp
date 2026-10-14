@@ -1,6 +1,6 @@
 #include "somtparser/languages/sygus.h"
 #include "somtparser/lowering/parser_to_hir.h"
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "test_helpers.h"
 
 using namespace SOMTParser;

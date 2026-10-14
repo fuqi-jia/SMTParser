@@ -22,7 +22,7 @@
 // The pairing against WCNF's `top` -- the same word for a different thing --
 // lives in test/languages/test_pb_cross_format.cpp.
 
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/opb.h"
 #include "somtparser/languages/register_all.h"
 #include "somtparser/frontend/parser.h"

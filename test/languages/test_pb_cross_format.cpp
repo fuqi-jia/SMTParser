@@ -22,7 +22,7 @@
 // 6 with `soft: 6;`, where the correct answer is UNSATISFIABLE and the dropped
 // threshold reports an optimum instead.
 
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/register_all.h"
 
 #include <cassert>

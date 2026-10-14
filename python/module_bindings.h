@@ -1,5 +1,5 @@
 #pragma once
-#include <somtparser/uir/module.h>
+#include <somtparser/translation/module.h>
 #include "hir_bindings.h"
 #include <sstream>
 

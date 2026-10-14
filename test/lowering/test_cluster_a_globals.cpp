@@ -28,7 +28,7 @@
 // through the pass and still not vary the axis, and saying which frontends are
 // in that position is the honest form of the coverage claim.
 
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/register_all.h"
 #include "somtparser/frontend/parser.h"
 

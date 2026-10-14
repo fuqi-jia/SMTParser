@@ -1,5 +1,5 @@
 #include "somtparser/languages/xcsp3.h"
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/frontend/parser.h"
 #include "../test_helpers.h"
 

@@ -6296,7 +6296,7 @@ private:
      *
      * The index set is deliberately *not* part of the sort: an HIR array is
      * SMT-LIB's, a total function from the index sort to the element sort
-     * (include/somtparser/uir/hir.h:55). So `1..n` cannot be stored in the sort
+     * (include/somtparser/hir/hir.h:55). So `1..n` cannot be stored in the sort
      * and is kept here instead, in ranges_, which is what alldifferent's index
      * bounds are then built from. A frontend that forgot to keep it would have
      * nowhere to get those bounds -- the array itself does not know them.

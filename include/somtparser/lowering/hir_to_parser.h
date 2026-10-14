@@ -18,9 +18,9 @@
 #define SOMTPARSER_LOWERING_HIR_TO_PARSER_HEADER
 
 #include "somtparser/frontend/parser.h"
-#include "somtparser/uir/diagnostic.h"
-#include "somtparser/uir/hir.h"
-#include "somtparser/uir/report.h"
+#include "somtparser/translation/diagnostic.h"
+#include "somtparser/hir/hir.h"
+#include "somtparser/translation/report.h"
 
 #include <cstddef>
 #include <functional>

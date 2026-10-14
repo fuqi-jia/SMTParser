@@ -59,7 +59,7 @@ several by `lexico` or `pareto`. Two corrections have been applied since the fir
   it the headline while also recommending core, which cannot both be true. Verified against
   arXiv:2009.00514 on 2026-08-12.
 - **The HIR now carries it anyway.** `Hir::ObjectiveCombination`
-  (`include/somtparser/uir/hir.h`) has `LEXICOGRAPHIC`, `PARETO`, `BOX`, `MINMAX` and
+  (`include/somtparser/hir/hir.h`) has `LEXICOGRAPHIC`, `PARETO`, `BOX`, `MINMAX` and
   `MAXMIN`, mirroring the engine's own `OPT_KIND`, and `omt_emitter` renders the first three
   for Z3 as `(set-option :opt.priority lex|pareto|box)`. That is not for XCSP3's sake: OMT
   is this project's headline capability, this engine already *reads* five multi-objective
@@ -176,7 +176,7 @@ Two things a frontend must not skip:
   range would *weaken* the model — more solutions than the original, `complete = true` but
   `sound = false`. It must become a disjunction, or a range plus exclusions, or an
   `int_in`-style membership. The HIR's `VarDecl` has exactly `lower_bound` and
-  `upper_bound` (`include/somtparser/uir/hir.h`), so a non-contiguous domain has to
+  `upper_bound` (`include/somtparser/hir/hir.h`), so a non-contiguous domain has to
   be expressed as an ordinary constraint, not as a declaration.
 - **Array slices** (`q[]`, `q[0..3]`, `q[][0]`) are notation over a declared array, not new
   variables.
@@ -305,7 +305,7 @@ memory arithmetic applies directly.
 
 ## 3. Construct → HIR mapping
 
-Target: `SOMTParser::Uir::Hir` as it exists at `include/somtparser/uir/hir.h` today.
+Target: `SOMTParser::Uir::Hir` as it exists at `include/somtparser/hir/hir.h` today.
 
 | Construct | HIR representation | New surface | Fidelity |
 |---|---|---|---|
@@ -321,7 +321,7 @@ Target: `SOMTParser::Uir::Hir` as it exists at `include/somtparser/uir/hir.h` to
 | `extension` | §4.2 | needs arrays for the tuple lists | `exact()` |
 | global constraints | §2.3's table; cluster A's shared pass library | as each row | mostly `exact()` |
 | `<group>` / `<block>` | expanded (§2.5) | none | `exact()` |
-| single objective over a variable | `Objective{kind, mkIdent(x)}` (`include/somtparser/uir/hir.h`; identifier construction: `include/somtparser/uir/hir.h`) | none | `exact()` |
+| single objective over a variable | `Objective{kind, mkIdent(x)}` (`include/somtparser/hir/hir.h`; identifier construction: `include/somtparser/hir/hir.h`) | none | `exact()` |
 | objective `type="sum"` etc. | needs the aggregate as a term | none for `sum`; `Op::ITE` for `nValues` | `exact()` |
 | **multi-objective** `lexico` / `pareto` — full XCSP3 only, not core | `ConstraintModel::objective_combination` | **none — implemented** | `exact()` |
 
@@ -369,10 +369,10 @@ where the encoding choice is a research question rather than a lookup.
 | Tseitin-style with selector variables | one Boolean per row, exactly-one over rows | O(rows) clauses + rows variables | `equisat()` — auxiliary variables preserve satisfiability both ways | changes the model's vocabulary, so the `Fidelity` is `equisat`, not `exact` |
 
 The `equisat` row distinguishes satisfiability from counting.
-`CountStatus::NO_GUARANTEE` and `CountStatus::UNASSESSED` are declared in `include/somtparser/uir/fidelity.h:25-28`.
-`Fidelity::equisat()` sets `NO_GUARANTEE` in `src/uir/fidelity.cpp:78-93`.
-`Fidelity::exact()` returns a default-constructed fidelity (`src/uir/fidelity.cpp:74-75`).
-The `count_status` field defaults to `CountStatus::UNASSESSED` (`include/somtparser/uir/fidelity.h:75`).
+`CountStatus::NO_GUARANTEE` and `CountStatus::UNASSESSED` are declared in `include/somtparser/translation/fidelity.h:25-28`.
+`Fidelity::equisat()` sets `NO_GUARANTEE` in `src/translation/fidelity.cpp:78-93`.
+`Fidelity::exact()` returns a default-constructed fidelity (`src/translation/fidelity.cpp:74-75`).
+The `count_status` field defaults to `CountStatus::UNASSESSED` (`include/somtparser/translation/fidelity.h:75`).
 Neither status asserts a measured count mismatch. A one-sided auxiliary can multiply the model count
 while preserving satisfiability in both directions; a functionally determined
 auxiliary can preserve it. A `PRESERVED` claim needs an explicit count obligation
@@ -487,8 +487,8 @@ supports/conflicts polarity.
 
 ### 4.5 Multi-objective: the HIR is poorer than the engine
 
-`Hir::ObjKind` is `{ MINIMIZE, MAXIMIZE }` (`include/somtparser/uir/hir.h`), and
-`Hir::ConstraintModel` carries a `std::vector<Objective>` (`include/somtparser/uir/hir.h`) with no statement of
+`Hir::ObjKind` is `{ MINIMIZE, MAXIMIZE }` (`include/somtparser/hir/hir.h`), and
+`Hir::ConstraintModel` carries a `std::vector<Objective>` (`include/somtparser/hir/hir.h`) with no statement of
 how several are combined. XCSP3 says: `lexico` or `pareto`.
 
 The engine already knows the difference. `OPT_KIND`
@@ -507,7 +507,7 @@ were not confirmed in this pass and are refused for the same reason.
 
 XCSP3-core does not exercise any of it (§1), so this is one of the few places where the
 HIR is ahead of the language rather than behind it. The reason is that the requirement came
-from OMT rather than from XCSP3: see the note in `include/somtparser/uir/hir.h`.
+from OMT rather than from XCSP3: see the note in `include/somtparser/hir/hir.h`.
 
 Retained for the record, because the argument is what justified implementing it rather than
 refusing: **flattening a multi-objective set into independent objectives answers a different
@@ -656,6 +656,6 @@ than the original — which is the direction that produces a confident wrong SAT
 9. `docs/languages/dimacs-cnf.md` §4.4 (the memory arithmetic §1 and §2.5 refer to).
 10. `docs/known-defects-2026-08-11.md` §2 (the silent-wrong-answer failure class §4.5
     belongs to).
-11. `include/somtparser/uir/hir.h`, `include/somtparser/uir/fidelity.h`,
+11. `include/somtparser/hir/hir.h`, `include/somtparser/translation/fidelity.h`,
     `include/somtparser/frontend/objective.h`, `src/lowering/omt_emitter.cpp`,
     `test/regression/test_int_div_mod_semantics.cpp`.

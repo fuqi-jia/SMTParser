@@ -8,7 +8,7 @@
 #ifndef SOMTPARSER_LANGUAGES_CRYPTOLINE_HEADER
 #define SOMTPARSER_LANGUAGES_CRYPTOLINE_HEADER
 
-#include "somtparser/uir/language.h"
+#include "somtparser/translation/language.h"
 
 namespace SOMTParser::Lang {
 

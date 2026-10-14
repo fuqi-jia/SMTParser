@@ -27,7 +27,7 @@
 
 #include "somtparser/frontend/parser.h"
 #include "somtparser/core/timing.h"
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include <fstream>
 #include <queue>
 #include <stack>

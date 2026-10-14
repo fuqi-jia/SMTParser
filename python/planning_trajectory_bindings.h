@@ -1,6 +1,6 @@
 #pragma once
 #include "hir_bindings.h"
-#include "somtparser/uir/planning_trajectory.h"
+#include "somtparser/hir/planning_trajectory.h"
 
 namespace SomtPythonPlanningTrajectory {
 namespace py = pybind11;

@@ -21,7 +21,7 @@
 // condition; partiality elsewhere closes at the nearest source Boolean node.
 
 #include "distinct_scope.h"
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/register_all.h"
 
 #include <iostream>

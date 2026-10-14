@@ -3,7 +3,7 @@
 // set, row-major mapping, empty-set identity, and propagation of undefinedness.
 
 #include "somtparser/languages/register_all.h"
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 
 #include <iostream>
 #include <string>

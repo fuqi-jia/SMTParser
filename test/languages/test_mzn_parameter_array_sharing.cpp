@@ -1,6 +1,6 @@
 // Repeated decision reads must share the fixed table's HIR storage.
 #include "somtparser/languages/minizinc.h"
-#include "somtparser/uir/hir.h"
+#include "somtparser/hir/hir.h"
 #include "test_helpers.h"
 
 #include <string>

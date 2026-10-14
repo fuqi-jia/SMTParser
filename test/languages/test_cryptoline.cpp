@@ -27,7 +27,7 @@
 // queries, chained by their pre- and postconditions, and a ConstraintModel is
 // one.
 
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/cryptoline.h"
 #include "somtparser/languages/register_all.h"
 #include "somtparser/frontend/parser.h"

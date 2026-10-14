@@ -36,7 +36,7 @@
 // the frontend broke rather than declined; that check holds at every level,
 // including inputs with no available semantic task.
 
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/register_all.h"
 #include "somtparser/frontend/parser.h"
 

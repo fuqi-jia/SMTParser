@@ -1,6 +1,6 @@
 # Finite object state relations
 
-`somtparser/uir/planning_objects.h` constructs finite object-valued state
+`somtparser/hir/planning_objects.h` constructs finite object-valued state
 relations in ordinary typed HIR. This API is independent of the PDDL parser.
 Its presence does not mean that a PDDL file declaring `:object-fluents` is
 accepted. The accompanying frontend change supports finite `(either ...)`

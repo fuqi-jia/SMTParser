@@ -13,13 +13,13 @@
 #include "somtparser/languages/pddl.h"
 #include "somtparser/languages/pddl_internal.h"
 #include "somtparser/languages/planning_types.h"
-#include "somtparser/uir/planning_numeric.h"
-#include "somtparser/uir/planning_objects.h"
-#include "somtparser/uir/planning_continuous.h"
-#include "somtparser/uir/planning_temporal.h"
-#include "somtparser/uir/planning_timed_initial.h"
-#include "somtparser/uir/planning_derived.h"
-#include "somtparser/uir/planning_trajectory.h"
+#include "somtparser/hir/planning_numeric.h"
+#include "somtparser/hir/planning_objects.h"
+#include "somtparser/hir/planning_continuous.h"
+#include "somtparser/hir/planning_temporal.h"
+#include "somtparser/hir/planning_timed_initial.h"
+#include "somtparser/hir/planning_derived.h"
+#include "somtparser/hir/planning_trajectory.h"
 
 #include <algorithm>
 #include <cctype>

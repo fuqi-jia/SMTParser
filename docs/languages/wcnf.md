@@ -231,7 +231,7 @@ clauses as `(or)` and rejects malformed ranges before emission.
 
 ## 3. Construct → HIR mapping
 
-Target: `SOMTParser::Uir::Hir` as it exists at `include/somtparser/uir/hir.h` today.
+Target: `SOMTParser::Uir::Hir` as it exists at `include/somtparser/hir/hir.h` today.
 Everything DIMACS CNF contributes is covered in `dimacs-cnf.md` §3 and not repeated; this
 table covers what WCNF adds.
 
@@ -242,7 +242,7 @@ current behavior. The current WCNF exact-weight path is summarized in §4.2.
 | Construct | HIR representation | New HIR surface required | Fidelity | Notes |
 |---|---|---|---|---|
 | `c …` comment | dropped | none | `exact()` | |
-| variable / literal / clause body | as `dimacs-cnf.md` §3 | none | `exact()` | Includes the empty-clause trap: `mkBool(false)`, never `mkOp(OR, {})` — `src/uir/hir.cpp`. |
+| variable / literal / clause body | as `dimacs-cnf.md` §3 | none | `exact()` | Includes the empty-clause trap: `mkBool(false)`, never `mkOp(OR, {})` — `src/hir/hir.cpp`. |
 | **new format** `p` line | absent by design | none | `exact()` | Variable count is derived from the clauses. |
 | **old format** `p wcnf V C top` | not represented; `top` drives the hard/soft split | none | `exact()` | |
 | **new format** `h <clause>` | `Constraint{formula, soft = false}` | none | `exact()` | Lowered by `hir_to_parser.cpp:173-177` as an ordinary assertion. |
@@ -273,7 +273,7 @@ the current HIR and lowering rather than of the source language.
 
 A `double` cannot distinguish every integer above `2^53`. The current WCNF parser checks and stores each positive integer weight (`languages/wcnf/src/wcnf.cpp:354-362`).
 It also stores the exact integer value as decimal text in `weight_text` (`languages/wcnf/src/wcnf.cpp:588-591`).
-The HIR field `weight_text` carries that value (`include/somtparser/uir/hir.h`), and lowering emits it as an
+The HIR field `weight_text` carries that value (`include/somtparser/hir/hir.h`), and lowering emits it as an
 integer literal through `mkConstInt(c.weight_text)` in [HIR lowering](../../src/lowering/hir_to_parser.cpp). Thus this WCNF path does not
 round legal individual weights through `double`. Other frontends that populate only the
 double field remain subject to the `2^53` exact-integer limit; do not generalise the WCNF
@@ -333,9 +333,9 @@ For each soft clause `C_i` with weight `w_i`:
 - **Size**: `+m + 1` variables and `+m + 1` constraints for `m` soft clauses; the
   objective-defining constraint has `m` terms. Linear in the input.
 - **Non-linearity check**: each product `w_i · r_i` has exactly one non-constant factor, so
-  `hasNonlinearMul` (`src/uir/hir.cpp`) does **not** set `feat::nonlinear()`. The
+  `hasNonlinearMul` (`src/hir/hir.cpp`) does **not** set `feat::nonlinear()`. The
   instance stays in QF_LIA.
-- **Why `r_i` is `INT` and not `BOOL`**: it is summed. `widen()` (`src/uir/hir.cpp`)
+- **Why `r_i` is `INT` and not `BOOL`**: it is summed. `widen()` (`src/hir/hir.cpp`)
   returns `BOOL` for an all-`BOOL` argument list, and `Parser::mkMul` has no meaning on a
   Boolean node. The same reasoning applies to OPB's variables (`opb-wbo.md` §4.2).
 - **Unweighted instances** are the special case `w_i = 1`, where the objective counts
@@ -444,6 +444,6 @@ optimum preserved**
 10. `opb-wbo.md` §2.4 (WBO's `top` versus WCNF's, the two must not be conflated), §4.4–§4.6
     (the same relaxation encoding, and the same `double`/objective gaps seen from the PB
     side); `dimacs-cnf.md` §3–§4 (the shared clause substrate).
-11. `include/somtparser/uir/hir.h`, `include/somtparser/uir/fidelity.h`, `src/uir/hir.cpp`,
+11. `include/somtparser/hir/hir.h`, `include/somtparser/translation/fidelity.h`, `src/hir/hir.cpp`,
     `src/lowering/hir_to_parser.cpp`, `src/lowering/omt_emitter.cpp`,
     `include/somtparser/ir/number.h`.

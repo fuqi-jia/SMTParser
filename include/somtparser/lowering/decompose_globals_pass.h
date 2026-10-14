@@ -47,7 +47,7 @@
 #ifndef SOMTPARSER_LOWERING_DECOMPOSE_GLOBALS_PASS_HEADER
 #define SOMTPARSER_LOWERING_DECOMPOSE_GLOBALS_PASS_HEADER
 
-#include "somtparser/uir/pass.h"
+#include "somtparser/translation/pass.h"
 
 namespace SOMTParser::Lower {
 

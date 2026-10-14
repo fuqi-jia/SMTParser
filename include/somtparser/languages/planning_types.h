@@ -2,7 +2,7 @@
 #ifndef SOMTPARSER_LANGUAGES_PLANNING_TYPES_HEADER
 #define SOMTPARSER_LANGUAGES_PLANNING_TYPES_HEADER
 
-#include "somtparser/uir/diagnostic.h"
+#include "somtparser/translation/diagnostic.h"
 
 #include <functional>
 #include <map>

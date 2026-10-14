@@ -8,7 +8,7 @@
 #ifndef SOMTPARSER_LANGUAGES_XCSP3_HEADER
 #define SOMTPARSER_LANGUAGES_XCSP3_HEADER
 
-#include "somtparser/uir/language.h"
+#include "somtparser/translation/language.h"
 
 namespace SOMTParser::Lang {
 

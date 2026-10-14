@@ -17,7 +17,7 @@
 // k" is not "safe". The fidelity entry must say so, and it is the only place
 // that can.
 
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/register_all.h"
 #include "somtparser/frontend/parser.h"
 

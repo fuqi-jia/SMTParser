@@ -24,7 +24,7 @@
 // nobody wrote down". ExprKind::LIT_REAL landed on 2026-08-12 and is exact, so
 // nothing is scaled and there is no factor.
 
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/lp.h"
 #include "somtparser/languages/register_all.h"
 #include "somtparser/frontend/parser.h"

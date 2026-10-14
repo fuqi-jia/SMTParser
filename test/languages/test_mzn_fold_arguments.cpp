@@ -14,7 +14,7 @@
 // once its two-dimensional parameter array is read.
 
 #include "somtparser/languages/register_all.h"
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 
 #include <iostream>
 #include <string>

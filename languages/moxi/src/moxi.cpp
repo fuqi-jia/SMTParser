@@ -43,7 +43,7 @@
  */
 
 #include "somtparser/languages/moxi.h"
-#include "somtparser/uir/module.h"
+#include "somtparser/translation/module.h"
 
 #include "somtparser/lowering/parser_to_hir.h"
 #include "somtparser/frontend/parser.h"

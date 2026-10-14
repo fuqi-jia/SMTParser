@@ -1,6 +1,6 @@
 // A finite key domain must not allocate another literal for each table row.
 #include "somtparser/languages/minizinc.h"
-#include "somtparser/uir/hir.h"
+#include "somtparser/hir/hir.h"
 #include "test_helpers.h"
 
 #include <map>

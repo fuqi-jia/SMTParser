@@ -1,7 +1,7 @@
 #include "somtparser/lowering/hir_to_parser.h"
 #include "somtparser/lowering/omt_emitter.h"
-#include "somtparser/uir/semantics.h"
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/semantics.h"
+#include "somtparser/translation/translate.h"
 #include "test_helpers.h"
 
 #include <algorithm>

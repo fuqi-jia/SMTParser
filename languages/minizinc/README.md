@@ -152,7 +152,7 @@ reads `complete = false`, `preserves_optimum = false`, with a
 `Bound{BV_WIDTH, 32, site}` per clamped variable and one `EncodingChoice`
 recording the decision. See `test/python/test_translate.py`
 (`test_bv32_profile_bounds_unbounded_ints_with_incomplete_fidelity`) and
-`test/uir/test_uir_translate_e2e.cpp`.
+`test/translation/test_uir_translate_e2e.cpp`.
 
 A second difference between profiles is not a fidelity loss at all. Both
 decompositions of a global constraint are `exact()` — they differ in output

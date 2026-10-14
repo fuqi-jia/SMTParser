@@ -3,7 +3,7 @@
 // the outermost existential level; QCIR keeps non-gate variables free.
 // Both accept these inputs. These tests pin the differing HIR structures.
 
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/register_all.h"
 
 #include <cassert>

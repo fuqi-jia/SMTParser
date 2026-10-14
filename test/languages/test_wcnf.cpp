@@ -20,7 +20,7 @@
 // formats and assert the two agree. wcnf.md §2.2 says they are the same problem;
 // if either reading of `top` were wrong, they would not be.
 
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/wcnf.h"
 #include "somtparser/languages/register_all.h"
 #include "somtparser/frontend/parser.h"

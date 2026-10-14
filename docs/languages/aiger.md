@@ -159,7 +159,7 @@ cluster D's structure.
 
 Identical in mechanism and consequence to `btor2.md` §4.2: unroll to depth *k*, a SAT answer
 is a genuine counterexample, an UNSAT answer is `underApprox` with `Bound::BMC_DEPTH`
-(`include/somtparser/uir/fidelity.h:90`, `:134`). The k-induction option and the
+(`include/somtparser/translation/fidelity.h:90`, `:134`). The k-induction option and the
 report-the-two-halves-separately recommendation apply unchanged, and are not repeated here.
 
 One AIGER-specific note: because every state is a single bit, the unrolled formula's size is
@@ -254,7 +254,7 @@ specifically — rather than refusing the file — is the right first step, and 
 
 **Nothing else.** No new sort, no new literal, no arithmetic, no arrays, no quantifiers.
 AIGER's combinational half is `Op::AND` and `Op::NOT` over `SortKind::BOOL`, all of which
-the HIR has (`include/somtparser/uir/hir.h`).
+the HIR has (`include/somtparser/hir/hir.h`).
 
 That makes AIGER the **cheapest member of cluster D** and the natural first implementation
 of it, for the same reason `qdimacs.md` §5 argues QDIMACS should be cluster C's: a bug in
@@ -324,4 +324,4 @@ Cheaper to unroll than any other cluster-D language, but the bound is the same c
 9. `docs/languages/qdimacs.md` §5 (the same "implement the cluster against its simplest
    member" argument, for cluster C).
 10. `docs/languages/dimacs-cnf.md` (the SAT arm §4.4's recommended framing compares against).
-11. `include/somtparser/uir/hir.h`, `include/somtparser/uir/fidelity.h`.
+11. `include/somtparser/hir/hir.h`, `include/somtparser/translation/fidelity.h`.

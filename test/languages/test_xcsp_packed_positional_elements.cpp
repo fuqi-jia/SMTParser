@@ -1,6 +1,6 @@
 #include "somtparser/languages/xcsp3.h"
-#include "somtparser/uir/packed_scalar_io.h"
-#include "somtparser/uir/typecheck.h"
+#include "somtparser/hir/packed_scalar_io.h"
+#include "somtparser/hir/typecheck.h"
 #include "test_helpers.h"
 
 #include <algorithm>

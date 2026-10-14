@@ -1,5 +1,5 @@
 #include "somtparser/languages/mps.h"
-#include "somtparser/uir/hir.h"
+#include "somtparser/hir/hir.h"
 #include "test_helpers.h"
 
 #include <string>

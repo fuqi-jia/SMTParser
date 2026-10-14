@@ -646,7 +646,7 @@ properties, an informative `repr`, `torch.load` (`sp.read`), `DataLoader`
 ## Further reading
 
 - `docs/superpowers/specs/2026-09-20-counting-and-solving-api-design.md` — design rationale.
-- `include/somtparser/uir/fidelity.h` — the `Fidelity` lattice itself, and the
+- `include/somtparser/translation/fidelity.h` — the `Fidelity` lattice itself, and the
   four constructors' comments on exactly what each one claims.
 - `docs/languages/dimacs-cnf.md` §3 (Construct → HIR mapping) and
   `docs/languages/opb-wbo.md` — the two frontends whose corpus made the axis

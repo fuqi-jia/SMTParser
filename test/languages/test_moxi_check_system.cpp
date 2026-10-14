@@ -30,8 +30,8 @@
 // provides state n+1 for primed formulas.
 
 #include "somtparser/languages/register_all.h"
-#include "somtparser/uir/language.h"
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/language.h"
+#include "somtparser/translation/translate.h"
 
 #include <iostream>
 #include <string>

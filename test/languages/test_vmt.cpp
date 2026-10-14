@@ -22,7 +22,7 @@
 //     the file does not state;
 //   * `:invar-property` asks reachability of its NEGATION.
 
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/register_all.h"
 #include "somtparser/frontend/parser.h"
 

@@ -1,6 +1,6 @@
 #pragma once
 #include "hir_bindings.h"
-#include "somtparser/uir/planning_continuous.h"
+#include "somtparser/hir/planning_continuous.h"
 
 namespace SomtPythonPlanningContinuous {
 namespace py = pybind11;

@@ -2,8 +2,8 @@
 #include "somtparser/languages/tptp.h"
 #include "somtparser/lowering/hir_to_parser.h"
 #include "somtparser/frontend/parser.h"
-#include "somtparser/uir/semantics.h"
-#include "somtparser/uir/typecheck.h"
+#include "somtparser/translation/semantics.h"
+#include "somtparser/hir/typecheck.h"
 #include "test_helpers.h"
 
 #include <fstream>

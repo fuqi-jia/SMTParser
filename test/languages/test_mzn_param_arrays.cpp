@@ -24,7 +24,7 @@
 // frontend is organised against, and it is the case below that would catch it.
 
 #include "somtparser/languages/register_all.h"
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 
 #include <iostream>
 #include <string>

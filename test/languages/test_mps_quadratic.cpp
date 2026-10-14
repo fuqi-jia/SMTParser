@@ -30,7 +30,7 @@
 // on the ordered pair, each breaks a DIFFERENT member of the family while
 // leaving the others passing. That is what a differential instrument buys.
 
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/register_all.h"
 
 #include <iostream>

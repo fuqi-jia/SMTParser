@@ -1,5 +1,5 @@
 #include "somtparser/languages/pddl_internal.h"
-#include "somtparser/uir/typecheck.h"
+#include "somtparser/hir/typecheck.h"
 #include "planning_public_pipeline.h"
 #include "test_helpers.h"
 #include <filesystem>

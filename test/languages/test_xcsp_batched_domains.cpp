@@ -1,7 +1,7 @@
 // Array membership metadata should scale with declarations, not cell count.
 #include "somtparser/languages/xcsp3.h"
-#include "somtparser/uir/hir.h"
-#include "somtparser/uir/typecheck.h"
+#include "somtparser/hir/hir.h"
+#include "somtparser/hir/typecheck.h"
 #include "test_helpers.h"
 #include <string>
 

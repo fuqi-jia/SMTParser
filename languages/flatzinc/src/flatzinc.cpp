@@ -25,7 +25,7 @@
  */
 
 #include "somtparser/languages/flatzinc.h"
-#include "somtparser/uir/module.h"
+#include "somtparser/translation/module.h"
 
 #include <algorithm>
 #include <cctype>

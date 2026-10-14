@@ -448,5 +448,5 @@ typing contract — a `u*` instruction on signed operands is ill-formed
 10. `docs/languages/qdimacs.md` §5, `docs/languages/aiger.md` §5 (the simplest-member
    sequencing rule §4.4 generalises).
 11. `docs/languages/smtlib2.md` §4.1 (cluster F unblocks QF_BV there too).
-12. `include/somtparser/uir/hir.h`, `include/somtparser/uir/fidelity.h`,
+12. `include/somtparser/hir/hir.h`, `include/somtparser/translation/fidelity.h`,
     `include/somtparser/core/kind.h`.

@@ -33,8 +33,8 @@
 #define SOMTPARSER_LOWERING_PARSER_TO_HIR_HEADER
 
 #include "somtparser/frontend/parser.h"
-#include "somtparser/uir/diagnostic.h"
-#include "somtparser/uir/hir.h"
+#include "somtparser/translation/diagnostic.h"
+#include "somtparser/hir/hir.h"
 
 #include <map>
 #include <memory>

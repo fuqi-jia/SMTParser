@@ -1,5 +1,5 @@
 #include "somtparser/languages/dimacs.h"
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "test_helpers.h"
 
 using namespace SOMTParser;

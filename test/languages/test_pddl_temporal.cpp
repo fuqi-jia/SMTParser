@@ -2,7 +2,7 @@
 #include "somtparser/languages/pddl_internal.h"
 #include "somtparser/lowering/hir_to_parser.h"
 #include "somtparser/lowering/omt_emitter.h"
-#include "somtparser/uir/typecheck.h"
+#include "somtparser/hir/typecheck.h"
 #include "test_helpers.h"
 #include "planning_public_pipeline.h"
 

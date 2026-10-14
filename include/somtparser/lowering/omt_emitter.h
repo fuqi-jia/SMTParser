@@ -17,8 +17,8 @@
 #define SOMTPARSER_LOWERING_OMT_EMITTER_HEADER
 
 #include "somtparser/lowering/hir_to_parser.h"
-#include "somtparser/uir/diagnostic.h"
-#include "somtparser/uir/hir.h"
+#include "somtparser/translation/diagnostic.h"
+#include "somtparser/hir/hir.h"
 
 #include <string>
 #include <optional>

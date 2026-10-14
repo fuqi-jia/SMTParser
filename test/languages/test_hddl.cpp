@@ -2,7 +2,7 @@
 
 #include "somtparser/frontend/parser.h"
 #include "somtparser/languages/register_all.h"
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "test_helpers.h"
 
 #include <cassert>

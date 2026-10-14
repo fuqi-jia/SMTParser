@@ -1,6 +1,6 @@
 // DIMACS literal sharing preserves clause, header and counting semantics.
 #include "somtparser/languages/dimacs.h"
-#include "somtparser/uir/hir.h"
+#include "somtparser/hir/hir.h"
 
 #include "test_helpers.h"
 #include <string>

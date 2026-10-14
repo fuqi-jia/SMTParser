@@ -15,7 +15,7 @@
 // handing over `n` instead of `n + 1` drops the last element of every
 // alldifferent in the corpus and every stage downstream agrees it is fine.
 
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/minizinc.h"
 #include "somtparser/languages/register_all.h"
 

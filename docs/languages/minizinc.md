@@ -513,7 +513,7 @@ tuple(...)  record(...)    -- 2.8 series
 Types are part of the language's cost. The HIR `SortKind` includes `BOOL`, `INT`, and
 `REAL`, along with arrays, bit-vectors, floating-point, strings, uninterpreted sorts,
 rounding modes, regular languages, datatypes, sets, and tuples
-(`include/somtparser/uir/hir.h`). This sort inventory does not mean every MiniZinc
+(`include/somtparser/hir/hir.h`). This sort inventory does not mean every MiniZinc
 source type or construct is implemented by the adapter; §5 describes the encoding and
 refusal boundary for each.
 
@@ -598,7 +598,7 @@ unused variables and `v` lines.
 
 ## 3. Construct → HIR mapping
 
-Target: `SOMTParser::Uir::Hir` as it exists at `include/somtparser/uir/hir.h` today.
+Target: `SOMTParser::Uir::Hir` as it exists at `include/somtparser/hir/hir.h` today.
 
 ### 3.1 What maps exactly
 
@@ -638,10 +638,10 @@ label is not a proof of each frontend call site or of model-count preservation.
 | float literal | `ExprKind::LIT_REAL` (landed 2026-08-12) | none |
 | `function`/`test` definitions | `FunDecl` with typed binders and an acyclic core-expression body | shared definitions are available; see `docs/hir-defined-functions.md` for scope limits |
 | global constraints | `alldifferent` and `count` landed with `DecomposeGlobalsPass`; the rest of the catalogue is still absent | cluster A's shared work |
-| `.dzn` data file | `Language::acceptsDataFiles()` returns false by default (`include/somtparser/uir/language.h:105`), so `translate()` refuses a `--data` argument outright rather than parsing the model alone | not a HIR gap |
+| `.dzn` data file | `Language::acceptsDataFiles()` returns false by default (`include/somtparser/translation/language.h:105`), so `translate()` refuses a `--data` argument outright rather than parsing the model alone | not a HIR gap |
 
 The `.dzn` row is worth dwelling on because it is a *correct* refusal that looks like a
-limitation. `src/uir/translate.cpp:376-388` rejects data files for a language that does not
+limitation. `src/translation/translate.cpp:376-388` rejects data files for a language that does not
 claim them, and the comment there gives the reason: parsing the model alone and reporting
 success for a problem whose data half was dropped is a wrong answer, not a degraded one.
 Finishing MiniZinc means overriding `acceptsDataFiles()` and reading the `.dzn` — until
@@ -650,7 +650,7 @@ then, refusing is right.
 ### 3.3 A predicate is a definition, and that decides its representation
 
 `predicate p(var int: a) = a > 0;` looks like it should map onto the HIR's `FunDecl`
-(`include/somtparser/uir/hir.h`), which is what cluster G added for TPTP's predicates and
+(`include/somtparser/hir/hir.h`), which is what cluster G added for TPTP's predicates and
 Boogie's functions. It must not. **`FunDecl` is *uninterpreted***: it declares that a symbol
 exists and says nothing about what it means. Mapping a MiniZinc predicate onto it throws the
 body away, so the predicate may denote anything — and a constraint the model says is
@@ -677,7 +677,7 @@ an undeclared identifier and sending a reader after a typo.
 
 The two routes are a genuine second `EncodingChoice`, on the same size-against-structure axis
 as ground/quantified, and the frontend records it as one. `Lang::ParseOutcome`
-(`include/somtparser/uir/language.h:64`) carries a `TranslationReport` alongside the model and
+(`include/somtparser/translation/language.h:64`) carries a `TranslationReport` alongside the model and
 diagnostics, so an encoding decision made during parsing reaches the same record as one made
 by a pass. Recorded once per predicate rather than once per call site, since the decision is
 about the predicate; both routes are `exact()`, so what the entry carries is not a loss but
@@ -927,7 +927,7 @@ branch cannot produce. So the untaken branch is skipped at the token level.
 
 **When the test mentions a decision variable**, both branches survive and the
 result goes through `Sem::RelationalBuilder::conditional`
-([src/uir/semantics.cpp](../../src/uir/semantics.cpp)) rather than `mkOp(Op::ITE, …)`
+([src/translation/semantics.cpp](../../src/translation/semantics.cpp)) rather than `mkOp(Op::ITE, …)`
 directly. The difference is the definedness obligation: the adapter emits
 `ITE(c, defined(a), defined(b))`, so only the *selected* branch must be defined,
 matching §4.2. A bare `Op::ITE` would conjoin both branches' definedness and
@@ -1114,7 +1114,7 @@ true" reading `dimacs-cnf.md` §2.2 uses.
 9. `docs/languages/flatzinc.md` §1 (the flattening boundary, stated from the other side),
    §4 (reification as FlatZinc sees it).
 10. `docs/languages/lp.md` §4 and `docs/languages/mps.md` §4 (the missing real literal).
-11. `include/somtparser/uir/hir.h`, `include/somtparser/uir/fidelity.h`,
-    `include/somtparser/uir/language.h`, `src/uir/translate.cpp`,
+11. `include/somtparser/hir/hir.h`, `include/somtparser/translation/fidelity.h`,
+    `include/somtparser/translation/language.h`, `src/translation/translate.cpp`,
     `src/lowering/omt_emitter.cpp`, `src/lowering/bound_ints_pass.cpp`,
     `languages/minizinc/src/mzn_minimal.cpp`, `include/somtparser/core/kind.h`.

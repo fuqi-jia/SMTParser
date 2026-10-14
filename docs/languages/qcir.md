@@ -14,7 +14,7 @@ read directly for this document; every syntactic claim below is from its BNF or 
 
 <!-- implicit-constraints:
   a non-gate variable that is neither quantified nor in the free block => is a FREE variable by default (standard §2.2, "Quantifier Alternations"); the frontend must materialise it as a top-level declaration; QDIMACS instead adds an outermost existential binder for unquantified matrix variables (§4.1)
-  an `and` gate with zero inputs => the constant true; an `or` gate with zero inputs => the constant false (standard §2.2, "Truth Constants"); emit mkBool, never mkOp(AND, {}), which throws (src/uir/hir.cpp) -- the same trap dimacs-cnf.md §4.1 records for the empty clause, with the opposite polarity (§4.2)
+  an `and` gate with zero inputs => the constant true; an `or` gate with zero inputs => the constant false (standard §2.2, "Truth Constants"); emit mkBool, never mkOp(AND, {}), which throws (src/hir/hir.cpp) -- the same trap dimacs-cnf.md §4.1 records for the empty clause, with the opposite polarity (§4.2)
   gate definitions not reachable from the output => are ignored by the semantics (standard §2.2, "Output"); they must not become constraints, and must not be counted in the reported statistics, or two files denoting the same formula report different sizes (§4.3)
   a gate variable must be defined before it is used => the circuit graph is acyclic by construction (standard §2.2, "Gate Variables"); a frontend still has to check it, because the property is what makes a single bottom-up pass correct and a malformed file would otherwise loop (§4.4)
   a gate variable occurs exactly once on the left of `=` and never in `free` or a quantifier block => gate variables and input variables are disjoint namespaces; merging them lets a redefinition pass as a constraint (§4.4)
@@ -148,8 +148,8 @@ same formula report different depths.
 An `and` gate with zero inputs is `true`; an `or` gate with zero inputs is `false`. This is
 the standard's §2.2, not an inference. It is also the trap `dimacs-cnf.md` §4.1 records with
 the polarity reversed — there, an empty *clause* is `false` — and it has the same mechanical
-consequence here: `mkOp(Op::AND, {})` throws (`src/uir/hir.cpp`), so the frontend must
-emit `mkBool(true)` (`include/somtparser/uir/hir.h`) and never route an empty gate
+consequence here: `mkOp(Op::AND, {})` throws (`src/hir/hir.cpp`), so the frontend must
+emit `mkBool(true)` (`include/somtparser/hir/hir.h`) and never route an empty gate
 through the n-ary builder.
 
 ### 2.4 Free variables, and what closing them costs
@@ -168,12 +168,12 @@ question the file asks do not.
 
 | QCIR construct | HIR | New surface | Fidelity |
 |---|---|---|---|
-| `free(v1, v2)` | `VarDecl{name, Sort::boolean()}` (`include/somtparser/uir/hir.h`) | none | `exact()` |
+| `free(v1, v2)` | `VarDecl{name, Sort::boolean()}` (`include/somtparser/hir/hir.h`) | none | `exact()` |
 | unquantified non-gate variable | the same — it *is* free (§4.1) | none | `exact()` |
-| `exists(v1, v2)` prefix block | `ExprKind::EXISTS` (`include/somtparser/uir/hir.h`) over the whole body | none | `exact()` |
-| `forall(v1)` prefix block | `ExprKind::FORALL` (`include/somtparser/uir/hir.h`) | none | `exact()` |
+| `exists(v1, v2)` prefix block | `ExprKind::EXISTS` (`include/somtparser/hir/hir.h`) over the whole body | none | `exact()` |
+| `forall(v1)` prefix block | `ExprKind::FORALL` (`include/somtparser/hir/hir.h`) | none | `exact()` |
 | `g = exists(v; lit)` quantifier gate | the same `ExprKind::EXISTS`, at the position the gate occupies | none | `exact()` |
-| variable occurrence under a quantifier | `ExprKind::BOUND_VAR` (`include/somtparser/uir/hir.h`) | none | `exact()` |
+| variable occurrence under a quantifier | `ExprKind::BOUND_VAR` (`include/somtparser/hir/hir.h`) | none | `exact()` |
 | `g = and(a, b, c)` | `Op::AND` | none | `exact()` |
 | `g = or(a, b)` | `Op::OR` | none | `exact()` |
 | `g = and()` / `g = or()` | `mkBool(true)` / `mkBool(false)` | none | `exact()` |
@@ -185,7 +185,7 @@ question the file asks do not.
 
 The column that matters is the third: **almost all of it is empty.** The quantifier surface
 landed on 2026-08-12 (`ExprKind::FORALL`, `EXISTS`, `BOUND_VAR`, `mkForall` at
-`include/somtparser/uir/hir.h`), and it was built for QDIMACS. QCIR reuses it unchanged,
+`include/somtparser/hir/hir.h`), and it was built for QDIMACS. QCIR reuses it unchanged,
 including at non-prenex positions, because a quantifier in this HIR is an ordinary expression
 rather than a prefix attached to a model. That was a design choice at the time and this is
 the first language that collects on it.
@@ -258,7 +258,7 @@ used at most once". The restriction exists because a shared quantified subcircui
 makes non-prenex QBF expensive to process.
 
 The HIR inherits the opposite property. Expressions are immutable and shared
-(`include/somtparser/uir/hir.h`'s header comment), and the engine below it hash-conses, so a
+(`include/somtparser/hir/hir.h`'s header comment), and the engine below it hash-conses, so a
 repeated subformula becomes **one** node with several parents — automatically, with no way to
 opt out per node. For an ordinary gate that is a pure win. For a quantifier gate it means the
 translation of a general (non-cleansed) QCIR file can produce a DAG whose shared quantified

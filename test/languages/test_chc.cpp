@@ -28,7 +28,7 @@
 // instead of "for all states", which is a different and much weaker claim, so
 // the test asserts the `forall` is still there after the round trip.
 
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/register_all.h"
 #include "somtparser/frontend/parser.h"
 

@@ -12,7 +12,7 @@
 // for it. A parameter array may not have one: there is no solver to leave it
 // to, which is why the hole is opt-in per call site rather than global.
 
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/minizinc.h"
 #include "somtparser/languages/register_all.h"
 

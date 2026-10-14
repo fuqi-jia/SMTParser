@@ -27,7 +27,7 @@ functions, against a HIR of `SortKind { BOOL, INT, REAL }` and eleven operators.
 
 **That gap is now closed except for one row, and §4.1 below is updated to match.**
 As of 2026-08-12 the HIR carries **10 sorts, 15 expression kinds and 107 operators**
-(`include/somtparser/uir/hir.h`, `include/somtparser/uir/hir.h`, `include/somtparser/uir/hir.h`): arrays with `select` *and* `store`,
+(`include/somtparser/hir/hir.h`, `include/somtparser/hir/hir.h`, `include/somtparser/hir/hir.h`): arrays with `select` *and* `store`,
 bit-vectors, floating point with a RoundingMode sort and exact literals, strings with the
 regular-expression fragment and a RegLan sort, uninterpreted sorts and functions, quantifiers,
 exact real literals, and the conversions between all of them.
@@ -438,7 +438,7 @@ a `Sort` recursive without making it large. Four points where the obvious thing 
   refuses an empty argument list. Unlike `set.empty` it needs no sort annotation: `UnitTuple`
   is the only sort it can have.
 
-Pinned by `test/uir/test_uir_tuples.cpp` and by eleven rows in the operator sweep. The sweep's
+Pinned by `test/hir/test_uir_tuples.cpp` and by eleven rows in the operator sweep. The sweep's
 tuple prelude is `(Tuple Int Bool)` rather than `(Tuple Int Int)` on purpose — with two
 fields of one sort, a lift that dropped the index or read the wrong field still type-checks.
 
@@ -573,7 +573,7 @@ approximative — there is no encoding choice to make and no `Bound` to record.
    against this engine, and what it found).
 8. `docs/known-defects-2026-08-11.md` §4 (the hand-picked-input lesson §4.4 echoes).
 9. Branch `harden-dump-roundtrip`: `33908e5`, `c90cffb`, `0ae8320`, `3316308`, `fffe0d5`.
-10. `include/somtparser/core/kind.h`, `include/somtparser/uir/hir.h`,
+10. `include/somtparser/core/kind.h`, `include/somtparser/hir/hir.h`,
     `include/somtparser/lowering/omt_emitter.h`, `src/frontend/base_parser.cpp`,
     `src/frontend/opt_parser.cpp`, `test/regression/test_int_div_mod_semantics.cpp`.
 

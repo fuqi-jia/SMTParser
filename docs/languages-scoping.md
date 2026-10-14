@@ -199,7 +199,7 @@ not assumed**: `Uir::Hir::Expr` today has four `ExprKind`s
 uninterpreted sorts, no arrays, no `TransitionSystem` (the
 design spec's §4.7 sketch of those is aspirational; the implemented type is
 narrower and is called `ConstraintModel`, not `Model` — see
-`include/somtparser/uir/hir.h`). Importantly, the **underlying mature
+`include/somtparser/hir/hir.h`). Importantly, the **underlying mature
 SMT-LIB engine `SOMTParser::Parser`/`DAGNode` that HIR lowers onto already
 supports all of these** — bit-vectors (`include/somtparser/core/kind.h`,
 `NT_BV_*`), quantifiers (`parser.h:3394 mkForall`, `parser.h:3402 mkExists`),
@@ -342,7 +342,7 @@ placeholders are revised below, for the reasons given in §4.2.
 Task 16's rationale (written before this scoping pass) explicitly deferred
 real `int`→bitvector lowering to "Plan 6" specifically *because* it requires
 a new HIR sort and is a core change (`task-16-brief.md` lines 13–14; also
-visible in `src/uir/profile.cpp`'s `bv32` profile, which today only bounds
+visible in `src/translation/profile.cpp`'s `bv32` profile, which today only bounds
 `Int` domains and says so in its own comment). That was a reasonable scope
 cut for Plan 1, which only needed to prove the fidelity pipeline worked at
 all with a lossy pass, not build a real bit-vector theory bridge.
@@ -608,7 +608,7 @@ that happens to emit SMT, which is a different project.
 |---|---|
 | PDDL added to cluster D | §3.1 cluster D language list; §3.2 at 1.8×; §4 table, Plan 4 |
 | SYNTCOMP (AIGER-EXT) added, spanning clusters C and D | §3.1 clusters C and D; §3.2 at 1.5×; §4 table, Plan 5 |
-| `Bound::Kind::PLAN_HORIZON` | design spec §4.1; `include/somtparser/uir/fidelity.h` when Plan 4 starts |
+| `Bound::Kind::PLAN_HORIZON` | design spec §4.1; `include/somtparser/translation/fidelity.h` when Plan 4 starts |
 | Cluster D `properties` need a safety/reachability flag | §6.3, to be written into Plan 4's first task |
 | MCC as a conditional DIMACS extension | §6.3; no language-list entry |
 | Competition coverage: 11 → 13 | §6.2 |

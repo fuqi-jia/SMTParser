@@ -1,4 +1,4 @@
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/register_all.h"
 #include "test_helpers.h"
 using namespace SOMTParser;

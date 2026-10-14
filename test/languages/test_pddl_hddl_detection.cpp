@@ -21,8 +21,8 @@
 // exactly as wrong as one that claims too much -- and only testing the
 // direction that was broken would leave the other free to break silently.
 
-#include "somtparser/uir/translate.h"
-#include "somtparser/uir/language.h"
+#include "somtparser/translation/translate.h"
+#include "somtparser/translation/language.h"
 #include "somtparser/languages/register_all.h"
 
 #include <iostream>

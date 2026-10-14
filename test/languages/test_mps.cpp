@@ -22,7 +22,7 @@
 // The remaining two are LP's, inherited: a column with no `BOUNDS` entry is
 // non-negative, and `BV` is integer and {0,1} overriding anything else.
 
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/mps.h"
 #include "somtparser/languages/register_all.h"
 #include "somtparser/frontend/parser.h"

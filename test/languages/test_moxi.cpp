@@ -9,7 +9,7 @@
 // eventualities by those names. In particular there is no check-system
 // `:invariant`; a safety violation is written as a reachable `(not P)` formula.
 
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/register_all.h"
 #include "somtparser/frontend/parser.h"
 

@@ -90,7 +90,7 @@ private:
     /** from_chars rather than stoll: an oversized literal in a benchmark is an
      *  input problem with a line number, not an exception escaping into the
      *  frontend's blanket handler where it would be filed as E_INTERNAL -- the
-     *  bucket uir/diagnostic.h reserves for broken invariants. */
+     *  bucket translation/diagnostic.h reserves for broken invariants. */
     static bool toInt(const std::string& tok, long long& out) {
         if (tok.empty()) { return false; }
         const char* first = tok.data();

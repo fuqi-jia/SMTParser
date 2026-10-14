@@ -1,7 +1,7 @@
 // Register after the shared HIR and planning_temporal bindings.
 #pragma once
 #include "planning_temporal_bindings.h"
-#include "somtparser/uir/planning_timed_initial.h"
+#include "somtparser/hir/planning_timed_initial.h"
 
 namespace SomtPythonPlanningTimedInitial {
 namespace py = pybind11;

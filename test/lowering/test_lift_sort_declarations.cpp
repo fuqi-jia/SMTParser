@@ -5,9 +5,9 @@
 #include "somtparser/frontend/parser.h"
 #include "somtparser/lowering/hir_to_parser.h"
 #include "somtparser/lowering/parser_to_hir.h"
-#include "somtparser/uir/semantics.h"
-#include "somtparser/uir/translate.h"
-#include "somtparser/uir/typecheck.h"
+#include "somtparser/translation/semantics.h"
+#include "somtparser/translation/translate.h"
+#include "somtparser/hir/typecheck.h"
 
 #include <string>
 

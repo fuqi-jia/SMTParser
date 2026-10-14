@@ -33,7 +33,7 @@
  */
 
 #include "somtparser/languages/essence.h"
-#include "somtparser/uir/typecheck.h"
+#include "somtparser/hir/typecheck.h"
 #include "somtparser/core/checked_integer.h"
 
 #include <algorithm>

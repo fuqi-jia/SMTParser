@@ -1,9 +1,9 @@
 // The first real language: it must build, register, be detected, and translate.
 #include "somtparser/languages/minizinc.h"
 #include "somtparser/languages/register_all.h"
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/frontend/parser.h"
-#include "uir/bound_semantics.h"
+#include "translation/bound_semantics.h"
 #include <cassert>
 #include <iostream>
 #include <string>

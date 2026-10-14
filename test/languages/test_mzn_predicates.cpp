@@ -12,12 +12,12 @@
 // flattening does. Inlining has one hard edge: a recursive predicate does not
 // terminate, so it must be refused rather than attempted.
 
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/minizinc.h"
 #include "somtparser/languages/register_all.h"
 #include "test_helpers.h"
 #include "somtparser/frontend/parser.h"
-#include "uir/bound_semantics.h"
+#include "translation/bound_semantics.h"
 
 #include <cassert>
 #include <iostream>

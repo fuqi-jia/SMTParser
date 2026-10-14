@@ -1,6 +1,6 @@
 #include "somtparser/languages/opb.h"
-#include "somtparser/uir/packed_linear_io.h"
-#include "somtparser/uir/typecheck.h"
+#include "somtparser/hir/packed_linear_io.h"
+#include "somtparser/hir/typecheck.h"
 #include "test_helpers.h"
 
 #include <sstream>

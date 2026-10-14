@@ -1,8 +1,8 @@
 #include "somtparser/languages/mps.h"
-#include "somtparser/uir/packed_linear_io.h"
-#include "somtparser/uir/typecheck.h"
-#include "somtparser/uir/translate.h"
-#include "somtparser/uir/pass.h"
+#include "somtparser/hir/packed_linear_io.h"
+#include "somtparser/hir/typecheck.h"
+#include "somtparser/translation/translate.h"
+#include "somtparser/translation/pass.h"
 #include "test_helpers.h"
 
 #include <functional>

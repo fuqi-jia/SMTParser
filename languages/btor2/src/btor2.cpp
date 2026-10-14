@@ -53,7 +53,7 @@
  */
 
 #include "somtparser/languages/btor2.h"
-#include "somtparser/uir/typecheck.h"
+#include "somtparser/hir/typecheck.h"
 
 #include <algorithm>
 #include <array>

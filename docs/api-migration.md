@@ -4,6 +4,17 @@ These notes cover changes from public SOMTParser main `f730eaac` (2026-09-16).
 Rebuild and relink C++ applications and Python extensions when updating: the
 parser and DAG classes do not provide a stable binary ABI.
 
+## HIR and translation header paths
+
+The former `uir/` implementation is organized into `hir/` (the constraint
+representation and construction APIs) and `translation/` (the translation
+pipeline). For example, replace `somtparser/uir/hir.h` with
+`somtparser/hir/hir.h`, and `somtparser/uir/translate.h` with
+`somtparser/translation/translate.h`. The old headers forward to the new ones
+and may be included alongside them. C++ namespaces, signatures and Python
+APIs are unchanged. See [the module layout](source-layout.md) for the complete
+division of responsibilities.
+
 ## Floating-point values to bit vectors
 
 The legacy `FloatingPointUtils::fpToUbv(string, Integer)` and

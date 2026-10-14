@@ -2,7 +2,7 @@
 #define SOMTPARSER_TEST_PLANNING_PUBLIC_PIPELINE_HEADER
 
 #include "somtparser/languages/pddl.h"
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "test_helpers.h"
 
 #include <atomic>

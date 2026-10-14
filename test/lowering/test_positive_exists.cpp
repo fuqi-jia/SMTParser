@@ -1,7 +1,7 @@
 #include "somtparser/lowering/positive_exists.h"
 #include "somtparser/lowering/hir_to_parser.h"
-#include "somtparser/uir/translate.h"
-#include "somtparser/uir/typecheck.h"
+#include "somtparser/translation/translate.h"
+#include "somtparser/hir/typecheck.h"
 #include "test_helpers.h"
 
 #include <set>

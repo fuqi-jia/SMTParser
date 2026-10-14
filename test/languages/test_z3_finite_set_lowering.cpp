@@ -1,7 +1,7 @@
 // Native integration regressions for the finite-set helper and exporter.
 #include "somtparser/lowering/z3_finite_set_lowering.h"
 #include "somtparser/languages/register_all.h"
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/frontend/parser.h"
 #include "test_helpers.h"
 

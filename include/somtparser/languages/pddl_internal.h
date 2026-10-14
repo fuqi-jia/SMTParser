@@ -3,11 +3,11 @@
 #ifndef SOMTPARSER_LANGUAGES_PDDL_INTERNAL_HEADER
 #define SOMTPARSER_LANGUAGES_PDDL_INTERNAL_HEADER
 
-#include "somtparser/uir/diagnostic.h"
-#include "somtparser/uir/hir.h"
-#include "somtparser/uir/language.h"
-#include "somtparser/uir/report.h"
-#include "somtparser/uir/semantics.h"
+#include "somtparser/translation/diagnostic.h"
+#include "somtparser/hir/hir.h"
+#include "somtparser/translation/language.h"
+#include "somtparser/translation/report.h"
+#include "somtparser/translation/semantics.h"
 
 #include <string>
 #include <map>

@@ -8,7 +8,7 @@
 #ifndef SOMTPARSER_LANGUAGES_QDIMACS_HEADER
 #define SOMTPARSER_LANGUAGES_QDIMACS_HEADER
 
-#include "somtparser/uir/language.h"
+#include "somtparser/translation/language.h"
 
 namespace SOMTParser::Lang {
 

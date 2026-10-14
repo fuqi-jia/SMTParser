@@ -4,8 +4,8 @@
  */
 
 #include "somtparser/languages/register_all.h"
-#include "somtparser/uir/translate.h"
-#include "somtparser/uir/module.h"
+#include "somtparser/translation/translate.h"
+#include "somtparser/translation/module.h"
 
 #include <fstream>
 #include <iostream>

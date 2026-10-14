@@ -26,7 +26,7 @@
 // changes which FILES are accepted, not what an accepted file means -- every
 // construct admitted is one this frontend already translates exactly.
 
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/register_all.h"
 
 #include <iostream>

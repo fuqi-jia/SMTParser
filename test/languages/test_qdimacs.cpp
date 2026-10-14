@@ -18,7 +18,7 @@
 // structure, so a result that does not stratify by it answers a question nobody
 // asked (§4.3). It is reported in Stats now, and this file pins what it counts.
 
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/qdimacs.h"
 #include "somtparser/languages/register_all.h"
 #include "somtparser/frontend/parser.h"

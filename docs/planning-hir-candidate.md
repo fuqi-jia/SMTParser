@@ -23,7 +23,7 @@ source names coincide.
 
 ## Public construction API
 
-Include `somtparser/uir/planning_numeric.h`, `planning_derived.h`,
+Include `somtparser/hir/planning_numeric.h`, `planning_derived.h`,
 `planning_temporal.h`, `planning_timed_initial.h`, `planning_continuous.h`,
 `planning_objects.h`, or `planning_trajectory.h`.
 The C++ builders return explicit typed deltas. Full HIR type checking and the

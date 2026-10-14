@@ -11,7 +11,7 @@
 // checking which indices appear says what the model means; matching emitted
 // text would pin what the caller does not choose.
 
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/register_all.h"
 #include "somtparser/frontend/parser.h"
 

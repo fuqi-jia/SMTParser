@@ -20,7 +20,7 @@
 // and the fixed-assignment tests distinguish one legal subcircuit from two
 // illegal disjoint cycles.
 
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/xcsp3.h"
 #include "somtparser/languages/register_all.h"
 #include "somtparser/frontend/parser.h"

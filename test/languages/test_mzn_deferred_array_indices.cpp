@@ -3,7 +3,7 @@
 // explicit index sets instead of treating them as lengths or rebasing them.
 
 #include "somtparser/languages/register_all.h"
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 
 #include <atomic>
 #include <chrono>

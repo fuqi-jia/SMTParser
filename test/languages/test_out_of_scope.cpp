@@ -3,7 +3,7 @@
 // frontends must not widen those fragments by silently dropping grammars,
 // universal closure, temporal operators, or strategy semantics.
 
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/register_all.h"
 
 #include <cassert>

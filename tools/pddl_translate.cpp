@@ -1,7 +1,7 @@
 // Official-corpus driver for the full public PDDL pipeline. No solver job is
 // hidden here: the campaign independently loads the complete emitted module.
 #include "somtparser/languages/pddl.h"
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 
 #include <algorithm>
 #include <climits>

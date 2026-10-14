@@ -22,7 +22,7 @@
 // nothing in common. `x1 x3 -1.0` in the MPS triangle and `- 2 x1*x3` over two
 // in the LP bracket arrive at the same `-1` by different routes.
 
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/register_all.h"
 
 #include <iostream>

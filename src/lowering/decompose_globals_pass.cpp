@@ -6,7 +6,7 @@
 #include "somtparser/lowering/decompose_globals_pass.h"
 
 #include "somtparser/lowering/bound_ints_pass.h"
-#include "somtparser/uir/profile.h"
+#include "somtparser/translation/profile.h"
 
 #include <functional>
 #include <memory>

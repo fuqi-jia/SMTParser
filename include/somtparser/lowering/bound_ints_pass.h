@@ -20,7 +20,7 @@
 #ifndef SOMTPARSER_LOWERING_BOUND_INTS_PASS_HEADER
 #define SOMTPARSER_LOWERING_BOUND_INTS_PASS_HEADER
 
-#include "somtparser/uir/pass.h"
+#include "somtparser/translation/pass.h"
 
 #include <string>
 

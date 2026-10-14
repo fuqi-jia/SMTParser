@@ -63,7 +63,7 @@ The **second** filter (§6 there) needs care and is §4.2's subject: HWMCC asks 
 state is reachable *at all*, and a bounded translation asks whether it is reachable *within
 k steps*. Those are different questions, and the difference is exactly what
 `Fidelity::underApprox` with `Bound::BMC_DEPTH` exists to record
-(`include/somtparser/uir/fidelity.h:90`).
+(`include/somtparser/translation/fidelity.h:90`).
 
 ---
 
@@ -203,7 +203,7 @@ of steps? SMT answers a bounded version: is it reachable in at most *k*?
 | UNSAT | no counterexample **within k**; says nothing beyond | `underApprox` with `Bound::BMC_DEPTH = k` |
 
 `Fidelity::underApprox(Bound)` and `Bound::BMC_DEPTH` both exist already
-(`include/somtparser/uir/fidelity.h:90`, `:134`), so this needs no lattice work — cluster D's
+(`include/somtparser/translation/fidelity.h:90`, `:134`), so this needs no lattice work — cluster D's
 pass records the depth and the report carries it.
 
 The prefix form is load-bearing. Requiring invariants through the configured frame `k`
@@ -260,7 +260,7 @@ array *k* times, and SMT array reasoning is already the expensive part.
 
 Note the third row is a *different* bound from the BMC depth, and a translation may carry
 both. `Fidelity::meet` unions bounds and now sorts them canonically, so a report with two
-bounds is stable across pass order (`test/uir/test_uir_fidelity.cpp`).
+bounds is stable across pass order (`test/translation/test_uir_fidelity.cpp`).
 
 The current adapter uses only the first row. A bit-vector constant in an array `init` is
 translated with SMT-LIB's constant-array constructor. Emitting `array = bitvector` is not an
@@ -369,5 +369,5 @@ explicit `Bound::DOMAIN_CUT`; the current implementation does not apply one (§4
     have, §2.3).
 11. `docs/languages/qdimacs.md` §2.4 (verdict-only comparison, which BTOR2 improves on via
     `btorsim`, §2.5).
-12. `include/somtparser/uir/hir.h`, `include/somtparser/uir/fidelity.h`,
-    `include/somtparser/core/kind.h`, `test/uir/test_uir_fidelity.cpp`.
+12. `include/somtparser/hir/hir.h`, `include/somtparser/translation/fidelity.h`,
+    `include/somtparser/core/kind.h`, `test/translation/test_uir_fidelity.cpp`.

@@ -85,7 +85,7 @@ void bind(py::module_& m) {
             throw py::value_error("bit-vector literal width does not match its sort");
         }
         if (sort.kind == K::FLOAT) {
-            // The three spellings uir/typecheck.h accepts: a decimal (emitted
+            // The three spellings hir/typecheck.h accepts: a decimal (emitted
             // as a to_fp conversion), one of the five special values, and the
             // bit triple -- each tied to the literal's own format.
             static const std::regex kDecimal(R"(^[+-]?\d+(\.\d+)?$)");

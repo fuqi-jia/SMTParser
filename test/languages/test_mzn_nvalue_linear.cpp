@@ -1,7 +1,7 @@
 // Structural regression for parseNvalue: unique HIR nodes should grow linearly.
 #include "somtparser/languages/register_all.h"
-#include "somtparser/uir/hir.h"
-#include "somtparser/uir/language.h"
+#include "somtparser/hir/hir.h"
+#include "somtparser/translation/language.h"
 #include "test_helpers.h"
 
 #include <iostream>

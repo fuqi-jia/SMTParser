@@ -1,8 +1,8 @@
 // Native HIR construction. Expressions remain immutable across Python calls.
 #pragma once
-#include <somtparser/uir/translate.h>
-#include <somtparser/uir/typecheck.h>
-#include <somtparser/uir/soft_objectives.h>
+#include <somtparser/translation/translate.h>
+#include <somtparser/hir/typecheck.h>
+#include <somtparser/hir/soft_objectives.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <algorithm>

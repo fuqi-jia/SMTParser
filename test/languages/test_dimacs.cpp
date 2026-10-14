@@ -14,7 +14,7 @@
 //     it -- a construction trap rather than a semantic gap, and one that would
 //     be filed under the wrong failure bucket if it escaped.
 
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/dimacs.h"
 #include "somtparser/languages/register_all.h"
 #include "somtparser/frontend/parser.h"

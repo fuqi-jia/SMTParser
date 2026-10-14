@@ -559,4 +559,4 @@ provability.
     undeclared bounds).
 12. `docs/known-defects-2026-08-11.md` §4 (why §4.2's fixtures must be programs that should
     *fail* to verify).
-13. `include/somtparser/uir/fidelity.h`, `include/somtparser/uir/hir.h`.
+13. `include/somtparser/translation/fidelity.h`, `include/somtparser/hir/hir.h`.

@@ -1,6 +1,6 @@
 // Literal sharing must keep repeated weighted clauses and their locations.
 #include "somtparser/languages/wcnf.h"
-#include "somtparser/uir/hir.h"
+#include "somtparser/hir/hir.h"
 #include "test_helpers.h"
 
 #include <string>

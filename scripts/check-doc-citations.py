@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Check that docs/languages/*.md still describes the code it cites.
 
-These documents are dense with pointers into the tree -- `src/uir/hir.cpp:98`,
+These documents are dense with pointers into the tree -- `src/hir/hir.cpp:98`,
 `Op::NOT`, `Fidelity::underApprox()`, `docs/languages-scoping.md §3.1` -- and
 every one of them is a claim that can quietly stop being true. It does not take
 long: two citations in `docs/languages/dimacs-cnf.md` went stale the day after
@@ -49,14 +49,14 @@ REPO = Path(__file__).resolve().parent.parent
 # no longer exists -- which for these docs is the difference between a design
 # note and a fiction.
 VOCAB = {
-    "Op": "include/somtparser/uir/hir.h",
-    "SortKind": "include/somtparser/uir/hir.h",
-    "ExprKind": "include/somtparser/uir/hir.h",
-    "ObjKind": "include/somtparser/uir/hir.h",
-    "Bound": "include/somtparser/uir/fidelity.h",
-    "Fidelity": "include/somtparser/uir/fidelity.h",
-    "ErrorCode": "include/somtparser/uir/diagnostic.h",
-    "Severity": "include/somtparser/uir/diagnostic.h",
+    "Op": "include/somtparser/hir/hir.h",
+    "SortKind": "include/somtparser/hir/hir.h",
+    "ExprKind": "include/somtparser/hir/hir.h",
+    "ObjKind": "include/somtparser/hir/hir.h",
+    "Bound": "include/somtparser/translation/fidelity.h",
+    "Fidelity": "include/somtparser/translation/fidelity.h",
+    "ErrorCode": "include/somtparser/translation/diagnostic.h",
+    "Severity": "include/somtparser/translation/diagnostic.h",
 }
 
 # How far from a cited line a named identifier may be and still count as "this
@@ -209,7 +209,7 @@ class Checker:
 
         The blank/brace heuristic above catches a citation that decayed onto
         nothing. It cannot catch one that decayed onto *something else*: when
-        `Hir::toString` was inserted into src/uir/hir.cpp, qcir.md's reference to
+        `Hir::toString` was inserted into src/hir/hir.cpp, qcir.md's reference to
         mkOp's condAssert slid from line 307 onto `e->name = std::move(name);`,
         which is a real line of real code and passed every check. The quoted-
         snippet form caught the same drift in dimacs-cnf.md, because a quote can
@@ -217,7 +217,7 @@ class Checker:
 
         What can be compared is the prose. A citation almost always sits in a
         sentence that names the construct -- "`mkOp(Op::AND, {})` throws
-        (`src/uir/hir.cpp:363`)". So: take the backticked identifiers near the
+        (`src/hir/hir.cpp:363`)". So: take the backticked identifiers near the
         citation, keep those that occur in the cited file at all, and require at
         least one of them within a window of the cited lines. An identifier the
         file never mentions says nothing about where in it to look, and is

@@ -1,6 +1,6 @@
 // Which integer division each language means.
 //
-// The HIR carries three conventions and no default (test/uir/test_uir_division
+// The HIR carries three conventions and no default (test/hir/test_uir_division
 // checks that they differ). This file checks the other half: that each frontend
 // names the one ITS language specifies, rather than the one SMT-LIB has.
 //
@@ -23,8 +23,8 @@
 // sign. The implementation revision used by this audit is recorded in
 // docs/languages/xcsp3.md.
 
-#include "somtparser/uir/translate.h"
-#include "somtparser/uir/typecheck.h"
+#include "somtparser/translation/translate.h"
+#include "somtparser/hir/typecheck.h"
 #include "somtparser/lowering/hir_to_parser.h"
 #include "somtparser/languages/register_all.h"
 #include "somtparser/frontend/parser.h"

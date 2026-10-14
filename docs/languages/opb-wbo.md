@@ -165,7 +165,7 @@ The spec's own example instance contains
 
 That coefficient is `1.23 × 10^19`, larger than `LLONG_MAX = 9223372036854775807`
 (`9.22 × 10^18`). **The canonical example in the format document does not fit
-`Hir::Expr::int_value` (`long long`, `include/somtparser/uir/hir.h`).** See §4.1.
+`Hir::Expr::int_value` (`long long`, `include/somtparser/hir/hir.h`).** See §4.1.
 
 ### 2.4 WBO: soft constraints and the top cost
 
@@ -229,7 +229,7 @@ what `E_UNSUPPORTED_CONSTRUCT` should map onto in differential testing.
 
 ## 3. Construct → HIR mapping
 
-Target: `SOMTParser::Uir::Hir` as it exists at `include/somtparser/uir/hir.h` today.
+Target: `SOMTParser::Uir::Hir` as it exists at `include/somtparser/hir/hir.h` today.
 
 Two global decisions govern the whole table and are justified in §4.2:
 
@@ -248,7 +248,7 @@ Two global decisions govern the whole table and are justified in §4.2:
 | Variable `xN` (purely propositional occurrence) | `VarDecl{name, Sort::boolean()}` | none | `exact()` | Only available when the variable occurs in no arithmetic sum anywhere in the file; in practice OPB always sums, so this case is rare. |
 | Literal `x` | `mkIdent(x, INT)` | none | `exact()` | |
 | Literal `~x` | `mkOp(SUB, {mkInt(1), mkIdent(x, INT)})` | none | `exact()` | `1 - x` is the format's own normalisation (§2.1 of the restricted document says linear files already have negations removed this way). |
-| Weighted term `a x` | `mkOp(MUL, {mkInt(a), mkIdent(x, INT)})` | none | `exact()` | One non-constant factor, so `isNonlinearOperation` (`src/uir/hir.cpp`) does **not** flag `feat::nonlinear()`. |
+| Weighted term `a x` | `mkOp(MUL, {mkInt(a), mkIdent(x, INT)})` | none | `exact()` | One non-constant factor, so `isNonlinearOperation` (`src/hir/hir.cpp`) does **not** flag `feat::nonlinear()`. |
 | Sum `Σ a_i t_i` | `mkOp(ADD, {…})` | none | `exact()` | n-ary; `mkOp` accepts any arity ≥ 1. |
 | `>= d` | `mkOp(GE, {sum, mkInt(d)})` | none | `exact()` | |
 | `= d` | `mkOp(EQ, {sum, mkInt(d)})` | none | `exact()` | |
@@ -271,8 +271,8 @@ Two global decisions govern the whole table and are justified in §4.2:
 
 ### 4.1 Arbitrary-precision integers versus `long long int_value`
 
-**The gap.** `Hir::Expr` carries `long long int_value` (`include/somtparser/uir/hir.h`)
-and `mkInt(long long)` (`src/uir/hir.cpp`) is the only numeric constructor. OPB
+**The gap.** `Hir::Expr` carries `long long int_value` (`include/somtparser/hir/hir.h`)
+and `mkInt(long long)` (`src/hir/hir.cpp`) is the only numeric constructor. OPB
 coefficients, degrees and soft costs are unbounded integers by explicit design (§2.3), and
 the format document's own example exceeds `LLONG_MAX`. This is a real gap, not a
 theoretical one: the competition publishes a `SampleByIntSize.tar` archive stratified by
@@ -286,15 +286,15 @@ for bit-vectors.
 
 | Encoding | Fidelity | Size | When to prefer |
 |---|---|---|---|
-| **A. Refuse.** If `intsize > 63` (or any parsed literal fails to fit), emit `E_UNSUPPORTED_CONSTRUCT` and translate nothing. | n/a — no translation is produced, so no `Fidelity` value is claimed | — | **~~The default until §5's `LIT_BIGINT` lands.~~ No longer needed: §4.6.** A recorded failure is the honest outcome and it is what `intsize=` exists to enable. The evaluation counts it under `E_UNSUPPORTED_CONSTRUCT`, which `include/somtparser/uir/diagnostic.h:17-19` defines as "our coverage is thin — an engineering problem", the correct bucket. |
-| **B. Saturate** oversized coefficients at `±LLONG_MAX`. | `sound = false` **and** `complete = false`; `preserves_optimum = false`. No `Bound` describes it — the distortion is not a limit on a parameter. | O(1) | **Never.** Listed only to be rejected: it silently answers a different arithmetic question and no `Fidelity` value in `include/somtparser/uir/fidelity.h` can express it. |
+| **A. Refuse.** If `intsize > 63` (or any parsed literal fails to fit), emit `E_UNSUPPORTED_CONSTRUCT` and translate nothing. | n/a — no translation is produced, so no `Fidelity` value is claimed | — | **~~The default until §5's `LIT_BIGINT` lands.~~ No longer needed: §4.6.** A recorded failure is the honest outcome and it is what `intsize=` exists to enable. The evaluation counts it under `E_UNSUPPORTED_CONSTRUCT`, which `include/somtparser/translation/diagnostic.h:17-19` defines as "our coverage is thin — an engineering problem", the correct bucket. |
+| **B. Saturate** oversized coefficients at `±LLONG_MAX`. | `sound = false` **and** `complete = false`; `preserves_optimum = false`. No `Bound` describes it — the distortion is not a limit on a parameter. | O(1) | **Never.** Listed only to be rejected: it silently answers a different arithmetic question and no `Fidelity` value in `include/somtparser/translation/fidelity.h` can express it. |
 | **C. Bit-blast** the constraint into single-bit variables and re-encode the sum. | `equisat()` | `O(n · log₂ Σ|a_i|)` new variables | Only once a bit-vector `Sort` exists (cluster F, Plan 4 per `docs/languages-scoping.md` §4.2). Not available to Plan 2. |
 | **D. Carry the decimal string**, lowered through `mkConstInt(const std::string&)`. | `exact()` | O(1) | **Done, 2026-08-12 — but as `LIT_INT` and not as a new kind. See §4.6 for why.** |
 
 ### 4.2 Boolean variables inside arithmetic, and the objective's shape
 
 **The gap.** `Hir::Op::MUL`/`ADD` over `SortKind::BOOL` arguments is meaningless: `widen()`
-(`src/uir/hir.cpp`) returns `BOOL` when every argument is `BOOL`, and the lowering
+(`src/hir/hir.cpp`) returns `BOOL` when every argument is `BOOL`, and the lowering
 would hand `parser_->mkMul` a Boolean node. OPB's variables are Boolean but every
 constraint is arithmetic over them.
 
@@ -334,7 +334,7 @@ count across them, `S`.
 | Encoding | Construction | Fidelity | Size | When to prefer |
 |---|---|---|---|---|
 | **A. Product variable (linearisation)** | one fresh `INT` `p ∈ [0,1]` per distinct product, with `p ≤ l_j` for each `j` and `p ≥ Σ_j l_j − (k−1)`. This is exactly the transformation the competition's own parsers perform, and the linearised factorisation example in *General OPB Format* §3.1.2 shows its output. | `equisat()` | `+P` variables, `+S + P` constraints | **Default.** Keeps the model linear, so `isNonlinearOperation` never fires and the instance stays in QF_LIA. The header hints exist to size exactly this. |
-| **B. Keep the product** | `mkOp(MUL, {mkInt(a), l₁, …, l_k})` | `exact()` | O(1) | Semantically the cleanest. But `isNonlinearOperation` (`src/uir/hir.cpp`) counts ≥ 2 non-constant factors and sets `feat::nonlinear()`, so the whole instance is routed as non-linear integer arithmetic. Prefer only when the experiment is specifically about NIA. |
+| **B. Keep the product** | `mkOp(MUL, {mkInt(a), l₁, …, l_k})` | `exact()` | O(1) | Semantically the cleanest. But `isNonlinearOperation` (`src/hir/hir.cpp`) counts ≥ 2 non-constant factors and sets `feat::nonlinear()`, so the whole instance is routed as non-linear integer arithmetic. Prefer only when the experiment is specifically about NIA. |
 | **C. Boolean AND + propositional PB encoding** | variables stay `BOOL`; `p ↔ AND(l₁ … l_k)` via `mkOp(AND, …)`, and each PB constraint gets a propositional encoding (sequential weighted counter, BDD, or adder network) | `equisat()` | sequential counter / BDD: `O(n · d)` variables and constraints per constraint of `n` terms and degree `d`; adder: `O(n log Σ|a_i|)` | When the point of the experiment is SAT-vs-SMT on the same instance. The `O(n · d)` factor is pseudo-polynomial in the *degree*, so it is unusable on big-integer instances — which is why the corpus's integer-size stratification matters here too. |
 
 Note the asymmetry: option A leaves the *products* linear but the *coefficients* still
@@ -355,12 +355,12 @@ The direction of the loss in B/C is worth stating precisely, because it is easy 
 backwards: dropping `T` *admits* assignments the format rejects, so the translated problem
 has more models. Translated-SAT no longer implies original-SAT: `sound = false`,
 `complete = true`. That is `Fidelity::overApprox()`, which by design carries no `Bound`
-(`include/somtparser/uir/fidelity.h:93`); the site is recorded on
+(`include/somtparser/translation/fidelity.h:93`); the site is recorded on
 `EncodingChoice::site` instead.
 
 ### 4.5 Soft constraints have a struct but no lowering
 
-`Hir::Constraint` carries `soft`, `weight` and `group` (`include/somtparser/uir/hir.h`),
+`Hir::Constraint` carries `soft`, `weight` and `group` (`include/somtparser/hir/hir.h`),
 which is what `docs/languages-scoping.md` §3.2 means by "`Constraint.soft`/`weight`
 already exist in HIR". But `HirToParser::lower` refuses them:
 
@@ -391,7 +391,7 @@ Two designs, and they are not equivalent:
 ### 4.6 `Constraint::weight` is `double`
 
 `Hir::Constraint::weight` is declared `double weight = 1.0`
-(`include/somtparser/uir/hir.h`). WBO costs are strictly positive integers of arbitrary
+(`include/somtparser/hir/hir.h`). WBO costs are strictly positive integers of arbitrary
 size. A `double` represents integers exactly only up to `2^53 ≈ 9.0 × 10^15`; beyond that,
 distinct costs collide.
 
@@ -564,6 +564,6 @@ wrong about the *domain of its literals* and the *state of its lowering*.
 10. `docs/superpowers/specs/2026-08-10-languages-design.md` §4.1 (the `Fidelity` lattice
     and why over-approximation carries no `Bound`), §4.7 (HIR; the note that OPB/WBO and
     WCNF map to "maxsat + soft weights").
-11. `include/somtparser/uir/hir.h`, `include/somtparser/uir/fidelity.h`,
-    `src/uir/hir.cpp`, `src/lowering/hir_to_parser.cpp`, `src/lowering/omt_emitter.cpp` —
+11. `include/somtparser/hir/hir.h`, `include/somtparser/translation/fidelity.h`,
+    `src/hir/hir.cpp`, `src/lowering/hir_to_parser.cpp`, `src/lowering/omt_emitter.cpp` —
     the code every claim in §3–§5 is checked against.

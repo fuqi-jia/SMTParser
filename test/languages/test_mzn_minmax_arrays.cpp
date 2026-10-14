@@ -1,7 +1,7 @@
 // MiniZinc numeric max/min overloads preserve numeric value semantics.
 
 #include "somtparser/languages/register_all.h"
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 
 #include <iostream>
 #include <string>

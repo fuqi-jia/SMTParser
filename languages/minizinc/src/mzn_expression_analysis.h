@@ -1,6 +1,6 @@
 #pragma once
 
-#include "somtparser/uir/hir.h"
+#include "somtparser/hir/hir.h"
 
 #include <optional>
 #include <string>

@@ -1,6 +1,6 @@
 #pragma once
 #include "hir_bindings.h"
-#include "somtparser/uir/planning_numeric.h"
+#include "somtparser/hir/planning_numeric.h"
 
 namespace SomtPythonPlanningNumeric {
 namespace py = pybind11;

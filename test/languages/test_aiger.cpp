@@ -15,7 +15,7 @@
 // A latch with no reset column takes AIGER's specified default 0. That default
 // is recorded, but it is neither a version inference nor an approximation.
 
-#include "somtparser/uir/translate.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/languages/register_all.h"
 #include "somtparser/frontend/parser.h"
 

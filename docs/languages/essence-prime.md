@@ -110,7 +110,7 @@ Items: `language`, `given`, `letting`, `where`, `find`, `such that`, and one of
 containing `letting` assignments — the same two-file shape as MiniZinc's `.dzn`, and
 subject to the same rule: `Language::acceptsDataFiles()` must be overridden or
 `translate()` will refuse the pair outright rather than silently translate the model alone
-(`include/somtparser/uir/language.h:105`, and the refusal at `src/uir/translate.cpp:376-388`).
+(`include/somtparser/translation/language.h:105`, and the refusal at `src/translation/translate.cpp:376-388`).
 
 ### 2.2 Domains
 
@@ -119,7 +119,7 @@ by [D1, D2] of D` for multi-dimensional matrices. Domains may be named with `let
 
 As in XCSP3 (`xcsp3.md` §2.2), an integer domain is **a set, not a pair of bounds**:
 `int(1, 3, 5)` is not `int(1..5)`. The HIR's `VarDecl` carries exactly `lower_bound` and
-`upper_bound` (`include/somtparser/uir/hir.h`), so a sparse domain becomes an ordinary
+`upper_bound` (`include/somtparser/hir/hir.h`), so a sparse domain becomes an ordinary
 membership constraint. Reading it as a range is unsound in the direction that admits extra
 solutions.
 
@@ -145,7 +145,7 @@ target solver's — the same projection question `flatzinc.md` §2.4 raises abou
 
 ## 3. Construct → HIR mapping
 
-Target: `SOMTParser::Uir::Hir` as it exists at `include/somtparser/uir/hir.h` today.
+Target: `SOMTParser::Uir::Hir` as it exists at `include/somtparser/hir/hir.h` today.
 
 | Construct | HIR representation | New surface | Fidelity |
 |---|---|---|---|
@@ -168,7 +168,7 @@ Target: `SOMTParser::Uir::Hir` as it exists at `include/somtparser/uir/hir.h` to
 | `sum i : D . e` | expanded into an n-ary `Op::ADD` | none | `exact()` |
 | `[ e | i : D, c ]` | expanded | `ExprKind::COMPREHENSION` if kept unexpanded | `exact()` |
 | global constraints | cluster A's shared decomposition library | a call form | mostly `exact()` |
-| `minimising e` | `Objective{MINIMIZE, e}` (`include/somtparser/uir/hir.h, 981-986`) | none | `exact()` |
+| `minimising e` | `Objective{MINIMIZE, e}` (`include/somtparser/hir/hir.h, 981-986`) | none | `exact()` |
 
 ---
 
@@ -221,7 +221,7 @@ ranges over a concrete set.
 Expansion is right, and it is what every CP toolchain does. The consequence to plan for is
 **size**, not fidelity: a nested `forall i, j` over `n = 1000` is 10⁶ constraints, and
 `dimacs-cnf.md` §4.4's memory arithmetic applies (each `Hir::Expr` is on the order of
-140 bytes before its `args` buffer, `include/somtparser/uir/hir.h`). Interning
+140 bytes before its `args` buffer, `include/somtparser/hir/hir.h`). Interning
 repeated subexpressions matters here for the same reason it matters for DIMACS.
 
 So Essence′ needs **no quantifier surface** — a useful result, because it means cluster A
@@ -444,7 +444,7 @@ element access, and the objective.
 **Inherently lossy: nothing intrinsic to Essence′.** Losses come from encoding decisions
 shared with the rest of cluster A — a global constraint whose only practical encoding
 bounds a domain (`underApprox` with `Bound::DOMAIN_CUT`,
-`include/somtparser/uir/fidelity.h:92`) — not from anything the language itself expresses
+`include/somtparser/translation/fidelity.h:92`) — not from anything the language itself expresses
 and SMT cannot.
 
 **Ways to make it lossy by mistake**:
@@ -493,8 +493,8 @@ ranking to beat.
 9. `docs/languages/flatzinc.md` §2.2 (1-D flattening), §2.4 (comparing in the source
    language's vocabulary), §4.1 (measuring somebody else's encoder), §4.3 (`element`).
 10. `docs/languages/dimacs-cnf.md` §4.4 (the memory arithmetic §4.2 depends on).
-11. `include/somtparser/uir/hir.h`, `include/somtparser/uir/fidelity.h`,
-    `include/somtparser/uir/language.h`, `src/uir/translate.cpp`.
+11. `include/somtparser/hir/hir.h`, `include/somtparser/translation/fidelity.h`,
+    `include/somtparser/translation/language.h`, `src/translation/translate.cpp`.
 
 
 ### Relational undefinedness (corrected 2026-09-23)
