@@ -105,7 +105,16 @@ jobs:
             delvewheel repair -w {dest_dir}
             --add-path C:/vcpkg/installed/x64-windows/bin {wheel}
           CIBW_TEST_REQUIRES: "pytest jsonschema>=4.18 z3-solver==5.1.0.0"
-          CIBW_TEST_COMMAND: cd "{project}" && python -m pytest test/python -q
+          # Full regression runs on Python 3.9/3.12 in ci.yml. Each wheel
+          # validates its installed extension and representative public APIs.
+          CIBW_TEST_COMMAND: >-
+            cd "{project}" && python -m pytest -q
+            test/python/test_parse.py test/python/test_node.py
+            test/python/test_model_eval.py test/python/test_hir_api.py
+            test/python/test_dump_omt_roundtrip.py test/python/test_fp_bv_rounding.py
+            test/python/test_nl_repair.py test/python/test_nl_datasets.py
+            test/python/test_essence_constant_precedence.py
+            test/python/test_z3_set_carrier_index_bounds.py
 
       - uses: actions/upload-artifact@v7
         with:
