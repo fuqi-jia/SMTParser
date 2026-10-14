@@ -99,7 +99,7 @@ def independent_relation(result, initial, horizon, mutation=None):
 
 
 def parsed_relation(result):
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     target = z3.Optimize()
     target.from_string(result.to_smt2(sp.OmtDialect.Z3))
     actual = z3.And(*target.assertions())
@@ -152,7 +152,7 @@ def test_static_absorption_never_hides_invalid_source(tmp_path, condition, effec
               f"(:action act :precondition {condition} :effect {effect}))")
     result = encode(tmp_path, set(), 1, domain, goal)
     assert not result.ok
-    assert any("undeclared" in diagnostic.message for diagnostic in result.diagnostics)
+    assert any("undeclared" in diagnostic.message for diagnostic in result.diagnostic_items)
 
 
 @pytest.mark.parametrize("condition,enabled", [

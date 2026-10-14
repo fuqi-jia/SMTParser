@@ -11,7 +11,7 @@ import z3
 def translate(body, semantics='Mealy'):
     source = f'INFO {{ SEMANTICS: {semantics} TARGET: {semantics} }} MAIN {{ {body} }}'
     result = sp.translate(source=source, language='syntcomp')
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     assert not result.report.fidelity.bounds
     solver = z3.Solver()
     solver.set(timeout=10000)
@@ -150,7 +150,7 @@ def test_original_official_amba_shift_is_unchanged_and_realizable():
     raw = path.read_bytes()
     assert hashlib.sha256(raw).hexdigest() == '54bc4453f8b1b41e652f7078f7a70494565c4679b19a8228f2dc85b668c1f22b'
     result = sp.translate(source=raw.decode(), language='syntcomp')
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     text = result.to_smt2()
     parser = sp.Parser()
     parser.parse_string(text)

@@ -30,7 +30,7 @@ def test_contextual_empty_preserves_nonempty_query(sort, member):
     (check-sat-assuming ((= set.empty x)))"""
     assert not translate(source, False).ok
     t = translate(source)
-    assert t.ok, [d.message for d in t.diagnostics]
+    assert t.ok, [d.message for d in t.diagnostic_items]
     # Dropping check-sat-assuming makes this SAT; acceptance alone misses it.
     assert verdict(source) == verdict(t.to_smt2()) == "unsat"
 
@@ -43,7 +43,7 @@ def test_contextual_empty_preserves_nonempty_query(sort, member):
 def test_empty_predicate(body, answer):
     source = f"(set-logic ALL)(declare-const x (Set Int))(assert {body})(check-sat)"
     t = translate(source)
-    assert t.ok, [d.message for d in t.diagnostics]
+    assert t.ok, [d.message for d in t.diagnostic_items]
     assert verdict(source) == verdict(t.to_smt2()) == answer
 
 
@@ -68,7 +68,7 @@ def test_untyped_empty_uses_cvc5_boolean_default():
 def test_assumption_query_is_not_silently_combined_or_moved(tail):
     t = translate('(declare-const x Bool)(check-sat-assuming (x))' + tail)
     assert not t.ok
-    assert any("terminal query" in d.message for d in t.diagnostics)
+    assert any("terminal query" in d.message for d in t.diagnostic_items)
 
 
 def test_standard_assumptions_are_preserved_without_compatibility():

@@ -24,7 +24,7 @@ def make_result(name='x'):
             (declare-const |{name}| Int)
             (assert (exists ((w Int)) (and (= |{name}| w) (or (= w 0) (= w 2)))))
         """)
-        assert result.ok, [d.message for d in result.diagnostics]
+        assert result.ok, [d.message for d in result.diagnostic_items]
         return result
     builder = HirBuilder()
     builder.declare(name, 'Int')
@@ -32,7 +32,7 @@ def make_result(name='x'):
         'body': op('and', op('eq', {'var': name}, {'var': 'w'}),
             op('or', op('eq', {'var': 'w'}, lit(0)), op('eq', {'var': 'w'}, lit(2))))})
     result = builder.translate()
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     return result
 
 

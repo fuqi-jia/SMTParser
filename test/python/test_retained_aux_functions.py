@@ -17,7 +17,7 @@ def test_retained_table_definition_agrees_with_finite_relation(kind):
               '<minimize type="sum"><list>a b c d</list></minimize>'
               '</objectives></instance>')
     result = sp.translate(source=source, language='xcsp3', dialect=sp.OmtDialect.Z3)
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     script = result.to_smt2(sp.OmtDialect.Z3)
     assert '(define-fun-rec __somt_xcsp_group_' in script
     choices = json.loads(result.report.to_json())['choices']

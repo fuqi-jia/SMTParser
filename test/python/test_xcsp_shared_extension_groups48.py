@@ -10,7 +10,7 @@ z3 = pytest.importorskip("z3")
 
 def _translation(source):
     result = sp.translate(source=source, language="xcsp3")
-    assert result.ok, [diagnostic.message for diagnostic in result.diagnostics]
+    assert result.ok, [diagnostic.message for diagnostic in result.diagnostic_items]
     script = result.to_smt2()
     helper = re.search(r"\(define-fun (__somt_xcsp_group_\d+)\s+\(", script)
     assert helper, script
@@ -22,7 +22,7 @@ def _translation(source):
 
 def _fallback_assertions(source):
     result = sp.translate(source=source, language="xcsp3")
-    assert result.ok, [diagnostic.message for diagnostic in result.diagnostics]
+    assert result.ok, [diagnostic.message for diagnostic in result.diagnostic_items]
     script = result.to_smt2()
     assert "__somt_xcsp_group_" not in script
     return z3.parse_smt2_string(script)
@@ -30,7 +30,7 @@ def _fallback_assertions(source):
 
 def _semantic_assertions(source):
     result = sp.translate(source=source, language="xcsp3")
-    assert result.ok, [diagnostic.message for diagnostic in result.diagnostics]
+    assert result.ok, [diagnostic.message for diagnostic in result.diagnostic_items]
     return z3.parse_smt2_string(result.to_smt2())
 
 
@@ -200,7 +200,7 @@ def test_percent_ellipsis_uses_ordinary_expansion_fallback():
               '<supports>(0,1)</supports></extension><args>x y</args>'
               '<args>y x</args></group></constraints></instance>')
     result = sp.translate(source=source, language="xcsp3")
-    assert result.ok, [diagnostic.message for diagnostic in result.diagnostics]
+    assert result.ok, [diagnostic.message for diagnostic in result.diagnostic_items]
     script = result.to_smt2()
     assert "__somt_xcsp_group_" not in script
     assertions = z3.parse_smt2_string(script)
@@ -216,7 +216,7 @@ def test_formal_bearing_table_attributes_fall_back():
               '<supports marker="%0">(0,1)</supports></extension>'
               '<args>x y</args><args>y x</args></group></constraints></instance>')
     result = sp.translate(source=source, language="xcsp3")
-    assert result.ok, [diagnostic.message for diagnostic in result.diagnostics]
+    assert result.ok, [diagnostic.message for diagnostic in result.diagnostic_items]
     assert "__somt_xcsp_group_" not in result.to_smt2()
 
 
@@ -229,7 +229,7 @@ def test_malformed_or_wrong_arity_tuples_are_rejected(table):
               '<args>y x</args></group></constraints></instance>')
     result = sp.translate(source=source, language="xcsp3")
     assert not result.ok
-    assert result.diagnostics
+    assert result.diagnostic_items
 
 
 def test_bad_group_argument_arity_falls_back_to_existing_error():
@@ -240,7 +240,7 @@ def test_bad_group_argument_arity_falls_back_to_existing_error():
               '</group></constraints></instance>')
     result = sp.translate(source=source, language="xcsp3")
     assert not result.ok
-    assert result.diagnostics
+    assert result.diagnostic_items
 
 
 @pytest.mark.parametrize(

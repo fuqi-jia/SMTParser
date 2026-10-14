@@ -26,7 +26,7 @@ def _check_interval_union(domain, domain_values, values, polarity):
     relation = z3.And(z3.Or(*[x == value for value in values]), y == 1, z == 0)
     expected = z3.And(x_domain, y >= 0, y <= 1, z >= 0, z <= 1,
                       relation if polarity == "supports" else z3.Not(relation))
-    assert result.ok, [diagnostic.message for diagnostic in result.diagnostics]
+    assert result.ok, [diagnostic.message for diagnostic in result.diagnostic_items]
     emitted = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     solver = z3.Solver()
     solver.add(z3.Xor(emitted, expected))

@@ -7,7 +7,7 @@ z3 = pytest.importorskip("z3")
 
 def _check(source, expected):
     result = sp.translate(source=source, language="minizinc")
-    assert result.ok, [diagnostic.message for diagnostic in result.diagnostics]
+    assert result.ok, [diagnostic.message for diagnostic in result.diagnostic_items]
     solver = z3.Solver()
     solver.add(*z3.parse_smt2_string(result.to_smt2(sp.OmtDialect.Z3)))
     assert solver.check() == expected

@@ -84,7 +84,7 @@ int main() {
         VERIFY(parsed.model->constraints[0].formula->op == H::Op::LE);
         TranslateOptions options;
         options.omt_dialect = Lower::OmtDialect::Z3;
-        auto translated = translateHir(*parsed.model, options);
+        auto translated = translate(*parsed.model, options);
         VERIFY(translated.ok() && translated.usesPackedSmtStream());
         VERIFY(translated.report().stats().num_constraints == 2);
         VERIFY(translated.objectiveCount() == 1);

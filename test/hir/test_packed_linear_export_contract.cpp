@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
                 TranslateOptions options;
                 options.profile_id = "feasibility";
                 options.omt_dialect = OmtDialect::None;
-                const auto packed = SOMTParser::translateHir(model, options);
+                const auto packed = SOMTParser::translate(model, options);
                 if (!packed.ok()) {
                     for (const auto& diagnostic : packed.diagnostics().all()) std::cerr << diagnostic.message << '\n';
                 }
@@ -153,7 +153,7 @@ int main(int argc, char** argv) {
                 row.formula = H::mkOp(H::Op::LE,
                     {H::mkIdent(name, model.decls.front().sort), H::mkReal("3.5")});
                 model.constraints.push_back(row);
-                const auto expanded = SOMTParser::translateHir(model, options);
+                const auto expanded = SOMTParser::translate(model, options);
                 VERIFY(expanded.ok());
                 if (argc == 2) {
                     for (const auto& item : {

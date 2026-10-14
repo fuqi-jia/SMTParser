@@ -22,7 +22,7 @@ def test_bad_assignment_rejected_even_without_a_live_obligation(source, horn):
     translated = sp.translate(source=source, language="boogie",
                               options={"chc": "1"} if horn else {})
     assert not translated.ok
-    assert any("assignment" in diagnostic.message for diagnostic in translated.diagnostics)
+    assert any("assignment" in diagnostic.message for diagnostic in translated.diagnostic_items)
 
 
 @pytest.mark.parametrize("constants,assertion,expected", [
@@ -33,7 +33,7 @@ def test_bad_assignment_rejected_even_without_a_live_obligation(source, horn):
 def test_horn_unique_constants_constrain_entry_states(constants, assertion, expected):
     translated = sp.translate(source=constants + "procedure P(){assert " + assertion + ";}",
                               language="boogie", options={"chc": "1"})
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     context = z3.Context()
     solver = z3.Solver(ctx=context)
     solver.set(timeout=10000)
@@ -51,7 +51,7 @@ def test_signed_mod_constant_folding_matches_independent_symbolic_operator(width
     source = (f"(declare-const observed (_ BitVec {width}))"
               f"(assert (= observed (bvsmod (_ bv{left} {width}) (_ bv{right} {width}))))")
     translated = sp.translate(source=source, language="smtlib2")
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     context = z3.Context()
     actual = z3.And(*z3.parse_smt2_string(translated.to_smt2(), ctx=context))
     observed = z3.BitVec("observed", width, ctx=context)

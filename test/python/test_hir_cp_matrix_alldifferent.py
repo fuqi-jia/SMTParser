@@ -10,7 +10,7 @@ def test_four_by_four_all_different_covers_all_sixteen_cells():
     builder.constrain({"op": "all_different", "args": [{"var": "square"}]})
 
     translated = builder.translate()
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     actual = z3.And(*z3.parse_smt2_string(translated.to_smt2()))
     square = z3.Array("square", z3.IntSort(),
                       z3.ArraySort(z3.IntSort(), z3.IntSort()))

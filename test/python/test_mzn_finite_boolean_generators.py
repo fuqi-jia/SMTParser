@@ -6,7 +6,7 @@ import somtparser as sp
 
 def _translate(source):
     result = sp.translate(source=source, language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     assert "finite-domain-quantifier" not in result.report.to_json()
     target = result.to_smt2(sp.OmtDialect.Z3)
     assertions = z3.parse_smt2_string(target)

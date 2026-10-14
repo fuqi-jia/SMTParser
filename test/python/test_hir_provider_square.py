@@ -42,7 +42,7 @@ def test_exact_square_rewrite_preserves_complete_relation_and_ledger(sort):
         builder.declare("x", sort)
         builder.constrain(expr)
         translated = builder.translate()
-        assert translated.ok, [d.message for d in translated.diagnostics]
+        assert translated.ok, [d.message for d in translated.diagnostic_items]
         return z3.And(*z3.parse_smt2_string(translated.to_smt2(), ctx=ctx))
 
     ctx = z3.Context()

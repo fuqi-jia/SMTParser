@@ -209,7 +209,7 @@ invariant support follows the earlier SyGuS-COMP'15 extension described in the
 ```python
 import somtparser as sp
 
-result = sp.convert("languages/sygus/instances/ok/max2.sl",
+result = sp.translate("languages/sygus/instances/ok/max2.sl",
                     language="sygus", profile="bmc",
                     options={"grammar_depth": "2"})
 assert result.exit_code == 0, result.diagnostics

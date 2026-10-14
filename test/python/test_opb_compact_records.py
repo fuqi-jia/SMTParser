@@ -23,7 +23,7 @@ def test_compact_wbo_records_preserve_each_source_assignment(top):
     source += "+1 x01 +1 x1 +1 x2 >= 1 ;\n"
     source += "\n".join(f"[{cost}] {expr} ;" for cost, expr, _ in soft)
     result = sp.translate(source=source, language="opb", dialect=sp.OmtDialect.Z3)
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     script = result.to_smt2(sp.OmtDialect.Z3)
     for assignment in product((0, 1), repeat=3):
         expected = sum(cost for cost, _, predicate in soft if not predicate(*assignment))
@@ -42,7 +42,7 @@ def test_compact_opb_records_keep_signed_big_coefficients_and_unused_zero_vars(d
     source = f"{direction}: +{weight} x01 ~x1 -{weight} ~x01 x1 +0 x2 ;\n"
     source += "+1 x01 +1 x1 <= 2 ;\n"
     result = sp.translate(source=source, language="opb", dialect=sp.OmtDialect.Z3)
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     script = result.to_smt2(sp.OmtDialect.Z3)
     assert re.search(r"\(declare-(?:fun\s+\|?x2\|?\s+\(\)|const\s+\|?x2\|?)\s+Int\s*\)", script)
     for a, b, c in product((0, 1), repeat=3):
@@ -68,7 +68,7 @@ def test_compact_opb_records_keep_signed_big_coefficients_and_unused_zero_vars(d
 def test_compact_hard_records_preserve_all_six_relations(relation, predicate):
     source = f"+2 x01 ~x1 -1 x2 {relation} 1 ;\n"
     result = sp.translate(source=source, language="opb", dialect=sp.OmtDialect.Z3)
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     script = result.to_smt2(sp.OmtDialect.Z3)
     for a, b, c in product((0, 1), repeat=3):
         expected = predicate(2 * a * (1 - b) - c, 1)

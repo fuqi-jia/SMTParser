@@ -7,7 +7,7 @@ import z3
 def translate(source, profile="default"):
     result = sp.translate(source=source, language="flatzinc", profile=profile,
                           dialect=sp.OmtDialect.Z3)
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     parsed = z3.Optimize()
     script = result.to_smt2(sp.OmtDialect.Z3)
     parsed.from_string(script)

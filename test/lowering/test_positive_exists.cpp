@@ -124,7 +124,7 @@ int main() {
         model.objectives.push_back(objective);
         SOMTParser::TranslateOptions options;
         options.omt_dialect = L::OmtDialect::Z3;
-        const auto translated = SOMTParser::translateHir(model, options);
+        const auto translated = SOMTParser::translate(model, options);
         VERIFY(translated.ok());
         const auto smt = translated.toSmt2();
         VERIFY(smt.find("(exists") == std::string::npos);

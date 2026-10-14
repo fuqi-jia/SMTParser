@@ -8,7 +8,7 @@ from somtparser import _somtparser as native
 
 def body(model):
     translated = model.translate()
-    assert translated.ok, [row.message for row in translated.diagnostics]
+    assert translated.ok, [row.message for row in translated.diagnostic_items]
     return z3.And(*z3.parse_smt2_string(translated.to_smt2()))
 
 

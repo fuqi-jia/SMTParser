@@ -17,6 +17,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <iosfwd>
 #include <stdexcept>
 #include <string>
@@ -39,11 +40,22 @@ struct TranslateOptions {
      * warn (docs/languages/dimacs-cnf.md §4.2).
      */
     Lang::ParseOptions parse;
+    bool details = true;
+    bool module = false;
+    std::string report_path;
+    // String dialects are validated at the same boundary as language/profile IDs.
+    std::optional<std::string> dialect_name;
+    bool profile_explicit = false;
+    bool dialect_explicit = false;
 };
 
 class Translation {
 public:
     bool ok() const noexcept { return ok_; }
+    int exitCode() const noexcept { return exit_code_; }
+    const std::string& smt2() const noexcept { return completed_smt2_; }
+    const std::string& diagnosticText() const noexcept { return diagnostic_text_; }
+    bool hasDetails() const noexcept { return details_; }
     /** Whether a materialized parser tree is available. Packed models
      *  are streamed directly to SMT-LIB to avoid per-symbol/per-clause expansion. */
     bool hasParser() const noexcept { return static_cast<bool>(parser_); }
@@ -51,15 +63,18 @@ public:
      *  translation uses the packed streaming backend. Failed translations keep
      *  the existing null result; check ok() and hasParser() before requesting. */
     ParserPtr parser() const {
+        requireDetails("parser");
+        if (module_mode_) { throw std::logic_error("query-free module has no materialized Parser; use smt2"); }
         if (packed_smt_) {
             throw std::logic_error("Translation uses packed SMT streaming and has no materialized Parser; use writeSmt2() or toSmt2()");
         }
         return parser_;
     }
     bool usesPackedSmtStream() const noexcept { return packed_smt_; }
-    const Uir::TranslationReport& report() const noexcept { return report_; }
+    const Uir::TranslationReport& report() const { requireDetails("report"); return report_; }
     const Uir::Diagnostics& diagnostics() const noexcept { return diagnostics_; }
-    const Uir::Sem::TranslationPipeline& semantics() const noexcept {
+    const Uir::Sem::TranslationPipeline& semantics() const {
+        requireDetails("semantics");
         return semantics_;
     }
     Uir::Hir::SetSolverRequirements setSolverRequirements() const noexcept {
@@ -85,6 +100,10 @@ public:
     std::size_t objectiveCount() const noexcept;
 
 private:
+    void requireDetails(const char* operation) const {
+        if (!details_) { throw std::logic_error(std::string(operation) + " is unavailable with details=False; translate again with details=True"); }
+    }
+    friend struct TranslationAccess;
     void validateForSmt2() const;
     std::string objectiveCommands(Lower::OmtDialect dialect,
                                   std::vector<std::string>* objective_names,
@@ -99,6 +118,11 @@ private:
                                      const std::vector<Uir::Hir::LocatedExpr>&);
 
     bool                                 ok_ = false;
+    int exit_code_ = 1;
+    bool details_ = true;
+    bool module_mode_ = false;
+    bool captured_output_ = true;
+    std::string completed_smt2_, diagnostic_text_, module_smt2_, module_interface_json_;
     ParserPtr                            parser_;
     Uir::Hir::ConstraintModelPtr                   model_;
     std::shared_ptr<Lower::HirToParser>  lowered_;
@@ -118,12 +142,14 @@ private:
     std::vector<std::string> packed_linear_symbols_;
 };
 
-Translation translate(const Lang::SourceUnit& unit, const TranslateOptions& opts = {});
+Translation translate(const Lang::SourceUnit& unit, const TranslateOptions& opts = {},
+                      std::istream* input = nullptr, std::ostream* output = nullptr,
+                      std::ostream* diagnostics = nullptr);
 
 /** Translate a typed HIR snapshot through the same checked pass pipeline.
  *  Copies the mutable container; immutable expressions may safely be shared.
  *  The contract starts at HIR and makes no natural-language intent claim. */
-Translation translateHir(const Uir::Hir::ConstraintModel& model,
+Translation translate(const Uir::Hir::ConstraintModel& model,
                          const TranslateOptions& opts = {});
 
 /** Additionally validate source terms erased during construction. These terms
@@ -131,9 +157,21 @@ Translation translateHir(const Uir::Hir::ConstraintModel& model,
  *  lowering, or added to the semantic signature. Each term must be closed over
  *  its lexical binders (ordinary model identifiers remain free). The caller
  *  retains immutable terms for this synchronous call only. */
-Translation translateHir(const Uir::Hir::ConstraintModel& model,
+Translation translate(const Uir::Hir::ConstraintModel& model,
                          const TranslateOptions& opts,
                          const std::vector<Uir::Hir::LocatedExpr>& source_terms);
+
+[[deprecated("use translate(model, options)")]]
+inline Translation translateHir(const Uir::Hir::ConstraintModel& model,
+                                const TranslateOptions& opts = {}) {
+    return translate(model, opts);
+}
+[[deprecated("use translate(model, options, source_terms)")]]
+inline Translation translateHir(const Uir::Hir::ConstraintModel& model,
+                                const TranslateOptions& opts,
+                                const std::vector<Uir::Hir::LocatedExpr>& source_terms) {
+    return translate(model, opts, source_terms);
+}
 
 } // namespace SOMTParser
 

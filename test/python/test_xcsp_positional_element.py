@@ -9,7 +9,7 @@ def _translate(body, declarations):
     source = ('<instance format="XCSP3" type="CSP"><variables>' + declarations
               + '</variables><constraints>' + body + '</constraints></instance>')
     result = sp.translate(source=source, language='xcsp3')
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     script = result.to_smt2()
     return script, z3.And(*z3.parse_smt2_string(script))
 
@@ -83,4 +83,4 @@ def test_nonvariable_index_is_rejected_before_positional_helper(index):
               + '</index><value>v</value></element></constraints></instance>')
     result = sp.translate(source=source, language='xcsp3')
     assert not result.ok
-    assert any('declared' in d.message for d in result.diagnostics)
+    assert any('declared' in d.message for d in result.diagnostic_items)

@@ -137,7 +137,7 @@ def test_same_dialect_is_available_for_bounded_queries_and_reported():
       (check-system S :input ((x (E Int))) :reachable (r ((_ is some) x)) :query (q (r)))'''
     result = sp.translate(source=source, language='moxi', profile='bmc',
                           options={**OPTION, 'bmc_depth': '1'})
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     assert any(c.strategy == 'explicit-flat-datatype-constructors' for c in result.report.choices)
     solver = z3.Solver()
     solver.from_string(result.to_smt2())
@@ -154,7 +154,7 @@ def test_nullary_constructor_inference_preserves_formula(term):
       (declare-datatype E (par (T) ((none) (some (value T)))))
       (declare-const x (E Int))(declare-const b Bool)'''
     result = sp.translate(source=declarations + '(assert ' + term + ')', language='smtlib2')
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     # The explicitly typed source is an independent reference accepted by Z3.
     reference = z3.And(*z3.parse_smt2_string(declarations + '(assert ' +
                          term.replace('none', '(as none (E Int))') + ')'))
@@ -171,7 +171,7 @@ def test_separate_nullary_occurrences_keep_separate_instances():
       (assert (= x none))(assert (= y none))
       (assert ((_ is none) x))(assert ((_ is none) y))'''
     result = sp.translate(source=source, language='smtlib2')
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     # Z3's indexed tester lookup is ambiguous after the same parametric nullary
     # constructor has been instantiated twice, including on the typed reference
     # below. cvc5 can check the complete source and output, including both testers.

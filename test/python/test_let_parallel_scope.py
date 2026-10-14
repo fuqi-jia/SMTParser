@@ -47,7 +47,7 @@ def test_parallel_rhs_scope_survives_source_to_hir(base, claim, negated):
     source = f"(set-logic ALL)\n{base}\n(assert {formula})\n"
     assert solver_statuses(source) == (expected, expected)
     translated = sp.translate(source=source, language="smtlib2")
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     assert solver_statuses(translated.to_smt2()) == (expected, expected)
 
 

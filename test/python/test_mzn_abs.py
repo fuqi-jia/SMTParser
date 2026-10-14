@@ -7,7 +7,7 @@ z3 = pytest.importorskip("z3")
 
 def translate(source):
     result = sp.translate(source=source, language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     return z3.And(*z3.parse_smt2_string(result.to_smt2(sp.OmtDialect.Z3)))
 
 
@@ -84,4 +84,4 @@ def test_absolute_value_keeps_dynamic_index_definedness(negated):
 def test_invalid_absolute_value_is_diagnosed(source, diagnostic):
     result = sp.translate(source=source + " solve satisfy;", language="minizinc")
     assert not result.ok
-    assert any(diagnostic in d.message for d in result.diagnostics)
+    assert any(diagnostic in d.message for d in result.diagnostic_items)

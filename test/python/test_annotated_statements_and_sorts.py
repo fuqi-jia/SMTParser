@@ -31,7 +31,7 @@ def raw_model(expr):
 
 def parsed(value):
     translated = build_hir(value, SOURCE).translate()
-    assert translated.ok, translated.diagnostics
+    assert translated.ok, translated.diagnostic_items
     target = z3.Optimize()
     text = translated.to_smt2(dialect=sp.OmtDialect.Z3)
     assert "define-objective" not in text and "optimize-sat" not in text

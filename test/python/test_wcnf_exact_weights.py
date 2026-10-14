@@ -16,7 +16,7 @@ def test_exact_cost_and_top_classification(packed, old_format, weight):
     source = (header + hard_equal + " 1 2 0\n" + hard_above + " -3 0\n"
               + f"000{weight} -1 0\n{weight - 1} 3 0\n7 0\n")
     result = sp.translate(source=source, language="wcnf", options={"packed": packed})
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     target = z3.Optimize()
     target.from_string(result.to_smt2(sp.OmtDialect.Z3))
     x1, x2, x3 = z3.Bools("x1 x2 x3")
@@ -38,7 +38,7 @@ def test_large_weight_with_small_or_absent_top(packed, top):
     marker = "" if top is None else f" {top}"
     source = f"p wcnf 1 2{marker}\n{weight} 1 0\n7 -1 0\n"
     result = sp.translate(source=source, language="wcnf", options={"packed": packed})
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     target = z3.Optimize()
     target.from_string(result.to_smt2(sp.OmtDialect.Z3))
     x1 = z3.Bool("x1")
@@ -59,7 +59,7 @@ def test_weights_remain_positive_decimal_integers(packed, token):
     result = sp.translate(source=f"{token} 1 0\n", language="wcnf",
                           options={"packed": packed})
     assert not result.ok
-    assert any(d.severity == sp.Severity.ERROR for d in result.diagnostics)
+    assert any(d.severity == sp.Severity.ERROR for d in result.diagnostic_items)
 
 
 def test_file_stream_matches_inline_input_and_preserves_parser(tmp_path):

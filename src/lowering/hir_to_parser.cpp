@@ -2032,7 +2032,7 @@ bool HirToParser::lowerImpl(const H::ConstraintModel& model,
     // This was declared, serialised into the report JSON and bound to Python,
     // and never assigned: every translation in the tree reported 0 smt nodes,
     // including the 432 rows of the corpus sweep whose whole point is size.
-    {
+    if (report.detailsEnabled()) {
         std::unordered_set<const DAGNode*> seen;
         std::vector<std::shared_ptr<DAGNode>> stack;
         for (const std::shared_ptr<DAGNode>& a : parser_->getAssertions()) {

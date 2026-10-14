@@ -17,7 +17,7 @@ FIXTURES = (
 def _translate(name):
     source = (FIXTURES / name).read_text(encoding="utf-8")
     result = sp.translate(source=source, language="syntcomp")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     return result
 
 
@@ -70,7 +70,7 @@ def test_temporal_mealy_strategy_observes_the_whole_current_input_tuple():
           GUARANTEES {{ (o <-> ((i && !j) || (!i && j))) && X[!] true; }}
         }}'''
         result = sp.translate(source=source, language="syntcomp")
-        assert result.ok, [d.message for d in result.diagnostics]
+        assert result.ok, [d.message for d in result.diagnostic_items]
         script = result.to_smt2()
         if semantics == "Mealy":
             assert "(Array Bool (Array Bool Bool))" in script

@@ -51,7 +51,7 @@ def test_tuple_catalog_and_heterogeneous_nested_sorts():
         op("eq", indexed("tuple.select", [2], var("value")), {"tuple_unit": True})
     )
     result = builder.translate()
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     text = result.to_smt2()
     assert "(Tuple Bool (_ BitVec 2) UnitTuple)" in text
     assert "((_ tuple.select 0) value)" in text
@@ -68,7 +68,7 @@ def test_unit_and_empty_projection_are_real_tuple_values():
         op("eq", indexed("tuple.project", [], var("t")), {"tuple_unit": True})
     )
     result = builder.translate()
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     assert "tuple.unit" in result.to_smt2()
     assert "((_ tuple.project)" not in result.to_smt2()
 
@@ -110,7 +110,7 @@ def test_bool_bitvector_tuple_semantics_against_cvc5_exhaustively():
                 builder.constrain(op("eq", var("t"), input_value))
                 builder.constrain(claim)
                 translated = builder.translate()
-                assert translated.ok, [d.message for d in translated.diagnostics]
+                assert translated.ok, [d.message for d in translated.diagnostic_items]
                 text = translated.to_smt2()
                 if "(check-sat)" not in text:
                     text += "\n(check-sat)\n"
@@ -216,4 +216,4 @@ def test_selected_field_sort_is_checked_by_native_typechecker():
     result = builder.translate()
     assert not result.ok
     assert any("Bool" in diagnostic.message or "sort" in diagnostic.message
-               for diagnostic in result.diagnostics)
+               for diagnostic in result.diagnostic_items)

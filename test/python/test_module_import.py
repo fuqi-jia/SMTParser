@@ -119,7 +119,7 @@ def test_malformed_datatype_is_not_reported_only_as_missing_query():
     assert any(d.code == sp.ErrorCode.E_PARSE for d in result.diagnostics)
     query = sp.translate(str(path), language='moxi', profile='bmc', options={'bmc_depth': '3'})
     assert not query.ok
-    assert any(d.code == sp.ErrorCode.E_PARSE for d in query.diagnostics)
+    assert any(d.code == sp.ErrorCode.E_PARSE for d in query.diagnostic_items)
 
 
 def test_external_calls_preserve_constraints_types_and_annotation_punctuation():

@@ -26,7 +26,7 @@ def _emit(rows, *, boolean=False, negate=False, computed=False):
         constraint {'not ' if negate else ''}table([{','.join(names)}], {table});
         solve satisfy;
     """)
-    assert result.ok, [diagnostic.message for diagnostic in result.diagnostics]
+    assert result.ok, [diagnostic.message for diagnostic in result.diagnostic_items]
     target = result.to_smt2(sp.OmtDialect.Z3)
     actual = z3.And(*z3.parse_smt2_string(target))
     variables = [z3.Bool(name) if boolean else z3.Int(name) for name in names]
@@ -82,7 +82,7 @@ def test_partial_function_tuple_closes_at_predicate_boundary(negate, partial_col
         constraint {'not ' if negate else ''}table([{','.join(values)}],t);
         solve satisfy;
     """)
-    assert result.ok, [diagnostic.message for diagnostic in result.diagnostics]
+    assert result.ok, [diagnostic.message for diagnostic in result.diagnostic_items]
     solver = z3.Solver()
     solver.add(*z3.parse_smt2_string(result.to_smt2(sp.OmtDialect.Z3)))
     assert solver.check() == (z3.sat if negate else z3.unsat)

@@ -12,7 +12,7 @@ import somtparser as sp
 
 def translate(source):
     result = sp.translate(source=source, language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     return result, z3.And(*z3.parse_smt2_string(result.to_smt2()))
 
 
@@ -495,7 +495,7 @@ constraint symmetry_breaking_constraint(value_precede_chain(Colors, array1d(puzz
 var int: objective = max(diff_across ++ diff_down);
 solve minimize objective;
 """, language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
 
     # Independently enumerate all 16 two-color matrices. The marker counts
     # require adjacent colors to differ in each row and column; the symmetry

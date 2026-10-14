@@ -153,7 +153,7 @@ int main(int argc, char** argv) {
     SOMTParser::TranslateOptions options;
     options.profile_id = "feasibility";
     options.omt_dialect = OmtDialect::None;
-    const auto actual = SOMTParser::translateHir(model, options);
+    const auto actual = SOMTParser::translate(model, options);
     if (!actual.ok()) {
         for (const auto& d : actual.diagnostics().all()) std::cerr << d.message << '\n';
     }
@@ -196,7 +196,7 @@ int main(int argc, char** argv) {
                              H::mkIdent("|false|", H::Sort::real())}),
         H::mkOp(H::Op::ADD, {H::mkIdent("aux", H::Sort::real()), H::mkReal("0.5")})});
     expanded.constraints.push_back(std::move(equation));
-    const auto expected = SOMTParser::translateHir(expanded, options);
+    const auto expected = SOMTParser::translate(expanded, options);
     VERIFY(expected.ok());
     if (argc == 2) {
         std::ofstream packed(std::string(argv[1]) + "/packed.smt2");
@@ -218,7 +218,7 @@ int main(int argc, char** argv) {
     SOMTParser::Lower::HirToParser free_lowering(free_parser);
     VERIFY(free_lowering.lowerPackedLinearPreamble(free_columns, report, diagnostics, true, true));
     VERIFY(free_lowering.varMap().empty());
-    const auto free_translation = SOMTParser::translateHir(free_columns, options);
+    const auto free_translation = SOMTParser::translate(free_columns, options);
     VERIFY(free_translation.ok());
     VERIFY(occurrences(free_translation.toSmt2(OmtDialect::None), "(declare-fun free") == 2048);
     VERIFY(free_translation.semantics().stages().back().target_signature.symbols.size() == 2048);

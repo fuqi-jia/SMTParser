@@ -64,7 +64,7 @@ def translate_releasing_source(text, mode, depth, tmp_path):
         path.unlink()
     else:
         result = sp.translate(source=text, **options)
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     return result
 
 
@@ -115,4 +115,4 @@ def test_populated_or_unused_adapters_preserve_sort_errors(text, line, part, mod
     else:
         result = sp.translate(source=text, **options)
     assert not result.ok
-    assert any(d.line == line and part in d.message for d in result.diagnostics)
+    assert any(d.line == line and part in d.message for d in result.diagnostic_items)

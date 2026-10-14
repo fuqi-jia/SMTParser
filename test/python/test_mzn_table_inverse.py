@@ -8,7 +8,7 @@ from somtparser import _somtparser as native
 
 def translate(source):
     result = sp.translate(source=source, language='minizinc', dialect=sp.OmtDialect.Z3)
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     return result, z3.And(*z3.parse_smt2_string(result.to_smt2(sp.OmtDialect.Z3)))
 
 
@@ -109,7 +109,7 @@ def test_natural_language_hir_cp_table_uses_shared_native_global(positive):
     builder.constrain({'cp': 'table', 'items': [{'var':'x'}],
                        'tuples': [[-2], [4], [4]], 'positive': positive})
     result = builder.translate()
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     assert 'table-row-disjunction' in result.report.to_json()
     formula = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     expected = z3.Or(z3.Int('x') == -2, z3.Int('x') == 4)

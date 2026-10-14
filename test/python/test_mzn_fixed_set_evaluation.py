@@ -11,7 +11,7 @@ z3 = pytest.importorskip("z3")
 
 def _translation(source):
     result = sp.translate(source=source, language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     return result
 
 
@@ -164,7 +164,7 @@ solve satisfy;
 """
     result = sp.translate(source=source, language="minizinc")
     assert not result.ok
-    assert any(d.severity == sp.Severity.ERROR for d in result.diagnostics)
+    assert any(d.severity == sp.Severity.ERROR for d in result.diagnostic_items)
 
 
 def test_decision_set_terms_remain_symbolic_instead_of_being_constant_folded():

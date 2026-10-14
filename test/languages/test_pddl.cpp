@@ -238,17 +238,17 @@ void checkSharedPlanningIdentifiers(Lang::Language& language) {
     scoped.constraints.push_back(std::move(constraint));
     TranslateOptions options;
     options.profile_id = "bmc";
-    VERIFY(translateHir(scoped, options).ok());
+    VERIFY(translate(scoped, options).ok());
     // HIR rejects a binder that shadows any global declaration. Sharing must
     // retain that diagnostic rather than reusing an unrelated successful check.
     scoped.constraints.back().formula = Hir::mkExists({{global->name, Hir::Sort::real()}},
         Hir::mkOp(Hir::Op::AND, {global, Hir::mkOp(Hir::Op::EQ,
             {Hir::mkBoundVar(global->name, Hir::Sort::real()), Hir::mkReal("0")})}));
-    VERIFY(!translateHir(scoped, options).ok());
+    VERIFY(!translate(scoped, options).ok());
     // Neither the accepted scope nor the rejected shadow can mutate the shared
     // global Bool; the original snapshot remains reusable after lowering.
     VERIFY(global->kind == Hir::ExprKind::IDENT && global->sort.kind == Hir::SortKind::BOOL);
-    VERIFY(translateHir(*first.model, options).ok());
+    VERIFY(translate(*first.model, options).ok());
 
     Lang::SourceUnit unit;
     unit.main_path = "languages/pddl/instances/ok/fond-retry.pddl";

@@ -44,7 +44,7 @@ def test_minizinc_shared_maximum_objective_is_compact_and_correct():
     translated = sp.translate(
         source="array[1..32] of var 0..7:x;constraint x[32]=7;solve minimize max(x);",
         language="minizinc", dialect=sp.OmtDialect.Z3)
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     output = translated.to_smt2(sp.OmtDialect.Z3)
     assert len(output) < 30000
     context = z3.Context()

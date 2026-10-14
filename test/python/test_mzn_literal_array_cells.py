@@ -16,7 +16,7 @@ def _translate(tmp_path, declaration, literal, constraints, data_file):
 
 
 def _exact(result, expected):
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     actual = z3.And(*z3.parse_smt2_string(result.to_smt2(sp.OmtDialect.Z3)))
     solver = z3.Solver()
     solver.add(z3.Xor(actual, expected))
@@ -70,4 +70,4 @@ def test_real_array_keeps_integer_promotion(tmp_path, data_file, literal, expect
 def test_fast_cells_do_not_accept_invalid_types_or_tokens(tmp_path, declaration, literal, data_file):
     result = _translate(tmp_path, declaration, literal, "", data_file)
     assert not result.ok
-    assert result.diagnostics
+    assert result.diagnostic_items

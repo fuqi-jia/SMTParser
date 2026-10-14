@@ -21,8 +21,8 @@ The translation path is language frontend -> HIR -> shared encoding -> SMT DAG
 construct the SMT DAG directly. Use `hir/` and `translation/` header paths;
 historical C++ namespace names containing `Uir` remain public API.
 
-File conversion is the public `convert` API in `translation/convert.h`, linked
-with `SOMTParser::languages`, and `somtparser.convert` in Python. There is no
+File conversion is the public `translate` API in `translation/translate.h`, linked
+with `SOMTParser::languages`, and `somtparser.translate` in Python. There is no
 standalone converter executable or console script. Keep conversion/report
 policy in that library implementation and Python bindings limited to adapters.
 

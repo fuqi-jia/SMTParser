@@ -20,7 +20,7 @@ def encode(tmp_path, domain, initial='', horizon=2):
     path.write_text('(define (problem p) (:domain d) (:init ' + initial + ') (:goal (and)))')
     result = sp.translate(source=domain, data=[str(path)], language='pddl', profile='bmc',
                           options={'plan_horizon': str(horizon)})
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.set(timeout=10000)
     solver.add(z3.parse_smt2_string(result.to_smt2()))

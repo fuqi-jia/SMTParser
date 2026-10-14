@@ -9,7 +9,7 @@ import somtparser as sp
 
 def _solver(source):
     result = sp.translate(source=source, language="minizinc")
-    assert result.ok, [diagnostic.message for diagnostic in result.diagnostics]
+    assert result.ok, [diagnostic.message for diagnostic in result.diagnostic_items]
     solver = z3.Solver()
     solver.add(*z3.parse_smt2_string(result.to_smt2()))
     return solver

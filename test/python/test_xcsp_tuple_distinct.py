@@ -17,7 +17,7 @@ def _translate(domains, rows, exceptions=()):
               + '</variables><constraints><allDifferent>' + lists + excluded
               + '</allDifferent></constraints></instance>')
     result = sp.translate(source=source, language='xcsp3')
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     script = result.to_smt2()
     return script, z3.And(*z3.parse_smt2_string(script))
 

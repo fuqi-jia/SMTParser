@@ -7,7 +7,7 @@ z3 = pytest.importorskip("z3")
 
 def check_vc(source, expected):
     translated = sp.translate(source=source, language="boogie")
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     text = translated.to_smt2()
     context = z3.Context()
     solver = z3.Solver(ctx=context)
@@ -83,11 +83,11 @@ INVALID_SIGNATURES = [
 def test_interpreted_map_signature_must_match(declaration):
     translated = sp.translate(source=declaration + "procedure P(){}", language="boogie")
     assert not translated.ok
-    assert any("signature" in d.message for d in translated.diagnostics)
+    assert any("signature" in d.message for d in translated.diagnostic_items)
 
 
 def test_implication_array_axiom_is_not_mislabeled_as_horn():
     translated = sp.translate(source=BOOL_MAPS + "procedure P(){}", language="boogie",
                               options={"chc": "1"})
     assert not translated.ok
-    assert any("not a Horn clause" in d.message for d in translated.diagnostics)
+    assert any("not a Horn clause" in d.message for d in translated.diagnostic_items)

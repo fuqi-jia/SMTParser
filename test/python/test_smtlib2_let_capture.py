@@ -34,7 +34,7 @@ z3 = pytest.importorskip("z3")
 def test_let_value_keeps_enclosing_binding(formula, expected):
     source = f"(set-logic ALL)\n(assert {formula})\n"
     translation = sp.translate(source=source, language="smtlib2")
-    assert translation.ok, [d.message for d in translation.diagnostics]
+    assert translation.ok, [d.message for d in translation.diagnostic_items]
     output = translation.to_smt2(sp.OmtDialect.Z3)
     context = z3.Context()
     reference = z3.And(*z3.parse_smt2_string(source, ctx=context))

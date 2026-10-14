@@ -223,20 +223,23 @@ Convert a model through the library API:
 ```python
 import somtparser as sp
 
-result = sp.convert("model.mzn", language="minizinc", dialect="z3")
+result = sp.translate("model.mzn", language="minizinc", dialect="z3")
 if result.exit_code == 0:
     smt2 = result.smt2
 else:
     print(result.diagnostics)
 ```
 
-`convert` also accepts companion data files, frontend options, report paths,
+`translate` also accepts companion data files, frontend options, report paths,
 module exports and caller-owned output streams. It is available in the Python
-package and in C++ through `somtparser/translation/convert.h`, linked with
+package and in C++ through `somtparser/translation/translate.h`, linked with
 `SOMTParser::languages`. There is no `somt-convert` executable or pip command.
-See [conversion and experiment migration](docs/convert.md) for examples and
-the status-code contract. `translate` continues to return the richer
-`Translation` object for inspecting the model and its structured report.
+See [translation and experiment migration](docs/translate.md) for examples and
+the status-code contract. The same `Translation` provides `smt2`, formatted `diagnostics`, `exit_code`,
+`ok`, `parser`, structured `diagnostic_items`, `report`, and dialect export
+methods. `details=False` skips optional audit records and DAG statistics and
+releases inspection structures after output; `report` is then `None` and
+unavailable inspection/export operations raise clear errors.
 
 Prebuilt wheels are published on [PyPI](https://pypi.org/project/somtparser/) for
 CPython 3.9–3.13 on Linux x86_64 (manylinux), macOS (Intel needs macOS 15+,

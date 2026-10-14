@@ -207,7 +207,7 @@ def test_real_native_finite_top_cost_projection(tmp_path, source, public_names, 
     path = tmp_path / 'finite-top.wbo'
     path.write_text(source)
     model = sp.translate(path=str(path), language='opb')
-    assert model.ok, [str(x) for x in model.diagnostics]
+    assert model.ok, [str(x) for x in model.diagnostic_items]
     target = tmp_path / 'target.smt2'
     model.write_smt2(str(target), sp.OmtDialect.Z3)
     assert check(source, target.read_text())['status'] == 'verified'
@@ -223,7 +223,7 @@ def test_real_native_packed_weighted_model(tmp_path):
     path = tmp_path / 'input.wbo'
     path.write_text(source)
     model = sp.translate(path=str(path), language='opb')
-    assert model.ok, [str(x) for x in model.diagnostics]
+    assert model.ok, [str(x) for x in model.diagnostic_items]
     target = tmp_path / 'target.smt2'
     model.write_smt2(str(target), sp.OmtDialect.Z3)
     proof = check(source, target.read_text())
@@ -284,7 +284,7 @@ def test_real_native_retains_soft_duplicate_of_hardened_row(tmp_path, predicate)
     path = tmp_path / 'mandatory-duplicate.wbo'
     path.write_text(source)
     model = sp.translate(path=str(path), language='opb')
-    assert model.ok, [str(x) for x in model.diagnostics]
+    assert model.ok, [str(x) for x in model.diagnostic_items]
     target = tmp_path / 'target.smt2'
     model.write_smt2(str(target), sp.OmtDialect.Z3)
     assert check(source, target.read_text())['status'] == 'verified'

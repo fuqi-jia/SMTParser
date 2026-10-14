@@ -27,7 +27,7 @@ def test_objective_label_collision_preserves_columns_feasibility_and_cost(langua
             " FX b obj 5\n FX b obj__objective 7\n FX b obj__objective1 9\nENDATA\n"
         )
     translation = sp.translate(source=source, language=language)
-    assert translation.ok, [d.message for d in translation.diagnostics]
+    assert translation.ok, [d.message for d in translation.diagnostic_items]
     optimizer = z3.Optimize()
     optimizer.from_string(translation.to_smt2(dialect=sp.OmtDialect.Z3))
     assert optimizer.check() == z3.sat
@@ -45,7 +45,7 @@ def test_objective_label_collision_preserves_columns_feasibility_and_cost(langua
 
 def test_default_lp_objective_label_cannot_capture_a_column():
     translation = sp.translate(source="Minimize\n obj\nSubject To\n r: obj >= 3\nEnd\n", language="lp")
-    assert translation.ok, [d.message for d in translation.diagnostics]
+    assert translation.ok, [d.message for d in translation.diagnostic_items]
     optimizer = z3.Optimize()
     optimizer.from_string(translation.to_smt2(dialect=sp.OmtDialect.Z3))
     assert optimizer.check() == z3.sat

@@ -12,7 +12,7 @@ def translate(source):
 
 def solver(source):
     result = translate(source)
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     s = z3.Solver()
     s.set(timeout=5000)
     s.add(z3.parse_smt2_string(result.to_smt2()))
@@ -84,4 +84,4 @@ def test_concat_fixtures(relative, expected):
     root = Path(__file__).resolve().parents[2]
     result = sp.translate(path=str(root / 'languages/minizinc/instances' / relative),
                           language='minizinc')
-    assert result.ok == expected, [d.message for d in result.diagnostics]
+    assert result.ok == expected, [d.message for d in result.diagnostic_items]

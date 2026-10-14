@@ -15,7 +15,7 @@ def literal(values):
 
 def translate(source):
     translated = sp.translate(source=source, language="smtlib2", dialect=sp.OmtDialect.OptiMathSAT)
-    assert translated.ok, [item.message for item in translated.diagnostics]
+    assert translated.ok, [item.message for item in translated.diagnostic_items]
     output = translated.to_smt2(sp.OmtDialect.OptiMathSAT)
     assert "((_ map " not in output
     assert "(Set " not in output

@@ -84,7 +84,7 @@ def test_sparse_lookup_does_not_accept_missing_or_invalid_references(text, line,
         path.write_text(text)
         result = sp.translate(path=str(path), **options)
     assert not result.ok
-    assert any(d.line == line and diagnostic in d.message for d in result.diagnostics)
+    assert any(d.line == line and diagnostic in d.message for d in result.diagnostic_items)
 
 
 def test_only_live_names_and_literals_outlive_the_inline_source():
@@ -103,7 +103,7 @@ def test_only_live_names_and_literals_outlive_the_inline_source():
     result = sp.translate(source=text, language='btor2', profile='bmc',
                           options={'bmc_depth': '1'})
     del text
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     script = result.to_smt2()
     assert state_name in script
     assert input_name in script
@@ -123,7 +123,7 @@ def test_duplicate_state_and_output_names_keep_the_existing_disambiguation():
     result = sp.translate(source=text, language='btor2', profile='bmc',
                           options={'bmc_depth': '0'})
     del text
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     script = result.to_smt2()
     assert shared_name + '@0' in script
     assert shared_name + '$3@0' in script
@@ -151,7 +151,7 @@ def test_multi_operand_justice_keeps_arity_and_checks_every_reference(justice_li
     result = sp.translate(source=text, language='btor2', profile='bmc',
                           options={'bmc_depth': '1'})
     assert not result.ok
-    assert any(diagnostic in d.message for d in result.diagnostics)
+    assert any(diagnostic in d.message for d in result.diagnostic_items)
 
 
 def test_unknown_operator_keeps_its_original_diagnostic():
@@ -160,4 +160,4 @@ def test_unknown_operator_keeps_its_original_diagnostic():
                           options={'bmc_depth': '1'})
     assert not result.ok
     assert any('unknown BTOR2 tag `mystery_tag`' in d.message
-               for d in result.diagnostics)
+               for d in result.diagnostic_items)

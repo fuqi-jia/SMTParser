@@ -11,7 +11,7 @@ import z3
 def test_ite_numeric_context_preserves_assertions(term):
     source = '(set-logic QF_LIRA)(declare-const p Bool)(declare-const q Bool)(declare-const r Real)(declare-const i Int)(assert (= r (/ 3 2)))(assert (= ' + term + ' r))(check-sat)'
     translated = sp.translate(source=source, language='smtlib2', dialect=sp.OmtDialect.Z3)
-    assert translated.ok, [(str(d.code), d.message) for d in translated.diagnostics]
+    assert translated.ok, [(str(d.code), d.message) for d in translated.diagnostic_items]
     converted = translated.to_smt2(sp.OmtDialect.Z3)
     context = z3.Context()
     left = z3.And(*z3.parse_smt2_string(source, ctx=context))
@@ -26,6 +26,6 @@ def test_deep_boolean_lift_does_not_overflow_native_stack():
     depth = 12000
     source = '(set-logic QF_UF)(declare-const p Bool)(declare-const q Bool)(assert ' + '(ite p ' * depth + 'p' + ' q)' * depth + ')(check-sat)'
     translated = sp.translate(source=source, language='smtlib2', dialect=sp.OmtDialect.Z3)
-    assert translated.ok, [(str(d.code), d.message) for d in translated.diagnostics]
+    assert translated.ok, [(str(d.code), d.message) for d in translated.diagnostic_items]
     converted = translated.to_smt2(sp.OmtDialect.Z3)
     assert len(sp.parse(converted).assertions) == 1

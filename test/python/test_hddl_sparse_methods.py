@@ -20,7 +20,7 @@ def encode(tmp_path, body, initial='', tasks='(t)', horizon=1, depth=1,
 
 
 def solve(result):
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.set(timeout=10000)
     solver.add(z3.parse_smt2_string(result.to_smt2()))
@@ -94,7 +94,7 @@ def test_pruned_method_still_reports_bad_source_formula(tmp_path):
             ':precondition (unknown ?x) :effect (done))')
     result = encode(tmp_path, body, horizon=0)
     assert not result.ok
-    assert any('undeclared' in d.message or 'unknown' in d.message for d in result.diagnostics)
+    assert any('undeclared' in d.message or 'unknown' in d.message for d in result.diagnostic_items)
 
 
 @pytest.mark.parametrize('left,right', list(product('ab', repeat=2)))

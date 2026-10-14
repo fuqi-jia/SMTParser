@@ -7,7 +7,7 @@ import somtparser as sp
 def _translate(source, options=None):
     translated = sp.translate(source=source, language="sygus", profile="bmc",
                               options=options or {})
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     return translated.to_smt2()
 
 

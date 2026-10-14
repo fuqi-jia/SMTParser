@@ -31,7 +31,7 @@ def first_difference(left, right, op):
 
 
 def target(result):
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     model = z3.Optimize()
     model.from_string(result.to_smt2(sp.OmtDialect.Z3))
     return z3.And(*model.assertions())
@@ -80,7 +80,7 @@ def test_lex_rejects_empty_unequal_and_missing_operand(operand):
                           '<constraints><lex>' + operand + '<operator>le</operator>'
                           '</lex></constraints></instance>', language='xcsp3')
     assert not result.ok
-    assert result.diagnostics
+    assert result.diagnostic_items
 
 
 def test_lex_output_growth_is_linear_in_tuple_length():

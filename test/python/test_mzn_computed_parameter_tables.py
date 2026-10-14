@@ -9,7 +9,7 @@ z3 = pytest.importorskip("z3")
 
 def _translate(source):
     result = sp.translate(source=source, language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     assert any(strategy in result.report.to_json() for strategy in (
         "table-shared-characteristic-array", "table-shared-functional-array"))
     target = result.to_smt2(sp.OmtDialect.Z3)

@@ -7,7 +7,7 @@ import z3
 def translate(source):
     kwargs = dict(source=source, language='minizinc', dialect=sp.OmtDialect.Z3)
     result = sp.translate(**kwargs)
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     return result
 
 

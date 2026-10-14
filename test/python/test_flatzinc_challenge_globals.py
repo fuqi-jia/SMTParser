@@ -24,7 +24,7 @@ def assert_relation(source, domains, expected, profile):
     """
     result = sp.translate(source=source + "\nsolve satisfy;", language="flatzinc",
                           profile=profile, dialect=sp.OmtDialect.Z3)
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     assert result.report.fidelity.sound and result.report.fidelity.complete
     whole = z3.Optimize()
     whole.set(timeout=0)
@@ -310,7 +310,7 @@ def test_globals_reject_wrong_arity(name, args, change):
     result = sp.translate(source="constraint " + name + "(" + ",".join(bad) + "); solve satisfy;",
                           language="flatzinc")
     assert not result.ok
-    assert result.diagnostics
+    assert result.diagnostic_items
 
 
 @pytest.mark.parametrize("call", [
@@ -348,7 +348,7 @@ def test_globals_reject_wrong_sorts_and_variable_parameters(call):
     result = sp.translate(source="var int: i; var set of 1..2: s; constraint " + call + "; solve satisfy;",
                           language="flatzinc")
     assert not result.ok
-    assert result.diagnostics
+    assert result.diagnostic_items
 
 
 @pytest.mark.parametrize("call", [
@@ -367,4 +367,4 @@ def test_globals_reject_wrong_sorts_and_variable_parameters(call):
 def test_globals_reject_invalid_shapes_and_gecode_preconditions(call):
     result = sp.translate(source="constraint " + call + "; solve satisfy;", language="flatzinc")
     assert not result.ok
-    assert result.diagnostics
+    assert result.diagnostic_items

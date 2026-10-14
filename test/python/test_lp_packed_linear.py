@@ -8,7 +8,7 @@ z3 = pytest.importorskip("z3")
 def load(source, options=None):
     translated = sp.translate(source=source, language="lp", options=options or {},
                               dialect=sp.OmtDialect.Z3)
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     assert translated.uses_packed_smt_stream
     optimizer = z3.Optimize()
     optimizer.from_string(translated.to_smt2(sp.OmtDialect.Z3))
@@ -85,4 +85,4 @@ def test_packing_does_not_skip_invalid_later_row():
             + " <= 65536\n broken: x <= no_number\nEnd\n")
     translated = sp.translate(source=text, language="lp")
     assert not translated.ok
-    assert any("not a number" in d.message for d in translated.diagnostics)
+    assert any("not a number" in d.message for d in translated.diagnostic_items)

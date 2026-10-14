@@ -102,7 +102,7 @@ int main() {
 
     SOMTParser::TranslateOptions options;
     options.omt_dialect = L::OmtDialect::Z3;
-    auto translated = SOMTParser::translateHir(model, options);
+    auto translated = SOMTParser::translate(model, options);
     for (const auto& diagnostic : translated.diagnostics().all())
         std::cerr << diagnostic.message << '\n';
     VERIFY(translated.ok());
@@ -122,13 +122,13 @@ int main() {
                                   H::ObjectiveCombination::BOX}) {
         auto grouped = twoGroups();
         grouped.objective_combination = combination;
-        auto result = SOMTParser::translateHir(grouped, options);
+        auto result = SOMTParser::translate(grouped, options);
         VERIFY(result.ok() && result.objectiveCount() == 2);
         VERIFY(result.toSmt2(L::OmtDialect::Z3).find(
             combination == H::ObjectiveCombination::PARETO
                 ? ":opt.priority pareto" : ":opt.priority box") != std::string::npos);
         options.omt_dialect = L::OmtDialect::SmtLib2025;
-        const auto proposal = SOMTParser::translateHir(grouped, options);
+        const auto proposal = SOMTParser::translate(grouped, options);
         VERIFY(proposal.ok());
         const auto gomt = proposal.toSmt2(L::OmtDialect::Gomt);
         VERIFY(gomt.find("(define-maxsmt-objective ") != std::string::npos);
@@ -163,7 +163,7 @@ int main() {
     batch.weight_bytes = "23";
     batch.source_lines = {1, 2};
     packed.packed_bool_clauses.push_back(batch);
-    auto compact = SOMTParser::translateHir(packed, options);
+    auto compact = SOMTParser::translate(packed, options);
     VERIFY(compact.ok() && compact.usesPackedSmtStream());
     VERIFY(compact.objectiveCount() == 1);
     VERIFY(compact.report().stats().num_objectives == 1);
@@ -193,7 +193,7 @@ int main() {
     for (const auto dialect : {L::OmtDialect::Z3, L::OmtDialect::OptiMathSAT, L::OmtDialect::Gomt}) {
         SOMTParser::TranslateOptions fractional_options;
         fractional_options.omt_dialect = dialect;
-        const auto result = SOMTParser::translateHir(legacy, fractional_options);
+        const auto result = SOMTParser::translate(legacy, fractional_options);
         VERIFY(result.ok());
         const auto output = result.toSmt2(dialect);
         VERIFY(output.find(":weight 2.5") != std::string::npos);
@@ -238,7 +238,7 @@ int main() {
         VERIFY(commands.find("(minimize same_)") != std::string::npos);
         VERIFY(commands.find(":id same)") == std::string::npos);
         options.omt_dialect = L::OmtDialect::OptiMathSAT;
-        const auto translated = SOMTParser::translateHir(collision, options);
+        const auto translated = SOMTParser::translate(collision, options);
         VERIFY(translated.ok());
         const auto output = translated.toSmt2();
         VERIFY(output.find(":produce-models true") < output.find("(declare-"));
@@ -261,7 +261,7 @@ int main() {
         groups.constraints.push_back(soft(H::mkOp(H::Op::NOT, {p}), "7", "I"));
         groups.objective_combination = H::ObjectiveCombination::LEXICOGRAPHIC;
         options.omt_dialect = L::OmtDialect::OptiMathSAT;
-        const auto translated = SOMTParser::translateHir(groups, options);
+        const auto translated = SOMTParser::translate(groups, options);
         VERIFY(translated.ok());
         const auto output = translated.toSmt2();
         VERIFY(output.find("(minimize __somt_soft_default)") != std::string::npos);
@@ -277,7 +277,7 @@ int main() {
     auto before_pass = twoGroups();
     before_pass.objective_combination = H::ObjectiveCombination::LEXICOGRAPHIC;
     options.omt_dialect = L::OmtDialect::SmtLib2025;
-    auto rewritten = SOMTParser::translateHir(before_pass, options);
+    auto rewritten = SOMTParser::translate(before_pass, options);
     for (const auto& diagnostic : rewritten.diagnostics().all())
         std::cerr << diagnostic.message << '\n';
     VERIFY(rewritten.ok());

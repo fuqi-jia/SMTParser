@@ -11,7 +11,7 @@ import z3
 def translate(declarations, constraint):
     result = sp.translate(source="language ESSENCE' 1.0\n" + declarations +
                           "\nsuch that " + constraint, language="essence")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     assert result.report.fidelity.sound and result.report.fidelity.complete
     return result
 
@@ -127,7 +127,7 @@ def test_unsupported_or_ill_shaped_matrix_values_are_explicit(declarations, cons
     result = sp.translate(source="language ESSENCE' 1.0\n" + declarations +
                           '\nsuch that ' + constraint, language='essence')
     assert not result.ok
-    assert any(diagnostic in item.message for item in result.diagnostics)
+    assert any(diagnostic in item.message for item in result.diagnostic_items)
 
 
 def _published_killer_sudoku():
@@ -137,7 +137,7 @@ def _published_killer_sudoku():
     cages = ast.literal_eval(re.search(r'letting P\s*=\s*(\[.*?\])\s*\$ decision variables',
                                      source, re.S).group(1))
     result = sp.translate(source=source, language='essence')
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     assert result.report.fidelity.sound and result.report.fidelity.complete
     return result, cages
 
@@ -193,7 +193,7 @@ def test_complete_csplib_model_admits_its_published_solution():
 def test_boolean_matrix_cells_coerce_in_integer_elaboration_contexts(declarations, constraint):
     result = sp.translate(source="language ESSENCE' 1.0\nletting P = [true]\n" +
                           declarations + '\nsuch that ' + constraint, language='essence')
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     assert solver(result).check() == z3.sat
 
 
@@ -202,7 +202,7 @@ def test_constant_guard_uses_implicit_boolean_numeric_coercion(guard):
     result = sp.translate(source="language ESSENCE' 1.0\nfind x : int(0..2)\n"
                           'such that x = sum([1 | b : matrix indexed by [int(1..1)] of bool, '
                           + guard + '])', language='essence')
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     check = solver(result)
     assert check.check() == z3.sat
     check.add(z3.Int('x') != 1)

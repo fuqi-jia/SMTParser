@@ -36,7 +36,7 @@ def relation(expr):
     builder.declare("x", "Int")
     builder.constrain(expr)
     translated = builder.translate()
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     return z3.And(*z3.parse_smt2_string(translated.to_smt2()))
 
 
@@ -604,7 +604,7 @@ def _declared_function_model(expr, *, source, functions, declarations=None):
 def _model_relation(candidate, source):
     built = build_hir(candidate, source)
     translated = built.translate()
-    assert translated.ok, [diagnostic.message for diagnostic in translated.diagnostics]
+    assert translated.ok, [diagnostic.message for diagnostic in translated.diagnostic_items]
     return z3.And(*z3.parse_smt2_string(translated.to_smt2()))
 
 
@@ -939,7 +939,7 @@ def test_entity_individual_alpha_renaming_is_z3_equivalent_and_collision_safe():
     assert adapt_provider_forms(adapted) == (adapted, [])
 
     translated = build_hir(adapted, source).translate()
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     actual = z3.And(*z3.parse_smt2_string(translated.to_smt2()))
 
     def find_constant(expression, name):
@@ -1098,7 +1098,7 @@ def test_scalar_entity_constant_function_collision_is_alpha_renamed():
     assert adapt_provider_forms(adapted) == (adapted, [])
 
     translated = build_hir(adapted, source).translate()
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     actual = z3.And(*z3.parse_smt2_string(translated.to_smt2()))
 
     def find_constant(expression, name):

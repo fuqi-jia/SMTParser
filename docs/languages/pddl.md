@@ -261,7 +261,7 @@ Example:
 ```python
 import somtparser as sp
 
-result = sp.convert("languages/pddl/instances/ok/fond-retry.pddl",
+result = sp.translate("languages/pddl/instances/ok/fond-retry.pddl",
                     data=["languages/pddl/instances/ok/fond-retry.problem.pddl"],
                     profile="bmc",
                     options={"fond_policy": "strong-cyclic", "policy_size": "2"})

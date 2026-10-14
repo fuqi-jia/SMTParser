@@ -11,7 +11,7 @@ def encode(tmp_path, domain, initial='', horizon=1, goal='(and)'):
     path.write_text(f'(define (problem p) (:domain d) (:init {initial}) (:goal {goal}))')
     result = sp.translate(source=domain, data=[str(path)], language='pddl', profile='bmc',
                           options={'plan_horizon': str(horizon)})
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.set(timeout=10000)
     solver.add(z3.parse_smt2_string(result.to_smt2()))
@@ -177,4 +177,4 @@ def test_pruning_never_hides_an_invalid_unreachable_schema(tmp_path):
     result = sp.translate(source=domain, data=[str(path)], language='pddl', profile='bmc',
                           options={'plan_horizon': '1'})
     assert not result.ok
-    assert any('undeclared' in d.message for d in result.diagnostics)
+    assert any('undeclared' in d.message for d in result.diagnostic_items)

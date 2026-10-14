@@ -11,7 +11,7 @@ import somtparser as sp
 
 def _translate(source, data_path):
     result = sp.translate(source=source, language="minizinc", data=[str(data_path)])
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     return result
 
 
@@ -53,7 +53,7 @@ def test_explicit_same_extent_different_origin_is_rejected(tmp_path):
     data = _data(tmp_path, "M = array2d(2..3, 4..5, [11, 12, 21, 22]);\n")
     result = sp.translate(source=source, language="minizinc", data=[str(data)])
     assert not result.ok
-    assert any("different index set" in d.message for d in result.diagnostics)
+    assert any("different index set" in d.message for d in result.diagnostic_items)
 
 
 def test_plain_list_and_explicit_array1d_must_match_declared_indices(tmp_path):
@@ -61,7 +61,7 @@ def test_plain_list_and_explicit_array1d_must_match_declared_indices(tmp_path):
     implicit = _data(tmp_path, "M = [7, 8];\n")
     result = sp.translate(source=source, language="minizinc", data=[str(implicit)])
     assert not result.ok
-    assert any("different index set" in d.message for d in result.diagnostics)
+    assert any("different index set" in d.message for d in result.diagnostic_items)
 
     explicit = _data(tmp_path, "M = array1d(0..1, [7, 8]);\n")
     assert _check(source, explicit).check() == z3.sat
@@ -69,7 +69,7 @@ def test_plain_list_and_explicit_array1d_must_match_declared_indices(tmp_path):
     wrong = _data(tmp_path, "M = array1d(1..2, [7, 8]);\n")
     result = sp.translate(source=source, language="minizinc", data=[str(wrong)])
     assert not result.ok
-    assert any("different index set" in d.message for d in result.diagnostics)
+    assert any("different index set" in d.message for d in result.diagnostic_items)
 
 
 def test_json_nested_arrays_rebase_synthetic_shape_indices(tmp_path):
@@ -114,7 +114,7 @@ def test_json_matrix_coerces_to_non1_based_named_set_array(tmp_path):
     data.write_text(json.dumps({"S": [[1, 4], [2, 3]]}), encoding="utf-8")
     result = sp.translate(source=source, language="minizinc", data=[str(data)])
     assert not result.ok
-    assert any("outside" in d.message for d in result.diagnostics)
+    assert any("outside" in d.message for d in result.diagnostic_items)
 
 
 @pytest.mark.parametrize("symbol,model,reason", [
@@ -127,7 +127,7 @@ def test_deferred_unknown_or_sparse_index_set_is_rejected(
     data = _data(tmp_path, f"M = array1d({symbol}, [7, 8]);\n")
     result = sp.translate(source=source, language="minizinc", data=[str(data)])
     assert not result.ok
-    assert any(reason in d.message for d in result.diagnostics)
+    assert any(reason in d.message for d in result.diagnostic_items)
 
 
 def test_empty_deferred_dimension_has_zero_cells_without_rebasing(tmp_path):
@@ -147,14 +147,14 @@ def test_constructor_dimension_count_and_payload_size_are_checked(tmp_path):
         source="array[1..4] of int: M; solve satisfy;",
         language="minizinc", data=[str(wrong_rank)])
     assert not result.ok
-    assert any("dimension(s)" in d.message for d in result.diagnostics)
+    assert any("dimension(s)" in d.message for d in result.diagnostic_items)
 
     wrong_size = _data(tmp_path, "M = array2d(1..2, 1..2, [1, 2, 3]);\n")
     result = sp.translate(
         source="array[1..2,1..2] of int: M; solve satisfy;",
         language="minizinc", data=[str(wrong_size)])
     assert not result.ok
-    assert any("element(s)" in d.message for d in result.diagnostics)
+    assert any("element(s)" in d.message for d in result.diagnostic_items)
 
 
 def test_bounded_integer_parameter_array_checks_dzn_values_and_relations(tmp_path):
@@ -173,7 +173,7 @@ def test_bounded_integer_parameter_array_checks_dzn_values_and_relations(tmp_pat
     outside = _data(tmp_path, "M = array1d(1..2, [0, 2]);\n")
     result = sp.translate(source=source, language="minizinc", data=[str(outside)])
     assert not result.ok
-    assert any("outside that domain" in d.message for d in result.diagnostics)
+    assert any("outside that domain" in d.message for d in result.diagnostic_items)
 
 
 def test_named_sparse_element_domain_checks_external_dzn_membership(tmp_path):
@@ -185,7 +185,7 @@ def test_named_sparse_element_domain_checks_external_dzn_membership(tmp_path):
     invalid = _data(tmp_path, "M = [2];\n")
     result = sp.translate(source=source, language="minizinc", data=[str(invalid)])
     assert not result.ok
-    assert any("outside that domain" in d.message for d in result.diagnostics)
+    assert any("outside that domain" in d.message for d in result.diagnostic_items)
 
 
 def test_bounded_integer_array_accepts_parameter_range_and_rejects_bool_bound(tmp_path):

@@ -18,8 +18,8 @@ import somtparser as sp
 resource.setrlimit(resource.RLIMIT_AS, (512 * 1024**2,) * 2)
 result = sp.translate(language=sys.argv[1], source=sys.argv[2], options={"packed": "0"})
 assert not result.ok
-assert any(d.code == sp.ErrorCode.E_RESOURCE for d in result.diagnostics), [d.message for d in result.diagnostics]
-assert all(d.code != sp.ErrorCode.E_INTERNAL for d in result.diagnostics)
+assert any(d.code == sp.ErrorCode.E_RESOURCE for d in result.diagnostic_items), [d.message for d in result.diagnostic_items]
+assert all(d.code != sp.ErrorCode.E_INTERNAL for d in result.diagnostic_items)
 '''
     completed = subprocess.run([sys.executable, "-c", code, language, source],
                                env=os.environ.copy(), capture_output=True, text=True, timeout=30)

@@ -12,9 +12,9 @@ def test_reference_outcomes(name, source, expected):
     result = sp.translate(source=source, language="minizinc")
     if expected == "reject":
         assert not result.ok
-        assert any("mixing indexed and non-indexed" in d.message for d in result.diagnostics)
+        assert any("mixing indexed and non-indexed" in d.message for d in result.diagnostic_items)
         return
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.set(timeout=5000)
     solver.add(*z3.parse_smt2_string(result.to_smt2(sp.OmtDialect.Z3)))
@@ -25,7 +25,7 @@ def test_reference_outcomes(name, source, expected):
 def test_literal_assignment_is_exact_for_all_element_values(literal):
     source = f"var int:p;var int:q;var int:r;array[2..4] of var int:x={literal};solve satisfy;"
     result = sp.translate(source=source, language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     actual = z3.And(*z3.parse_smt2_string(result.to_smt2(sp.OmtDialect.Z3)))
     x = z3.Array("x", z3.IntSort(), z3.IntSort())
     p, q, r = z3.Ints("p q r")
@@ -44,4 +44,4 @@ def test_invalid_index_layout_is_rejected(literal):
                           language="minizinc")
     assert not result.ok
     assert any("duplicate" in d.message or "rectangular" in d.message or
-               "inconsistent ranks" in d.message for d in result.diagnostics)
+               "inconsistent ranks" in d.message for d in result.diagnostic_items)

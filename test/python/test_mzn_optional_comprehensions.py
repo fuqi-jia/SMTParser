@@ -11,7 +11,7 @@ z3 = pytest.importorskip("z3")
 
 def _solver(source):
     translated = sp.translate(source=source, language="minizinc")
-    assert translated.ok, [diagnostic.message for diagnostic in translated.diagnostics]
+    assert translated.ok, [diagnostic.message for diagnostic in translated.diagnostic_items]
     context = z3.Context()
     solver = z3.Solver(ctx=context)
     solver.set(timeout=10000)
@@ -124,7 +124,7 @@ def test_all_different_keeps_linear_native_distinct():
     source = ('include "all_different.mzn";var bool:b;'
               'any:a=[i:i|i in 1..128 where b];constraint all_different(a);solve satisfy;')
     translated = sp.translate(source=source, language="minizinc")
-    assert translated.ok, [diagnostic.message for diagnostic in translated.diagnostics]
+    assert translated.ok, [diagnostic.message for diagnostic in translated.diagnostic_items]
     smt = translated.to_smt2()
     assert smt.count("(distinct ") == 1
 
@@ -184,14 +184,14 @@ def test_empty_optional_int_array_keeps_its_numeric_signature(consumer):
     translated = sp.translate(source="var bool:b;any:a=[i:i|i in 1..0 where b];constraint "
                               + consumer + ";solve satisfy;", language="minizinc")
     assert not translated.ok
-    assert any("signature" in diagnostic.message for diagnostic in translated.diagnostics)
+    assert any("signature" in diagnostic.message for diagnostic in translated.diagnostic_items)
 
 
 def test_empty_optional_concat_keeps_its_element_type():
     translated = sp.translate(source="var bool:b;any:a=[i:i|i in 1..0 where b];"
                               "any:c=[] ++ a;constraint forall(c);solve satisfy;", language="minizinc")
     assert not translated.ok
-    assert any("signature" in diagnostic.message for diagnostic in translated.diagnostics)
+    assert any("signature" in diagnostic.message for diagnostic in translated.diagnostic_items)
 
 
 @pytest.mark.parametrize("present,expected", [(False, "sat"), (True, "unsat")])

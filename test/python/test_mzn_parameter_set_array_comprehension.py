@@ -9,7 +9,7 @@ import somtparser as sp
 
 def _translate(source):
     result = sp.translate(source=source, language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     return result
 
 
@@ -63,7 +63,7 @@ solve satisfy;
     result = sp.translate(source=source, language="minizinc")
     assert not result.ok
     assert any("produces 1 value(s), but its declared shape has 2 cell(s)" in d.message
-               for d in result.diagnostics)
+               for d in result.diagnostic_items)
 
 
 def test_array1d_preserves_comprehension_values_on_non1based_indices():
@@ -180,4 +180,4 @@ def test_constructed_set_comprehension_rejects_another_enum_type():
     )
     result = sp.translate(source=source, language="minizinc")
     assert not result.ok
-    assert any("enum element type" in d.message for d in result.diagnostics)
+    assert any("enum element type" in d.message for d in result.diagnostic_items)

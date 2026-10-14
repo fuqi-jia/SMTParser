@@ -30,7 +30,7 @@ def test_full_array_relation_including_unused_coordinates(tmp_path, file_input):
         translated = sp.translate(path=str(path), language="xcsp3")
     else:
         translated = sp.translate(source=SOURCE, language="xcsp3")
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     assert translated.uses_packed_smt_stream
     assert translated.report.stats.num_vars == 65539
     script = translated.to_smt2()
@@ -73,4 +73,4 @@ def test_compact_names_and_streamed_document_are_checked(tmp_path, file_input, c
     else:
         translated = sp.translate(source=source, language="xcsp3")
     assert not translated.ok
-    assert translated.diagnostics
+    assert translated.diagnostic_items

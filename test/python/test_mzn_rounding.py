@@ -15,7 +15,7 @@ _EXPECTED = {
 
 def translate(source):
     result = sp.translate(source=source, language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     return z3.parse_smt2_string(result.to_smt2())
 
 
@@ -82,7 +82,7 @@ def test_rounding_rejects_string_argument(operation):
     result = sp.translate(source=f'constraint {operation}("abc") = 0; solve satisfy;',
                           language="minizinc")
     assert not result.ok
-    assert any("numeric argument" in d.message for d in result.diagnostics)
+    assert any("numeric argument" in d.message for d in result.diagnostic_items)
 
 
 def test_rounding_accepts_implicit_boolean_and_integer_coercions():

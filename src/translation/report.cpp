@@ -125,7 +125,11 @@ void TranslationReport::addChoice(EncodingChoice c) {
     } else {
         fidelity_ = Fidelity::meet(fidelity_, c.fidelity);
     }
-    choices_.push_back(std::move(c));
+    if (phase_active_) {
+        phase_fidelity_ = phase_has_choice_ ? Fidelity::meet(phase_fidelity_, c.fidelity) : c.fidelity;
+        phase_has_choice_ = true;
+    }
+    if (details_enabled_) { choices_.push_back(std::move(c)); }
 }
 
 void TranslationReport::mergeFrontend(const TranslationReport& frontend) {
@@ -145,8 +149,9 @@ void TranslationReport::mergeFrontend(const TranslationReport& frontend) {
     for (const EncodingChoice& c : frontend.choices_) {
         addChoice(c);
     }
-    warnings_.insert(warnings_.end(), frontend.warnings_.begin(),
-                     frontend.warnings_.end());
+    if (details_enabled_) {
+        warnings_.insert(warnings_.end(), frontend.warnings_.begin(), frontend.warnings_.end());
+    }
 }
 
 std::string TranslationReport::toJson() const {

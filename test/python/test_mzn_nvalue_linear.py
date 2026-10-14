@@ -6,7 +6,7 @@ import somtparser as sp
 
 def _script(source):
     result = sp.translate(source=source, language="minizinc", dialect=sp.OmtDialect.Z3)
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     return result.to_smt2(sp.OmtDialect.Z3)
 
 

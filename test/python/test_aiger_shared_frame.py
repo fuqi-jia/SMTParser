@@ -12,7 +12,7 @@ def test_shared_fanin_preserves_every_frame_and_literal_polarity(depth):
     source = "aag 5 2 2 1 1\n2\n4\n6 10 6\n8 11 8\n1\n10 2 4\n"
     result = sp.translate(source=source, language="aiger", profile="bmc",
                           options={"bmc_depth": str(depth)})
-    assert result.ok, [item.message for item in result.diagnostics]
+    assert result.ok, [item.message for item in result.diagnostic_items]
     context = z3.Context()
     assertions = z3.parse_smt2_string(result.to_smt2(), ctx=context)
     actual = z3.And(*assertions) if len(assertions) else z3.BoolVal(True, ctx=context)
@@ -45,7 +45,7 @@ def test_many_latches_export_shared_fanin_once():
         previous = gate
     result = sp.translate(source="\n".join(source) + "\n", language="aiger",
                           profile="bmc", options={"bmc_depth": "1"})
-    assert result.ok, [item.message for item in result.diagnostics]
+    assert result.ok, [item.message for item in result.diagnostic_items]
     target = result.to_smt2()
     # The repeated eight-input expression is emitted once in a lexical let.
     assert "(let (" in target

@@ -6,7 +6,7 @@ z3 = pytest.importorskip("z3")
 
 
 def _exact(result, expected):
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     actual = z3.And(*z3.parse_smt2_string(result.to_smt2(sp.OmtDialect.Z3)))
     solver = z3.Solver()
     solver.add(z3.Xor(actual, expected))
@@ -80,7 +80,7 @@ def test_replayed_unterminated_comment_keeps_opening_location(tmp_path, included
         model = damaged
     result = sp.translate(path=str(model), language="minizinc")
     assert not result.ok
-    errors = [d for d in result.diagnostics if "unterminated block comment" in d.message]
+    errors = [d for d in result.diagnostic_items if "unterminated block comment" in d.message]
     assert errors
     assert any(d.file.endswith("damaged.mzn") and d.line == 3 and d.column == 3
                for d in errors)

@@ -203,7 +203,7 @@ VERDICT_CORPUS = [
 
 def verdict(source):
     t = sp.translate(source=source, language="boogie")
-    assert t.ok, t.diagnostics[0].message if t.diagnostics else "no model"
+    assert t.ok, t.diagnostic_items[0].message if t.diagnostic_items else "no model"
     solver = z3.Solver()
     solver.from_string(t.to_smt2())
     return solver.check()

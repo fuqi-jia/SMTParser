@@ -31,7 +31,7 @@ def normalized(raw):
 def formula(raw):
     adapted, _ = normalized(raw)
     result = build_hir(adapted, "x" * 12).translate()
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     return public_relation(result)
 
 

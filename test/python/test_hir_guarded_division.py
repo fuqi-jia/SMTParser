@@ -20,7 +20,7 @@ def op(name, *args):
 def formula(expression):
     b=HirBuilder();b.declare('x','Int');b.declare('d','Int')
     b.constrain(expression);result=b.translate()
-    assert result.ok,[d.message for d in result.diagnostics]
+    assert result.ok,[d.message for d in result.diagnostic_items]
     return z3.And(*z3.parse_smt2_string(result.to_smt2()))
 
 

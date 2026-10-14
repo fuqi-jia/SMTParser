@@ -20,7 +20,7 @@ def compile_pairs(expression, rows, names=NAMES, extra=None):
               + '</intension>' + ''.join('<args>' + row + '</args>' for row in rows)
               + '</group></constraints></instance>')
     result = sp.translate(source=source, language='xcsp3')
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     ctx = z3.Context()
     solver = z3.Solver(ctx=ctx)
     solver.set(timeout=3000)

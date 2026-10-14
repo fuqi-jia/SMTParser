@@ -65,7 +65,7 @@ int main() {
     VERIFY(raw.str().find("(and (<= (- 2.5) (+ x y)) (<= (+ x y) 2.0))") != std::string::npos);
     VERIFY(raw.str().find("(assert (>= 0.0 0.0))") != std::string::npos);
     TranslateOptions opts; opts.omt_dialect = Lower::OmtDialect::Z3;
-    auto translated = translateHir(model, opts);
+    auto translated = translate(model, opts);
     VERIFY(translated.ok());
     VERIFY(translated.usesPackedSmtStream());
     VERIFY(!translated.hasParser());
@@ -161,7 +161,7 @@ int main() {
     VERIFY(storage.numbers[first[6].rhs] == "9007199254740993");
     Uir::Diagnostics large_diagnostics;
     VERIFY(H::typeCheck(*parsed.model, large_diagnostics));
-    auto large = translateHir(*parsed.model, opts);
+    auto large = translate(*parsed.model, opts);
     VERIFY(large.ok());
     VERIFY(large.report().stats().num_constraints == rows + 1);
     VERIFY(large.objectiveCount() == 1);

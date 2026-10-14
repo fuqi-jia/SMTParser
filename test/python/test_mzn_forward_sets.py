@@ -7,7 +7,7 @@ z3 = pytest.importorskip("z3")
 
 def status(source):
     result = sp.translate(source=source, language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.set(timeout=5000)
     solver.add(z3.parse_smt2_string(result.to_smt2()))
@@ -60,9 +60,9 @@ def test_finite_set_element_domains_check_holes_and_bounds(domain, value, accept
         source=f"set of D:S={value}; set of int:D={domain}; solve satisfy;",
         language="minizinc",
     )
-    assert result.ok == accepted, [d.message for d in result.diagnostics]
+    assert result.ok == accepted, [d.message for d in result.diagnostic_items]
     if not accepted:
-        assert any("outside its element domain" in d.message for d in result.diagnostics)
+        assert any("outside its element domain" in d.message for d in result.diagnostic_items)
 
 
 def test_separate_data_assignment_obeys_declared_element_domain():
@@ -70,7 +70,7 @@ def test_separate_data_assignment_obeys_declared_element_domain():
     result = sp.translate(source="set of 1..3:S; S={1,4}; solve satisfy;",
                           language="minizinc")
     assert not result.ok
-    assert any("outside its element domain" in d.message for d in result.diagnostics)
+    assert any("outside its element domain" in d.message for d in result.diagnostic_items)
 
 
 @pytest.mark.parametrize("source", [

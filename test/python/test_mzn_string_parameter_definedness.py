@@ -11,4 +11,4 @@ def test_dynamic_index_guard_survives_string_parameter_extraction(expression):
               f'string:block={expression}; constraint i=0; solve satisfy;')
     result = sp.translate(source=source, language='minizinc')
     assert not result.ok
-    assert any('conditionally defined' in d.message for d in result.diagnostics)
+    assert any('conditionally defined' in d.message for d in result.diagnostic_items)

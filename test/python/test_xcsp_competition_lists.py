@@ -14,7 +14,7 @@ def translate(body, variables='<var id="x">0..2</var><var id="y">0..2</var>'):
         + '</variables>' + body + '</instance>',
         language="xcsp3", dialect=sp.OmtDialect.Z3,
     )
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     target = z3.Optimize()
     target.from_string(result.to_smt2(sp.OmtDialect.Z3))
     return target
@@ -70,7 +70,7 @@ def test_array_content_alias_checks_reference_and_content(tail):
                           '<array id="x" size="[2]">0..1</array>' + tail
                           + '</variables></instance>', language="xcsp3")
     assert not result.ok
-    assert any("as" in d.message for d in result.diagnostics)
+    assert any("as" in d.message for d in result.diagnostic_items)
 
 
 @pytest.mark.parametrize("except_zero", [False, True])

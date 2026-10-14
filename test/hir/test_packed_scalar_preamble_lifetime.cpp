@@ -115,7 +115,7 @@ int main(int argc, char** argv) {
                 VERIFY(language->retained->decls[0].upper_bound);
                 // translateHir also gets its own container. Repeated use must
                 // leave the caller's formulas, bounds, and definition intact.
-                const auto repeated = translateHir(*language->retained, options);
+                const auto repeated = translate(*language->retained, options);
                 VERIFY(repeated.ok());
                 VERIFY(language->retained->constraints[0].formula == language->constraint.lock());
             } else {

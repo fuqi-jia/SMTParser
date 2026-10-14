@@ -31,8 +31,8 @@ for dialect, path in [(sp.OmtDialect.Z3, "z3.smt2"),
     parser.dump_smt2(path, dialect=dialect)
 ```
 
-`somtparser.convert(path, dialect="z3")` selects the same dialects for
-language translation; see [the conversion API](convert.md).
+`somtparser.translate(path, dialect="z3")` selects the same dialects for
+language translation; see [the conversion API](translate.md).
 `Parser.dump_smt2()` defaults to Z3;
 `Translation.to_smt2()` retains the dialect selected at translation time.
 

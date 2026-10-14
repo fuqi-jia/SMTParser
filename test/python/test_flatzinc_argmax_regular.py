@@ -49,7 +49,7 @@ def exact(source, expected, profile):
     else:
         result = sp.translate(source=source + "\nsolve satisfy;", language="flatzinc",
                               profile=profile, dialect=sp.OmtDialect.Z3)
-        assert result.ok, [d.message for d in result.diagnostics]
+        assert result.ok, [d.message for d in result.diagnostic_items]
         assert result.report.fidelity.sound and result.report.fidelity.complete
         script = result.to_smt2(sp.OmtDialect.Z3)
     whole = z3.Optimize()
@@ -204,7 +204,7 @@ def test_malformed_parameter_and_type_contracts_are_rejected(source):
         return
     result = sp.translate(source=source + " solve satisfy;", language="flatzinc")
     assert not result.ok
-    assert any(d.message for d in result.diagnostics)
+    assert any(d.message for d in result.diagnostic_items)
 
 
 @pytest.mark.parametrize("profile", PROFILES)
@@ -221,7 +221,7 @@ def test_retained_annotated_goal_direction_and_signed_numeric_repairs(profile, d
     else:
         result = sp.translate(source=source, language="flatzinc", profile=profile,
                               dialect=sp.OmtDialect.Z3)
-        assert result.ok, [d.message for d in result.diagnostics]
+        assert result.ok, [d.message for d in result.diagnostic_items]
         script = result.to_smt2(sp.OmtDialect.Z3)
     whole = z3.Optimize()
     whole.from_string(script)

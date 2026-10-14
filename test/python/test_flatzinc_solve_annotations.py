@@ -15,7 +15,7 @@ ANNOTATIONS = [
 def translate(source, profile):
     result = sp.translate(source=source, language='flatzinc', profile=profile,
                           dialect=sp.OmtDialect.Z3)
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     assert result.report.fidelity.sound and result.report.fidelity.complete
     parser = z3.Optimize()
     parser.from_string(result.to_smt2(sp.OmtDialect.Z3))
@@ -135,7 +135,7 @@ def test_direct_hir_integer_spelling_preserves_constraint_and_objective(text, ma
     model.constrain(native._hir_op('eq', [x, literal]))
     model.objective(maximize, literal)
     result = model.translate()
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     parser = z3.Optimize()
     parser.from_string(result.to_smt2(sp.OmtDialect.Z3))
     expected = int(text)

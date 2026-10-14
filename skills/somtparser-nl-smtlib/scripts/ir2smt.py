@@ -285,7 +285,7 @@ def render(source, model, *, route="hir", dialect="z3", context=None):
         if not translated.ok:
             return dict(status="translation-error",ir=original,code=None,
                         assumptions=selected.get("assumptions",[]),ambiguities=selected.get("unresolved",[]),
-                        diagnostics=[d.message for d in translated.diagnostics],
+                        diagnostics=[d.message for d in translated.diagnostic_items],
                         meta=dict(route=route,dialect=dialect,solver_executed=False,source_sha256=sha(source)))
         code = translated.to_smt2(dialect=dialects[dialect])
     # Query responses are state-dependent. Emit check-sat only; the caller can

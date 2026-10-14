@@ -7,7 +7,7 @@ import somtparser as sp
 def _translation(source, depth=1):
     result = sp.translate(source=source, language="sygus", profile="bmc",
                           options={"grammar_depth": str(depth)})
-    assert result.ok, [diagnostic.message for diagnostic in result.diagnostics]
+    assert result.ok, [diagnostic.message for diagnostic in result.diagnostic_items]
     return result
 
 
@@ -167,7 +167,7 @@ def test_configured_depth_is_not_silently_increased():
               "(constraint f) (check-synth)")
     result = sp.translate(source=source, language="sygus", profile="bmc",
                           options={"grammar_depth": "0"})
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     assert _status(result.to_smt2()) == z3.unsat
     assert any(choice.strategy == "empty-bounded-grammar"
                for choice in result.report.choices)
@@ -257,7 +257,7 @@ def test_sparse_deep_grammar_uses_budgeted_circuit_without_changing_depth():
 
     too_shallow = sp.translate(source=source, language="sygus", profile="bmc",
                                options={"grammar_depth": str(count - 2)})
-    assert too_shallow.ok, [d.message for d in too_shallow.diagnostics]
+    assert too_shallow.ok, [d.message for d in too_shallow.diagnostic_items]
     assert _status(too_shallow.to_smt2()) == z3.unsat
     assert any(choice.strategy == "empty-bounded-grammar"
                for choice in too_shallow.report.choices)

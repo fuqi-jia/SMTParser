@@ -22,7 +22,7 @@ def helper(model,name,body):
 
 def body(model):
     translated=model.translate()
-    assert translated.ok,[d.message for d in translated.diagnostics]
+    assert translated.ok,[d.message for d in translated.diagnostic_items]
     return z3.And(*z3.parse_smt2_string(translated.to_smt2()))
 
 

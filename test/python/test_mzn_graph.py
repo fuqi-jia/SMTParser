@@ -34,7 +34,7 @@ def test_original_nonzero_axes_against_exhaustive_graph_search(directed, negated
             'array[-1..1]of var bool:ns;array[3..4]of var bool:es;')
     result = sp.translate(source=decl+'constraint '+('not ' if negated else '')
                           +name+'(f,t,ns,es);solve satisfy;', language='minizinc')
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     formula = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     ns = z3.Array('ns', z3.IntSort(), z3.BoolSort())
     es = z3.Array('es', z3.IntSort(), z3.BoolSort())
@@ -53,7 +53,7 @@ def test_original_nonzero_axes_against_exhaustive_graph_search(directed, negated
 def test_empty_graph_is_false_and_negation_is_true(name):
     for prefix, expected in [('',z3.unsat), ('not ',z3.sat)]:
         r=sp.translate(source='constraint '+prefix+name+'([],[],[],[]);solve satisfy;',language='minizinc')
-        assert r.ok,[d.message for d in r.diagnostics]
+        assert r.ok,[d.message for d in r.diagnostic_items]
         s=z3.Solver();s.add(z3.parse_smt2_string(r.to_smt2()));assert s.check()==expected
 
 
@@ -83,7 +83,7 @@ def test_nominal_enum_node_and_edge_indices_are_preserved():
         solve satisfy;
     '''
     translated = sp.translate(source=source, language='minizinc')
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     solver = z3.Solver()
     solver.add(z3.parse_smt2_string(translated.to_smt2()))
     assert solver.check() == z3.sat
@@ -104,7 +104,7 @@ def test_explicit_graph_definition_keeps_its_own_semantics(name, definition):
         solve satisfy;
     '''
     translated = sp.translate(source=source, language='minizinc')
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     solver = z3.Solver()
     solver.add(z3.parse_smt2_string(translated.to_smt2()))
     assert solver.check() == z3.unsat
@@ -118,7 +118,7 @@ def test_predicate_and_function_definition_trailing_commas():
         solve satisfy;
     '''
     translated = sp.translate(source=source, language='minizinc')
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     solver = z3.Solver()
     solver.add(z3.parse_smt2_string(translated.to_smt2()))
     assert solver.check() == z3.sat

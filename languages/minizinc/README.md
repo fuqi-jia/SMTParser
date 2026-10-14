@@ -7,7 +7,7 @@ University and Data61. Specification: https://docs.minizinc.dev/
 ## Entry point
 - C++: `SOMTParser::Lang::mkMiniZincLanguage()` from
   `<somtparser/languages/minizinc.h>`
-- Conversion API: `somtparser.convert("model.mzn")`
+- Conversion API: `somtparser.translate("model.mzn")`
 - Python: `somtparser.translate("model.mzn")`
 
 ## Input model

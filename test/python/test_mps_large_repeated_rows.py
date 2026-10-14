@@ -25,7 +25,7 @@ def test_long_rows_preserve_repeated_columns_and_exact_objective(packed):
     rows.extend(["RHS", " rhs objective 1.25", " rhs ceiling 10", " rhs floor -5",
                  "BOUNDS", *[f" FR bounds {name}" for name in names], "ENDATA"])
     result = sp.translate(source="\n".join(rows) + "\n", language="mps")
-    assert result.ok, [item.message for item in result.diagnostics]
+    assert result.ok, [item.message for item in result.diagnostic_items]
     assert result.uses_packed_smt_stream == packed
     target = z3.Optimize()
     target.from_string(result.to_smt2(sp.OmtDialect.Z3))
@@ -60,7 +60,7 @@ def test_packed_batch_boundaries_keep_ranged_rows_and_skip_free_rows():
                    "RANGES", " span row_4096 3", " span row_8192 5",
                    "BOUNDS", " FR bounds x", " FR bounds y", " FR bounds z", "ENDATA"])
     result = sp.translate(source="\n".join(source) + "\n", language="mps")
-    assert result.ok, [item.message for item in result.diagnostics]
+    assert result.ok, [item.message for item in result.diagnostic_items]
     assert result.uses_packed_smt_stream
     target = z3.Optimize()
     target.from_string(result.to_smt2(sp.OmtDialect.Z3))

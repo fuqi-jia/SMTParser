@@ -14,7 +14,7 @@ def _translate(tmp_path, source, data, *, dzn=False):
 
 
 def _exact_booleans(result, values):
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     actual = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     expected = z3.And(*[z3.Bool(name) == value for name, value in values.items()])
     solver = z3.Solver()
@@ -160,8 +160,8 @@ def test_wrong_nominal_type_is_an_error_with_original_json_parameter_location(tm
                           "enum DIFFERENT={Other};solve satisfy;",
                           data=[str(path)], language="minizinc")
     assert not result.ok
-    errors = [d for d in result.diagnostics if d.file == str(path)]
-    assert errors, [d.message for d in result.diagnostics]
+    errors = [d for d in result.diagnostic_items if d.file == str(path)]
+    assert errors, [d.message for d in result.diagnostic_items]
     assert any(d.line == 6 and d.column == 3 for d in errors)
 
 
@@ -218,4 +218,4 @@ def test_forward_enum_set_array_keeps_its_typed_nonempty_cell(tmp_path, size, ex
 def test_forward_elaboration_does_not_hide_invalid_models(source):
     result = sp.translate(source=source, language="minizinc")
     assert not result.ok
-    assert all("E_INTERNAL" not in str(d.code) for d in result.diagnostics)
+    assert all("E_INTERNAL" not in str(d.code) for d in result.diagnostic_items)

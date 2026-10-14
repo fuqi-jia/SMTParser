@@ -9,7 +9,7 @@ def _translate(source):
 
 
 def _assert_sat(result):
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.add(z3.parse_smt2_string(result.to_smt2()))
     assert solver.check() == z3.sat
@@ -17,11 +17,11 @@ def _assert_sat(result):
 
 def _assert_error(result):
     assert not result.ok
-    assert all("E_INTERNAL" not in str(d.code) for d in result.diagnostics)
+    assert all("E_INTERNAL" not in str(d.code) for d in result.diagnostic_items)
 
 
 def _assert_unsat(result):
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.add(z3.parse_smt2_string(result.to_smt2()))
     assert solver.check() == z3.unsat

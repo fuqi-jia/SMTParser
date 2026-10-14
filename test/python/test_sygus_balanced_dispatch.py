@@ -21,7 +21,7 @@ def test_wide_alternatives_preserve_values_and_source_witnesses(expected):
               f"(constraint (= f {numeral(expected)})) (check-synth)")
     translated = sp.translate(source=source, language="sygus", profile="bmc",
                               options={"grammar_mode": "unbounded"})
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     target = translated.to_smt2(sp.OmtDialect.Z3)
     context = z3.Context()
     solver = z3.Solver(ctx=context)

@@ -7,7 +7,7 @@ import somtparser as sp
 
 def roundtrip(source):
     result = sp.translate(source=source, language='smtlib2', dialect=sp.OmtDialect.Z3)
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     return result.to_smt2(sp.OmtDialect.Z3)
 
 
@@ -56,7 +56,7 @@ def test_exact_weight_and_soft_feasible_set_survive_two_roundtrips(weight):
 def test_unimplemented_cost_orderings_and_weight_domains_still_refuse(tail):
     result = sp.translate(source='(declare-const p Bool)' + tail, language='smtlib2')
     assert not result.ok
-    assert all(d.code != sp.ErrorCode.E_INTERNAL for d in result.diagnostics)
+    assert all(d.code != sp.ErrorCode.E_INTERNAL for d in result.diagnostic_items)
 
 
 def test_original_zero_cost_mps_roundtrips():

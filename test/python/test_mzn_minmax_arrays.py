@@ -9,7 +9,7 @@ import somtparser as sp
 
 def _solve(source, data=()):
     result = sp.translate(source=source, language="minizinc", data=list(map(str, data)))
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.add(*z3.parse_smt2_string(result.to_smt2()))
     return solver
@@ -57,7 +57,7 @@ def test_whole_array_minmax_output_size_scales_with_number_of_cells():
             "solve satisfy;\n"
         )
         result = sp.translate(source=source, language="minizinc")
-        assert result.ok, [d.message for d in result.diagnostics]
+        assert result.ok, [d.message for d in result.diagnostic_items]
         return len(result.to_smt2())
 
     size16 = output_size(16)
@@ -84,7 +84,7 @@ def test_whole_parameter_array_minmax_uses_supplied_values(tmp_path):
 
     data.write_text("costs = array1d(4..6, [-11, 7, 2]);\n", encoding="utf-8")
     result = sp.translate(source=source, language="minizinc", data=[str(data)])
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.add(*z3.parse_smt2_string(result.to_smt2()))
     assert solver.check() == z3.unsat
@@ -97,7 +97,7 @@ def test_numeric_minmax_of_empty_array_is_rejected_as_undefined(fn):
         language="minizinc",
     )
     assert not result.ok
-    assert any("empty array has no value" in d.message for d in result.diagnostics)
+    assert any("empty array has no value" in d.message for d in result.diagnostic_items)
 
 
 @pytest.mark.parametrize("expression", [

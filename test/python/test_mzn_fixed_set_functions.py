@@ -12,7 +12,7 @@ z3 = pytest.importorskip("z3")
 
 def _check(source):
     translated = sp.translate(source=source, language="minizinc")
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     context = z3.Context()
     solver = z3.Solver(ctx=context)
     solver.set(timeout=5000)
@@ -26,7 +26,7 @@ def _check(source):
 def _reject(source):
     result = sp.translate(source=source, language="minizinc")
     assert not result.ok
-    assert result.diagnostics
+    assert result.diagnostic_items
 
 
 def test_polymorphic_fixed_set_result_unifies_scalar_and_set_enum():
@@ -171,7 +171,7 @@ solve satisfy;
 """
     result = sp.translate(source=source, language="minizinc")
     assert not result.ok
-    assert any("type variable" in d.message for d in result.diagnostics)
+    assert any("type variable" in d.message for d in result.diagnostic_items)
 
 
 def test_fixed_set_arguments_require_matching_enum_types():
@@ -185,7 +185,7 @@ solve satisfy;
 """
     result = sp.translate(source=source, language="minizinc")
     assert not result.ok
-    assert result.diagnostics
+    assert result.diagnostic_items
 
 
 def test_concrete_int_set_formal_accepts_enum_set_by_ordinal_coercion():
@@ -206,7 +206,7 @@ solve satisfy;
 """
     result = sp.translate(source=source, language="minizinc")
     assert not result.ok
-    assert result.diagnostics
+    assert result.diagnostic_items
 
 
 def test_function_with_set_result_cannot_be_used_as_scalar_expression():
@@ -236,4 +236,4 @@ solve satisfy;
 """
     result = sp.translate(source=source, language="minizinc")
     assert not result.ok
-    assert result.diagnostics
+    assert result.diagnostic_items

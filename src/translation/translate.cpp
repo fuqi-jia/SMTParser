@@ -127,17 +127,21 @@ void applyEmittedNames(Uir::Sem::TranslationContract& contract,
 void recordSemanticStage(Uir::TranslationReport& report,
                          const Uir::Sem::TranslationContract& contract) {
     Uir::EncodingChoice choice;
-    choice.site = contract.id;
-    choice.unified_op = "semantic-translation-stage";
-    choice.strategy = contract.source.id + "->" + contract.target.id
-        + (contract.decision.polarity == Uir::Sem::VerdictPolarity::PRESERVE
-               ? ";verdict-preserving"
-               : ";verdict-inverting");
+    if (report.detailsEnabled()) {
+        choice.site = contract.id;
+        choice.unified_op = "semantic-translation-stage";
+        choice.strategy = contract.source.id + "->" + contract.target.id
+            + (contract.decision.polarity == Uir::Sem::VerdictPolarity::PRESERVE
+                   ? ";verdict-preserving"
+                   : ";verdict-inverting");
+    }
     choice.fidelity = contract.claimed_fidelity;
-    choice.rationale =
-        "validated Phi/A/beta/objective/decision metadata and recorded local proof "
-        "obligations. Target SAT: " + contract.decision.target_sat_meaning
-        + "; target UNSAT: " + contract.decision.target_unsat_meaning;
+    if (report.detailsEnabled()) {
+        choice.rationale =
+            "validated Phi/A/beta/objective/decision metadata and recorded local proof "
+            "obligations. Target SAT: " + contract.decision.target_sat_meaning
+            + "; target UNSAT: " + contract.decision.target_unsat_meaning;
+    }
     if (contract.claimed_fidelity.count_status == Uir::CountStatus::PRESERVED) {
         for (const Uir::Sem::ProofObligation& obligation : contract.obligations) {
             if (obligation.kind == Uir::Sem::ProofObligationKind::MODEL_COUNT
@@ -171,6 +175,8 @@ std::string Translation::toSmt2(Lower::OmtDialect dialect) const {
 }
 
 std::string Translation::toParserSmt2() const {
+    requireDetails("native export");
+    if (module_mode_) { return module_smt2_; }
     if (packed_smt_) {
         throw std::runtime_error("packed translation has no materialized Parser AST; use writeSmt2() or toSmt2()");
     }
@@ -183,6 +189,15 @@ std::string Translation::toParserSmt2() const {
 }
 
 void Translation::writeSmt2(std::ostream& out, Lower::OmtDialect dialect) const {
+    if (!details_ || module_mode_) {
+        if (dialect != dialect_) { throw std::logic_error("another dialect is unavailable for this Translation; translate again with details=True and module=False"); }
+        if (!details_ && (!captured_output_ || exit_code_ != 0)) {
+            throw std::logic_error("SMT output was not retained with details=False; use the supplied output stream or translate again with details=True");
+        }
+        out << (module_mode_ && details_ ? module_smt2_ : completed_smt2_);
+        if (!out) { throw std::runtime_error("writeSmt2: failed while writing SMT-LIB output"); }
+        return;
+    }
     std::vector<std::string> objective_names;
     std::string preamble;
     const std::string omt = objectiveCommands(dialect, &objective_names, &preamble);
@@ -364,6 +379,15 @@ void Translation::writeSmt2Body(std::ostream& out, const std::string& omt,
 
 void Translation::writeSmt2(const std::string& path,
                             Lower::OmtDialect dialect) const {
+    if (!details_ || module_mode_) {
+        const auto script = toSmt2(dialect);
+        std::ofstream out(path, std::ios::binary | std::ios::out | std::ios::trunc);
+        if (!out) { throw std::runtime_error("writeSmt2: could not open destination: " + path); }
+        out << script;
+        out.flush();
+        if (!out) { throw std::runtime_error("writeSmt2: failed while writing destination: " + path); }
+        return;
+    }
     // Refuse failed translations before opening with truncation, so a rejected
     // Translation or an unsupported objective dialect cannot destroy a
     // pre-existing destination. Objective validation happens once, before open.
@@ -408,6 +432,7 @@ Translation translateImpl(const Lang::SourceUnit& unit, const TranslateOptions& 
 
     Translation t;
     t.dialect_ = opts.omt_dialect;
+    t.report_.setDetailsEnabled(opts.details || !opts.report_path.empty());
     const char* stage = "setup";
 
     // Per-stage timing, recorded because a total cannot be optimised against.
@@ -577,7 +602,7 @@ Translation translateImpl(const Lang::SourceUnit& unit, const TranslateOptions& 
     for (const Uir::Sem::TranslationContract& contract : t.semantics_.stages()) {
         recordSemanticStage(t.report_, contract);
     }
-    const std::size_t target_choice_begin = t.report_.choices().size();
+    t.report_.beginPhase();
 
     // 3b. Type-check the model the frontend handed over, before anything reads
     //     it. A frontend is not required to type-check -- most of these
@@ -613,8 +638,10 @@ Translation translateImpl(const Lang::SourceUnit& unit, const TranslateOptions& 
 
     // 4. Domain fingerprint, recorded before any pass rewrites the model.
     stage = "HIR feature analysis";
-    for (const auto& f : t.model_->features()) {
-        t.report_.mutableFeatureCounts()[std::string(f.name())] += 1;
+    if (t.report_.detailsEnabled()) {
+        for (const auto& f : t.model_->features()) {
+            t.report_.mutableFeatureCounts()[std::string(f.name())] += 1;
+        }
     }
 
     // 5. Passes, with the pre-flight check inside.
@@ -837,12 +864,7 @@ Translation translateImpl(const Lang::SourceUnit& unit, const TranslateOptions& 
         if (has_target_semantics) {
             stage = "packed target semantic validation";
             if (t.lowered_) { applyEmittedNames(target_contract, *t.lowered_); }
-            Uir::Fidelity target_fidelity = Uir::Fidelity::exact();
-            bool has_target_choice = false;
-            for (std::size_t i = target_choice_begin; i < t.report_.choices().size(); ++i) {
-                if (!has_target_choice) { target_fidelity = t.report_.choices()[i].fidelity; has_target_choice = true; }
-                else target_fidelity = Uir::Fidelity::meet(target_fidelity, t.report_.choices()[i].fidelity);
-            }
+            const auto target_fidelity = t.report_.phaseFidelity();
             target_contract.claimed_fidelity = Uir::Fidelity::meet(
                 target_contract.claimed_fidelity, target_fidelity);
             t.semantics_.add(std::move(target_contract));
@@ -860,15 +882,17 @@ Translation translateImpl(const Lang::SourceUnit& unit, const TranslateOptions& 
         // Requirements were captured from complete post-pass HIR above. The
         // packed scalar emission model may now have relinquished formula roots;
         // re-analyzing that metadata would forget requirements of the preamble.
-        auto& provenance = t.report_.mutableProvenance();
-        provenance.somtparser_version = "1.0.0";
-        provenance.language_id = source_id;
-        provenance.language_version = input_model ? "1" : lang->version();
-        provenance.profile_id = profile->id();
-        provenance.profile_content_hash = profile->contentHash();
-        provenance.target_dialect = Lower::omtDialectName(opts.omt_dialect);
-        t.report_.mutableStats().translate_ms =
-            std::chrono::duration<double, std::milli>(clock::now() - started).count();
+        if (t.report_.detailsEnabled()) {
+            auto& provenance = t.report_.mutableProvenance();
+            provenance.somtparser_version = "1.0.0";
+            provenance.language_id = source_id;
+            provenance.language_version = input_model ? "1" : lang->version();
+            provenance.profile_id = profile->id();
+            provenance.profile_content_hash = profile->contentHash();
+            provenance.target_dialect = Lower::omtDialectName(opts.omt_dialect);
+            t.report_.mutableStats().translate_ms =
+                std::chrono::duration<double, std::milli>(clock::now() - started).count();
+        }
         t.ok_ = true;
         return;
     }
@@ -897,18 +921,7 @@ Translation translateImpl(const Lang::SourceUnit& unit, const TranslateOptions& 
     stage = "target semantic validation";
     if (has_target_semantics) {
         applyEmittedNames(target_contract, *t.lowered_);
-        Uir::Fidelity target_fidelity = Uir::Fidelity::exact();
-        bool has_target_choice = false;
-        for (std::size_t i = target_choice_begin;
-             i < t.report_.choices().size(); ++i) {
-            if (!has_target_choice) {
-                target_fidelity = t.report_.choices()[i].fidelity;
-                has_target_choice = true;
-            } else {
-                target_fidelity = Uir::Fidelity::meet(
-                    target_fidelity, t.report_.choices()[i].fidelity);
-            }
-        }
+        const auto target_fidelity = t.report_.phaseFidelity();
         target_contract.claimed_fidelity = Uir::Fidelity::meet(
             target_contract.claimed_fidelity, target_fidelity);
         t.semantics_.add(std::move(target_contract));
@@ -986,18 +999,20 @@ Translation translateImpl(const Lang::SourceUnit& unit, const TranslateOptions& 
     t.lowered_->retainObjectiveBindings(*t.model_);
 
     // 8. Provenance, so the row can be traced back to this configuration.
-    auto& prov = t.report_.mutableProvenance();
-    prov.somtparser_version = "1.0.0";
-    prov.language_id = source_id;
-    prov.language_version = input_model ? "1" : lang->version();
-    prov.profile_id = profile->id();
-    prov.profile_content_hash = profile->contentHash();
-    prov.target_dialect = Lower::omtDialectName(opts.omt_dialect);
+    if (t.report_.detailsEnabled()) {
+        auto& prov = t.report_.mutableProvenance();
+        prov.somtparser_version = "1.0.0";
+        prov.language_id = source_id;
+        prov.language_version = input_model ? "1" : lang->version();
+        prov.profile_id = profile->id();
+        prov.profile_content_hash = profile->contentHash();
+        prov.target_dialect = Lower::omtDialectName(opts.omt_dialect);
 
-    const auto elapsed = clock::now() - started;
-    t.report_.mutableStats().translate_ms =
-        std::chrono::duration<double, std::milli>(elapsed).count();
+        const auto elapsed = clock::now() - started;
+        t.report_.mutableStats().translate_ms =
+            std::chrono::duration<double, std::milli>(elapsed).count();
 
+    }
     t.ok_ = true;
     };   // end of body
 
@@ -1017,22 +1032,6 @@ Translation translateImpl(const Lang::SourceUnit& unit, const TranslateOptions& 
                              "translate() threw an unknown exception");
     }
     return t;
-}
-
-Translation translate(const Lang::SourceUnit& unit, const TranslateOptions& opts) {
-    return translateImpl(unit, opts, nullptr, {});
-}
-
-Translation translateHir(const Uir::Hir::ConstraintModel& model,
-                         const TranslateOptions& opts) {
-    return translateImpl({}, opts, std::make_shared<Uir::Hir::ConstraintModel>(model), {});
-}
-
-Translation translateHir(const Uir::Hir::ConstraintModel& model,
-                         const TranslateOptions& opts,
-                         const std::vector<Uir::Hir::LocatedExpr>& source_terms) {
-    return translateImpl({}, opts, std::make_shared<Uir::Hir::ConstraintModel>(model),
-                         source_terms);
 }
 
 } // namespace SOMTParser

@@ -25,4 +25,4 @@ def test_unused_extensions_reject_index_and_result_width_overflow(
     else:
         result = sp.translate(source=text, **options)
     assert not result.ok
-    assert any(d.line == 6 and message in d.message for d in result.diagnostics)
+    assert any(d.line == 6 and message in d.message for d in result.diagnostic_items)

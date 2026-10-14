@@ -16,7 +16,7 @@ z3 = pytest.importorskip("z3")
 ])
 def test_reused_cnf_variables_have_clause_local_meaning(source, expected):
     result = sp.translate(source=source, language="tptp")
-    assert result.ok, [diagnostic.message for diagnostic in result.diagnostics]
+    assert result.ok, [diagnostic.message for diagnostic in result.diagnostic_items]
     context = z3.Context()
     solver = z3.Solver(ctx=context)
     solver.set(timeout=5000)

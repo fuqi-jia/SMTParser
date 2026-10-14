@@ -9,7 +9,7 @@ import z3
 def translated(text, *, packed=True, options=None):
     result = sp.translate(source=text, language="lp", dialect=sp.OmtDialect.Z3,
                           options=options or {})
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     assert result.uses_packed_smt_stream == packed
     assert result.report.fidelity.sound and result.report.fidelity.complete
     assert result.report.fidelity.preserves_optimum

@@ -54,7 +54,7 @@ def test_quoted_command_names_survive_public_export(name):
         f"(assert (|{name}| 1))(check-sat)"
     )
     translated = sp.translate(source=source, language="smtlib2", dialect=sp.OmtDialect.Z3)
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     lowered = translated.to_smt2(sp.OmtDialect.Z3)
     solver = solver_for(lowered)
     assert solver.check() == z3.sat
@@ -71,7 +71,7 @@ def test_simultaneous_let_support_does_not_capture_shadowed_scalar(claimed, expe
         f"(= (set.card S) {claimed})))"
     )
     translated = sp.translate(source=source, language="smtlib2")
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     assert solver_for(translated.to_smt2(sp.OmtDialect.Z3)).check() == expected
 
 
@@ -90,7 +90,7 @@ def test_public_translation_exhausts_all_subsets_of_three_element_carrier():
     for mask in range(8):
         values = {i for i in range(3) if mask & (1 << i)}
         good = model_with_set_and_card(values, len(values)).translate(dialect=sp.OmtDialect.Z3)
-        assert good.ok, [d.message for d in good.diagnostics]
+        assert good.ok, [d.message for d in good.diagnostic_items]
         lowered = good.to_smt2(sp.OmtDialect.Z3)
         assert "(Set Int)" not in lowered
         assert "set.card" not in lowered and "set.member" not in lowered
@@ -99,7 +99,7 @@ def test_public_translation_exhausts_all_subsets_of_three_element_carrier():
 
         wrong_size = (len(values) + 1) % 4
         bad = model_with_set_and_card(values, wrong_size).translate(dialect=sp.OmtDialect.Z3)
-        assert bad.ok, [d.message for d in bad.diagnostics]
+        assert bad.ok, [d.message for d in bad.diagnostic_items]
         assert solver_for(bad.to_smt2(sp.OmtDialect.Z3)).check() == z3.unsat
 
 
@@ -120,7 +120,7 @@ def test_dynamic_set_array_index_uses_cell_carriers_and_keeps_index_semantics():
     builder.constrain(op("eq", op("set.card", dynamic), lit(1, "Int")))
 
     translated = builder.translate(dialect=sp.OmtDialect.Z3)
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     text = translated.to_smt2(sp.OmtDialect.Z3)
     assert "set.card" not in text and "set.member" not in text
     assert "(Array Int (Array Int Bool))" in text
@@ -137,7 +137,7 @@ def test_dynamic_set_array_index_uses_cell_carriers_and_keeps_index_semantics():
 def test_native_smtlib2025_set_dialect_is_not_rewritten():
     translated = model_with_set_and_card({0, 2}, 2).translate(
         dialect=sp.OmtDialect.SmtLib2025)
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     native_sets = translated.to_smt2(sp.OmtDialect.SmtLib2025)
     assert "(Set Int)" in native_sets
     assert "set.card" in native_sets and "set.member" in native_sets
@@ -213,5 +213,5 @@ def test_finite_set_operators_and_cardinality_agree_with_python_sets():
             builder = HirBuilder()
             builder.constrain(op("not", op("and", *claims)))
             translated = builder.translate()
-            assert translated.ok, [d.message for d in translated.diagnostics]
+            assert translated.ok, [d.message for d in translated.diagnostic_items]
             assert solver_for(translated.to_smt2(sp.OmtDialect.Z3)).check() == z3.unsat, (left, right)

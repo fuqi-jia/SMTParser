@@ -26,7 +26,7 @@ def test_required_soft_rows_preserve_projected_models_and_optimum(top):
     source += "+1 x1 +1 x2 +1 x3 >= 1 ;\n"
     source += "\n".join(f"[{cost}] {expr} ;" for cost, expr, _ in soft)
     translated = sp.translate(source=source, language="opb", dialect=sp.OmtDialect.Z3)
-    assert translated.ok, [item.message for item in translated.diagnostics]
+    assert translated.ok, [item.message for item in translated.diagnostic_items]
     script = translated.to_smt2(sp.OmtDialect.Z3)
     for assignment in product((0, 1), repeat=3):
         expected_cost = sum(cost for cost, _, pred in soft if not pred(*assignment))
@@ -47,7 +47,7 @@ def test_required_soft_rows_preserve_projected_models_and_optimum(top):
 def test_empty_soft_sum_keeps_strict_threshold(top):
     translated = sp.translate(source="soft: " + (top or "") + " ;\n+1 x1 = 1 ;\n",
                               language="opb", dialect=sp.OmtDialect.Z3)
-    assert translated.ok, [item.message for item in translated.diagnostics]
+    assert translated.ok, [item.message for item in translated.diagnostic_items]
     opt = z3.Optimize()
     opt.from_string(translated.to_smt2(sp.OmtDialect.Z3))
     assert opt.check() == (z3.unsat if top is not None and int(top) == 0 else z3.sat)
@@ -61,7 +61,7 @@ def test_threshold_and_costs_use_exact_unsigned_decimal_arithmetic(top):
     source += "\n".join(f"[+0{cost}] +1 x{i} = 1 ;"
                         for i, cost in enumerate(costs, 1))
     translated = sp.translate(source=source, language="opb", dialect=sp.OmtDialect.Z3)
-    assert translated.ok, [item.message for item in translated.diagnostics]
+    assert translated.ok, [item.message for item in translated.diagnostic_items]
     for assignment in product((0, 1), repeat=3):
         expected_cost = sum(cost for value, cost in zip(assignment, costs) if value == 0)
         expected_feasible = top is None or expected_cost < int(top)
@@ -78,4 +78,4 @@ def test_every_spelling_of_zero_soft_cost_is_rejected(zero):
     translated = sp.translate(source=f"soft: 3 ;\n[{zero}] +1 x1 = 1 ;\n",
                               language="opb", dialect=sp.OmtDialect.Z3)
     assert not translated.ok
-    assert any("strictly positive" in item.message for item in translated.diagnostics)
+    assert any("strictly positive" in item.message for item in translated.diagnostic_items)

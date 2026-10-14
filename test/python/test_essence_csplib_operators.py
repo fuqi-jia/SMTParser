@@ -13,7 +13,7 @@ import z3
 def translate(declarations, expression):
     result = sp.translate(source="language ESSENCE' 1.0\n" + declarations +
                           "\nsuch that " + expression, language="essence")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     assert result.report.fidelity.sound and result.report.fidelity.complete
     solver = z3.Solver()
     solver.from_string(result.to_smt2())
@@ -135,7 +135,7 @@ def test_invalid_types_and_unsupported_variable_power_remain_explicit(expression
     result = sp.translate(source="language ESSENCE' 1.0\nfind x,y: int(0..3)\nsuch that " +
                           expression, language='essence')
     assert not result.ok
-    assert result.diagnostics
+    assert result.diagnostic_items
 
 
 @pytest.mark.parametrize('spelling', ['allDiff', 'alldifferent'])
@@ -217,7 +217,7 @@ def test_complete_published_csplib_source_matches_independent_relation(name):
     source = (Path(__file__).resolve().parents[2] / 'languages/essence/instances/csplib' /
               (name + '.eprime')).read_text()
     result = sp.translate(source=source, language='essence')
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     target = z3.And(list(z3.parse_smt2_string(result.to_smt2())))
     checker = z3.Solver()
     checker.set(timeout=0)

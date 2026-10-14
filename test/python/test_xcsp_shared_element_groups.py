@@ -10,7 +10,7 @@ z3 = pytest.importorskip("z3")
 
 def _assertions(source):
     result = sp.translate(source=source, language="xcsp3")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     script = result.to_smt2()
     return script, z3.parse_smt2_string(script)
 

@@ -20,7 +20,7 @@ def equivalent(body, relation, tmp_path=None):
         path = tmp_path / 'deep.xml'
         path.write_text(text)
         result = sp.translate(path=str(path), language="xcsp3")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     x, y, z = z3.Ints('x y z')
     expected = z3.And(*(z3.And(v >= -2, v <= 2) for v in (x, y, z)), relation)
     check = z3.Solver()

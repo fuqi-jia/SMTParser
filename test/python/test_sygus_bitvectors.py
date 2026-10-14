@@ -9,7 +9,7 @@ import somtparser as sp
 def translate(source, depth='1'):
     result = sp.translate(source=source, language='sygus', profile='bmc',
                           options={'grammar_depth': depth})
-    assert result.ok, [diagnostic.message for diagnostic in result.diagnostics]
+    assert result.ok, [diagnostic.message for diagnostic in result.diagnostic_items]
     assert result.report.fidelity.sound
     assert not result.report.fidelity.complete
     return result
@@ -175,7 +175,7 @@ def test_concat_rejects_result_width_overflow_before_target_lowering():
                           options={'grammar_depth': '0'})
     assert not result.ok
     assert any('concat result width overflows' in d.message
-               for d in result.diagnostics)
+               for d in result.diagnostic_items)
 
 
 @pytest.mark.parametrize("expected,verdict", [("2", z3.sat), ("3", z3.unsat)])
@@ -213,7 +213,7 @@ def test_bv_grammar_rejects_width_mismatched_operator_arguments():
                           options={'grammar_depth': '0'})
     assert not result.ok
     assert any('equal-width bit-vector operands' in diagnostic.message
-               for diagnostic in result.diagnostics)
+               for diagnostic in result.diagnostic_items)
 
 
 def test_indexed_bv_literal_reduces_modulo_its_declared_width():
@@ -274,7 +274,7 @@ def test_grammar_helper_does_not_accept_wrong_width_argument():
     result = sp.translate(source=source, language='sygus', profile='bmc',
                           options={'grammar_depth': '0'})
     assert not result.ok
-    assert any('wrong sort' in d.message for d in result.diagnostics)
+    assert any('wrong sort' in d.message for d in result.diagnostic_items)
 
 
 @pytest.mark.parametrize(
@@ -329,7 +329,7 @@ def test_typed_let_rejects_bvcomp_with_mixed_operand_widths():
                           options={'grammar_depth': '0'})
     assert not result.ok
     assert any("typed let binding 'value'" in d.message
-               for d in result.diagnostics)
+               for d in result.diagnostic_items)
 
 
 def test_reserved_store_helper_call_has_single_function_semantics():
@@ -417,7 +417,7 @@ def test_bv_builtin_helper_names_are_rejected_before_candidate_specialization(
                           options={'grammar_depth': '0'})
     assert not result.ok
     assert any("reserved by source logic BV" in d.message
-               for d in result.diagnostics)
+               for d in result.diagnostic_items)
 
 
 @pytest.mark.parametrize("name", [
@@ -433,7 +433,7 @@ def test_bv_builtin_names_cannot_be_synthesized_as_functions(name):
                           options={'grammar_depth': '0'})
     assert not result.ok
     assert any("reserved by source logic BV" in d.message
-               for d in result.diagnostics)
+               for d in result.diagnostic_items)
 
 
 @pytest.mark.parametrize("name", ["bvadd", "bvnego"])
@@ -446,7 +446,7 @@ def test_bv_builtin_names_cannot_be_synthesized_as_invariants(name):
                           options={'grammar_depth': '0'})
     assert not result.ok
     assert any("reserved by source logic BV" in d.message
-               for d in result.diagnostics)
+               for d in result.diagnostic_items)
 
 
 def test_bv_builtin_spelling_remains_valid_as_a_scoped_parameter():
@@ -475,4 +475,4 @@ def test_universal_variables_cannot_redeclare_a_function_symbol(declaration, var
                           options={'grammar_depth': '0'})
     assert not result.ok
     assert any('duplicat' in diagnostic.message and 'clash' in diagnostic.message
-               for diagnostic in result.diagnostics)
+               for diagnostic in result.diagnostic_items)

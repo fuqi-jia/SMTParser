@@ -28,7 +28,7 @@ def test_objective_binding_preserves_all_source_names(kind, after, direction, di
               + 'such that true')
     dialect = getattr(sp.OmtDialect, dialect_name)
     result = sp.translate(source=source, language='essence', dialect=dialect)
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     assert result.report.fidelity.sound and result.report.fidelity.complete
     script = result.to_smt2(dialect)
     command = 'minimize' if direction == 'minimising' else 'maximize'
@@ -70,7 +70,7 @@ def test_direct_hir_real_spelling_preserves_exact_relation_and_objective(text, m
     model.constrain(native._hir_op('eq', [x, literal]))
     model.objective(maximize, literal)
     result = model.translate()
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     parser = z3.Optimize()
     parser.from_string(result.to_smt2(sp.OmtDialect.Z3))
     expected = z3.RealVal(text.lstrip('+'))
@@ -97,7 +97,7 @@ def test_flatzinc_signed_real_bounds_initializer_and_goal(profile, direction):
               'solve :: float_search([x],0.01,input_order,indomain_split,complete) '
               + direction + ' x;')
     result = sp.translate(source=source, language='flatzinc', profile=profile, dialect=sp.OmtDialect.Z3)
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     parser = z3.Optimize()
     parser.from_string(result.to_smt2(sp.OmtDialect.Z3))
     x = z3.Real('x')

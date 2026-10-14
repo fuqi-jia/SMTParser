@@ -39,7 +39,7 @@ def _check(smt2):
 def _target_source_witness(source):
     translated = sp.translate(source=source, language="sygus", profile="bmc",
                               options={"grammar_mode": "unbounded"})
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     strategies = {choice.strategy for choice in translated.report.choices}
     assert strategies & {
         "unbounded-grammar-direct-constant",

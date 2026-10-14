@@ -60,7 +60,7 @@ def translate(model, route):
         else:
             result=build_hir(expand_cp_model(model) if route=="expanded" else model,"x").translate()
         if not result.ok:
-            raise ModelError(str([d.message for d in result.diagnostics]))
+            raise ModelError(str([d.message for d in result.diagnostic_items]))
         return result
     finally:
         assert model==before

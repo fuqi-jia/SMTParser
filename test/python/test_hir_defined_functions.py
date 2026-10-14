@@ -254,7 +254,7 @@ def test_direct_builder_failed_definition_can_be_retried():
     builder.define_function("identity", binder, var("x"), path="functions[0]")
     builder.constrain(op("eq", apply("identity", lit(4)), lit(4)))
     translation = builder.translate()
-    assert translation.ok, [d.message for d in translation.diagnostics]
+    assert translation.ok, [d.message for d in translation.diagnostic_items]
     solver = z3.Solver()
     solver.add(*z3.parse_smt2_string(translation.to_smt2()))
     assert solver.check() == z3.sat

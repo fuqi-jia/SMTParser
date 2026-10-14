@@ -34,7 +34,7 @@ CASES = [
 def test_array_equality_export_preserves_the_complete_relation(name, declarations, formula):
     source = declarations + '(assert ' + formula + ')(check-sat)'
     translated = sp.translate(source=source, language='smtlib2')
-    assert translated.ok, [diagnostic.message for diagnostic in translated.diagnostics]
+    assert translated.ok, [diagnostic.message for diagnostic in translated.diagnostic_items]
     context = z3.Context()
     reference = z3.And(*z3.parse_smt2_string(source, ctx=context))
     actual = z3.And(*z3.parse_smt2_string(translated.to_smt2(), ctx=context))

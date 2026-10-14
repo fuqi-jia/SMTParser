@@ -23,7 +23,7 @@ def compile_expression(expr, declarations=()):
         b.declare(name, 'Int')
     b.constrain(expr)
     result = b.translate()
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     script = result.to_smt2()
     return b, script, public_relation(result, script)
 
@@ -131,7 +131,7 @@ def test_repeated_fold_array_lookups_share_nodes_without_changing_relation():
             )
             builder.constrain(op('eq', matches, lit(1)))
         translated = builder.translate()
-        assert translated.ok, [item.message for item in translated.diagnostics]
+        assert translated.ok, [item.message for item in translated.diagnostic_items]
         formula = public_relation(translated)
         return builder, formula
 
@@ -164,7 +164,7 @@ def test_fold_lookup_sharing_respects_nested_fold_and_quantifier_shadowing():
                   nested_fold, lit(0))
         builder.constrain(op('eq', fold('sum', 'i', [0, 3], body), lit(3)))
         translated = builder.translate()
-        assert translated.ok, [item.message for item in translated.diagnostics]
+        assert translated.ok, [item.message for item in translated.diagnostic_items]
         return builder, public_relation(translated)
 
     cached, cached_formula = compile_shadowed(True)
@@ -187,7 +187,7 @@ def test_fold_data_lookup_cache_tracks_mutable_table_contents():
     builder.data['weights'][0] = 5
     builder.constrain(op('eq', total(), lit(7)))
     translated = builder.translate()
-    assert translated.ok, [item.message for item in translated.diagnostics]
+    assert translated.ok, [item.message for item in translated.diagnostic_items]
     formula = public_relation(translated)
     solver = z3.Solver()
     solver.add(z3.Not(formula))
@@ -204,7 +204,7 @@ def test_shared_fold_predicates_match_independent_counting():
         builder.constrain(op('eq', fold('sum', 'i', [0, 12],
                                        op('ite', body, lit(1), lit(0))), lit(target)))
     result = builder.translate()
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     hosts = z3.Array('hosts', z3.IntSort(), z3.BoolSort())
     visits = z3.Array('visits', z3.IntSort(), z3.IntSort())
     expected = z3.And(*[

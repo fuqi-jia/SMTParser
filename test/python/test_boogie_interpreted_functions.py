@@ -57,7 +57,7 @@ OPERATORS = [
 
 def check_vc(source, expected):
     translated = sp.translate(source=source, language="boogie")
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     context = z3.Context()
     solver = z3.Solver(ctx=context)
     solver.set(timeout=10000)
@@ -144,7 +144,7 @@ REJECTIONS = [
 def test_semantic_attributes_and_invalid_terms_are_never_silently_erased(source, diagnostic):
     translated = sp.translate(source=source, language="boogie")
     assert not translated.ok
-    assert any(diagnostic in d.message for d in translated.diagnostics)
+    assert any(diagnostic in d.message for d in translated.diagnostic_items)
 
 
 # Exact lines from Corral/SMACK test_list.bpl; see packaged component provenance.
@@ -167,6 +167,6 @@ def test_interpreted_builtin_horn_script_parses(operator):
     result = "bool" if operator == "bvslt" else "bv8"
     source = f'function {{:bvbuiltin "{operator}"}} f(bv8,bv8):{result};procedure P(){{assert f(1bv8,2bv8)==f(1bv8,2bv8);}}'
     translated = sp.translate(source=source, language="boogie", options={"chc":"1"})
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     context = z3.Context()
     z3.parse_smt2_string(translated.to_smt2(), ctx=context)

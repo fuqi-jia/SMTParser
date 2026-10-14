@@ -17,7 +17,7 @@ def _translation(constraints, declarations):
               + '</variables><constraints>' + constraints
               + '</constraints></instance>')
     result = sp.translate(source=source, language="xcsp3")
-    assert result.ok, [diagnostic.message for diagnostic in result.diagnostics]
+    assert result.ok, [diagnostic.message for diagnostic in result.diagnostic_items]
     script = result.to_smt2()
     return script, z3.parse_smt2_string(script)
 
@@ -93,7 +93,7 @@ def test_unreachable_final_state_stays_unsatisfiable_and_empty_word_stays_reject
               + '</variables><constraints>' + empty + '</constraints></instance>')
     result = sp.translate(source=source, language="xcsp3")
     assert not result.ok
-    assert any("empty variable list" in diagnostic.message for diagnostic in result.diagnostics)
+    assert any("empty variable list" in diagnostic.message for diagnostic in result.diagnostic_items)
 
 
 def test_different_row_alias_patterns_keep_independent_word_actuals():

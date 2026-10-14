@@ -25,5 +25,5 @@ def test_reglan_binder_retains_native_sort_without_inventing_an_encoding():
     builder.constrain(unique(op("eq", var("x"), var("target")), (("x", "RegLan"),)))
     builder.validate()
     translated = builder.translate()
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     assert "RegLan" in translated.to_smt2()

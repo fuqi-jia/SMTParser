@@ -23,7 +23,7 @@ CASES = [
 def test_range_values_and_order(expression, expected):
     result = sp.translate(source=(f"array[int] of int: a = {expression};"
         f"constraint a = {expected}; solve satisfy;"), language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.add(*z3.parse_smt2_string(result.to_smt2()))
     assert solver.check() == z3.sat
@@ -32,7 +32,7 @@ def test_range_values_and_order(expression, expected):
 def test_range_initializer_has_exact_one_based_layout_for_all_assignments():
     result = sp.translate(source="array[1..3] of var int: a = reverse(-2..0); solve satisfy;",
                           language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     actual = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     array = z3.Array("a", z3.IntSort(), z3.IntSort())
     expected = z3.And(array[1] == 0, array[2] == -1, array[3] == -2)
@@ -47,7 +47,7 @@ def test_stripboard_enum_reindexing_of_reversed_range():
               "array1d(LINKS,reverse(1..card(LINKS))); } in "
               "unused_x[a] = 3 /\\ unused_x[b] = 2 /\\ unused_x[c] = 1; solve satisfy;")
     result = sp.translate(source=source, language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.add(*z3.parse_smt2_string(result.to_smt2()))
     assert solver.check() == z3.sat
@@ -57,7 +57,7 @@ def test_enum_range_retains_nominal_element_type():
     source = ("enum E = {a,b,c}; array[1..3] of E: xs = reverse(a..c);"
               "constraint xs[1] = c /\\ xs[2] = b /\\ xs[3] = a; solve satisfy;")
     result = sp.translate(source=source, language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.add(*z3.parse_smt2_string(result.to_smt2()))
     assert solver.check() == z3.sat

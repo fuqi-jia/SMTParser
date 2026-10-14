@@ -7,7 +7,7 @@ z3 = pytest.importorskip("z3")
 
 def emit(source):
     result = sp.translate(source=source, language="smtlib2")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     output = result.to_smt2(sp.OmtDialect.Z3)
     sp.parse(output)  # native self-read is a separate contract from Z3 parsing
     return output

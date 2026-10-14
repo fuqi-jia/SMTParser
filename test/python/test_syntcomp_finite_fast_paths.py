@@ -10,7 +10,7 @@ def _info(semantics, title):
 
 def _translate(source):
     result = sp.translate(source=source, language="syntcomp")
-    assert result.ok, [diagnostic.message for diagnostic in result.diagnostics]
+    assert result.ok, [diagnostic.message for diagnostic in result.diagnostic_items]
     return result
 
 

@@ -18,7 +18,7 @@ def _translate(tmp_path, source, data=None, *, dzn=False):
 
 
 def _assert_exact_booleans(result, expected_values):
-    assert result.ok, [diagnostic.message for diagnostic in result.diagnostics]
+    assert result.ok, [diagnostic.message for diagnostic in result.diagnostic_items]
     actual = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     expected = z3.And(
         *[z3.Bool(name) == value for name, value in expected_values.items()]
@@ -30,7 +30,7 @@ def _assert_exact_booleans(result, expected_values):
 
 def _assert_forced_boolean_values(result, expected_values):
     """Check selected Boolean consequences while existentially leaving others free."""
-    assert result.ok, [diagnostic.message for diagnostic in result.diagnostics]
+    assert result.ok, [diagnostic.message for diagnostic in result.diagnostic_items]
     actual = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     solver = z3.Solver()
     solver.add(actual)
@@ -225,7 +225,7 @@ def test_empty_enum_array_comprehension_is_vacuously_true():
 def test_wrong_enum_row_column_or_typed_empty_set_is_rejected(source):
     result = _translate(None, source)
     assert not result.ok
-    assert all("E_INTERNAL" not in str(diagnostic.code) for diagnostic in result.diagnostics)
+    assert all("E_INTERNAL" not in str(diagnostic.code) for diagnostic in result.diagnostic_items)
 
 
 @pytest.mark.parametrize(
@@ -243,7 +243,7 @@ def test_wrong_enum_row_column_or_typed_empty_set_is_rejected(source):
 def test_wrong_enum_identity_or_integer_to_enum_coercion_is_rejected(source):
     result = _translate(None, source)
     assert not result.ok
-    assert all("E_INTERNAL" not in str(diagnostic.code) for diagnostic in result.diagnostics)
+    assert all("E_INTERNAL" not in str(diagnostic.code) for diagnostic in result.diagnostic_items)
 
 
 def test_plain_int_generator_shadow_does_not_inherit_enum_parameter_type():
@@ -253,7 +253,7 @@ def test_plain_int_generator_shadow_does_not_inherit_enum_parameter_type():
         "constraint forall(i in 1..2)(a[i]);solve satisfy;",
     )
     assert not result.ok
-    assert all("E_INTERNAL" not in str(diagnostic.code) for diagnostic in result.diagnostics)
+    assert all("E_INTERNAL" not in str(diagnostic.code) for diagnostic in result.diagnostic_items)
 
 
 def test_quoted_dzn_string_does_not_coerce_to_enum(tmp_path):
@@ -264,7 +264,7 @@ def test_quoted_dzn_string_does_not_coerce_to_enum(tmp_path):
         dzn=True,
     )
     assert not result.ok
-    assert all("E_INTERNAL" not in str(diagnostic.code) for diagnostic in result.diagnostics)
+    assert all("E_INTERNAL" not in str(diagnostic.code) for diagnostic in result.diagnostic_items)
 
 
 @pytest.mark.parametrize("negated", [False, True])
@@ -273,7 +273,7 @@ def test_boolean_argument_to_integer_predicate_preserves_relation(negated):
     result = sp.translate(source=("predicate pos(var int: a)=a>0;var bool:b;"
                                   "constraint " + call + ";solve satisfy;"),
                           language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     actual = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     expected = z3.Not(z3.Bool("b")) if negated else z3.Bool("b")
     solver = z3.Solver()

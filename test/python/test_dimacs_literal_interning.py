@@ -9,7 +9,7 @@ z3 = pytest.importorskip("z3")
 
 def _target(source):
     translated = sp.translate(source=source, language="dimacs")
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     return translated, z3.And(*z3.parse_smt2_string(translated.to_smt2()))
 
 
@@ -49,7 +49,7 @@ def test_counting_weights_and_projection_metadata_are_preserved():
               "c p show 1 3 0\n"
               "p cnf 3 1\n1 -2 0\n")
     translated = sp.translate(source=source, language="dimacs")
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     choices = json.loads(translated.report.to_json())["choices"]
     assert any(c["strategy"] == "counting-weights" and "0.25" in c["rationale"]
                for c in choices)
@@ -60,7 +60,7 @@ def test_counting_weights_and_projection_metadata_are_preserved():
 def test_malformed_clause_diagnostic_keeps_original_line():
     translated = sp.translate(source="p cnf 1 1\n1\nx 0\n", language="dimacs")
     assert not translated.ok
-    error = next(d for d in translated.diagnostics if d.severity == sp.Severity.ERROR)
+    error = next(d for d in translated.diagnostic_items if d.severity == sp.Severity.ERROR)
     assert error.line == 3
 
 
@@ -68,6 +68,6 @@ def test_unrepresentable_negative_variable_index_is_a_parse_error_at_its_line():
     translated = sp.translate(
         source="p cnf 1 1\n-9223372036854775808 0\n", language="dimacs")
     assert not translated.ok
-    error = next(d for d in translated.diagnostics if d.severity == sp.Severity.ERROR)
+    error = next(d for d in translated.diagnostic_items if d.severity == sp.Severity.ERROR)
     assert error.line == 2
     assert "magnitude" in error.message

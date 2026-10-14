@@ -42,7 +42,7 @@ def test_source_and_two_hir_roundtrips_agree(declarations, constraints, expected
     assert solve(source) == expected
     for _ in range(2):
         result = sp.translate(source=source, language='smtlib2')
-        assert result.ok, [d.message for d in result.diagnostics]
+        assert result.ok, [d.message for d in result.diagnostic_items]
         assert result.report.fidelity.sound and result.report.fidelity.complete
         source = result.to_smt2()
         assert '(declare-codatatypes ' in source
@@ -54,7 +54,7 @@ def test_original_codatatype_regression_roundtrip():
         'languages/smtlib2/instances/upstream/datatypes_cdt-enum-type-mismatch.smt2')
     source = path.read_text()
     result = sp.translate(source=source, language='smtlib2')
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     target = result.to_smt2()
     assert '(declare-datatypes ' not in target
     assert solve(source) == solve(target) == 'sat'
@@ -66,7 +66,7 @@ def test_coinduction_is_not_replaced_by_induction():
     assert solve(source) == 'sat'
     assert solve(source.replace('declare-codatatypes', 'declare-datatypes')) == 'unsat'
     result = sp.translate(source=source, language='smtlib2')
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     assert solve(result.to_smt2()) == 'sat'
 
 

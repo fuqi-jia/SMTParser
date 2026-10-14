@@ -12,7 +12,7 @@ def _translate(size, start=0, required=None):
       <array id="x" size="[{size}]">{start}..{last}</array></variables>
       <constraints><circuit><list startIndex="{start}">x[]</list>{count}</circuit></constraints></instance>'''
     result = sp.translate(source=source, language="xcsp3")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.add(*z3.parse_smt2_string(result.to_smt2(sp.OmtDialect.Z3)))
     return result, solver

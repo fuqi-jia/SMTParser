@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def read(source, language):
     result = sp.translate(source=source, language=language)
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     s = z3.Optimize()
     s.from_string(result.to_smt2(dialect=sp.OmtDialect.Z3))
     return result, s
@@ -100,7 +100,7 @@ def test_numeric_lhs_names_match_reference_reader_only_when_selected():
     source = (ROOT/'languages/lp/instances/upstream/1451.lp').read_text()
     for mode, expected in [('constants', 3), ('variables', 2)]:
         result = sp.translate(source=source, language='lp', options={'lhs_numbers': mode})
-        assert result.ok, [d.message for d in result.diagnostics]
+        assert result.ok, [d.message for d in result.diagnostic_items]
         opt = z3.Optimize()
         opt.from_string(result.to_smt2(dialect=sp.OmtDialect.Z3))
         assert opt.check() == z3.sat
@@ -118,7 +118,7 @@ def test_explicit_inline_bounds_preserves_row_bounds_and_objective(header, upper
     source = f'Minimize a subject to bounds: a >= 1 {header} a <= {upper}\n'
     assert not sp.translate(source=source, language='lp').ok
     result = sp.translate(source=source, language='lp', options={'inline_bounds': 'true'})
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     assert any(c.strategy == 'explicit-inline-bounds' for c in result.report.choices)
     optimizer = z3.Optimize()
     optimizer.from_string(result.to_smt2(dialect=sp.OmtDialect.Z3))
@@ -134,7 +134,7 @@ def test_explicit_inline_bounds_preserves_row_bounds_and_objective(header, upper
 def test_inline_bounds_keyword_in_lhs_is_not_a_section_boundary():
     result = sp.translate(source='Minimize a subject to r: a + bounds >= 1 bounds a <= 3\n',
                           language='lp', options={'inline_bounds': 'true'})
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     optimizer = z3.Optimize()
     optimizer.from_string(result.to_smt2(dialect=sp.OmtDialect.Z3))
     assert optimizer.check() == z3.sat
@@ -149,7 +149,7 @@ def test_original_1449a_translates_only_under_explicit_inline_bounds_extension()
     path = ROOT / 'languages/lp/instances/upstream/1449a.lp'
     assert not sp.translate(str(path), language='lp').ok
     result = sp.translate(str(path), language='lp', options={'inline_bounds': 'true'})
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     optimizer = z3.Optimize()
     optimizer.from_string(result.to_smt2(dialect=sp.OmtDialect.Z3))
     assert optimizer.check() == z3.unsat
@@ -165,13 +165,13 @@ def test_inline_bounds_option_rejects_typos_and_incomplete_rows():
                    'Minimize a subject to a >= 1 + bounds a <= 3']:
         result = sp.translate(source=source, language='lp', options={'inline_bounds': 'true'})
         assert not result.ok
-        assert all(d.code != sp.ErrorCode.E_INTERNAL for d in result.diagnostics)
+        assert all(d.code != sp.ErrorCode.E_INTERNAL for d in result.diagnostic_items)
 
 
 def test_inline_bounds_with_multiple_rows_and_continuation():
     source = 'Minimize a\nSubject to\nr1: a >= 1\nr2: a +\nb >= 2 Bounds a <= 3\nEnd\n'
     result = sp.translate(source=source, language='lp', options={'inline_bounds': 'true'})
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     optimizer = z3.Optimize()
     optimizer.from_string(result.to_smt2(dialect=sp.OmtDialect.Z3))
     for a, b in [(0, 2), (1, 0), (1, 1), (3, 0), (4, 0), (2, -1)]:

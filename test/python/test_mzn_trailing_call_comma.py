@@ -20,7 +20,7 @@ constraint {call};
 constraint x = {value};
 solve satisfy;
 """, language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.add(*z3.parse_smt2_string(result.to_smt2()))
     assert solver.check() == expected

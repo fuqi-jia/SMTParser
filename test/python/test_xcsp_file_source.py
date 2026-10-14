@@ -15,7 +15,7 @@ SOURCE = ('<instance format="XCSP3" type="CSP"><variables>'
 
 
 def assert_relation(result):
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     x, y = z3.Ints('x y')
     expected = z3.And(x >= 0, x <= 2, y >= 0, y <= 2,
                       z3.Or(z3.And(x == 0, y == 1), x == 2))
@@ -68,7 +68,7 @@ def test_file_table_backing_survives_template_copies_and_consumption(
     path = tmp_path / 'table-lifetimes.xml'
     path.write_text(source)
     result = sp.translate(path=str(path), language='xcsp3')
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     x, y = z3.Ints('x y')
     relations = ([x == 1, y == 2] if in_table_formal else
                  [z3.Or(z3.And(x == 0, y == 1), x == 2),
@@ -91,7 +91,7 @@ def test_file_table_backing_preserves_rejected_tuple_location(tmp_path):
     result = sp.translate(path=str(path), language='xcsp3')
     assert not result.ok
     assert any('not an integer' in d.message and d.file == str(path)
-               for d in result.diagnostics)
+               for d in result.diagnostic_items)
 
 
 @pytest.mark.parametrize('token,split', [
@@ -140,7 +140,7 @@ def test_streaming_xml_preserves_line_at_mismatched_boundary_tag(tmp_path):
     result = sp.translate(path=str(path), language='xcsp3')
     assert not result.ok
     assert any(d.file == str(path) and d.line == source.count('\n') + 1
-               and 'conflicts' in d.message for d in result.diagnostics)
+               and 'conflicts' in d.message for d in result.diagnostic_items)
 
 
 def test_shared_streamed_table_keeps_polarity_and_domains(tmp_path):
@@ -155,7 +155,7 @@ def test_shared_streamed_table_keeps_polarity_and_domains(tmp_path):
     path = tmp_path / 'shared-bytes.xml'
     path.write_text(source)
     result = sp.translate(path=str(path), language='xcsp3')
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     x, y, z = z3.Ints('x y z')
     expected = z3.And(x >= 0, x <= 2, y >= 0, y <= 1, z >= 0, z <= 2,
                       z3.Or(z3.And(x == 0, y == 1), x == 2),

@@ -6,7 +6,7 @@ import z3
 
 def check(source, expected):
     result = sp.translate(source=source+' solve satisfy;', language='minizinc')
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     actual = z3.And(*z3.parse_smt2_string(result.to_smt2(sp.OmtDialect.Z3)))
     solver = z3.Solver()
     solver.add(z3.Xor(actual, expected))

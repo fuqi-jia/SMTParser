@@ -29,7 +29,7 @@ CASES = [
 @pytest.mark.parametrize("name,source,expected", CASES, ids=[r[0] for r in CASES])
 def test_named_type_semantics(name, source, expected):
     translated = sp.translate(source=source, language="boogie")
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     context = z3.Context()
     solver = z3.Solver(ctx=context)
     solver.set(timeout=10000)
@@ -55,12 +55,12 @@ REJECTIONS = [
 def test_invalid_or_unimplemented_type_declaration_is_explicit(name, source):
     translated = sp.translate(source=source, language="boogie")
     assert not translated.ok
-    assert translated.diagnostics
+    assert translated.diagnostic_items
 
 
 @pytest.mark.parametrize("source", [CASES[0][1], CASES[2][1], CASES[7][1], CASES[11][1]])
 def test_named_type_horn_output_parses_completely(source):
     translated = sp.translate(source=source, language="boogie", options={"chc": "1"})
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     context = z3.Context()
     z3.parse_smt2_string(translated.to_smt2(), ctx=context)

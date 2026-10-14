@@ -37,7 +37,7 @@ def translation(raw, route="direct"):
     else:
         translated = build_hir(expand_cp_model(raw) if route == "expanded" else raw, "x").translate()
     if not translated.ok:
-        raise ModelError(str(translated.diagnostics))
+        raise ModelError(str(translated.diagnostic_items))
     return translated
 
 

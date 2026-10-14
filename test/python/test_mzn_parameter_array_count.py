@@ -12,7 +12,7 @@ import somtparser as sp
 def test_parameter_array_count_uses_values(declaration, expression, value):
     result = sp.translate(source=declaration + "var int: n; constraint n=" + expression
                           + "; solve satisfy;", language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.set(timeout=3000)
     solver.add(*z3.parse_smt2_string(result.to_smt2()))
@@ -24,7 +24,7 @@ def test_parameter_array_count_uses_values(declaration, expression, value):
 def test_parameter_array_predicate_count_uses_values():
     result = sp.translate(source='include "globals.mzn";' + "array[4..6] of int: a=array1d(4..6,[7,8,7]); var int: n; "
                           "constraint count(a,7,n); solve satisfy;", language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.set(timeout=3000)
     solver.add(*z3.parse_smt2_string(result.to_smt2()))

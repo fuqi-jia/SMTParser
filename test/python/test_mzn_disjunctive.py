@@ -12,9 +12,9 @@ def test_disjunctive_matches_reference(name, source, expected):
     result = sp.translate(source=source, language="minizinc")
     if expected == "reject":
         assert not result.ok
-        assert any("empty duration" in d.message for d in result.diagnostics)
+        assert any("empty duration" in d.message for d in result.diagnostic_items)
         return
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.set(timeout=5000)
     solver.add(*z3.parse_smt2_string(result.to_smt2(sp.OmtDialect.Z3)))
@@ -26,7 +26,7 @@ def test_disjunctive_reification_is_exact_for_symbolic_starts_and_durations(stri
     name = "disjunctive_strict" if strict else "disjunctive"
     source = f'include "{name}.mzn";array[-2..0] of var int:s;array[-2..0] of var int:d;var bool:b;constraint b={name}(s,d);solve satisfy;'
     result = sp.translate(source=source, language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     actual = z3.And(*z3.parse_smt2_string(result.to_smt2(sp.OmtDialect.Z3)))
     s = z3.Array("s", z3.IntSort(), z3.IntSort())
     d = z3.Array("d", z3.IntSort(), z3.IntSort())
@@ -53,12 +53,12 @@ def test_disjunctive_checks_index_sets_and_element_types(source):
     result = sp.translate(source='include "disjunctive.mzn";'+source, language="minizinc")
     assert not result.ok
     assert any("index sets" in d.message or "Int-compatible" in d.message
-               for d in result.diagnostics)
+               for d in result.diagnostic_items)
 
 
 def test_strict_empty_relation_is_true():
     result = sp.translate(source='include "disjunctive_strict.mzn";constraint not disjunctive_strict([],[]);solve satisfy;',language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.add(*z3.parse_smt2_string(result.to_smt2(sp.OmtDialect.Z3)))
     assert solver.check() == z3.unsat

@@ -6,7 +6,7 @@ import somtparser as sp
 
 def formula(source):
     result = sp.translate(source=source + 'solve satisfy;', language='minizinc')
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     return z3.And(*z3.parse_smt2_string(result.to_smt2()))
 
 
@@ -146,7 +146,7 @@ def test_constant_index_errors_outside_default_are_still_reported(body):
     result = sp.translate(source=f'array[1..2] of int:a=[2,3];constraint {body};solve satisfy;',
                           language='minizinc')
     assert not result.ok
-    assert any('outside' in d.message for d in result.diagnostics)
+    assert any('outside' in d.message for d in result.diagnostic_items)
 
 
 @pytest.mark.parametrize('body', ['a[true] default 2 = 2', 'a[0] default "bad" = 2',
@@ -161,4 +161,4 @@ def test_invalid_second_axis_type_is_not_hidden_by_invalid_first_axis():
     result = sp.translate(source='array[1..2,1..2] of var int:a;'
                           'constraint (a[0,true] default 2)=2;solve satisfy;', language='minizinc')
     assert not result.ok
-    assert any('sort Int' in d.message for d in result.diagnostics)
+    assert any('sort Int' in d.message for d in result.diagnostic_items)

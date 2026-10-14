@@ -12,7 +12,7 @@ def translate(source, recover=True):
 
 
 def read(result):
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     opt = z3.Optimize()
     opt.from_string(result.to_smt2(dialect=sp.OmtDialect.Z3))
     return opt

@@ -35,7 +35,7 @@ def _source(*, maximize=False, offset="-1.25", integers=False, zeros=False, quad
 
 def _model(text):
     result = sp.translate(source=text, language="mps", dialect=sp.OmtDialect.Z3)
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     target = z3.Optimize()
     target.from_string(result.to_smt2(sp.OmtDialect.Z3))
     assert len(target.objectives()) == 1

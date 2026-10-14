@@ -20,7 +20,7 @@ def test_final_assignment_without_semicolon(tmp_path, model, data):
     path = tmp_path / "values.dzn"
     path.write_text(data)
     result = sp.translate(source=model + "solve satisfy;", language="minizinc", data=[str(path)])
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.add(z3.parse_smt2_string(result.to_smt2()))
     assert solver.check() == z3.sat
@@ -35,7 +35,7 @@ def test_eof_normalization_does_not_accept_malformed_data(tmp_path, data):
     path.write_text(data)
     result = sp.translate(source="int:n; int:m; solve satisfy;", language="minizinc", data=[str(path)])
     assert not result.ok
-    assert result.diagnostics
+    assert result.diagnostic_items
 
 
 def test_implicit_delimiters_remain_independent_between_data_files(tmp_path):
@@ -44,7 +44,7 @@ def test_implicit_delimiters_remain_independent_between_data_files(tmp_path):
         path.write_text(data)
     result = sp.translate(source="int:n; int:m; constraint n+m!=9; solve satisfy;",
                           language="minizinc", data=[str(path) for path in paths])
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.add(z3.parse_smt2_string(result.to_smt2()))
     assert solver.check() == z3.unsat

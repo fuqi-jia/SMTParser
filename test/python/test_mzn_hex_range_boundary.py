@@ -7,7 +7,7 @@ z3 = pytest.importorskip("z3")
 
 def _relation(source):
     result = sp.translate(source=source, language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     return z3.And(*z3.parse_smt2_string(result.to_smt2(sp.OmtDialect.Z3)))
 
 
@@ -40,11 +40,11 @@ def test_hexadecimal_float_retains_its_fraction_and_binary_exponent(literal, val
 def test_bad_hexadecimal_float_is_not_reinterpreted_as_integer(literal):
     result = sp.translate(source=f"float:k={literal}; solve satisfy;", language="minizinc")
     assert not result.ok
-    assert result.diagnostics
+    assert result.diagnostic_items
 
 
 @pytest.mark.parametrize("interval", ["0x1..", "0x1...0x2", "0x1..0x2.p"])
 def test_bad_interval_boundary_remains_an_error(interval):
     result = sp.translate(source=f"var {interval}:x; solve satisfy;", language="minizinc")
     assert not result.ok
-    assert result.diagnostics
+    assert result.diagnostic_items

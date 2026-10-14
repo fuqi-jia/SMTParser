@@ -23,7 +23,7 @@ def check_word(regex_expr, word, expected):
     b = HirBuilder()
     b.constrain(op("str.in_re", lit(word), regex_expr))
     translated = b.translate()
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     solver = z3.Solver()
     solver.set(timeout=10000)
     solver.add(z3.And(*z3.parse_smt2_string(translated.to_smt2())))
@@ -130,7 +130,7 @@ def test_re_loop_preserves_full_unsigned_indices_in_smt(bound):
         )
     )
     translated = b.translate()
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     assert f"((_ re.loop {bound} {bound})" in translated.to_smt2()
 
 
@@ -143,7 +143,7 @@ def test_re_range_accepts_symbolic_endpoints(word):
     b.constrain(op("eq", {"var": "hi"}, lit("b")))
     b.constrain(op("str.in_re", lit(word), op("re.range", {"var": "lo"}, {"var": "hi"})))
     translated = b.translate()
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     solver = z3.Solver()
     solver.set(timeout=10000)
     solver.add(z3.And(*z3.parse_smt2_string(translated.to_smt2())))

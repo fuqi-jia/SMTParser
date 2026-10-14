@@ -11,7 +11,7 @@ def literal(kind, text):
 
 def target(model):
     result = model.translate()
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     return z3.And(*z3.parse_smt2_string(result.to_smt2()))
 
 

@@ -126,7 +126,7 @@ def translated_after_source_release(text, mode, depth, tmp_path):
     else:
         result = sp.translate(source=text, language='btor2', profile='bmc',
                               options={'bmc_depth': str(depth)})
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     # The native SourceUnit and reader have already been destroyed at return.
     # Serialization must only inspect owning HIR/DAG data, never a source view.
     del text
@@ -187,4 +187,4 @@ def test_unreferenced_invalid_record_is_not_skipped(mode, tmp_path):
     else:
         result = sp.translate(source=text, **options)
     assert not result.ok
-    assert any(d.line == 4 and 'undeclared earlier node' in d.message for d in result.diagnostics)
+    assert any(d.line == 4 and 'undeclared earlier node' in d.message for d in result.diagnostic_items)

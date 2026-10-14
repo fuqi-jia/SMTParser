@@ -138,6 +138,8 @@ jobs:
             "{project}/test/python/test_nl_repair.py" "{project}/test/python/test_nl_datasets.py"
             "{project}/test/python/test_essence_constant_precedence.py"
             "{project}/test/python/test_z3_set_carrier_index_bounds.py"
+            "{project}/test/python/test_file_conversion_api.py"
+            "{project}/test/python/test_translate_details.py"
 
       - uses: actions/upload-artifact@v7
         with:

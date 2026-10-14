@@ -25,7 +25,7 @@ def automaton(items, start=-4, finals=None, transitions=None):
 
 
 def formula(b):
-    result = b.translate(); assert result.ok, [d.message for d in result.diagnostics]
+    result = b.translate(); assert result.ok, [d.message for d in result.diagnostic_items]
     return public_relation(result)
 
 

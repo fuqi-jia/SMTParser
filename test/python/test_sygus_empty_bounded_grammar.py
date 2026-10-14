@@ -11,7 +11,7 @@ def translate(source, depth=0):
 
 
 def status(result):
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.set(timeout=5000)
     solver.add(z3.parse_smt2_string(result.to_smt2()))
@@ -55,7 +55,7 @@ def test_empty_search_space_does_not_hide_source_errors(tail):
               "((Start Int (Next)) (Next Int (0)))) " + tail)
     result = translate(source)
     assert not result.ok
-    assert result.diagnostics
+    assert result.diagnostic_items
 
 
 def test_unproductive_grammar_has_no_finite_bounded_witness():

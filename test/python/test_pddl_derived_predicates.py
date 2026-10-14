@@ -16,7 +16,7 @@ def translate(tmp_path, domain, initial="", horizon=0, goal="(and)", objects="")
 
 
 def solver(result):
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     answer = z3.Solver()
     answer.add(z3.parse_smt2_string(result.to_smt2()))
     return answer
@@ -179,7 +179,7 @@ def test_native_closure_api_projects_exact_relation(tmp_path, seed):
     for atom, value in zip([p, q], result["values"]):
         model.constrain(native._hir_op("eq", [atom, value]))
     actual = model.translate()
-    assert actual.ok, [d.message for d in actual.diagnostics]
+    assert actual.ok, [d.message for d in actual.diagnostic_items]
     s = solver(actual)
     s.add(z3.Bool("base") == seed)
     assert s.check() == z3.sat

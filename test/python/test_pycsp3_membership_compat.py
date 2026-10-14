@@ -61,7 +61,7 @@ def test_composed_membership_preserves_all_observable_assignments(negative, memb
                               cwd=tmp_path, capture_output=True, text=True)
     assert exported.returncode == 0 and xml.exists(), exported.stdout + exported.stderr
     translated = sp.translate(path=str(xml), language='xcsp3', dialect=sp.OmtDialect.Z3)
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     actual = z3.And(*z3.parse_smt2_string(translated.to_smt2(dialect=sp.OmtDialect.Z3)))
     x, y, b = z3.Ints('x y b')
     membership = z3.BoolVal(False) if members == '[]' else z3.Or(x == 1, x == 2)

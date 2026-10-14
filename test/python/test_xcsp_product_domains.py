@@ -24,7 +24,7 @@ def translate(declarations, constraints='', path=None):
         result = sp.translate(path=str(path), language='xcsp3')
     else:
         result = sp.translate(source=source, language='xcsp3')
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     text = result.to_smt2()
     return text, z3.And(*z3.parse_smt2_string(text))
 
@@ -109,4 +109,4 @@ def test_array_alias_with_own_product_content_is_still_rejected():
               '</variables></instance>')
     result = sp.translate(source=source, language='xcsp3')
     assert not result.ok
-    assert any('must not have its own content' in d.message for d in result.diagnostics)
+    assert any('must not have its own content' in d.message for d in result.diagnostic_items)

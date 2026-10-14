@@ -7,7 +7,7 @@ import z3
 def verdict(source):
     result = sp.translate(source=source, language="sygus", profile="bmc",
                           options={"grammar_depth": "0"})
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     assert result.report.fidelity.sound
     assert not result.report.fidelity.complete
     solver = z3.Solver()

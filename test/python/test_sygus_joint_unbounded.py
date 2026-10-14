@@ -9,7 +9,7 @@ import somtparser as sp
 def translate(source):
     result = sp.translate(source=source, language="sygus", profile="bmc",
                           options={"grammar_mode": "unbounded"})
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     return result
 
 

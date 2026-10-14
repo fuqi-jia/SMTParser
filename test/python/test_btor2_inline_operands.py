@@ -30,10 +30,10 @@ def test_justice_overflow_keeps_every_reference(mode, arity, invalid_last, tmp_p
     if invalid_last:
         assert any(d.code == sp.ErrorCode.E_PARSE and d.line == 1003
                    and 'negated node id is out of range' in d.message
-                   for d in result.diagnostics)
+                   for d in result.diagnostic_items)
     else:
         assert any(d.code == sp.ErrorCode.E_UNSUPPORTED_CONSTRUCT
-                   for d in result.diagnostics)
+                   for d in result.diagnostic_items)
 
 
 @pytest.mark.parametrize('mode', ['inline', 'path'])
@@ -48,7 +48,7 @@ def test_deep_init_input_dependency_has_bounded_stack(mode, tmp_path):
     assert not result.ok
     assert any(d.code == sp.ErrorCode.E_PARSE and d.line == state+1
                and 'inputs are not allowed in initialization expressions' in d.message
-               for d in result.diagnostics)
+               for d in result.diagnostic_items)
 
 
 @pytest.mark.parametrize('mode', ['inline', 'path'])
@@ -58,7 +58,7 @@ def test_initial_state_is_not_an_input_dependency(mode, tmp_path):
     source = ('1 sort bitvec 1\n2 state 1 a\n3 not 1 2\n4 state 1 b\n'
               '5 init 1 4 3\n6 one 1\n7 bad 6\n')
     result = translate(source, mode, tmp_path)
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     actual = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     expected = z3.BitVec('b@0', 1) == ~z3.BitVec('a@0', 1)
     solver = z3.Solver(); solver.set(timeout=5000)

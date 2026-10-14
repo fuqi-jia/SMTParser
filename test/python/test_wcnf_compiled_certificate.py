@@ -104,7 +104,7 @@ def test_arbitrary_precision_weight_bytes():
 def test_real_native_expanded_export_full_correspondence(source):
     import somtparser as sp
     result=sp.translate(source=source.decode(),language='wcnf',dialect=sp.OmtDialect.Z3)
-    assert result.ok,[d.message for d in result.diagnostics]
+    assert result.ok,[d.message for d in result.diagnostic_items]
     assert verify(source,result.to_smt2(dialect=sp.OmtDialect.Z3).encode())['pointwise_violation_cost_equal']
 
 

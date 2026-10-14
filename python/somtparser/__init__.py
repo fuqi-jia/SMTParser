@@ -51,7 +51,6 @@ from ._somtparser import (
     Bound,
     CarrierEmptiness,
     CarrierSemantics,
-    ConvertResult,
     DecisionKind,
     Diagnostic,
     DivisionSemantics,
@@ -82,36 +81,6 @@ from ._somtparser import (
     source_semantics,
 )
 from ._somtparser import translate as _translate_raw
-from ._somtparser import convert as _convert_raw
-
-
-def convert(path="", *, source="", language="", profile=None, dialect=None,
-            data=(), options=None, report="", module=False, stdin=None,
-            output=None, diagnostics=None):
-    """Convert a file or inline model to SMT/OMT and return a ConvertResult.
-
-    The result contains exit_code (0 success, 1 translation failure, 2 invalid
-    settings, 3 I/O failure), smt2 and formatted diagnostics. No process is
-    spawned and conversion failures do not raise SystemExit.
-
-    Pass caller-owned text streams as output/diagnostics to stream rather than
-    capture that channel; its corresponding result string will then be empty.
-    Streams are flushed, never closed. For byte-stable file output, open with
-    encoding="utf-8", newline="". path="-" reads stdin (default sys.stdin) and
-    requires language. source supplies an inline model without reading stdin.
-
-    dialect accepts an OmtDialect or "gomt", "smtlib-omt-2025", "z3",
-    "optimathsat", "none". Unset profile/dialect use "default"/"gomt".
-    module=True exports a query-free module; explicitly selecting profile or
-    dialect in that mode is an invalid setting. report writes the translation
-    report, or the exported module's interface, as JSON with a final newline.
-    """
-    return _convert_raw(
-        path=os.fspath(path), source=source, language=language, profile=profile,
-        dialect=dialect, data=[os.fspath(p) for p in data],
-        options=dict(options or {}), report=os.fspath(report), module=module,
-        stdin=stdin, output=output, diagnostics=diagnostics,
-    )
 
 
 class TranslationError(RuntimeError):
@@ -128,32 +97,41 @@ class TranslationError(RuntimeError):
         self.diagnostics = diagnostics
 
 
-def translate(path="", *, source="", data=(), language="", profile="default",
-              dialect=OmtDialect.SmtLib2025, strict=False, options=None):
-    """Translate any supported constraint language to SMT/OMT.
+def translate(path="", *, source="", language="", profile=None, dialect=None,
+              data=(), options=None, strict=False, module=False, report="",
+              stdin=None, output=None, diagnostics=None, details: bool = True) -> Translation:
+    """Translate a model and return the single Translation result type.
 
-    `options` carries per-language parse options (a dict of strings), the same
-    channel the CLI's `--opt` uses -- e.g. boogie's `chc=1` emits Horn clauses.
+    smt2/diagnostics capture the completed output channels; exit_code is 0 for
+    success, 1 for translation failure, 2 for invalid settings, 3 for I/O failure.
+    Caller-owned output/diagnostics text streams avoid capturing those channels.
+    diagnostic_items contains the structured diagnostic objects used by strict.
+    details=False omits the returned report and releases inspection structures;
+    parser and other-dialect exports then raise a clear error. Validation and
+    output semantics are unchanged. An explicit report path still writes JSON.
     """
-    t = _translate_raw(path=path, source=source, data=list(data),
-                       language=language, profile=profile, dialect=dialect,
-                       options=dict(options or {}))
-    if strict and not t.ok:
-        diags = t.diagnostics
-        # The first ERROR, not the first diagnostic. A frontend may emit notes
-        # and warnings before the thing that actually stopped it -- Essence'
-        # notes that it skipped a `branching` directive, then fails on a parse
-        # gap several lines later -- and taking diags[0] reported the note's
-        # code and text as the cause. That is not a cosmetic slip: it is the
-        # code a corpus sweep buckets failures by, so it put genuine parse
-        # gaps in the coverage column and made the failure-cause distribution
-        # wrong for every file whose frontend says anything before it fails.
+    t = _translate_raw(
+        path=os.fspath(path), source=source, language=language, profile=profile,
+        dialect=dialect, data=[os.fspath(p) for p in data],
+        options=dict(options or {}), report=os.fspath(report), module=module,
+        stdin=stdin, output=output, diagnostics=diagnostics, details=details,
+    )
+    if strict and t.exit_code:
+        diags = t.diagnostic_items
         errors = [d for d in diags if d.severity == Severity.ERROR]
         first = errors[0] if errors else (diags[0] if diags else None)
-        message = first.message if first is not None else "translation failed"
-        code = first.code if first is not None else ErrorCode.E_INTERNAL
+        message = first.message if first is not None else t.diagnostics.strip() or "translation failed"
+        code = first.code if first is not None else ErrorCode.E_IO if t.exit_code == 3 else ErrorCode.E_INTERNAL
         raise TranslationError(message, code, diags)
     return t
+
+
+def convert(*args, **kwargs):
+    """Deprecated compatibility alias; use translate."""
+    import warnings
+    warnings.warn("somtparser.convert is deprecated; use somtparser.translate",
+                  DeprecationWarning, stacklevel=2)
+    return translate(*args, **kwargs)
 
 
 from .natural_language import CandidateSizeLimits
@@ -287,7 +265,6 @@ __all__ = [
     "CarrierSemantics",
     "CmdType",
     "ConstructionLimits",
-    "ConvertResult",
     "CandidateSizeLimits",
     "Command",
     "DecisionKind",

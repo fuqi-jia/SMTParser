@@ -14,7 +14,7 @@ def encode(tmp_path, domain, initial, tasks, goal='(and)', horizon=1):
 
 
 def solve(result):
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.set(timeout=10000)
     solver.add(z3.parse_smt2_string(result.to_smt2()))
@@ -65,7 +65,7 @@ def test_sparse_initial_relation_still_validates_every_literal(tmp_path, initial
     result = encode(tmp_path, domain, initial, '(act)')
     assert not result.ok
     assert any('initial state both' in d.message or 'unknown PDDL object' in d.message
-               or 'expects' in d.message for d in result.diagnostics)
+               or 'expects' in d.message for d in result.diagnostic_items)
 
 
 def test_sparse_tuple_keys_do_not_alias_concatenated_names(tmp_path):

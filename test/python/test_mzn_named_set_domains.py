@@ -11,7 +11,7 @@ import somtparser as sp
 
 def _translate(source, data=()):
     result = sp.translate(source=source, language="minizinc", data=list(data))
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     return result
 
 
@@ -53,7 +53,7 @@ def test_supplied_set_array_rejects_a_value_in_sparse_domain_hole(kind, tmp_path
     result = sp.translate(source=model, language="minizinc", data=[str(data_file)])
     assert not result.ok
     assert any("outside set element type 'Ori'" in d.message
-               for d in result.diagnostics)
+               for d in result.diagnostic_items)
 
 
 def test_sparse_named_decision_domain_forces_members_and_rejects_holes():

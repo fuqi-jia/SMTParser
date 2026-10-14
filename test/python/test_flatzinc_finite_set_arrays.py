@@ -30,7 +30,7 @@ def equivalent(source, expected, profile="default"):
     translated = sp.translate(source=source + "\nsolve satisfy;",
                               language="flatzinc", profile=profile,
                               dialect=sp.OmtDialect.Z3)
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     assert translated.report.fidelity.sound
     assert translated.report.fidelity.complete
     script = translated.to_smt2(sp.OmtDialect.Z3)

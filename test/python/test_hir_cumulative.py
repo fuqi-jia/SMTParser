@@ -20,7 +20,7 @@ def model(expression, names=()):
 
 def formula(source):
     result = sp.translate(source=source+' solve satisfy;', language='minizinc')
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     return result, z3.And(*z3.parse_smt2_string(result.to_smt2(sp.OmtDialect.Z3)))
 
 
@@ -34,7 +34,7 @@ def test_variable_scheduling_matches_every_bounded_assignment(negated):
     if negated:expr={'op':'not','args':[expr]}
     source=model(expr,names)
     result=build_hir(source,'x').translate()
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     assert 'cumulative-start-events' in result.report.to_json()
     actual=z3.And(*z3.parse_smt2_string(result.to_smt2()))
     expected=z3.And(values['b']>=0, *[values[n]>=0 for n in names[2:6]], *[

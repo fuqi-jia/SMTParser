@@ -41,7 +41,7 @@ def translated(raw, route="direct"):
         else:
             result = build_hir(expand_cp_model(raw) if route == "expanded" else raw, "x").translate()
         if not result.ok:
-            raise ModelError(str([d.message for d in result.diagnostics]))
+            raise ModelError(str([d.message for d in result.diagnostic_items]))
         return result.to_smt2()
     finally:
         assert raw == previous

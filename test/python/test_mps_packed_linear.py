@@ -30,7 +30,7 @@ def source(row_type="L", rhs="2", span=None, *, packed=True, exact_duplicate=Fal
 
 def translate(text, packed):
     result = sp.translate(source=text, language="mps", dialect=sp.OmtDialect.Z3)
-    assert result.ok, [item.message for item in result.diagnostics]
+    assert result.ok, [item.message for item in result.diagnostic_items]
     assert result.uses_packed_smt_stream == packed
     assert result.has_parser != packed
     assert result.report.stats.num_constraints == (65536 if packed else 1) + 1
@@ -132,7 +132,7 @@ def test_invalid_range_keeps_source_diagnostic_before_packing():
     result = sp.translate(source=text, language="mps")
     assert not result.ok
     assert any("RANGES cannot be applied to free N row" in item.message and item.line > 65536
-               for item in result.diagnostics)
+               for item in result.diagnostic_items)
 
 
 def test_wide_matrix_packs_by_entries_and_preserves_exact_feasible_set():
@@ -146,7 +146,7 @@ def test_wide_matrix_packs_by_entries_and_preserves_exact_feasible_set():
                  "BOUNDS", " FR bounds x", " FR bounds y", "ENDATA"])
     result = sp.translate(source="\n".join(text) + "\n", language="mps",
                           dialect=sp.OmtDialect.Z3)
-    assert result.ok, [item.message for item in result.diagnostics]
+    assert result.ok, [item.message for item in result.diagnostic_items]
     assert result.uses_packed_smt_stream
     assert result.report.stats.num_constraints == 2
     assert result.report.fidelity.sound and result.report.fidelity.complete

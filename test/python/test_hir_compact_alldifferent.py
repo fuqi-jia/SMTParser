@@ -15,7 +15,7 @@ def test_explicit_terms_match_pair_relation_in_both_polarities(profile, negated)
     distinct = {"op": "all_different", "args": [{"var": n} for n in names]}
     builder.constrain({"op": "not", "args": [distinct]} if negated else distinct)
     result = builder.translate(profile=profile)
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     values = [z3.Int(name) for name in names]
     expected = z3.And(*[a != b for i, a in enumerate(values) for b in values[i + 1:]])
     if negated:
@@ -31,7 +31,7 @@ def test_large_finite_array_has_linear_translation_size():
     builder.declare("cells", "Int", shape=[5000])
     builder.constrain({"op": "all_different", "args": [{"var": "cells"}]})
     result = builder.translate()
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     script = result.to_smt2()
     # An independent parser accepts the large result without solving it. This
     # budget catches construction of millions of pairs before solver search.
@@ -44,7 +44,7 @@ def test_indexed_array_preserves_nonzero_start_and_half_open_extent(profile):
     result = sp.translate(
         source="array[-2..1] of var int: a; constraint alldifferent(a); solve satisfy;",
         language="minizinc", profile=profile)
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     a = z3.Array("a", z3.IntSort(), z3.IntSort())
     expected = z3.And(*[a[i] != a[j] for i in range(-2, 2) for j in range(i + 1, 2)])
     solver = z3.Solver()
@@ -59,7 +59,7 @@ def test_nary_comparison_negation_preserves_source_relation(sort, operator):
     source = ''.join(f'(declare-const {v} {sort})\n' for v in ('a', 'b', 'c'))
     source += f'(assert (not ({operator} a b c)))\n(check-sat)\n'
     result = sp.translate(source=source, language="smtlib2")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.set(timeout=5000)
     solver.add(z3.Xor(z3.And(*z3.parse_smt2_string(source)),
@@ -76,7 +76,7 @@ def test_boolean_comparison_constants_and_complements(operator):
             source = ('(declare-const a Bool)(declare-const b Bool)'
                       f'(assert ({operator} ' + ' '.join(operands) + '))(check-sat)')
             result = sp.translate(source=source, language="smtlib2")
-            assert result.ok, [d.message for d in result.diagnostics]
+            assert result.ok, [d.message for d in result.diagnostic_items]
             solver = z3.Solver()
             solver.set(timeout=5000)
             solver.add(z3.Xor(z3.And(*z3.parse_smt2_string(source)),
@@ -104,7 +104,7 @@ def test_frontends_keep_every_cell_in_shared_distinct(language):
         terms = z3.Ints("q1 q2 q3")
         bounds = [z3.And(t >= 1, t <= 3) for t in terms]
     result = sp.translate(source=source, language=language)
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     expected = z3.And(*(bounds + [a != b for i, a in enumerate(terms) for b in terms[i + 1:]]))
     solver = z3.Solver()
     solver.set(timeout=5000)

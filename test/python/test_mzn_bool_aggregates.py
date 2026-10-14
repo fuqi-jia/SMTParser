@@ -6,7 +6,7 @@ import somtparser as sp
 
 def formula(source):
     result = sp.translate(source=source + 'solve satisfy;', language='minizinc')
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     return z3.And(*z3.parse_smt2_string(result.to_smt2()))
 
 
@@ -86,7 +86,7 @@ def test_nonnumeric_named_arrays_remain_type_errors_even_when_empty(fn, element,
               f'constraint {fn}(a)=0;solve satisfy;')
     result = sp.translate(source=source, language='minizinc')
     assert not result.ok
-    assert any('no matching signature' in d.message for d in result.diagnostics)
+    assert any('no matching signature' in d.message for d in result.diagnostic_items)
 
 
 @pytest.mark.parametrize('fn', ['forall', 'exists', 'count'])

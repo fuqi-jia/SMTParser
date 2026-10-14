@@ -24,7 +24,7 @@ def quant(kind, name, body):
 
 def exported(builder):
     result = builder.translate()
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     return result, result.to_smt2(sp.OmtDialect.Z3)
 
 

@@ -16,6 +16,6 @@ def test_dynamic_index_does_not_borrow_carrier_from_neighboring_cells(cells, upp
         source += f"(assert (= {cell} (set.inter {cell} {domain})))"
     source += "(assert (= (set.card (select A i)) 1))"
     translation = sp.translate(source=source, language="smtlib2")
-    assert translation.ok, [d.message for d in translation.diagnostics]
+    assert translation.ok, [d.message for d in translation.diagnostic_items]
     with pytest.raises(RuntimeError, match="finite support|carrier"):
         translation.to_smt2(sp.OmtDialect.Z3)

@@ -12,7 +12,7 @@ def test_function_count_matches_independent_indicators(negated,boolean):
     relation=f'count(a,{sought})=c'
     source=f'array[-1..1] of var {typ}:a;var int:c;constraint '
     result=sp.translate(source=source+('not ('+relation+')' if negated else relation)+';solve satisfy;',language='minizinc')
-    assert result.ok,[d.message for d in result.diagnostics]
+    assert result.ok,[d.message for d in result.diagnostic_items]
     assert 'count-value-indicators' in result.report.to_json()
     a=z3.Array('a',z3.IntSort(),z3.BoolSort() if boolean else z3.IntSort())
     expected=z3.Int('c')==z3.Sum(*[z3.If(a[i]==(False if boolean else -2),1,0) for i in range(-1,2)])
@@ -28,7 +28,7 @@ def test_function_count_matches_independent_indicators(negated,boolean):
 ])
 def test_empty_duplicate_string_and_row_counts(expression,value):
     result=sp.translate(source=f'constraint {expression}={value};solve satisfy;',language='minizinc')
-    assert result.ok,[d.message for d in result.diagnostics]
+    assert result.ok,[d.message for d in result.diagnostic_items]
     solver=z3.Solver();solver.add(z3.parse_smt2_string(result.to_smt2()))
     assert solver.check()==z3.sat
 
@@ -43,7 +43,7 @@ def test_count_preserves_operand_partiality_under_negation():
 def test_boolean_count_objective_reaches_independent_optimizer():
     result=sp.translate(source='array[0..2] of var bool:a;constraint not a[0];'
                         'solve minimize 3*count(a,false);',language='minizinc')
-    assert result.ok,[d.message for d in result.diagnostics]
+    assert result.ok,[d.message for d in result.diagnostic_items]
     script=result.to_smt2(sp.OmtDialect.Z3);assert '(minimize' in script
     solver=z3.Optimize();solver.from_string(script);assert solver.check()==z3.sat
     a=z3.Array('a',z3.IntSort(),z3.BoolSort())

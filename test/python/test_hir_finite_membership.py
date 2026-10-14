@@ -36,7 +36,7 @@ def test_symbolic_finite_set_algebra_against_python_membership(kind, negated):
     for name in ['x','y','z']: builder.declare(name,'Int')
     builder.constrain(op('not',member) if negated else member)
     result = builder.translate()
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     script = result.to_smt2()
     assert 'set.member' not in script and '(Set ' not in script
     assert 'finite-set-membership' in result.report.to_json()
@@ -81,7 +81,7 @@ def test_minizinc_set_literal_operand_definedness_is_not_erased(negative):
     expr='x in {1,1 div z}'
     if negative:expr='not ('+expr+')'
     result=sp.translate(source='var 1..1:x;var 0..0:z;constraint '+expr+';solve satisfy;',language='minizinc')
-    assert result.ok,[d.message for d in result.diagnostics]
+    assert result.ok,[d.message for d in result.diagnostic_items]
     solver=z3.Solver();solver.add(*z3.parse_smt2_string(result.to_smt2()))
     assert solver.check()==(z3.sat if negative else z3.unsat)
 
@@ -100,7 +100,7 @@ def test_minizinc_literal_and_named_set_algebra_membership(set_expr, members, ne
     result = sp.translate(
         source='set of int:A=2..3;set of int:B={4};var -1..5:x;constraint '
                + predicate + ';solve satisfy;', language='minizinc')
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     x = z3.Int('x')
     expected = z3.Or(*[x == value for value in members])
     if negative:
@@ -121,7 +121,7 @@ def test_minizinc_literal_union_with_decision_set_keeps_symbolic_operand(element
                           'constraint x in {1} union s;'
                           f'constraint x={element};constraint s={values};solve satisfy;',
                           language='minizinc')
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     script = result.to_smt2()
     assert 'set.member' in script
     executable = shutil.which('cvc5')
@@ -152,7 +152,7 @@ def test_frontend_finite_membership_keeps_exact_values_and_polarity(language, ne
                 '<intension>'+predicate+'</intension></constraints></instance>')
         members=[-1,1,3]
     result=sp.translate(source=source,language=language.split('-')[0])
-    assert result.ok,[d.message for d in result.diagnostics]
+    assert result.ok,[d.message for d in result.diagnostic_items]
     actual=z3.And(*z3.parse_smt2_string(result.to_smt2()))
     x=z3.Int('x');expected=z3.Or(*[x==v for v in members])
     if negative:expected=z3.Not(expected)

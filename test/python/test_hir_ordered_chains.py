@@ -15,7 +15,7 @@ def test_ordered_chain_matches_adjacent_pairs(operator, symbol, sort, negated):
     chain = {'op': operator, 'args': [{'var': name} for name in names]}
     builder.constrain({'op': 'not', 'args': [chain]} if negated else chain)
     translated = builder.translate()
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     reference = ''.join(f'(declare-const {name} {sort})' for name in names)
     pairs = '(and ' + ' '.join(f'({symbol} {a} {b})' for a, b in zip(names, names[1:])) + ')'
     reference += '(assert ' + ('(not ' + pairs + ')' if negated else pairs) + ')'

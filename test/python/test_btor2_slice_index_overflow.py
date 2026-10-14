@@ -20,4 +20,4 @@ def test_unused_slice_indices_do_not_wrap(mode, upper, lower, result_width, tmp_
     else:
         result = sp.translate(source=source, **options)
     assert not result.ok
-    assert any(d.line == 6 and "slice' index exceeds" in d.message for d in result.diagnostics)
+    assert any(d.line == 6 and "slice' index exceeds" in d.message for d in result.diagnostic_items)

@@ -8,7 +8,7 @@ z3 = pytest.importorskip("z3")
 
 def _solve(source):
     result = sp.translate(source=source, language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     context = z3.Context()
     solver = z3.Solver(ctx=context)
     solver.set(timeout=5000)
@@ -202,7 +202,7 @@ solve satisfy;
 """, encoding="utf-8")
 
     result = sp.translate(path=str(model), language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     context = z3.Context()
     solver = z3.Solver(ctx=context)
     solver.set(timeout=5000)

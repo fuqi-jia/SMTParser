@@ -17,7 +17,7 @@ def op(name, *args):
 
 def loaded(builder):
     result = builder.translate()
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     ctx = z3.Context()
     assertions = z3.parse_smt2_string(result.to_smt2(), ctx=ctx)
     return ctx, assertions

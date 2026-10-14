@@ -103,7 +103,7 @@ def build_hir(negated=False):
     relation = op("and", *(claim for claim, _ in CLAIMS))
     builder.constrain(op("not", relation) if negated else relation)
     result = builder.translate()
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     return result.to_smt2()
 
 
@@ -183,7 +183,7 @@ def test_empty_unicode_ranges_load_in_both_solvers(lo, hi):
     builder.declare('word', 'String')
     builder.constrain(op('str.in_re', {'var': 'word'}, op('re.range', lit(lo), lit(hi))))
     translated = builder.translate()
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     script = translated.to_smt2()
     assert z3_status(script) == z3.unsat
     assert cvc5_status(script) == 'unsat'
@@ -199,7 +199,7 @@ def test_non_singleton_endpoint_makes_symbolic_range_empty(symbolic_first):
         endpoints.reverse()
     builder.constrain(op('str.in_re', {'var': 'word'}, op('re.range', *endpoints)))
     translated = builder.translate()
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     script = translated.to_smt2()
     assert z3_status(script) == z3.unsat
     assert cvc5_status(script) == 'unsat'
@@ -210,7 +210,7 @@ def test_unicode_range_crossing_ascii_boundary(word, expected):
     builder = HirBuilder()
     builder.constrain(op('str.in_re', lit(word), op('re.range', lit('a'), lit('é'))))
     translated = builder.translate()
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     script = translated.to_smt2()
     assert z3_status(script) == (z3.sat if expected else z3.unsat)
     assert cvc5_status(script) == ('sat' if expected else 'unsat')

@@ -53,7 +53,7 @@ int main() {
         // Exercise the public translation facade used by Parser.cnf(), not
         // only the lowerer directly. Unused constructors must still reach the
         // translated Parser where the conservative counting guard inspects it.
-        Translation translated = translateHir(model);
+        Translation translated = translate(model);
         VERIFY(translated.ok());
         VERIFY(translated.parser()->getSymbolManager()->hasSort("U"));
         const auto box = translated.parser()->getSymbolManager()->resolveSort("Box");

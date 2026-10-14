@@ -21,7 +21,7 @@ def boolean(value):
 
 def compile_model(model, profile="default"):
     translation = model.translate(profile=profile, dialect=native.OmtDialect.Z3)
-    assert translation.ok, [d.message for d in translation.diagnostics]
+    assert translation.ok, [d.message for d in translation.diagnostic_items]
     text = translation.to_smt2(native.OmtDialect.Z3)
     optimizer = z3.Optimize()
     optimizer.from_string(text)
@@ -193,7 +193,7 @@ def test_grouped_soft_feasibility_dialect_is_an_explicit_diagnostic():
     model.objective_order("lexicographic")
     result = model.translate(profile="feasibility", dialect=native.OmtDialect.NONE)
     assert not result.ok
-    assert any("combined soft groups" in d.message for d in result.diagnostics)
+    assert any("combined soft groups" in d.message for d in result.diagnostic_items)
 
 
 def test_grouped_soft_gomt_uses_named_objectives_and_retains_the_exact_cost_vector():
@@ -203,7 +203,7 @@ def test_grouped_soft_gomt_uses_named_objectives_and_retains_the_exact_cost_vect
     model.soft_constrain(op("not", p), "3", group="b")
     model.objective_order("lexicographic")
     result = model.translate(dialect=native.OmtDialect.SmtLib2025)
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     text = result.to_smt2(native.OmtDialect.SmtLib2025)
     assert text.count("(define-maxsmt-objective ") == 2
     assert text.count(":objective ") == 2

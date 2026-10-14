@@ -9,7 +9,7 @@ z3 = pytest.importorskip("z3")
 
 def translate(source, packed=True):
     result = sp.translate(source=source, language="dimacs", options={"packed": str(int(packed))})
-    assert result.ok, [item.message for item in result.diagnostics]
+    assert result.ok, [item.message for item in result.diagnostic_items]
     assert result.uses_packed_smt_stream == packed
     assert result.has_parser != packed
     return result
@@ -47,7 +47,7 @@ def test_file_input_and_inline_input_have_identical_packed_output(tmp_path):
     path = tmp_path / "multiline.cnf"
     path.write_bytes(source.encode())
     result = sp.translate(str(path), language="dimacs", options={"packed": "1"})
-    assert result.ok, [item.message for item in result.diagnostics]
+    assert result.ok, [item.message for item in result.diagnostic_items]
     assert result.to_smt2() == translate(source).to_smt2()
 
 
@@ -70,13 +70,13 @@ def test_counting_metadata_stays_attached_to_the_formula(packed):
 def test_invalid_clause_keeps_original_diagnostic_location(source, line):
     result = sp.translate(source=source, language="dimacs", options={"packed": "1"})
     assert not result.ok
-    assert next(item for item in result.diagnostics if item.severity == sp.Severity.ERROR).line == line
+    assert next(item for item in result.diagnostic_items if item.severity == sp.Severity.ERROR).line == line
 
 
 def test_packed_option_requires_explicit_boolean_value():
     result = sp.translate(source="p cnf 0 0\n", language="dimacs", options={"packed": "yes"})
     assert not result.ok
-    assert any("'packed'" in item.message for item in result.diagnostics)
+    assert any("'packed'" in item.message for item in result.diagnostic_items)
 
 
 def test_default_path_keeps_materialized_parser():

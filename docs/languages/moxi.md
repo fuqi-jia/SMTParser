@@ -117,7 +117,7 @@ with `query=<name>`; multiple check commands additionally require `check_index=<
 ```python
 import somtparser as sp
 
-result = sp.convert("model.moxi", language="moxi", profile="bmc",
+result = sp.translate("model.moxi", language="moxi", profile="bmc",
                     options={"bmc_depth": "20", "check_index": "1", "query": "q2"})
 assert result.exit_code == 0, result.diagnostics
 ```
@@ -150,7 +150,7 @@ The normalization appears in query reports or the module's `source_rewrites`
 interface entries, including original/normalized declaration and source location.
 
 ```python
-result = sp.convert("languages/moxi/instances/upstream/QF_LRA_LossyIntChannelX.moxi",
+result = sp.translate("languages/moxi/instances/upstream/QF_LRA_LossyIntChannelX.moxi",
                     module=True, options={"flat_datatype_constructors": "true"})
 assert result.exit_code == 0, result.diagnostics
 ```

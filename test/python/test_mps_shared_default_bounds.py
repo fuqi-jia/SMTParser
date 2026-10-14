@@ -16,7 +16,7 @@ def test_shared_default_bounds_keep_marker_and_bound_overrides(packed):
                   ' LO bounds c 2', ' FR bounds f', ' MI bounds n', ' SC bounds s 3',
                   ' BV bounds q', 'ENDATA'])
     result = sp.translate(source='\n'.join(lines) + '\n', language='mps', dialect=sp.OmtDialect.Z3)
-    assert result.ok, [item.message for item in result.diagnostics]
+    assert result.ok, [item.message for item in result.diagnostic_items]
     assert result.uses_packed_smt_stream == packed
     opt = z3.Optimize()
     opt.from_string(result.to_smt2(sp.OmtDialect.Z3))

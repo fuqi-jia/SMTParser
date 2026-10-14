@@ -38,7 +38,7 @@ import somtparser as sp
 ])
 def test_domain_reflection_matches_minizinc_294_oracles(source, expected):
     translated = sp.translate(source=source + " solve satisfy;", language="minizinc")
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     solver = z3.Solver()
     solver.from_string(translated.to_smt2(sp.OmtDialect.Z3))
     assert solver.check() == expected
@@ -56,7 +56,7 @@ constraint members(x);
 solve satisfy;
 """
     translated = sp.translate(source=source, language="minizinc")
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     solver = z3.Solver()
     solver.from_string(translated.to_smt2(sp.OmtDialect.Z3))
     assert solver.check() == z3.unsat
@@ -66,4 +66,4 @@ def test_unbounded_domain_does_not_invent_machine_integer_limits():
     translated = sp.translate(
         source="var int:x; constraint x in dom(x); solve satisfy;", language="minizinc")
     assert not translated.ok
-    assert any("no proven finite integer bounds" in d.message for d in translated.diagnostics)
+    assert any("no proven finite integer bounds" in d.message for d in translated.diagnostic_items)

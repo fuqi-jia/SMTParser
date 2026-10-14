@@ -16,7 +16,7 @@ def translated(tmp_path, declaration, params, expression, *, good=True):
     result = sp.translate(source="language ESSENCE' 1.0\n" + declaration +
                           '\nsuch that ' + expression, data=[str(data)], language='essence')
     if good:
-        assert result.ok, [d.message for d in result.diagnostics]
+        assert result.ok, [d.message for d in result.diagnostic_items]
         assert result.report.fidelity.sound and result.report.fidelity.complete
     else:
         assert not result.ok
@@ -51,7 +51,7 @@ def test_given_reindexes_without_permuting_parameter_cells(tmp_path, domain, exp
     result = translated(tmp_path, 'given M: matrix indexed by [' + domain + '] of int',
                         'letting M = [7,8,9]', expression)
     assert solver(result).check() == z3.sat
-    assert any('reindexed' in d.message for d in result.diagnostics)
+    assert any('reindexed' in d.message for d in result.diagnostic_items)
 
 
 @pytest.mark.parametrize('domain,expression', [
@@ -128,7 +128,7 @@ def test_distinct_parameter_files_share_constants_but_reject_duplicate_assignmen
     second.write_text('letting M = [[1,2],[3,n]]')
     source = "language ESSENCE' 1.0\ngiven n: int\ngiven M: matrix indexed by [int(1..n),int(1..n)] of int\nsuch that M[2,2] = n"
     result = sp.translate(source=source, data=[str(first),str(second)], language='essence')
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     assert solver(result).check() == z3.sat
     second.write_text('letting n = 2')
     result = sp.translate(source=source, data=[str(first),str(second)], language='essence')

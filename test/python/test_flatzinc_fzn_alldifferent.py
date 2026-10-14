@@ -7,7 +7,7 @@ import z3
 def equivalent(source, expected, profile="default"):
     translated = sp.translate(
         source=source + "\nsolve satisfy;", language="flatzinc", profile=profile)
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     assert translated.report.fidelity.sound
     assert translated.report.fidelity.complete
     actual = z3.And(*z3.parse_smt2_string(translated.to_smt2()))
@@ -83,4 +83,4 @@ def test_unrecognized_fzn_prefix_does_not_become_a_builtin():
         source="var int: x; constraint fzn_int_eq(x,1); solve satisfy;",
         language="flatzinc")
     assert not translated.ok
-    assert any("fzn_int_eq" in d.message for d in translated.diagnostics)
+    assert any("fzn_int_eq" in d.message for d in translated.diagnostic_items)

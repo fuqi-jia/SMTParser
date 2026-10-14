@@ -7,7 +7,7 @@ import somtparser as sp
 
 def translate(source):
     result = sp.translate(source=source + ' solve satisfy;', language='minizinc')
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     script = result.to_smt2(sp.OmtDialect.Z3)
     return script, public_relation(result, script)
 
@@ -82,7 +82,7 @@ def test_uninitialized_bool_and_real_locals_are_bound():
 def test_free_local_rejected_in_minizinc_negative_context(expression):
     result = sp.translate(source='constraint '+expression+';solve satisfy;', language='minizinc')
     assert not result.ok
-    assert any('non-positive context' in d.message for d in result.diagnostics)
+    assert any('non-positive context' in d.message for d in result.diagnostic_items)
 
 
 @pytest.mark.parametrize('expression', [

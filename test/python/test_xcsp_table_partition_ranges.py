@@ -27,7 +27,7 @@ def test_factored_tables_match_the_raw_tuple_relation(positive, order):
               '</variables><constraints><extension><list>a b c</list>'
               f'<{kind}>{text}</{kind}></extension></constraints></instance>')
     translated = sp.translate(source=source, language='xcsp3')
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     ctx = z3.Context()
     solver = z3.Solver(ctx=ctx);solver.set(timeout=3000)
     solver.add(z3.parse_smt2_string(translated.to_smt2(), ctx=ctx))

@@ -39,7 +39,7 @@ def model(expr, declarations=(), source="x"):
 
 def translated_relation(candidate):
     result = build_hir(candidate, "x").translate()
-    assert result.ok, [diagnostic.message for diagnostic in result.diagnostics]
+    assert result.ok, [diagnostic.message for diagnostic in result.diagnostic_items]
     return z3.And(*z3.parse_smt2_string(result.to_smt2()))
 
 

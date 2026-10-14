@@ -16,7 +16,7 @@ def row_count(prefix):
 
 def translated_formula(value):
     translated = build_cp_hir(value, "x").translate()
-    assert translated.ok, [item.message for item in translated.diagnostics]
+    assert translated.ok, [item.message for item in translated.diagnostic_items]
     return z3.And(*z3.parse_smt2_string(translated.to_smt2()))
 
 

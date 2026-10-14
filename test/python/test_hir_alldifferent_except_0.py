@@ -23,7 +23,7 @@ def op(name, *args):
 
 def _relation(builder):
     translated = builder.translate()
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     return z3.And(*z3.parse_smt2_string(translated.to_smt2()))
 
 
@@ -77,7 +77,7 @@ def test_list_cardinality_edges_and_output_growth(arity):
         builder.declare(name, "Int")
     builder.constrain(op("all_different_except_0", *(var(n) for n in names)))
     translated = builder.translate()
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     smt = translated.to_smt2()
     if arity < 2:
         assert "(assert true)" in smt
@@ -94,7 +94,7 @@ def test_list_encoding_size_is_linear_in_arity():
             builder.declare(name, "Int")
         builder.constrain(op("all_different_except_0", *(var(n) for n in names)))
         translated = builder.translate()
-        assert translated.ok, [d.message for d in translated.diagnostics]
+        assert translated.ok, [d.message for d in translated.diagnostic_items]
         smt = translated.to_smt2()
         assert smt.count("(distinct ") == 1
         return len(smt)
@@ -167,4 +167,4 @@ def test_cp_constructor_builds_same_global_and_checks_types():
     translated = bad_bounds.translate()
     assert not translated.ok
     assert any("lower index bound must be Int" in d.message
-               for d in translated.diagnostics)
+               for d in translated.diagnostic_items)

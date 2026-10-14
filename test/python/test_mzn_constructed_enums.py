@@ -21,7 +21,7 @@ def _translate(source, *, tmp_path=None, data=None):
 
 def _assert_forced_boolean_values(result, expected_values):
     """Leave unrelated model variables existential while checking each fact."""
-    assert result.ok, [diagnostic.message for diagnostic in result.diagnostics]
+    assert result.ok, [diagnostic.message for diagnostic in result.diagnostic_items]
     actual = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     solver = z3.Solver()
     solver.add(actual)
@@ -33,7 +33,7 @@ def _assert_forced_boolean_values(result, expected_values):
 
 
 def _assert_solver_outcome(result, expected):
-    assert result.ok, [diagnostic.message for diagnostic in result.diagnostics]
+    assert result.ok, [diagnostic.message for diagnostic in result.diagnostic_items]
     solver = z3.Solver()
     solver.add(z3.parse_smt2_string(result.to_smt2()))
     assert solver.check() == expected
@@ -390,7 +390,7 @@ solve satisfy;
 """
     result = _translate(source, tmp_path=tmp_path, data=data)
     assert not result.ok
-    assert all("E_INTERNAL" not in str(diagnostic.code) for diagnostic in result.diagnostics)
+    assert all("E_INTERNAL" not in str(diagnostic.code) for diagnostic in result.diagnostic_items)
 
 
 def test_constructor_over_enum_base_and_appended_none_keep_type_ordinals():
@@ -436,7 +436,7 @@ solve satisfy;
 def test_malformed_constructor_arity_or_nominal_argument_is_rejected(source):
     result = _translate(source)
     assert not result.ok
-    assert all("E_INTERNAL" not in str(diagnostic.code) for diagnostic in result.diagnostics)
+    assert all("E_INTERNAL" not in str(diagnostic.code) for diagnostic in result.diagnostic_items)
 
 
 def test_constructor_wrong_ordinal_is_unsatisfiable():
@@ -445,7 +445,7 @@ enum Product = P(1..3);
 constraint enum2int(P(2)) = 3;
 solve satisfy;
 """)
-    assert result.ok, [diagnostic.message for diagnostic in result.diagnostics]
+    assert result.ok, [diagnostic.message for diagnostic in result.diagnostic_items]
     solver = z3.Solver()
     solver.add(z3.parse_smt2_string(result.to_smt2()))
     assert solver.check() == z3.unsat
@@ -538,7 +538,7 @@ solve satisfy;
 """)
     if expected == "error":
         assert not result.ok
-        assert all("E_INTERNAL" not in str(diagnostic.code) for diagnostic in result.diagnostics)
+        assert all("E_INTERNAL" not in str(diagnostic.code) for diagnostic in result.diagnostic_items)
     else:
         _assert_solver_outcome(result, {"sat": z3.sat, "unsat": z3.unsat}[expected])
 
@@ -579,7 +579,7 @@ solve satisfy;
 def test_empty_matrix_rank_or_row_count_mismatch_is_rejected(source):
     result = _translate(source)
     assert not result.ok
-    assert all("E_INTERNAL" not in str(diagnostic.code) for diagnostic in result.diagnostics)
+    assert all("E_INTERNAL" not in str(diagnostic.code) for diagnostic in result.diagnostic_items)
 
 
 def test_explicit_two_dimensional_empty_matrix_literal_is_accepted():

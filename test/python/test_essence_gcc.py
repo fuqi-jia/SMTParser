@@ -7,7 +7,7 @@ import z3
 def translated(declarations, constraint):
     result = sp.translate(source="language ESSENCE' 1.0\n" + declarations +
                           "\nsuch that " + constraint, language="essence")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     assert result.report.fidelity.sound and result.report.fidelity.complete
     return z3.And(list(z3.parse_smt2_string(result.to_smt2())))
 
@@ -81,7 +81,7 @@ def test_constant_parameter_row_slice_uses_source_indices(tmp_path, negated):
         "find a : matrix indexed by [int(1..3)] of int(0..2)\nfind row : int(-2..1)\n"
         "such that " + ("!" if negated else "") + "gcc(a, [0,1], counts[row,..])",
         data=[str(data)], language="essence")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     actual = z3.And(list(z3.parse_smt2_string(result.to_smt2())))
     a = z3.Array("a", z3.IntSort(), z3.IntSort())
     row = z3.Int("row")
@@ -123,4 +123,4 @@ def test_bad_cardinality_arguments_report_the_specific_error(constraint, diagnos
     result = sp.translate(source="language ESSENCE' 1.0\nfind x : int(0..2)\nsuch that " + constraint,
                           language="essence")
     assert not result.ok
-    assert any(diagnostic in item.message for item in result.diagnostics)
+    assert any(diagnostic in item.message for item in result.diagnostic_items)

@@ -15,7 +15,7 @@ def test_boolean_map_parser_and_hir_roundtrips(op, arity, index_sort, index):
     assert "(_ map " + op + ")" in dump
     assert sp.parse(dump).dump_smt2() == dump
     translation = sp.translate(source=dump, language="smtlib2")
-    assert translation.ok, [d.message for d in translation.diagnostics]
+    assert translation.ok, [d.message for d in translation.diagnostic_items]
     emitted = translation.to_smt2(sp.OmtDialect.Z3)
     solver = z3.Solver()
     # Compare with scalar membership, an independent oracle that also

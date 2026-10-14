@@ -210,7 +210,7 @@ def run_case(sp, z3, args, case, route):
             if not result.ok:
                 row['status'] = 'translation_rejected'
                 row['diagnostics'] = [dict(code=str(d.code), severity=str(d.severity), message=d.message,
-                                           file=d.file, line=d.line, column=d.column) for d in result.diagnostics]
+                                           file=d.file, line=d.line, column=d.column) for d in result.diagnostic_items]
                 raise AssertionError('translation rejected')
             text = result.to_smt2(sp.OmtDialect.OptiMathSAT)
             z3_text = result.to_smt2(sp.OmtDialect.Z3)

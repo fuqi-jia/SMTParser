@@ -20,7 +20,7 @@ def _model(rows, *, boolean=False, negate=False, columns=None, call=None, extra=
       solve satisfy;
     """
     result = sp.translate(source=source, language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     assert any(choice in result.report.to_json() for choice in (
         "table-shared-characteristic-array", "table-shared-functional-array"))
     solver = z3.Solver()
@@ -84,7 +84,7 @@ def test_repeated_calls_emit_one_total_table_definition():
           solve satisfy;
         """
         result = sp.translate(source=source, language="minizinc")
-        assert result.ok, [d.message for d in result.diagnostics]
+        assert result.ok, [d.message for d in result.diagnostic_items]
         target = result.to_smt2(sp.OmtDialect.Z3)
         assert "define-fun" in target and "__mzn_table@" in target
         solver = z3.Solver(); solver.add(*z3.parse_smt2_string(target))
@@ -104,7 +104,7 @@ def test_large_dzn_matrix_cells_keep_their_own_expression_boundaries(tmp_path):
     last = ((rows * columns - 1) % 17) - 8
     source = f"array[1..{rows},1..{columns}] of int:a; constraint a[1,1]=-8 /\\ a[{rows},{columns}]={last}; solve satisfy;"
     result = sp.translate(source=source, language="minizinc", data=[str(data)])
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver(); solver.add(*z3.parse_smt2_string(result.to_smt2(sp.OmtDialect.Z3)))
     assert solver.check() == z3.sat
 
@@ -117,7 +117,7 @@ def test_numeric_range_probe_keeps_nested_argument_commas_and_matrix_rows():
       solve satisfy;
     """
     result = sp.translate(source=source, language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver(); solver.add(*z3.parse_smt2_string(result.to_smt2(sp.OmtDialect.Z3)))
     assert solver.check() == z3.sat
 
@@ -140,7 +140,7 @@ def test_cached_initializer_resolves_forward_dependencies_and_keeps_column_origi
       solve satisfy;
     """
     result = sp.translate(source=source, language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver(); solver.add(*z3.parse_smt2_string(result.to_smt2(sp.OmtDialect.Z3)))
     assert solver.check() == z3.sat
 
@@ -152,7 +152,7 @@ def test_initializer_with_let_bindings_keeps_ordinary_evaluation():
       solve satisfy;
     """
     result = sp.translate(source=source, language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver(); solver.add(*z3.parse_smt2_string(result.to_smt2(sp.OmtDialect.Z3)))
     assert solver.check() == z3.sat
 
@@ -164,7 +164,7 @@ def test_initializer_cache_positions_belong_to_each_include(tmp_path):
     right.write_text("array[2..129] of int:b=array1d(2..129,[i+7 | i in 2..129]);\n")
     source = f'include "{left}"; include "{right}"; constraint a[2]=5 /\\ b[129]=136; solve satisfy;'
     result = sp.translate(source=source, language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver(); solver.add(*z3.parse_smt2_string(result.to_smt2(sp.OmtDialect.Z3)))
     assert solver.check() == z3.sat
 
@@ -180,6 +180,6 @@ def test_initializer_reuse_waits_for_all_deferred_data(tmp_path):
       solve satisfy;
     """
     result = sp.translate(source=source, language="minizinc", data=[str(data)])
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver(); solver.add(*z3.parse_smt2_string(result.to_smt2(sp.OmtDialect.Z3)))
     assert solver.check() == z3.sat

@@ -9,7 +9,7 @@ import somtparser as sp
 def translate(source, depth='1'):
     result = sp.translate(source=source, language='sygus', profile='bmc',
                           options={'grammar_depth': depth})
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     assert result.report.fidelity.sound and not result.report.fidelity.complete
     return result
 
@@ -118,7 +118,7 @@ def test_malformed_legacy_grouped_grammar_is_rejected():
     result = sp.translate(source=source, language='sygus', profile='bmc',
                           options={'grammar_depth': '0'})
     assert not result.ok
-    assert 'malformed grouped grammar rule listing' in result.diagnostics[0].message
+    assert 'malformed grouped grammar rule listing' in result.diagnostic_items[0].message
 
 
 def test_four_selectors_are_exactly_one_for_all_assignments():
@@ -187,4 +187,4 @@ def test_recursive_define_fun_is_rejected():
     result = sp.translate(source=source, language='sygus', profile='bmc',
                           options={'grammar_depth': '0'})
     assert not result.ok
-    assert 'recursive SyGuS define-fun' in result.diagnostics[0].message
+    assert 'recursive SyGuS define-fun' in result.diagnostic_items[0].message

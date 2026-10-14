@@ -7,7 +7,7 @@ import somtparser as sp
 def solve(source):
     translated = sp.translate(source=source, language='sygus', profile='bmc',
                               options={'grammar_depth': '1'})
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     assert translated.report.fidelity.sound
     assert not translated.report.fidelity.complete
     solver = z3.Solver()
@@ -81,7 +81,7 @@ def test_typed_let_sort_annotations_are_checked_before_lowering():
                               profile='bmc', options={'grammar_depth': '1'})
         assert not result.ok
         assert any('typed let binding' in diagnostic.message
-                   for diagnostic in result.diagnostics)
+                   for diagnostic in result.diagnostic_items)
 
     shadowed = ('(define-fun pre ((outer Bool)) Bool '
                 '(let ((outer ghost)) (let ((q Bool outer)) true))) ')
@@ -89,7 +89,7 @@ def test_typed_let_sort_annotations_are_checked_before_lowering():
                           profile='bmc', options={'grammar_depth': '1'})
     assert not result.ok
     assert any('typed let binding' in diagnostic.message
-               for diagnostic in result.diagnostics)
+               for diagnostic in result.diagnostic_items)
 
 
 def test_initiation_obligation_is_required():

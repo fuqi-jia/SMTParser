@@ -121,7 +121,7 @@ def _translate(source, tmp_path, file_input):
         result = sp.translate(path=str(path), language="xcsp3")
     else:
         result = sp.translate(source=source, language="xcsp3")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     assert result.uses_packed_smt_stream
     return result
 

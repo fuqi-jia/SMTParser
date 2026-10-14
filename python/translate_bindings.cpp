@@ -1,7 +1,7 @@
-#include "convert_bindings.h"
+#include "translate_bindings.h"
 #include <pybind11/stl.h>
 
-#include "somtparser/translation/convert.h"
+#include "somtparser/translation/translate.h"
 #include "somtparser/lowering/omt_emitter.h"
 
 #include <array>
@@ -97,63 +97,54 @@ std::optional<std::string> dialectName(const py::object& dialect) {
 
 } // namespace
 
-namespace SomtPythonConvert {
+namespace SomtPythonTranslate {
 
 void bind(py::module_& m) {
     using namespace SOMTParser;
-    py::class_<ConvertResult>(m, "ConvertResult")
-        .def_readonly("exit_code", &ConvertResult::exit_code)
-        .def_readonly("smt2", &ConvertResult::smt2)
-        .def_readonly("diagnostics", &ConvertResult::diagnostics);
-
-    m.def("convert", [](const std::string& path, const std::string& source,
+    m.def("translate", [](const std::string& path, const std::string& source,
                         const std::string& language, const std::optional<std::string>& profile,
                         const py::object& dialect, const std::vector<std::string>& data,
                         const Uir::ParamMap& options,
-                        const std::string& report, bool module, py::object input,
+                        const std::string& report, bool module, bool details, py::object input,
                         const py::object& output, const py::object& diagnostics) {
         Lang::SourceUnit unit;
         unit.main_path = path;
         unit.inline_source = source;
         unit.data_paths = data;
         if (!path.empty()) { unit.display_name = path; }
-        ConvertOptions opts;
-        opts.language = language;
-        opts.profile = profile;
-        opts.dialect = dialectName(dialect);
+        TranslateOptions opts;
+        opts.language_id = language;
+        opts.profile_id = profile.value_or("default");
+        opts.profile_explicit = profile.has_value();
+        opts.dialect_name = dialectName(dialect);
+        opts.dialect_explicit = !dialect.is_none();
         opts.parse.options = options;
-        opts.report = report;
+        opts.report_path = report;
         opts.module = module;
+        opts.details = details;
 
         if (input.is_none()) { input = py::module_::import("sys").attr("stdin"); }
         PythonInputBuffer input_buffer(std::move(input));
         std::istream in(&input_buffer);
-        std::ostringstream captured_output, captured_diagnostics;
         std::unique_ptr<PythonOutputBuffer> output_buffer, diagnostic_buffer;
-        if (!output.is_none()) { output_buffer = std::make_unique<PythonOutputBuffer>(output); }
+        std::unique_ptr<std::ostream> out, err;
+        if (!output.is_none()) {
+            output_buffer = std::make_unique<PythonOutputBuffer>(output);
+            out = std::make_unique<std::ostream>(output_buffer.get());
+        }
         if (!diagnostics.is_none()) {
             diagnostic_buffer = std::make_unique<PythonOutputBuffer>(diagnostics);
+            err = std::make_unique<std::ostream>(diagnostic_buffer.get());
         }
-        std::streambuf* out_buffer = captured_output.rdbuf();
-        std::streambuf* err_buffer = captured_diagnostics.rdbuf();
-        if (output_buffer) { out_buffer = output_buffer.get(); }
-        if (diagnostic_buffer) { err_buffer = diagnostic_buffer.get(); }
-        std::ostream out(out_buffer), err(err_buffer);
-        ConvertResult result;
-        result.exit_code = convert(unit, opts, in, out, err);
-        err.flush();
-        if (!err) { result.exit_code = 3; }
-        result.smt2 = captured_output.str();
-        result.diagnostics = captured_diagnostics.str();
-        return result;
+        return translate(unit, opts, &in, out.get(), err.get());
     }, py::arg("path") = "", py::kw_only(), py::arg("source") = "",
        py::arg("language") = "", py::arg("profile") = py::none(),
        py::arg("dialect") = py::none(), py::arg("data") = std::vector<std::string>{},
        py::arg("options") = Uir::ParamMap{},
-       py::arg("report") = "", py::arg("module") = false,
+       py::arg("report") = "", py::arg("module") = false, py::arg("details") = true,
        py::arg("stdin") = py::none(), py::arg("output") = py::none(),
        py::arg("diagnostics") = py::none(),
-       "Convert a model; capture output by default or write to caller-owned text streams.");
+       "Translate a model; capture output by default or write to caller-owned text streams.");
 }
 
-} // namespace SomtPythonConvert
+} // namespace SomtPythonTranslate

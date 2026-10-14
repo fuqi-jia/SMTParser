@@ -10,7 +10,7 @@ def _relation(variables, constraints=""):
         source=(f'<instance format="XCSP3" type="CSP"><variables>{variables}'
                 f'</variables><constraints>{constraints}</constraints></instance>'),
         language="xcsp3")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     return z3.And(*z3.parse_smt2_string(result.to_smt2()))
 
 
@@ -61,4 +61,4 @@ def test_sharing_preserves_selector_errors(domains, message):
                 f'<array id="x" size="[2]">{domains}</array>'
                 '</variables></instance>'), language="xcsp3")
     assert not result.ok
-    assert any(message in d.message for d in result.diagnostics)
+    assert any(message in d.message for d in result.diagnostic_items)

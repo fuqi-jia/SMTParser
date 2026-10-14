@@ -8,7 +8,7 @@ import z3
 
 def translate(source):
     translated = sp.translate(source=source + "\nsolve satisfy;", language="flatzinc")
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     solver = z3.Solver()
     solver.from_string(translated.to_smt2())
     return z3.And(*solver.assertions())

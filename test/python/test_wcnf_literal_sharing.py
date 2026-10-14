@@ -13,7 +13,7 @@ def test_repeated_literals_preserve_hard_constraints_and_exact_total_cost(old_fo
               "3 1 1 -2 0\n11 1 1 -2 0\n7 -1 2 0\n"
               "9007199254740993 -2 0\n5 0\n")
     result = sp.translate(source=source, language="wcnf")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     text = result.to_smt2(sp.OmtDialect.Z3)
     target = z3.Optimize()
     target.from_string(text)
@@ -34,7 +34,7 @@ def test_repeated_literals_preserve_hard_constraints_and_exact_total_cost(old_fo
 
 def test_hard_empty_clause_stays_infeasible():
     result = sp.translate(source="h 0\n3 1 0\n4 1 0\n", language="wcnf")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     target = z3.Optimize()
     target.from_string(result.to_smt2(sp.OmtDialect.Z3))
     assert target.check() == z3.unsat
@@ -43,6 +43,6 @@ def test_hard_empty_clause_stays_infeasible():
 def test_unrepresentable_literal_is_diagnosed_before_absolute_value():
     result = sp.translate(source="h 1 0\n7 -9223372036854775808 0\n", language="wcnf")
     assert not result.ok
-    error = next(d for d in result.diagnostics if d.severity == sp.Severity.ERROR)
+    error = next(d for d in result.diagnostic_items if d.severity == sp.Severity.ERROR)
     assert error.line == 2
     assert "magnitude" in error.message

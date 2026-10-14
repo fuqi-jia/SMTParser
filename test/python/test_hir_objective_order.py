@@ -30,7 +30,7 @@ def test_satisfiability_model_with_no_objectives_translates():
     candidate = model(source)
     builder = hir.build_hir(candidate, source)
     result = builder.translate()
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.set(timeout=5000)
     solver.add(z3.parse_smt2_string(result.to_smt2()))

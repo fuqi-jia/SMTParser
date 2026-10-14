@@ -164,8 +164,8 @@ def test_report_json_round_trips():
 def test_failure_is_a_value_by_default_and_an_exception_when_strict():
     t = sp.translate(source="var int: ;\n", language="minizinc")
     assert not t.ok
-    assert t.diagnostics[0].code == sp.ErrorCode.E_PARSE
-    assert t.diagnostics[0].line == 1
+    assert t.diagnostic_items[0].code == sp.ErrorCode.E_PARSE
+    assert t.diagnostic_items[0].line == 1
 
     with pytest.raises(sp.TranslationError) as excinfo:
         sp.translate(source="var int: ;\n", language="minizinc", strict=True)
@@ -181,8 +181,8 @@ def test_unreadable_data_file_stops_the_translation():
     t = sp.translate(source="var int: x;\nconstraint x > 0;\nsolve satisfy;\n",
                      language="minizinc", data=["m.dzn"])
     assert not t.ok
-    assert t.diagnostics[0].code == sp.ErrorCode.E_IO
-    assert "m.dzn" in t.diagnostics[0].message
+    assert t.diagnostic_items[0].code == sp.ErrorCode.E_IO
+    assert "m.dzn" in t.diagnostic_items[0].message
 
     # The identical call without the data file still succeeds, so what fails
     # above is the dropped data and not the model.
@@ -252,7 +252,7 @@ def test_unknown_language_and_profile_are_rejected():
     t2 = sp.translate(source="var int: x;\nsolve satisfy;\n",
                       language="minizinc", profile="nope")
     assert not t2.ok
-    assert t2.diagnostics[0].code == sp.ErrorCode.E_PASS_PIPELINE
+    assert t2.diagnostic_items[0].code == sp.ErrorCode.E_PASS_PIPELINE
 
 
 def test_parser_parse_any():
@@ -340,12 +340,12 @@ def test_ill_sorted_input_is_a_diagnostic_not_a_crash(capfd):
     """
     t = sp.translate(path="languages/minizinc/instances/reject/ill_sorted.mzn")
     assert not t.ok
-    assert t.diagnostics
-    assert t.diagnostics[0].code == sp.ErrorCode.E_TYPE
+    assert t.diagnostic_items
+    assert t.diagnostic_items[0].code == sp.ErrorCode.E_TYPE
     # The diagnostic names the term, not just the file: Expr::loc was set by
     # nothing before, so every message pointed at line 0.
-    assert t.diagnostics[0].line > 0
-    assert t.diagnostics[0].file.endswith("ill_sorted.mzn")
+    assert t.diagnostic_items[0].line > 0
+    assert t.diagnostic_items[0].file.endswith("ill_sorted.mzn")
 
     captured = capfd.readouterr()
     assert captured.out == ""

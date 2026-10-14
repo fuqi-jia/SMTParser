@@ -42,7 +42,7 @@ def target(value, expanded=False):
     if expanded:
         value = expand_cp_model(value)
     result = build_cp_hir(value, "x").translate()
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     text = result.to_smt2(sp.OmtDialect.Z3)
     parsed = z3.Optimize()
     parsed.from_string(text)

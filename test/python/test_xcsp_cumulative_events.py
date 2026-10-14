@@ -26,7 +26,7 @@ def source(origins, lengths, heights, condition, *, variables=None, ends=None,
 
 def translate(xml):
     result = sp.translate(source=xml, language="xcsp3")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     target = result.to_smt2(sp.OmtDialect.Z3)
     assert "(forall " not in target
     assert "integer-time-events" in result.report.to_json()

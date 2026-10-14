@@ -19,7 +19,7 @@ def op(name, *arguments):
 
 def script_for(model):
     translated = model.translate()
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     script = translated.to_smt2()
     # Re-emission must not mutate the DAG or its canonical ordering hashes.
     assert translated.to_smt2() == script

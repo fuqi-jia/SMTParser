@@ -250,7 +250,7 @@ int main(int argc, char** argv) {
             options.omt_dialect = Lower::OmtDialect::Z3;
             for (const bool packed : {false, true}) {
                 if (packed) { model.packed_linear_rows = std::make_shared<H::PackedLinearRows>(); }
-                const auto translated = translateHir(model, options);
+                const auto translated = translate(model, options);
                 for (const auto& d : translated.diagnostics().all()) {
                     if (d.severity == Severity::ERROR) { std::cerr << d.message << '\n'; }
                 }
@@ -330,7 +330,7 @@ int main(int argc, char** argv) {
         options.omt_dialect = Lower::OmtDialect::Z3;
         for (const bool packed : {false, true}) {
             if (packed) { model.packed_linear_rows = std::make_shared<H::PackedLinearRows>(); }
-            const auto translated = translateHir(model, options);
+            const auto translated = translate(model, options);
             VERIFY(translated.ok());
             const auto& contract = translated.semantics().stages().back();
             bool free_found = false, function_found = false, binder_found = false, text_found = false;
@@ -373,7 +373,7 @@ int main(int argc, char** argv) {
         x.name = "ordinary";
         x.sort = H::Sort::integer();
         ordinary.decls.push_back(x);
-        const auto translated = translateHir(ordinary);
+        const auto translated = translate(ordinary);
         VERIFY(translated.ok());
         const auto& contract = translated.semantics().stages().back();
         VERIFY(contract.source_signature.sharesStorageWith(contract.target_signature));

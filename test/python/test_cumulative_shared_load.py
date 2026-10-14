@@ -26,7 +26,7 @@ def test_shared_load_matches_independent_integer_time_grid(negated):
     if negated:
         expr = {"op": "not", "args": [expr]}
     translated = build_hir(model(expr, names), "x").translate()
-    assert translated.ok, [item.message for item in translated.diagnostics]
+    assert translated.ok, [item.message for item in translated.diagnostic_items]
     assert "cumulative-start-events-shared-load" in translated.report.to_json()
     actual = z3.And(*z3.parse_smt2_string(translated.to_smt2(sp.OmtDialect.Z3), ctx=context))
     expected = z3.And(terms["b"] >= 0, *[terms[n] >= 0 for n in names[2:6]], *[
@@ -47,7 +47,7 @@ def test_large_ground_export_does_not_expand_every_task_pair():
     expr = {"cp": "cumulative", "starts": [{"var": name} for name in names],
             "durations": [1] * 256, "demands": [1] * 256, "capacity": {"literal": 1, "sort": "Int"}}
     result = build_hir(model(expr, names), "x").translate()
-    assert result.ok, [item.message for item in result.diagnostics]
+    assert result.ok, [item.message for item in result.diagnostic_items]
     target = result.to_smt2(sp.OmtDialect.Z3)
     # A complete 256-task formula used to allocate 65,536 load terms; retain
     # its exact definition instead. Verify an actual conflicting assignment.
@@ -71,7 +71,7 @@ def test_shared_function_name_cannot_capture_source_variable():
     capacity = native._hir_literal(integer, "127")
     raw.constrain(native._hir_global("cumulative", [capacity] + [start, one, one] * 128))
     result = raw.translate()
-    assert result.ok, [item.message for item in result.diagnostics]
+    assert result.ok, [item.message for item in result.diagnostic_items]
     context = z3.Context()
     solver = z3.Solver(ctx=context)
     solver.set(timeout=10000)
@@ -86,7 +86,7 @@ def test_lexically_bound_start_stays_in_its_scope(capacity, expected):
     expression = {"quantifier": "exists", "binders": [{"name": "start", "sort": "Int"}],
                   "body": relation}
     result = build_hir(model(expression, []), "x").translate()
-    assert result.ok, [item.message for item in result.diagnostics]
+    assert result.ok, [item.message for item in result.diagnostic_items]
     assert "cumulative-start-events-shared-load" not in result.report.to_json()
     context = z3.Context()
     solver = z3.Solver(ctx=context)
@@ -106,7 +106,7 @@ def test_minizinc_shared_helper_composes_with_frontend_contract(capacity, expect
         f"{capacity});\nsolve satisfy;\n"
     )
     result = sp.translate(source=source, language="minizinc")
-    assert result.ok, [item.message for item in result.diagnostics]
+    assert result.ok, [item.message for item in result.diagnostic_items]
     assert "cumulative-start-events-shared-load" in result.report.to_json()
     assert "typed-relational-core-defined-helper-extension-v1" in result.report.to_json()
     context = z3.Context()

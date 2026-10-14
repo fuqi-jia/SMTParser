@@ -43,7 +43,7 @@ def test_translation_retains_objective_response_in_each_dialect(tmp_path, dialec
     path = tmp_path / "goal.smt2"
     path.write_text(source)
     result = sp.translate(path=str(path), language="smtlib2", dialect=dialect)
-    assert result.ok, result.diagnostics
+    assert result.ok, result.diagnostic_items
     output = result.to_smt2(dialect)
     if dialect == sp.OmtDialect.Gomt:
         assert output.count("(optimize-sat ") == 1

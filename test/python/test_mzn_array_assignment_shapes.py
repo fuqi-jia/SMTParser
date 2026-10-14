@@ -13,7 +13,7 @@ def _translate(source, data=()):
 
 
 def _solver(result):
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.add(*z3.parse_smt2_string(result.to_smt2(sp.OmtDialect.Z3)))
     return solver
@@ -26,8 +26,8 @@ def test_non1_based_numeric_inline_parameter_and_decision_lists_are_rejected():
         "array[3..4] of var int: a = [11,22]; constraint a[3] = 11; solve satisfy;")
     assert not parameter.ok
     assert not decision.ok
-    assert any("indexes differ" in d.message for d in parameter.diagnostics)
-    assert any("indexes differ" in d.message for d in decision.diagnostics)
+    assert any("indexes differ" in d.message for d in parameter.diagnostic_items)
+    assert any("indexes differ" in d.message for d in decision.diagnostic_items)
 
 
 def test_enum_and_inferred_array_literals_keep_contextual_indexing():
@@ -65,7 +65,7 @@ def test_dzn_list_does_not_acquire_a_numeric_declared_origin(tmp_path, element_t
     data.write_text("a = [11,22];\n", encoding="utf-8")
     result = _translate(source, [str(data)])
     assert not result.ok
-    assert any("different index set" in d.message for d in result.diagnostics)
+    assert any("different index set" in d.message for d in result.diagnostic_items)
 
 
 def test_explicit_dzn_shape_and_json_declared_shape_remain_supported(tmp_path):
@@ -102,7 +102,7 @@ def test_nonmatching_numeric_origin_is_checked_after_expression_parsing(
         "constraint a[3] = 11; solve satisfy;"
     )
     assert not result.ok
-    assert any("indexes differ" in d.message for d in result.diagnostics)
+    assert any("indexes differ" in d.message for d in result.diagnostic_items)
 
 
 @pytest.mark.parametrize("element_type", ["int", "var int"])
@@ -112,7 +112,7 @@ def test_separate_model_assignment_checks_and_preserves_source_axes(element_type
         f"array[3..4] of {element_type}: a; a = [11,22]; " + suffix
     )
     assert not invalid.ok
-    assert any("different index set" in d.message for d in invalid.diagnostics)
+    assert any("different index set" in d.message for d in invalid.diagnostic_items)
 
     explicit = _translate(
         f"array[3..4] of {element_type}: a; "
@@ -170,7 +170,7 @@ def test_dzn_matrix_origin_is_checked_and_array2d_is_explicit(tmp_path):
     wrong.write_text("a = [|11,12|21,22|];\n", encoding="utf-8")
     result = _translate(source, [str(wrong)])
     assert not result.ok
-    assert any("different index set" in d.message for d in result.diagnostics)
+    assert any("different index set" in d.message for d in result.diagnostic_items)
 
     correct = tmp_path / "matrix-array2d.dzn"
     correct.write_text(

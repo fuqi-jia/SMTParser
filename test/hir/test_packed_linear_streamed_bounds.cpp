@@ -77,7 +77,7 @@ int main(int argc, char** argv) {
     SOMTParser::TranslateOptions options;
     options.profile_id = "feasibility";
     options.omt_dialect = OmtDialect::Z3;
-    const auto actual = SOMTParser::translateHir(model, options);
+    const auto actual = SOMTParser::translate(model, options);
     if (!actual.ok()) {
         for (const auto& d : actual.diagnostics().all()) std::cerr << d.message << '\n';
     }
@@ -85,7 +85,7 @@ int main(int argc, char** argv) {
     VERIFY(actual.usesPackedSmtStream());
     auto ordinary = model;
     ordinary.packed_linear_rows.reset();
-    const auto expected = SOMTParser::translateHir(ordinary, options);
+    const auto expected = SOMTParser::translate(ordinary, options);
     VERIFY(expected.ok());
     const auto packed_script = actual.toSmt2(OmtDialect::Z3);
     VERIFY(assertions(packed_script) == 22);
@@ -128,7 +128,7 @@ int main(int argc, char** argv) {
     wrong_sort->name = "0";
     VERIFY(!H::isPackedLinearBoundLiteral(model.decls.front(), wrong_sort));
     malformed.decls.front().lower_bound = wrong_sort;
-    VERIFY(!SOMTParser::translateHir(malformed, options).ok());
+    VERIFY(!SOMTParser::translate(malformed, options).ok());
     auto with_arguments = std::make_shared<H::Expr>();
     with_arguments->kind = H::ExprKind::LIT_INT;
     with_arguments->sort = H::Sort::integer();

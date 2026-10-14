@@ -70,7 +70,7 @@ def test_unused_malformed_extension_is_still_checked(record, line, part, mode, t
     else:
         result = sp.translate(source=text, **options)
     assert not result.ok
-    assert any(d.line == line and part in d.message for d in result.diagnostics)
+    assert any(d.line == line and part in d.message for d in result.diagnostic_items)
 
 
 @pytest.mark.parametrize('mode', ['inline', 'path'])
@@ -84,4 +84,4 @@ def test_zero_extension_of_an_array_is_not_silently_an_identity(mode, tmp_path):
     else:
         result = sp.translate(source=text, **options)
     assert not result.ok
-    assert any(d.line == 6 and 'declares result sort' in d.message for d in result.diagnostics)
+    assert any(d.line == 6 and 'declares result sort' in d.message for d in result.diagnostic_items)

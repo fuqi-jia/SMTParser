@@ -141,7 +141,7 @@ int main(int argc, char** argv) {
                 // view. The default profile must still reject that loss; the
                 // retained objectives are exercised by subsequent re-emission.
                 if (number == 0) {
-                    const auto rejected = translateHir(model, options);
+                    const auto rejected = translate(model, options);
                     VERIFY(!rejected.ok());
                     const auto& errors = rejected.diagnostics().all();
                     VERIFY(std::any_of(errors.begin(), errors.end(), [](const auto& error) {
@@ -149,7 +149,7 @@ int main(int argc, char** argv) {
                     }));
                 }
                 options.profile_id = "feasibility";
-                const auto compact = translateHir(model, options);
+                const auto compact = translate(model, options);
                 if (!compact.ok()) {
                     for (const auto& d : compact.diagnostics().all()) { std::cerr << d.message << '\n'; }
                 }
@@ -157,7 +157,7 @@ int main(int argc, char** argv) {
                 VERIFY(compact.report().stats().num_vars == 6);
                 VERIFY(compact.objectiveCount() == 1);
                 VERIFY(model.packed_function_calls == storage);
-                const auto expected = translateHir(expandedModel(model), options);
+                const auto expected = translate(expandedModel(model), options);
                 VERIFY(expected.ok());
                 const auto output = compact.toSmt2(Lower::OmtDialect::Z3);
                 VERIFY(output.rfind("(set-logic ", 0) == 0);

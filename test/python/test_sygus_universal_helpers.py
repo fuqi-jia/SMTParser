@@ -7,7 +7,7 @@ import somtparser as sp
 def translate(source, depth="0"):
     result = sp.translate(source=source, language="sygus", profile="bmc",
                           options={"grammar_depth": depth})
-    assert result.ok, [diagnostic.message for diagnostic in result.diagnostics]
+    assert result.ok, [diagnostic.message for diagnostic in result.diagnostic_items]
     return result
 
 
@@ -138,7 +138,7 @@ def test_define_fun_cannot_capture_a_later_declare_var():
     assert not result.ok
     assert any("unknown" in diagnostic.message.lower()
                or "undeclared" in diagnostic.message.lower()
-               for diagnostic in result.diagnostics)
+               for diagnostic in result.diagnostic_items)
 
 
 def test_quantifier_shadowing_is_restored_after_the_nested_body():

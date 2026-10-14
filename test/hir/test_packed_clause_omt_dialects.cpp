@@ -67,7 +67,7 @@ int main() {
     for (const auto dialect : {L::OmtDialect::Z3, L::OmtDialect::OptiMathSAT, L::OmtDialect::Gomt}) {
         SOMTParser::TranslateOptions options;
         options.omt_dialect = dialect;
-        const auto translated = SOMTParser::translateHir(model, options);
+        const auto translated = SOMTParser::translate(model, options);
         VERIFY(translated.ok());
         VERIFY(translated.usesPackedSmtStream() && !translated.hasParser());
         VERIFY(translated.objectiveCount() == 1);
@@ -100,7 +100,7 @@ int main() {
         auto hard = model;
         hard.packed_bool_clauses[0].weight_bytes.clear();
         hard.packed_bool_clauses[0].weight_offsets = {0, 0, 0, 0};
-        const auto sat = SOMTParser::translateHir(hard, options);
+        const auto sat = SOMTParser::translate(hard, options);
         VERIFY(sat.ok());
         const auto hard_text = sat.toSmt2(dialect);
         VERIFY(count(hard_text, "(check-sat)") == 1);

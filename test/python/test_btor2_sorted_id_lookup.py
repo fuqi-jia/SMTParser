@@ -84,4 +84,4 @@ def test_sparse_lookup_does_not_accept_missing_or_invalid_references(text, line,
         path.write_text(text)
         result = sp.translate(path=str(path), **options)
     assert not result.ok
-    assert any(d.line == line and diagnostic in d.message for d in result.diagnostics)
+    assert any(d.line == line and diagnostic in d.message for d in result.diagnostic_items)

@@ -28,7 +28,7 @@ def test_completed_thf_model_owns_its_terms_and_conjecture_mode(tmp_path, body, 
         result = sp.translate(source=source, language="tptp")
     del source
     gc.collect()
-    assert result.ok, [item.message for item in result.diagnostics]
+    assert result.ok, [item.message for item in result.diagnostic_items]
     solver = z3.Solver()
     solver.set(timeout=5000)
     solver.add(z3.parse_smt2_string(result.to_smt2()))
@@ -42,7 +42,7 @@ def test_include_only_first_order_problem_still_uses_its_own_frontend(tmp_path):
     problem = tmp_path / "first_order.p"
     problem.write_text("include('first_order.ax').\n", encoding="utf-8")
     result = sp.translate(str(problem), language="tptp")
-    assert result.ok, [item.message for item in result.diagnostics]
+    assert result.ok, [item.message for item in result.diagnostic_items]
     solver = z3.Solver()
     solver.set(timeout=5000)
     solver.add(z3.parse_smt2_string(result.to_smt2()))
@@ -54,4 +54,4 @@ def test_encoding_failure_never_publishes_partial_thf_model():
                           language="tptp")
     assert not result.ok
     assert any("interpreted arithmetic semantics" in item.message
-               for item in result.diagnostics)
+               for item in result.diagnostic_items)

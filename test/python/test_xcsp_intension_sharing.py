@@ -15,7 +15,7 @@ def convert(expression, rows):
             + ''.join('<args>' + row + '</args>' for row in rows)
             + '</group></constraints></instance>')
     translation = sp.translate(source=text, language="xcsp3")
-    assert translation.ok, [d.message for d in translation.diagnostics]
+    assert translation.ok, [d.message for d in translation.diagnostic_items]
     solver = z3.Solver()
     solver.add(z3.parse_smt2_string(translation.to_smt2()))
     return solver

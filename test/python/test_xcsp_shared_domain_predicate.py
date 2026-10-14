@@ -12,7 +12,7 @@ def test_shared_domain_equals_exact_members_and_keeps_every_cell(count, members)
               f'<array id="x" size="[{count}]">{members[0]} {members[1]}</array>'
               '</variables></instance>')
     result = sp.translate(source=source, language='xcsp3')
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     script = result.to_smt2()
     actual = z3.And(*z3.parse_smt2_string(script))
     expected = z3.And(*[z3.Or(z3.Int(f'x[{i}]') == members[0],
@@ -31,7 +31,7 @@ def test_domain_helper_does_not_capture_a_future_source_declaration(future):
               f'<var id="{future}">-2..2</var></variables>'
               '</instance>')
     result = sp.translate(source=source, language='xcsp3')
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     script = result.to_smt2()
     assert '(define-fun __somt_xcsp_group_0 ' not in script
     solver = z3.Solver()
@@ -56,7 +56,7 @@ def test_shared_domain_aliases_preserve_independent_exact_source_cells():
               '<var id="c" as="a[255]"/>'
               '</variables></instance>')
     result = sp.translate(source=source, language='xcsp3')
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     script = result.to_smt2()
     names = [f'{array}[{i}]' for array in ('a', 'b') for i in range(256)] + ['c']
     actual = z3.And(*z3.parse_smt2_string(script))

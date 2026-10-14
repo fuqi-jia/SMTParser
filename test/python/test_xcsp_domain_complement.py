@@ -14,7 +14,7 @@ def test_domain_complement_matches_independent_enumeration(members):
     source = ('<instance format="XCSP3" type="CSP"><variables><var id="x">'
               + ' '.join(map(str, members)) + '</var></variables></instance>')
     result = sp.translate(source=source, language='xcsp3')
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     x = z3.Int('x')
     expected = z3.Or(*[x == v for v in members])
     actual = z3.And(*z3.parse_smt2_string(result.to_smt2()))
@@ -29,7 +29,7 @@ def test_many_sign_variables_keep_linear_single_node_membership():
               f'<array id="sign" size="[{n}]">-1 1</array>'
               '</variables></instance>')
     result = sp.translate(source=source, language='xcsp3')
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     script = result.to_smt2()
     # The whole two-point domain (including its bounds) is shared once;
     # individual array cells remain declared and call that exact predicate.
@@ -49,7 +49,7 @@ def test_implicit_precedence_uses_members_not_excluded_holes():
               '<array id="x" size="[3]">1 3</array></variables><constraints>'
               '<precedence>x[]</precedence></constraints></instance>')
     result = sp.translate(source=source, language='xcsp3')
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     xs = [z3.Int(f'x[{i}]') for i in range(3)]
     expected = z3.And(*[z3.Or(x == 1, x == 3) for x in xs],
                       *[z3.Implies(xs[i] == 3,

@@ -17,7 +17,7 @@ def translate(variables, constraints="", objectives="", *, path=None):
 
 
 def relation(result):
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     script = result.to_smt2(dialect=sp.OmtDialect.Z3)
     parsed = z3.Optimize()
     parsed.from_string(script)
@@ -96,7 +96,7 @@ def test_undefined_operands_are_rejected_instead_of_dropped(constraints, objecti
     result = translate('<array id="x" size="[2]">'
                        '<domain for="x[0]">0..1</domain></array>', constraints, objective)
     assert not result.ok
-    assert result.diagnostics
+    assert result.diagnostic_items
 
 
 def test_undefined_cell_cannot_supply_a_domain_alias():

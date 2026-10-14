@@ -4,14 +4,17 @@ These notes cover changes from public SOMTParser main `f730eaac` (2026-09-16).
 Rebuild and relink C++ applications and Python extensions when updating: the
 parser and DAG classes do not provide a stable binary ABI.
 
-## Conversion as a library function
+## Unified translation result
 
 The `somt-convert` executable has been removed. Python callers use
-`somtparser.convert(path, language=..., dialect=..., options=...)`; C++ callers
-include `somtparser/translation/convert.h` and link `SOMTParser::languages`.
+`somtparser.translate(path, language=..., dialect=..., options=...)`; C++ callers
+include `somtparser/translation/translate.h` and link `SOMTParser::languages`.
 Conversion output, formatted diagnostics and status are returned together;
-large outputs can stream to caller-owned sinks. See [the conversion API and
-experiment migration table](convert.md) for all settings and status codes.
+large outputs can stream to caller-owned sinks. `Translation.diagnostics` is
+formatted text; structured diagnostic objects are available as
+`diagnostic_items`. `details=False` disables optional inspection data while
+retaining the same result type and completed output. See [the translation API and
+experiment migration table](translate.md) for all settings and status codes.
 
 ## HIR and translation header paths
 

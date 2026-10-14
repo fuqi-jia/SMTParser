@@ -23,7 +23,7 @@ def _check_progression(domain, values, polarity="supports"):
     relation = z3.And(z3.Or(*[x == v for v in values]), y == 1, z == 0)
     expected = z3.And(x_domain, y >= 0, y <= 1, z >= 0, z <= 1,
                       relation if polarity == "supports" else z3.Not(relation))
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     emitted = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     solver = z3.Solver()
     solver.add(z3.Xor(emitted, expected))
@@ -57,7 +57,7 @@ def test_progression_labels_covering_sparse_domain_need_no_local_guard():
     x, y = z3.Ints("x y")
     expected = z3.And(z3.Or(x == 0, x == 2, x == 4, x == 6),
                       y >= 0, y <= 1_000_000_000, y == 1)
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     emitted = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     solver = z3.Solver()
     solver.add(z3.Xor(emitted, expected))

@@ -8,7 +8,7 @@ import somtparser as sp
 
 def _relation(source):
     translated = sp.translate(source=source, language="opb")
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     target = z3.Optimize()
     target.from_string(translated.to_smt2(sp.OmtDialect.Z3))
     assert len(target.objectives()) == 1

@@ -386,7 +386,7 @@ def test_reference_semantics(name, source, expected):
     if expected == "reject":
         assert not result.ok
         return
-    assert result.ok, [diagnostic.message for diagnostic in result.diagnostics]
+    assert result.ok, [diagnostic.message for diagnostic in result.diagnostic_items]
     context = z3.Context()
     solver = z3.Solver(ctx=context)
     solver.set(timeout=5000)
@@ -397,7 +397,7 @@ def test_reference_semantics(name, source, expected):
 def test_indexed_comprehension_with_variable_filter():
     source = "var bool:b;any:a=[i:i|i in 1..3 where b];constraint length(a)=3;solve satisfy;"
     result = sp.translate(source=source, language="minizinc")
-    assert result.ok, [diagnostic.message for diagnostic in result.diagnostics]
+    assert result.ok, [diagnostic.message for diagnostic in result.diagnostic_items]
     context = z3.Context()
     solver = z3.Solver(ctx=context)
     solver.set(timeout=5000)

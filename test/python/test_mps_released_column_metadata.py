@@ -32,7 +32,7 @@ def _source(mode, quadratic=False, collisions=2):
 
 def _check(source, packed, quadratic=False, columns=5):
     result = sp.translate(source=source, language="mps", dialect=sp.OmtDialect.Z3)
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     assert result.uses_packed_smt_stream == packed
     assert result.report.stats.num_vars == columns
     script = result.to_smt2(sp.OmtDialect.Z3)

@@ -91,7 +91,7 @@ int main(int argc, char** argv) {
     H::ConstraintModel model = twoHelpers();
     VERIFY(accepted(model));
 
-    auto translated = SOMTParser::translateHir(model);
+    auto translated = SOMTParser::translate(model);
     VERIFY(translated.ok());
     const std::string smt = translated.toSmt2();
     const auto g_definition = smt.find("(define-fun g ");
@@ -178,7 +178,7 @@ int main(int argc, char** argv) {
         {H::mkApply("f", H::Sort::integer(), {H::mkInt(2)}), H::mkInt(9)});
     shadowed_parameter.constraints.push_back(std::move(shadowed_call));
     VERIFY(accepted(shadowed_parameter));
-    auto shadowed_translation = SOMTParser::translateHir(shadowed_parameter);
+    auto shadowed_translation = SOMTParser::translate(shadowed_parameter);
     VERIFY(shadowed_translation.ok());
     const std::string shadowed_smt = shadowed_translation.toSmt2();
     VERIFY(shadowed_smt.find("(define-fun f ((__somt_hir_param_0 Int)) Int")
@@ -210,7 +210,7 @@ int main(int argc, char** argv) {
         {H::mkApply("f", H::Sort::integer(), {H::mkInt(2)}), H::mkInt(9)});
     quoted_collision.constraints.push_back(std::move(quoted_sat));
     VERIFY(accepted(quoted_collision));
-    auto quoted_translation = SOMTParser::translateHir(quoted_collision);
+    auto quoted_translation = SOMTParser::translate(quoted_collision);
     VERIFY(quoted_translation.ok());
     const std::string quoted_smt = quoted_translation.toSmt2();
     // This compatibility mode is intentionally usable with the pre-fix lowerer:
@@ -227,7 +227,7 @@ int main(int argc, char** argv) {
         quoted_unsat_model.constraints.back().formula = H::mkOp(
             H::Op::EQ,
             {H::mkApply("f", H::Sort::integer(), {H::mkInt(2)}), H::mkInt(10)});
-        auto quoted_unsat_translation = SOMTParser::translateHir(quoted_unsat_model);
+        auto quoted_unsat_translation = SOMTParser::translate(quoted_unsat_model);
         if (!quoted_unsat_translation.ok()) { return 3; }
         const std::vector<std::pair<std::string, std::string>> fixtures = {
             {"defined_function_quoted_shadow_sat.smt2", quoted_smt},
@@ -275,7 +275,7 @@ int main(int argc, char** argv) {
                     {H::mkIdent("alias_x", H::Sort::integer())})});
     quoted_alias_collision.constraints.push_back(std::move(alias_calls));
     VERIFY(accepted(quoted_alias_collision));
-    auto quoted_alias_translation = SOMTParser::translateHir(quoted_alias_collision);
+    auto quoted_alias_translation = SOMTParser::translate(quoted_alias_collision);
     VERIFY(quoted_alias_translation.ok());
     const std::string quoted_alias_smt = quoted_alias_translation.toSmt2();
     VERIFY(quoted_alias_smt.find("not!1") != std::string::npos);
@@ -294,13 +294,13 @@ int main(int argc, char** argv) {
         unsat_model.constraints.back().formula = H::mkOp(
             H::Op::EQ,
             {H::mkApply("f", H::Sort::integer(), {H::mkInt(2)}), H::mkInt(10)});
-        auto unsat_translation = SOMTParser::translateHir(unsat_model);
+        auto unsat_translation = SOMTParser::translate(unsat_model);
         if (!unsat_translation.ok()) { return 3; }
         H::ConstraintModel quoted_unsat_model = quoted_collision;
         quoted_unsat_model.constraints.back().formula = H::mkOp(
             H::Op::EQ,
             {H::mkApply("f", H::Sort::integer(), {H::mkInt(2)}), H::mkInt(10)});
-        auto quoted_unsat_translation = SOMTParser::translateHir(quoted_unsat_model);
+        auto quoted_unsat_translation = SOMTParser::translate(quoted_unsat_model);
         if (!quoted_unsat_translation.ok()) { return 3; }
         const std::vector<std::pair<std::string, std::string>> fixtures = {
             {"defined_function_shadow_sat.smt2", shadowed_smt},
@@ -340,7 +340,7 @@ int main(int argc, char** argv) {
     repeated_parameter_names.funs = {std::move(int_f), std::move(bool_g),
                                      std::move(colliding_binder)};
     VERIFY(accepted(repeated_parameter_names));
-    auto repeated_translation = SOMTParser::translateHir(repeated_parameter_names);
+    auto repeated_translation = SOMTParser::translate(repeated_parameter_names);
     VERIFY(repeated_translation.ok());
     const std::string repeated_smt = repeated_translation.toSmt2();
     VERIFY(repeated_smt.find("(define-fun f ((__somt_hir_param_0 Int)) Int")

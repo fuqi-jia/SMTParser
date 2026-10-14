@@ -81,7 +81,7 @@ def test_explicit_unknown_operation_uses_provider_path_and_finite_disjunction(ta
     assert captured["source"] == source
     assert captured["instruction"].endswith(natural_language._SOURCE_RELATION_GUIDANCE)
     translated = build_hir(candidate.model, source).translate()
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
 
     context = z3.Context()
     formula = z3.And(*z3.parse_smt2_string(translated.to_smt2(), ctx=context))

@@ -8,7 +8,7 @@ import somtparser as sp
 def translate(source):
     result = sp.translate(source=source, language="sygus", profile="bmc",
                           options={"grammar_depth": "1"})
-    assert result.ok, [item.message for item in result.diagnostics]
+    assert result.ok, [item.message for item in result.diagnostic_items]
     assert result.report.fidelity.sound
     assert not result.report.fidelity.complete
     return result

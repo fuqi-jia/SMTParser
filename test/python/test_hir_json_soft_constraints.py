@@ -51,7 +51,7 @@ def compile_model(raw, route="direct"):
     else:
         result = build_hir(expand_cp_model(raw) if route == "expanded" else raw, SOURCE).translate()
     assert raw == before
-    assert result.ok, result.diagnostics
+    assert result.ok, result.diagnostic_items
     text = result.to_smt2() if route in ("provider", "cp-provider") else result.to_smt2(sp.OmtDialect.Z3)
     optimizer = z3.Optimize()
     optimizer.from_string(text)
@@ -117,7 +117,7 @@ def test_helper_discovered_only_in_soft_expression_precedes_its_use():
     builder = build_hir(raw, SOURCE)
     assert builder._sum_template_cache
     result = builder.translate()
-    assert result.ok, result.diagnostics
+    assert result.ok, result.diagnostic_items
     optimizer = z3.Optimize()
     optimizer.from_string(result.to_smt2(sp.OmtDialect.Z3))
     values = z3.Array("values", z3.IntSort(), z3.IntSort())
@@ -221,7 +221,7 @@ def test_public_builder_constructs_one_weighted_preference():
     builder.declare("p", "Bool")
     builder.soft_constrain(var("p"), "23", source_path="preference.expr")
     result = builder.translate()
-    assert result.ok, result.diagnostics
+    assert result.ok, result.diagnostic_items
     optimizer = z3.Optimize()
     optimizer.from_string(result.to_smt2(sp.OmtDialect.Z3))
     assert_vector(optimizer, z3.BoolVal(True), [z3.If(z3.Bool("p"), 0, 23)])

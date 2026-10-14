@@ -6,7 +6,7 @@ import somtparser as sp
 
 def equivalent(source, expected, profile='default'):
     result = sp.translate(source=source + '\nsolve satisfy;', language='flatzinc', profile=profile)
-    assert result.ok, [diagnostic.message for diagnostic in result.diagnostics]
+    assert result.ok, [diagnostic.message for diagnostic in result.diagnostic_items]
     solver = z3.Solver()
     solver.set(timeout=5000)
     solver.add(z3.And(*z3.parse_smt2_string(result.to_smt2())) != expected)
@@ -84,7 +84,7 @@ def test_reification_keeps_entire_global_relation_inside_boolean(name, args, exp
 def test_unproven_vendor_domains_are_explicitly_refused(source):
     result = sp.translate(source=source + 'solve satisfy;', language='flatzinc')
     assert not result.ok
-    assert any('requires declared' in d.message for d in result.diagnostics)
+    assert any('requires declared' in d.message for d in result.diagnostic_items)
 
 
 def test_singleton_preserves_registry_relation_without_duration_restriction():

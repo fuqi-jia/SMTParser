@@ -23,7 +23,7 @@ def translate(tmp_path, actions, initial='(= (total-cost) 0)', horizon=2,
 
 
 def optimizer(result):
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Optimize()
     solver.set(timeout=10000)
     text = result.to_smt2(dialect=sp.OmtDialect.Z3)
@@ -117,7 +117,7 @@ def test_original_minecraft_pair_keeps_metric_and_reports_only_bounded_unsat():
     result = sp.translate(str(root / 'minecraft-costs.hddl'),
         data=[str(root / 'minecraft-costs-problem.hddl')], language='hddl', profile='bmc',
         options={'plan_horizon': '6', 'decomposition_depth': '3', 'lenient_requirements': '1'})
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Optimize()
     solver.set(timeout=10000)
     text = result.to_smt2(dialect=sp.OmtDialect.Z3)

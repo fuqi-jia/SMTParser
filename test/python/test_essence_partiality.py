@@ -13,7 +13,7 @@ import somtparser as sp
 def translate(declarations, constraint):
     result = sp.translate(source="language ESSENCE' 1.0\n" + declarations +
                           '\nsuch that ' + constraint, language='essence')
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     assert result.report.fidelity.sound and result.report.fidelity.complete
     return result
 
@@ -107,7 +107,7 @@ def test_catch_requires_a_defined_constant_of_the_same_type(expression):
 def test_undefined_objective_is_not_an_arbitrary_smt_value():
     result = sp.translate(source="language ESSENCE' 1.0\nfind x: int(0..3)\n"
                           'minimising x / 0\nsuch that true', language='essence')
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     s = z3.Optimize()
     s.from_string(result.to_smt2(dialect=sp.OmtDialect.Z3))
     assert s.check() == z3.unsat
@@ -116,7 +116,7 @@ def test_undefined_objective_is_not_an_arbitrary_smt_value():
 def test_original_basic_set07_has_the_reference_solution_and_no_other_cells():
     path = Path(__file__).resolve().parents[2] / 'languages/essence/instances/upstream/basic_set07.eprime'
     result = sp.translate(source=path.read_text(), language='essence')
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     s = solver(result)
     assert s.check() == z3.sat
     occurrence = z3.Array('x_Occurrence', z3.IntSort(), z3.BoolSort())

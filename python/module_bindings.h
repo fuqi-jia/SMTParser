@@ -11,7 +11,7 @@ namespace py = pybind11;
 inline std::string checkedSmt(const H::ConstraintModel& model) {
     SOMTParser::TranslateOptions options;
     options.omt_dialect = SOMTParser::Lower::OmtDialect::Z3;
-    const auto result = SOMTParser::translateHir(model, options);
+    const auto result = SOMTParser::translate(model, options);
     if (!result.ok()) {
         std::string error = "module relation lowering failed";
         for (const auto& d : result.diagnostics().all()) { error += ": " + d.message; }

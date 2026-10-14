@@ -12,7 +12,7 @@ def encode(tmp_path, domain, initial, goal='(done)', horizon=1):
 
 
 def solve(result):
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.set(timeout=10000)
     solver.add(z3.parse_smt2_string(result.to_smt2()))

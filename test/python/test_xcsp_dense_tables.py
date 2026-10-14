@@ -18,7 +18,7 @@ def test_shared_cells_preserve_overlapping_table_relations(first_polarity, secon
               + second_polarity + '>(-1,*)(1,0)</' + second_polarity
               + '></extension></constraints></instance>')
     result = sp.translate(source=source, language="xcsp3")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     x, y, z = z3.Ints("x y z")
     first = z3.Or(z3.And(x == -1, y == 1), z3.And(x == 0, y == -1),
                   z3.And(x == 1, y == 1))
@@ -40,7 +40,7 @@ def table_formula(domains, rows, polarity="supports", scope="x y"):
         + '</variables><constraints><extension><list>' + scope + '</list><'
         + polarity + '>' + tuples + '</' + polarity
         + '></extension></constraints></instance>', language="xcsp3")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     text = result.to_smt2(sp.OmtDialect.Z3)
     return z3.And(*z3.parse_smt2_string(text)), text
 
@@ -150,7 +150,7 @@ def test_very_wide_tables_preserve_iterative_fallback():
                           + names + '</list><supports>' + rows
                           + '</supports></extension></constraints></instance>',
                           language="xcsp3")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     values = [z3.Int(f'v{i}') for i in range(65)]
     expected = z3.Or(z3.And(*[v == 0 for v in values]),
                      z3.And(*[v == 1 for v in values]))
@@ -174,7 +174,7 @@ def test_numeric_table_storage_keeps_extreme_values_separate_from_wildcards(pola
               + '</list><' + polarity + '>' + tuples + '</' + polarity
               + '></extension></constraints></instance>')
     result = sp.translate(source=source, language="xcsp3")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     values = [z3.Int(name) for name in names]
     x, y = values[:2]
     relation = z3.Or(z3.And(x == low, y == high), y == low,
@@ -196,7 +196,7 @@ def test_invalid_table_cell_is_rejected_before_dense_complement(token):
         '<supports>(0,0)(0,1)(1,0)(1,1)(' + token + ',0)</supports>'
         '</extension></constraints></instance>'), language="xcsp3")
     assert not result.ok
-    assert any("not an integer" in d.message for d in result.diagnostics)
+    assert any("not an integer" in d.message for d in result.diagnostic_items)
 
 
 @pytest.mark.parametrize("from_file", [False, True])
@@ -217,7 +217,7 @@ def test_table_source_lifetime_and_group_sharing(tmp_path, from_file, polarity, 
         result = sp.translate(path=str(path), language="xcsp3")
     else:
         result = sp.translate(source=source, language="xcsp3")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     x, y, z = z3.Ints('x y z')
     def relation(a, b):
         allowed = z3.Or(z3.And(a == -1, b == 0), z3.And(a == 1, b == 1))
@@ -236,7 +236,7 @@ def test_group_table_formals_are_materialized_before_substitution():
               '</extension><args>x y 1</args><args>y x 2</args></group>'
               '</constraints></instance>')
     result = sp.translate(source=source, language="xcsp3")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.add(z3.Xor(z3.And(*z3.parse_smt2_string(result.to_smt2())),
                      z3.And(z3.Int('x') == 1, z3.Int('y') == 2)))

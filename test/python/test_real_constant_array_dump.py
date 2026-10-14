@@ -16,7 +16,7 @@ def test_hir_constant_array_real_values_are_independently_parseable(value, neste
         array = {'op': 'select', 'args': [array, {'literal': True, 'sort': 'Bool'}]}
     read = {'op': 'select', 'args': [array, {'var': 'i'}]}
     b.constrain({'op': 'eq', 'args': [{'var': 'r'}, read]})
-    result = b.translate(); assert result.ok, [d.message for d in result.diagnostics]
+    result = b.translate(); assert result.ok, [d.message for d in result.diagnostic_items]
     actual = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     solver = z3.Solver(); solver.set(timeout=10000)
     solver.add(z3.Xor(actual, z3.Real('r') == z3.RealVal(str(Fraction(value)))))
@@ -29,7 +29,7 @@ def test_smtlib_real_constant_array_survives_lifting_and_export(value):
               f'(assert (= a ((as const (Array Int Real)) {value})))'
               '(check-sat)')
     result = sp.translate(source=source, language='smtlib2')
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     original = z3.And(*z3.parse_smt2_string(source))
     emitted = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     solver = z3.Solver(); solver.set(timeout=10000)

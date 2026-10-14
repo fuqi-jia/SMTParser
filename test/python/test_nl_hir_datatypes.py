@@ -218,7 +218,7 @@ def test_direct_api_distinguishes_inductive_and_coinductive_self_cycles():
         op("eq", dt_sel("headC", "Int", var("s")), lit(7, "Int"))
     )
     translated = coinductive.translate()
-    assert translated.ok, [item.message for item in translated.diagnostics]
+    assert translated.ok, [item.message for item in translated.diagnostic_items]
     assert cvc5_status(translated.to_smt2()) == "sat"
 
     contrary, _ = stream_builder()
@@ -226,5 +226,5 @@ def test_direct_api_distinguishes_inductive_and_coinductive_self_cycles():
         op("not", op("eq", dt_sel("headC", "Int", var("s")), lit(7, "Int")))
     )
     translated = contrary.translate()
-    assert translated.ok, [item.message for item in translated.diagnostics]
+    assert translated.ok, [item.message for item in translated.diagnostic_items]
     assert cvc5_status(translated.to_smt2()) == "unsat"

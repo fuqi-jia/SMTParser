@@ -19,7 +19,7 @@ def test_signed_minimum_is_the_exact_integer(literal, context):
     else:
         source = f"var {literal}..{literal}:x; solve satisfy;"
     result = sp.translate(source=source, language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     actual = z3.And(*z3.parse_smt2_string(result.to_smt2(sp.OmtDialect.Z3)))
     solver = z3.Solver()
     solver.add(z3.Xor(actual, z3.Int("x") == MINIMUM))
@@ -35,7 +35,7 @@ def test_signed_minimum_is_the_exact_integer(literal, context):
 def test_out_of_range_constant_still_reports_input_error(expression):
     result = sp.translate(source=f"int:k={expression}; solve satisfy;", language="minizinc")
     assert not result.ok
-    assert any("64-bit" in d.message or "overflows" in d.message for d in result.diagnostics)
+    assert any("64-bit" in d.message or "overflows" in d.message for d in result.diagnostic_items)
 
 
 @pytest.mark.parametrize("tail", ["^0", "default 1"])
@@ -46,4 +46,4 @@ def test_minimum_shortcut_does_not_move_minus_inside_tighter_operator(tail):
     result = sp.translate(source=f"int:k=-9223372036854775808 {tail}; solve satisfy;",
                           language="minizinc")
     assert not result.ok
-    assert any("64-bit" in d.message for d in result.diagnostics)
+    assert any("64-bit" in d.message for d in result.diagnostic_items)

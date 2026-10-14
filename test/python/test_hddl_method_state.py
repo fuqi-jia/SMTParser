@@ -15,7 +15,7 @@ def translate(tmp_path, body, initial='', tasks='(t)', goal='(and)', horizon=1, 
                        + tasks + ') (:init ' + initial + ') (:goal ' + goal + '))')
     result = sp.translate(source=domain, data=[str(problem)], language='hddl', profile='bmc',
                           options={'plan_horizon': str(horizon), 'decomposition_depth': str(depth)})
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     assert [(b.kind, b.value) for b in result.report.fidelity.bounds
             if b.kind == sp.Bound.PLAN_HORIZON] == [(sp.Bound.PLAN_HORIZON, horizon)]
     solver = z3.Solver()
@@ -89,7 +89,7 @@ def test_upstream_method_effect_conditional_guards_use_old_state():
                           language='hddl', profile='bmc',
                           options={'plan_horizon': '0', 'decomposition_depth': '2',
                                    'lenient_requirements': '1'})
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.add(z3.parse_smt2_string(result.to_smt2()))
     assert solver.check() == z3.sat
@@ -217,7 +217,7 @@ def test_initial_network_binding_restrictions(tmp_path, constraint, expected):
                           '(:action a :parameters (?v) :effect (p)))',
                           data=[str(problem)], language='hddl', profile='bmc',
                           options={'plan_horizon': '1', 'decomposition_depth': '1'})
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.add(z3.parse_smt2_string(result.to_smt2()))
     assert solver.check() == expected

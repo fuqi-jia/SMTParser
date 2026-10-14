@@ -40,7 +40,7 @@ def export(source, route):
     if route == "parser":
         return sp.parse(source).dump_smt2(dialect=sp.OmtDialect.OptiMathSAT)
     translated = sp.translate(source=source, language="smtlib2")
-    assert translated.ok, translated.diagnostics
+    assert translated.ok, translated.diagnostic_items
     return translated.to_smt2(dialect=sp.OmtDialect.OptiMathSAT)
 
 
@@ -97,7 +97,7 @@ def test_stream_and_string_agree_and_keep_responses(tmp_path):
     source = ("(declare-const a (Array Int Bool))(assert (select a 0))"
               "(minimize (ite (select a 1) 2 1))(check-sat)(get-objectives)")
     translated = sp.translate(source=source, language="smtlib2")
-    assert translated.ok, translated.diagnostics
+    assert translated.ok, translated.diagnostic_items
     destination = tmp_path / "arrays.smt2"
     translated.write_smt2(str(destination), dialect=sp.OmtDialect.OptiMathSAT)
     assert destination.read_text() == translated.to_smt2(dialect=sp.OmtDialect.OptiMathSAT)

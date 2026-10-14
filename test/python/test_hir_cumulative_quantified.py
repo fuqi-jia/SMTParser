@@ -20,7 +20,7 @@ def test_quantified_load_equals_independent_finite_time_grid(negated):
             "demands": [{"var": f"r{i % 2}"} for i in range(128)], "capacity": {"var": "b"}}
     builder.constrain({"op": "not", "args": [expr]} if negated else expr)
     result = builder.translate(profile="quantified")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     assert "cumulative-integer-time-quantified" in result.report.to_json()
     context = z3.Context()
     actual = z3.And(*z3.parse_smt2_string(result.to_smt2(), ctx=context))
@@ -43,7 +43,7 @@ def test_25600_tasks_construct_export_and_load_without_event_cross_product():
     builder.constrain({"cp": "cumulative", "starts": {"array": "starts", "length": 25600},
                        "durations": [1] * 25600, "demands": [1] * 25600, "capacity": lit(100)})
     result = builder.translate(profile="quantified")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     target = result.to_smt2()
     assert "cumulative-integer-time-quantified" in result.report.to_json()
     assert len(target) < 25600 * 500
@@ -60,7 +60,7 @@ def test_fresh_time_binder_does_not_capture_source_demand():
     number = lambda n: native._hir_literal(integer, str(n))
     raw.constrain(native._hir_global("cumulative", [number(1), number(0), number(3), demand]))
     result = raw.translate(profile="quantified")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     context = z3.Context()
     actual = z3.And(*z3.parse_smt2_string(result.to_smt2(), ctx=context))
     expected = z3.And(z3.Int(name, ctx=context) >= 0, z3.Int(name, ctx=context) <= 1)
@@ -78,7 +78,7 @@ def test_nested_lexical_start_scope_is_preserved(capacity, negated, expected):
         relation = {"op": "not", "args": [relation]}
     builder.constrain({"quantifier": "forall", "binders": [{"name": "t", "sort": "Int"}], "body": relation})
     result = builder.translate(profile="quantified")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     context = z3.Context()
     actual = z3.And(*z3.parse_smt2_string(result.to_smt2(), ctx=context))
     proof = z3.Solver(ctx=context)

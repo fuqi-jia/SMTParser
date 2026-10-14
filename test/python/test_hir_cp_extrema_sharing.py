@@ -27,7 +27,7 @@ def extreme(kind, *items):
 
 def formula(builder):
     result = builder.translate()
-    assert result.ok, [item.message for item in result.diagnostics]
+    assert result.ok, [item.message for item in result.diagnostic_items]
     text = result.to_smt2()
     return z3.And(*z3.parse_smt2_string(text)), text
 
@@ -158,7 +158,7 @@ def test_construct_and_complete_smt_scale_linearly(kind):
         started = time.monotonic()
         builder.constrain(op("eq", var("r"), {"cp": kind, "items": {"array": "a", "length": count}}))
         built = time.monotonic()
-        result = builder.translate(); assert result.ok, [item.message for item in result.diagnostics]
+        result = builder.translate(); assert result.ok, [item.message for item in result.diagnostic_items]
         text = result.to_smt2(); serialized = time.monotonic()
         parsed = z3.Optimize(); parsed.from_string(text); completed = time.monotonic()
         assert builder.nodes < 8 * count + 10

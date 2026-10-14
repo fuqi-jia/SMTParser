@@ -6,7 +6,7 @@ import somtparser as sp
 
 def equivalent(source, expected):
     result = sp.translate(source=source + '\nsolve satisfy;', language='flatzinc')
-    assert result.ok, [diagnostic.message for diagnostic in result.diagnostics]
+    assert result.ok, [diagnostic.message for diagnostic in result.diagnostic_items]
     actual = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     solver = z3.Solver()
     solver.set(timeout=5000)

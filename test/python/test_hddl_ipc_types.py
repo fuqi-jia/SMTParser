@@ -13,7 +13,7 @@ def translate(tmp_path, domain, problem, options=None):
 
 
 def check(result):
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.set(timeout=10000)
     solver.add(z3.parse_smt2_string(result.to_smt2()))
@@ -66,7 +66,7 @@ def test_ipc_parent_only_sort_and_explicit_file_pairing(tmp_path, initial, expec
     assert not translate(tmp_path, domain, problem).ok
     result = translate(tmp_path, domain, problem, {'ipc_compatibility': 'true'})
     assert check(result) == expected
-    messages = '\n'.join(d.message for d in result.diagnostics)
+    messages = '\n'.join(d.message for d in result.diagnostic_items)
     assert "parent-only type 'parent'" in messages
     assert "'legacy-name' paired" in messages
     assert 'ipc-hddl-compatibility' in result.report.to_json()
@@ -79,8 +79,8 @@ def test_cycles_and_missing_ancestors_have_type_diagnostics(tmp_path, types):
     problem = '(define (problem p) (:domain d) (:htn :subtasks (and)) (:init))'
     result = translate(tmp_path, domain, problem)
     assert not result.ok
-    assert any('type' in d.message for d in result.diagnostics)
-    assert not any('hddl frontend:' in d.message for d in result.diagnostics)
+    assert any('type' in d.message for d in result.diagnostic_items)
+    assert not any('hddl frontend:' in d.message for d in result.diagnostic_items)
     if types == 'a - b b - a':
         assert not translate(tmp_path, domain, problem, {'ipc_compatibility': '1'}).ok
 
@@ -149,7 +149,7 @@ def test_second_parent_cycle_is_rejected(tmp_path, types):
     problem = '(define (problem p) (:domain d) (:htn :subtasks (and)) (:init))'
     result = translate(tmp_path, domain, problem, {'ipc_compatibility': 'true'})
     assert not result.ok
-    assert any('cyclic HDDL' in d.message for d in result.diagnostics)
+    assert any('cyclic HDDL' in d.message for d in result.diagnostic_items)
 
 
 def test_multiple_inheritance_does_not_widen_parent_to_child(tmp_path):
@@ -160,7 +160,7 @@ def test_multiple_inheritance_does_not_widen_parent_to_child(tmp_path):
                '(:htn :subtasks (act c)) (:init))')
     result = translate(tmp_path, domain, problem, {'ipc_compatibility': 'true'})
     assert not result.ok
-    assert any('incompatible' in d.message or 'where' in d.message for d in result.diagnostics)
+    assert any('incompatible' in d.message or 'where' in d.message for d in result.diagnostic_items)
 
 
 @pytest.mark.parametrize('object_type,expected', [('engine', z3.sat), ('part', z3.unsat)])
@@ -232,4 +232,4 @@ def test_ipc_narrowing_does_not_accept_bad_constant_in_unreachable_method(tmp_pa
     problem = '(define (problem p) (:domain d) (:htn :subtasks (and)) (:init))'
     result = translate(tmp_path, domain, problem, {'ipc_compatibility': 'true'})
     assert not result.ok
-    assert any("'c'" in d.message and 'where' in d.message for d in result.diagnostics)
+    assert any("'c'" in d.message and 'where' in d.message for d in result.diagnostic_items)

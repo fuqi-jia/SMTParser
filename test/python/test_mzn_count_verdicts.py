@@ -26,7 +26,7 @@ import somtparser as sp
 
 def _model(body, profile="default"):
     t = sp.translate(source=body, language="minizinc", profile=profile)
-    assert t.ok, t.diagnostics[0].message if t.diagnostics else "no model"
+    assert t.ok, t.diagnostic_items[0].message if t.diagnostic_items else "no model"
     return t.to_smt2()
 
 

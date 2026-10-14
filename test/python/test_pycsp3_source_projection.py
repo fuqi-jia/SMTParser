@@ -178,7 +178,7 @@ def test_complete_projected_relation_and_signed_cost(reference):
     directory, provenance = reference
     source = (directory / "reference.xml").read_text()
     translated = sp.translate(source=source, language="xcsp3", dialect=sp.OmtDialect.Z3)
-    assert translated.ok, translated.diagnostics
+    assert translated.ok, translated.diagnostic_items
     script = translated.to_smt2(dialect=sp.OmtDialect.Z3)
     optimize = z3.Optimize()
     optimize.from_string(script)

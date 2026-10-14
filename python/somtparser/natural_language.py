@@ -573,7 +573,7 @@ def _prepare_candidate(
                     dialect=OmtDialect.Z3 if formal_dialect is None else formal_dialect,
                 )
                 if not checked.ok:
-                    messages = [d.message for d in checked.diagnostics]
+                    messages = [d.message for d in checked.diagnostic_items]
                     raise ModelError("; ".join(messages or ["SMT-LIB validation failed"]), "program")
                 has_objectives = json.loads(checked.report.to_json())["stats"]["num_objectives"] > 0
                 if has_objectives != (copied["decision"] == "optimization"):
@@ -1025,7 +1025,7 @@ def _compile(candidate, acceptance, profile, dialect):
             source=prepared["script"], language=language, profile=profile, dialect=dialect
         )
     diagnostics = (
-        tuple(d.message for d in translation.diagnostics) if not translation.ok else ()
+        tuple(d.message for d in translation.diagnostic_items) if not translation.ok else ()
     )
     if translation.ok:
         has_objectives = (

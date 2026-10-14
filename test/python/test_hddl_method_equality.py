@@ -27,7 +27,7 @@ def translate(tmp_path, condition, arguments="a b", initial="", prepare=False):
 
 
 def status(result):
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     context = z3.Context()
     solver = z3.Solver(ctx=context)
     solver.set(timeout=5000)
@@ -60,7 +60,7 @@ def test_dynamic_condition_is_checked_after_the_preceding_action(tmp_path):
 def test_false_equality_does_not_hide_an_invalid_state_condition(tmp_path):
     result = translate(tmp_path, "(and (= ?x ?y) (undeclared))", "a b")
     assert not result.ok
-    assert any("undeclared" in d.message for d in result.diagnostics)
+    assert any("undeclared" in d.message for d in result.diagnostic_items)
 
 
 def test_false_head_equality_precedes_local_cartesian_expansion(tmp_path):

@@ -8,7 +8,7 @@ import somtparser as sp
 def translate(source, depth=2):
     result = sp.translate(source=source, language="moxi", profile="bmc",
                           options={"bmc_depth": str(depth)})
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     assert result.report.fidelity.sound and not result.report.fidelity.complete
     assert any(c.strategy == "bmc-fair-lasso" for c in result.report.choices)
     return result

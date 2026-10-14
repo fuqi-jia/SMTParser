@@ -144,7 +144,7 @@ def test_positional_scalar_calls_preserve_full_relation(tmp_path, file_input, ca
         translated = sp.translate(path=str(path), language="xcsp3")
     else:
         translated = sp.translate(source=source, language="xcsp3")
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     assert translated.uses_packed_smt_stream
     assert translated.report.stats.num_vars == 65539
     script = translated.to_smt2()

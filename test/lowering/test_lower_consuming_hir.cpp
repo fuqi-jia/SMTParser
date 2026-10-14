@@ -205,8 +205,8 @@ int main() {
     // translateHir must consume its private container, never the caller's roots.
     SOMTParser::TranslateOptions options;
     options.omt_dialect = L::OmtDialect::Z3;
-    const auto first = SOMTParser::translateHir(original, options);
-    const auto second = SOMTParser::translateHir(original, options);
+    const auto first = SOMTParser::translate(original, options);
+    const auto second = SOMTParser::translate(original, options);
     VERIFY(first.ok() && second.ok());
     const std::string first_smt = first.toSmt2(L::OmtDialect::Z3);
     VERIFY(first_smt == first.toSmt2(L::OmtDialect::Z3));

@@ -40,7 +40,7 @@ def formula(expr, builder=None):
     builder = HirBuilder() if builder is None else builder
     builder.constrain(expr)
     result = builder.translate()
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     return public_relation(result)
 
 
@@ -90,7 +90,7 @@ def test_nested_shadowing_and_later_user_names_are_not_captured():
         builder.declare(name, "Int")
         builder.constrain(op("eq", var(name), lit(42)))
     result = builder.translate()
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     actual = public_relation(result)
     same(actual, z3.And(*[z3.Int(n) == 42 for n in ["x", "somt_hir_bound_1", "somt_hir_bound_2"]]))
 
@@ -157,7 +157,7 @@ def test_container_and_datatype_binders_use_the_same_exact_equality(sort):
     builder.declare("target", sort)
     builder.constrain(op("not", unique(op("eq", var("x"), var("target")), (("x", sort),))))
     result = builder.translate()
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     script = result.to_smt2(sp.OmtDialect.SmtLib2025)
     if "(check-sat)" not in script:
         script += "\n(check-sat)\n"

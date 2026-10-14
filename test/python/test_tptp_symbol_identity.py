@@ -22,7 +22,7 @@ def translate(source):
 ])
 def test_ordinary_names_preserve_satisfiability(source, expected):
     result = translate(source)
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.set(timeout=5000)
     solver.add(z3.parse_smt2_string(result.to_smt2()))
@@ -36,14 +36,14 @@ def test_quoted_individual_sort_cannot_alias_system_or_encoded_name(other_sort):
         + "tff(b_type,type,b:" + other_sort + "). tff(a,axiom,a = b)."
     )
     assert not result.ok
-    assert any("type" in str(d.code).lower() for d in result.diagnostics)
+    assert any("type" in str(d.code).lower() for d in result.diagnostic_items)
 
 
 def test_ordinary_name_resembling_function_encoding_stays_independent():
     # This is the exact candidate target spelling for the ordinary source true.
     source = "fof(a,axiom,true != 'tptp$symbol$74727565$0')."
     result = translate(source)
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.set(timeout=5000)
     solver.add(z3.parse_smt2_string(result.to_smt2()))

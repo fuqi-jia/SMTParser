@@ -11,7 +11,7 @@ constraint keep({});
 solve satisfy;
 """
     translated = sp.translate(source=source, language="minizinc")
-    assert translated.ok, [item.message for item in translated.diagnostics]
+    assert translated.ok, [item.message for item in translated.diagnostic_items]
     assert z3.parse_smt2_string(translated.to_smt2(sp.OmtDialect.Z3))
 
 
@@ -24,7 +24,7 @@ solve satisfy;
 """
     translated = sp.translate(source=source, language="minizinc")
     assert not translated.ok
-    assert any("finite domain" in item.message for item in translated.diagnostics)
+    assert any("finite domain" in item.message for item in translated.diagnostic_items)
 
 
 def test_named_enum_set_formal_rejects_different_enum_identity():
@@ -37,4 +37,4 @@ solve satisfy;
 """
     translated = sp.translate(source=source, language="minizinc")
     assert not translated.ok
-    assert any("finite domain" in item.message for item in translated.diagnostics)
+    assert any("finite domain" in item.message for item in translated.diagnostic_items)

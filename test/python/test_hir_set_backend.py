@@ -24,7 +24,7 @@ def solve(builder, args=None):
     if shutil.which("cvc5") is None:
         pytest.skip("cvc5 is required for the Set backend oracle")
     translated = builder.translate()
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     formula = Formula(translated, "hir", backend="cvc5", timeout=10, args=args)
     return formula.solve()
 
@@ -108,7 +108,7 @@ def test_quantified_set_int_is_refused_before_solver_call(monkeypatch):
     b.declare("S", {"Set": "Int"})
     b.constrain({"quantifier": "forall", "binders": [{"name": "x", "sort": "Int"}], "body": op("set.member", var("x"), var("S"))})
     translated = b.translate()
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     monkeypatch.setattr(_solving._backends, "run", lambda *a, **k: pytest.fail("solver must not run"))
     with pytest.raises(FidelityError, match="infinite or unknown carrier"):
         Formula(translated, "hir", backend="cvc5", timeout=10).solve()
@@ -123,7 +123,7 @@ def test_quantified_set_preserves_explicit_model_finding_choice(monkeypatch, cho
     b.constrain({"quantifier": "forall", "binders": [{"name": "x", "sort": "Bool"}],
                  "body": op("set.member", var("x"), var("S"))})
     translated = b.translate()
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     seen = []
 
     def run(name, script, timeout, seed, path, args):
@@ -143,7 +143,7 @@ def test_explicit_disable_conflicts_with_required_sets_exp():
     b.declare("S", {"Set": "Bool"})
     b.constrain(op("eq", var("S"), lit("set.empty", {"Set": "Bool"})))
     translated = b.translate()
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     with pytest.raises(FidelityError, match="disable required --sets-exp"):
         Formula(translated, "hir", backend="cvc5", args=("--lang=smt2", "--sets-exp=false")).solve()
 
@@ -167,7 +167,7 @@ def test_set_requirement_follows_array_and_function_signatures():
             "body": op("eq", op("set.card", selected), lit(0, "Int")),
         })
         translated = b.translate()
-        assert translated.ok, [d.message for d in translated.diagnostics]
+        assert translated.ok, [d.message for d in translated.diagnostic_items]
         assert translated.set_solver_requirements.has_sets
         assert translated.set_solver_requirements.has_quantifiers
         assert translated.set_solver_requirements.infinite_or_unknown_carrier
@@ -189,7 +189,7 @@ def test_result_records_actual_backend_argv_including_seed(monkeypatch):
     b.declare("S", {"Set": "Bool"})
     b.constrain(op("eq", var("S"), lit("set.empty", {"Set": "Bool"})))
     translated = b.translate()
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     seen = {}
 
     def fake_run(name, script, timeout, seed, path, args):
@@ -210,14 +210,14 @@ def test_nested_finite_and_infinite_array_carriers_are_classified():
     finite = HirBuilder()
     finite.declare("S", {"Set": {"Array": ["Bool", "Bool"]}})
     finite_result = finite.translate()
-    assert finite_result.ok, [d.message for d in finite_result.diagnostics]
+    assert finite_result.ok, [d.message for d in finite_result.diagnostic_items]
     requirements = finite_result.set_solver_requirements
     assert requirements.has_sets and not requirements.infinite_or_unknown_carrier
 
     infinite = HirBuilder()
     infinite.declare("S", {"Set": {"Array": ["Int", "Bool"]}})
     infinite_result = infinite.translate()
-    assert infinite_result.ok, [d.message for d in infinite_result.diagnostics]
+    assert infinite_result.ok, [d.message for d in infinite_result.diagnostic_items]
     assert infinite_result.set_solver_requirements.infinite_or_unknown_carrier
 
 
@@ -228,7 +228,7 @@ def test_nonrecursive_finite_datatype_set_carrier_is_classified():
 (assert (forall ((x Flag)) (set.member x S)))
 """
     translated = sp.translate(source=source, language="smtlib2")
-    assert translated.ok, [item.message for item in translated.diagnostics]
+    assert translated.ok, [item.message for item in translated.diagnostic_items]
     requirements = translated.set_solver_requirements
     assert requirements.has_sets and requirements.has_quantifiers
     assert not requirements.infinite_or_unknown_carrier
@@ -241,7 +241,7 @@ def test_optimize_without_objectives_still_configures_sets_exp():
     b.declare("S", {"Set": "Bool"})
     b.constrain(op("eq", var("S"), lit("set.empty", {"Set": "Bool"})))
     translated = b.translate()
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     result = Formula(translated, "hir", backend="cvc5", timeout=10).optimize()
     assert result.status == "sat"
     assert "--sets-exp" in result.backend_options
@@ -265,7 +265,7 @@ def test_parametric_datatype_set_carrier_uses_instantiated_fields():
 (assert (forall ((x {element_sort})) (set.member x S)))
 """
         translated = sp.translate(source=source, language="smtlib2")
-        assert translated.ok, [item.message for item in translated.diagnostics]
+        assert translated.ok, [item.message for item in translated.diagnostic_items]
         requirements = translated.set_solver_requirements
         assert requirements.has_sets and requirements.has_quantifiers
         assert requirements.infinite_or_unknown_carrier is unknown
@@ -281,7 +281,7 @@ def test_parametric_datatype_set_field_substitutes_parameters():
 (assert (= x x))
 """
         translated = sp.translate(source=source, language="smtlib2")
-        assert translated.ok, [item.message for item in translated.diagnostics]
+        assert translated.ok, [item.message for item in translated.diagnostic_items]
         requirements = translated.set_solver_requirements
         assert requirements.has_sets
         assert requirements.infinite_or_unknown_carrier is unknown
@@ -297,7 +297,7 @@ def test_nested_parametric_datatype_set_carrier_preserves_instance_scope():
 (assert (= S (as set.empty (Set (BoxBox Bool)))))
 """
     translated = sp.translate(source=source, language="smtlib2")
-    assert translated.ok, [item.message for item in translated.diagnostics]
+    assert translated.ok, [item.message for item in translated.diagnostic_items]
     requirements = translated.set_solver_requirements
     assert requirements.has_sets
     assert not requirements.infinite_or_unknown_carrier
@@ -316,7 +316,7 @@ def test_sort_cache_distinguishes_quoted_datatype_name_from_set_spelling():
 (assert (forall ((x |(Set Bool)|)) (= (payload x) (as set.empty (Set Int)))))
 """
     translated = sp.translate(source=source, language="smtlib2")
-    assert translated.ok, [item.message for item in translated.diagnostics]
+    assert translated.ok, [item.message for item in translated.diagnostic_items]
     requirements = translated.set_solver_requirements
     assert requirements.has_sets
     assert requirements.has_quantifiers

@@ -35,7 +35,7 @@ def test_1001_tasks_preserve_all_assignments_and_polarity(negated):
     source = model(expr)
     before = deepcopy(source)
     result = build_hir(source, "x").translate()
-    assert result.ok, [entry.message for entry in result.diagnostics]
+    assert result.ok, [entry.message for entry in result.diagnostic_items]
     assert source == before
     assert "cumulative-start-events-shared-load" in result.report.to_json()
     target = result.to_smt2()
@@ -71,7 +71,7 @@ def test_nested_cp_capacity_reaches_native_builder_without_eager_json_expansion(
     expr = relation()
     expr["capacity"] = {"cp": "maximum", "items": [{"var": "b"}] * 40}
     result = build_hir(model(expr), "x").translate()
-    assert result.ok, [entry.message for entry in result.diagnostics]
+    assert result.ok, [entry.message for entry in result.diagnostic_items]
     context = z3.Context()
     actual = z3.And(*z3.parse_smt2_string(result.to_smt2(), ctx=context))
     d, r, b = z3.Ints("d r b", ctx=context)

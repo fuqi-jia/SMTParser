@@ -14,7 +14,7 @@ def translate(source, *, horn=False, infer=True):
 
 def check(source, verified, *, horn=False):
     result = translate(source, horn=horn)
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.SolverFor("HORN") if horn else z3.Solver()
     solver.set(timeout=10000)
     solver.from_string(result.to_smt2())
@@ -89,7 +89,7 @@ def test_recursive_multiple_implementation_frames_report_actual_fixed_point():
               "implementation P(){call Q();} implementation Q(){g:=1; call P();} "
               "implementation Q(){h:=2;} procedure ReadOnly(){assert k==k;}")
     result = translate(source)
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     rows = reports(result)
     assert "direct global writes={}" in rows["P"]
     assert "direct global writes={g, h}" in rows["Q"]
@@ -116,7 +116,7 @@ def test_explicit_larger_contract_frame_is_not_narrowed_to_body_writes():
 def test_default_still_rejects_missing_frame(source, horn):
     result = translate(source, horn=horn, infer=False)
     assert not result.ok
-    assert any("modifies" in d.message for d in result.diagnostics)
+    assert any("modifies" in d.message for d in result.diagnostic_items)
 
 
 @pytest.mark.parametrize("option", ["", "0", "true", "2"])
@@ -124,7 +124,7 @@ def test_invalid_option_value_is_rejected(option):
     result = sp.translate(source="procedure P(){}", language="boogie",
                           options={"infer_modifies": option})
     assert not result.ok
-    assert any("infer_modifies" in d.message for d in result.diagnostics)
+    assert any("infer_modifies" in d.message for d in result.diagnostic_items)
 
 
 INVALID = [
@@ -144,7 +144,7 @@ INVALID = [
 def test_inference_does_not_disable_source_errors(name, source, message):
     result = translate(source)
     assert not result.ok
-    assert any(message in d.message for d in result.diagnostics)
+    assert any(message in d.message for d in result.diagnostic_items)
 
 
 def test_inference_scope_is_per_translation_and_default_report_has_no_inference():

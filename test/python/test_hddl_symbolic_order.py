@@ -13,7 +13,7 @@ def encode(tmp_path, body, network, horizon, depth=1):
     problem.write_text('(define (problem p) (:domain d) (:htn ' + network + ') (:init (p)))')
     result = sp.translate(source=domain, data=[str(problem)], language='hddl', profile='bmc',
                           options={'plan_horizon': str(horizon), 'decomposition_depth': str(depth)})
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.set(timeout=10000)
     solver.add(z3.parse_smt2_string(result.to_smt2()))

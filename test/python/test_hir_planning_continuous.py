@@ -18,7 +18,7 @@ def example():
 def test_complete_public_construction_and_target_load(kind):
     model,encoding=example().build_model(kind)
     result=model.translate()
-    assert result.ok,[d.message for d in result.diagnostics]
+    assert result.ok,[d.message for d in result.diagnostic_items]
     target=z3.And(*z3.parse_smt2_string(result.to_smt2()))
     assert encoding.polynomial_witness==(kind=='polynomial')
     assert encoding.requires_trajectory_source_observations==(kind=='general')

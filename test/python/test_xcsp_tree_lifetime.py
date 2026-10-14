@@ -6,7 +6,7 @@ z3 = pytest.importorskip("z3")
 
 
 def _check_equivalent(result, expected):
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.add(z3.Xor(z3.And(*z3.parse_smt2_string(result.to_smt2())), expected))
     assert solver.check() == z3.unsat
@@ -64,7 +64,7 @@ def test_later_error_location_is_stable_after_prior_constraint_erased():
               '</constraints>\n</instance>')
     result = sp.translate(source=source, language="xcsp3")
     assert not result.ok
-    diagnostic = next(d for d in result.diagnostics if "not implemented" in d.message)
+    diagnostic = next(d for d in result.diagnostic_items if "not implemented" in d.message)
     assert diagnostic.line == 7
 
 
@@ -75,5 +75,5 @@ def test_group_arity_diagnostic_keeps_later_argument_location_after_erasure():
               '<args>x y</args>\n<args>x</args></group>\n</constraints>\n</instance>')
     result = sp.translate(source=source, language="xcsp3")
     assert not result.ok
-    diagnostic = next(d for d in result.diagnostics if "only 1 argument" in d.message)
+    diagnostic = next(d for d in result.diagnostic_items if "only 1 argument" in d.message)
     assert diagnostic.line == 9

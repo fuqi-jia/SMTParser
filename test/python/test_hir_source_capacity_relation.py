@@ -64,12 +64,12 @@ def test_real_hir_provider_route_appends_shared_guidance_and_translates():
     # source-relation guidance, rather than only testing the string constant.
     assert captured["instruction"].endswith(natural_language._SOURCE_RELATION_GUIDANCE)
     translated = build_hir(candidate.model, SOURCE).translate()
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
 
 
 def test_capacity_subrelation_allows_slack_and_cell_value_above_index_count():
     translated = build_hir(capacity_model(), SOURCE).translate()
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     context = z3.Context()
     formula = z3.And(*z3.parse_smt2_string(translated.to_smt2(), ctx=context))
     layout = z3.Array("layout", z3.IntSort(context), z3.IntSort(context))
@@ -116,7 +116,7 @@ def test_direct_boolean_implication_avoids_invalid_numeric_comparison():
         "unresolved": [],
     }
     translated = build_hir(model, "If production is positive, the template is used.").translate()
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     context = z3.Context()
     formula = z3.And(*z3.parse_smt2_string(translated.to_smt2(), ctx=context))
     production = z3.Array("production", z3.IntSort(context), z3.IntSort(context))

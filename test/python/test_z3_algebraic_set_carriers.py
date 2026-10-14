@@ -18,7 +18,7 @@ def finite(values):
 
 def export(body, declarations="(declare-const S (Set Int))"):
     translation = sp.translate(source=declarations + body, language="smtlib2")
-    assert translation.ok, [d.message for d in translation.diagnostics]
+    assert translation.ok, [d.message for d in translation.diagnostic_items]
     return translation.to_smt2(sp.OmtDialect.Z3)
 
 

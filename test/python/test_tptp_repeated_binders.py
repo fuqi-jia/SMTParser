@@ -11,7 +11,7 @@ def test_duplicate_universal_binder_matches_single_universal_semantically():
         "fof(single, conjecture, ![Y] : p(Y)).\n"
     )
     result = sp.translate(source=source, language="tptp")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     target = result.to_smt2()
     assert "tptp_shadow_" in target
     solver = z3.Solver()
@@ -27,7 +27,7 @@ def test_repeated_name_in_nested_list_does_not_capture_outer_occurrences():
         "fof(reference, conjecture, ![Y] : (p(Y) & (?[Z] : q(Z)) & r(Y))).\n"
     )
     result = sp.translate(source=source, language="tptp")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     target = result.to_smt2()
     assert target.count("tptp_shadow_") >= 2
     solver = z3.Solver()
@@ -43,7 +43,7 @@ def test_alpha_renaming_does_not_capture_a_source_constant(constant, quantifiers
         "fof(all_equal, conjecture, ![Y,Z] : Y = Z).\n"
     )
     result = sp.translate(source=source, language="tptp")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.set(timeout=5000)
     solver.add(*z3.parse_smt2_string(result.to_smt2()))

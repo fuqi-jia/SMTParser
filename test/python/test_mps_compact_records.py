@@ -27,7 +27,7 @@ def test_many_distinct_rhs_values_preserve_exact_intervals_and_objective(packed)
     source += [f" span {row} {'0.125' if i % 2 else '-0.25'}" for i, row in enumerate(names)]
     source += ["ENDATA"]
     result = sp.translate(source="\n".join(source) + "\n", language="mps", dialect=sp.OmtDialect.Z3)
-    assert result.ok, [diagnostic.message for diagnostic in result.diagnostics]
+    assert result.ok, [diagnostic.message for diagnostic in result.diagnostic_items]
     assert result.uses_packed_smt_stream == packed
     target = z3.Optimize()
     target.from_string(result.to_smt2(sp.OmtDialect.Z3))
@@ -52,7 +52,7 @@ def test_input_diagnostics_keep_original_row_names(section, records, diagnostic)
                           "COLUMNS", " x long_row_name 1", section, *records, "ENDATA"]) + "\n"
     result = sp.translate(source=source, language="mps")
     assert not result.ok
-    assert any(diagnostic in item.message for item in result.diagnostics)
+    assert any(diagnostic in item.message for item in result.diagnostic_items)
 
 
 def test_nonobjective_quadratic_row_is_checked_before_row_index_release():
@@ -67,4 +67,4 @@ QSECTION nonobjective_row
 ENDATA
 """)
     assert not result.ok
-    assert any("not the objective row" in item.message for item in result.diagnostics)
+    assert any("not the objective row" in item.message for item in result.diagnostic_items)

@@ -67,7 +67,7 @@ def _grid_model(clue):
 @pytest.mark.parametrize("clue", range(4))
 def test_fixed_corner_clue_and_neighbor_count_match_every_two_by_two_grid(clue):
     translated = build_cp_hir(_grid_model(clue), "x").translate()
-    assert translated.ok, [item.message for item in translated.diagnostics]
+    assert translated.ok, [item.message for item in translated.diagnostic_items]
     formula = z3.And(*z3.parse_smt2_string(translated.to_smt2()))
     # Native HIR represents a shaped array as nested SMT arrays.
     rows = z3.ArraySort(z3.IntSort(), z3.BoolSort())

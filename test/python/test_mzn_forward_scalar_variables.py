@@ -6,7 +6,7 @@ z3 = pytest.importorskip("z3")
 
 
 def status(result):
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.set(timeout=5000)
     solver.add(z3.parse_smt2_string(result.to_smt2()))
@@ -56,14 +56,14 @@ def test_forward_identifier_still_checks_type_errors_and_duplicates():
     )
     assert not wrong_sort.ok
     assert all("undeclared identifier" not in d.message
-               for d in wrong_sort.diagnostics)
+               for d in wrong_sort.diagnostic_items)
 
     duplicate = sp.translate(
         source="constraint x=1; var 1..10:x; var 1..10:x; solve satisfy;",
         language="minizinc",
     )
     assert not duplicate.ok
-    assert any("already declared" in d.message for d in duplicate.diagnostics)
+    assert any("already declared" in d.message for d in duplicate.diagnostic_items)
 
 
 def test_generator_binding_shadows_forward_global():

@@ -10,7 +10,7 @@ z3 = pytest.importorskip("z3")
 
 def _translate(source):
     result = sp.translate(source=source, language="xcsp3")
-    assert result.ok, [diagnostic.message for diagnostic in result.diagnostics]
+    assert result.ok, [diagnostic.message for diagnostic in result.diagnostic_items]
     script = result.to_smt2()
     return script, z3.parse_smt2_string(script)
 
@@ -160,7 +160,7 @@ def test_malformed_repeated_table_still_reports_error():
               '</constraints></instance>')
     result = sp.translate(source=source, language="xcsp3")
     assert not result.ok
-    assert result.diagnostics
+    assert result.diagnostic_items
 
 
 def test_file_owned_repeated_table_text_survives_earlier_node_erasure(tmp_path):
@@ -175,7 +175,7 @@ def test_file_owned_repeated_table_text_survives_earlier_node_erasure(tmp_path):
     path = tmp_path / "owned-repeated-table.xml"
     path.write_text(source)
     result = sp.translate(path=str(path), language="xcsp3")
-    assert result.ok, [diagnostic.message for diagnostic in result.diagnostics]
+    assert result.ok, [diagnostic.message for diagnostic in result.diagnostic_items]
     script = result.to_smt2()
     assert re.search(r"\(define-fun __somt_xcsp_group_\d+\s+\(", script), script
     assertions = z3.parse_smt2_string(script)

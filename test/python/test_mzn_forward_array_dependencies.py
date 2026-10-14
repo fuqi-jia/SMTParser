@@ -6,7 +6,7 @@ z3 = pytest.importorskip("z3")
 
 
 def solve(result):
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     context = z3.Context()
     solver = z3.Solver(ctx=context)
     solver.set(timeout=5000)

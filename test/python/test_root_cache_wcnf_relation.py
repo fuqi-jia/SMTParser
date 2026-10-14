@@ -21,7 +21,7 @@ def test_wide_then_small_roots_preserve_full_relation_and_signed_cost(old_format
         expected_terms.append(z3.If(clause, 0, weight))
     rows.extend([hard + " -1 2 0", hard + " 3 -4 0"])
     translated = sp.translate(source=prefix + "\n".join(rows) + "\n", language="wcnf")
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     target = z3.Optimize()
     target.from_string(translated.to_smt2(dialect=sp.OmtDialect.Z3))
     assert len(target.objectives()) == 1
@@ -49,6 +49,6 @@ def test_wide_root_followed_by_bad_literal_retains_source_location():
     translated = sp.translate(source=wide + "7 1 0\n5 -9223372036854775808 0\n",
                               language="wcnf")
     assert not translated.ok
-    error = next(d for d in translated.diagnostics if d.severity == sp.Severity.ERROR)
+    error = next(d for d in translated.diagnostic_items if d.severity == sp.Severity.ERROR)
     assert error.line == 3
     assert "magnitude" in error.message

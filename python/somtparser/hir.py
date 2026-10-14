@@ -2935,10 +2935,10 @@ class HirBuilder:
                 raise ModelError(diagnostic.message, diagnostic.file or "model")
         return diagnostics
 
-    def translate(self, *, profile="default", dialect=None):
+    def translate(self, *, profile="default", dialect=None, details: bool = True) -> "native.Translation":
         options = {"source_terms": self._source_terms} if self._source_terms else {}
         return self.model.translate(
-            profile, native.OmtDialect.Z3 if dialect is None else dialect, **options
+            profile, native.OmtDialect.Z3 if dialect is None else dialect, details=details, **options
         )
 
 

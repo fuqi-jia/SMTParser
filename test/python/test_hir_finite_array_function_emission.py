@@ -43,7 +43,7 @@ def declare_count(model, name='count', count=200):
 
 def script_for(model):
     result = model.translate()
-    assert result.ok, [diagnostic.message for diagnostic in result.diagnostics]
+    assert result.ok, [diagnostic.message for diagnostic in result.diagnostic_items]
     script = result.to_smt2()
     assert result.to_smt2() == script
     return script
@@ -74,7 +74,7 @@ def test_generated_200_cell_template_with_25_calls_is_exact_and_projectable():
             }, {'literal': 8, 'sort': 'Int'}],
         })
     result = builder.translate()
-    assert result.ok, [diagnostic.message for diagnostic in result.diagnostics]
+    assert result.ok, [diagnostic.message for diagnostic in result.diagnostic_items]
     script = result.to_smt2()
     assert len(builder._sum_template_cache) == 1
     assert script.count('(define-fun somt_hir_sum_template_1 ') == 1

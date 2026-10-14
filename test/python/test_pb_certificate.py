@@ -189,7 +189,7 @@ def test_real_native_export(tmp_path, source):
     source_path = tmp_path / 'input.opb'
     source_path.write_text(source)
     model = sp.translate(path=str(source_path), language='opb')
-    assert model.ok, [str(x) for x in model.diagnostics]
+    assert model.ok, [str(x) for x in model.diagnostic_items]
     target_path = tmp_path / 'target.smt2'
     model.write_smt2(str(target_path), sp.OmtDialect.Z3)
     assert checked(source, target_path.read_text())['status'] == 'verified'

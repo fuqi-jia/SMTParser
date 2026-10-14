@@ -18,7 +18,7 @@ _MODEL = _FIXTURES / "json_equiv.mzn"
 def _solver(data_file):
     result = sp.translate(path=str(_MODEL), data=[str(_FIXTURES / data_file)],
                          language="minizinc")
-    assert result.ok, result.diagnostics[0].message if result.diagnostics else "translation failed"
+    assert result.ok, result.diagnostic_items[0].message if result.diagnostic_items else "translation failed"
     solver = z3.Solver()
     solver.add(*z3.parse_smt2_string(result.to_smt2()))
     return solver
@@ -54,7 +54,7 @@ def test_each_json_data_field_is_semantically_necessary(change, tmp_path):
     changed_file.write_text(json.dumps(data), encoding="utf-8")
     result = sp.translate(path=str(_MODEL), data=[str(changed_file)],
                          language="minizinc")
-    assert result.ok, result.diagnostics[0].message if result.diagnostics else "translation failed"
+    assert result.ok, result.diagnostic_items[0].message if result.diagnostic_items else "translation failed"
     solver = z3.Solver()
     solver.add(*z3.parse_smt2_string(result.to_smt2()))
     assert solver.check() == z3.unsat
@@ -64,7 +64,7 @@ def test_json_surrogate_pair_quote_and_backslash_are_preserved(tmp_path):
     model = _FIXTURES / "json_escaped_string.mzn"
     data = _FIXTURES / "json_escaped_string.json"
     result = sp.translate(path=str(model), data=[str(data)], language="minizinc")
-    assert result.ok, result.diagnostics[0].message if result.diagnostics else "translation failed"
+    assert result.ok, result.diagnostic_items[0].message if result.diagnostic_items else "translation failed"
     solver = z3.Solver()
     solver.add(*z3.parse_smt2_string(result.to_smt2()))
     assert solver.check() == z3.sat
@@ -74,7 +74,7 @@ def test_json_surrogate_pair_quote_and_backslash_are_preserved(tmp_path):
     wrong_data = tmp_path / "json_escaped_string_wrong.json"
     wrong_data.write_text(json.dumps(wrong), encoding="utf-8")
     changed = sp.translate(path=str(model), data=[str(wrong_data)], language="minizinc")
-    assert changed.ok, changed.diagnostics[0].message if changed.diagnostics else "translation failed"
+    assert changed.ok, changed.diagnostic_items[0].message if changed.diagnostic_items else "translation failed"
     solver = z3.Solver()
     solver.add(*z3.parse_smt2_string(changed.to_smt2()))
     assert solver.check() == z3.unsat
@@ -86,7 +86,7 @@ def test_mixed_json_set_ranges_preserve_holes_and_endpoints(tmp_path):
     result = sp.translate(
         source="set of int: allowed; var int: x; constraint x in allowed; solve satisfy;",
         language="minizinc", data=[str(data)])
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.add(*z3.parse_smt2_string(result.to_smt2()))
     for value in range(-4, 12):
@@ -102,14 +102,14 @@ def test_fixed_integer_set_does_not_hide_invalid_element_type():
         source="set of int: empty = {}; constraint true in empty; solve satisfy;",
         language="minizinc")
     assert not result.ok
-    assert any("integer element" in d.message for d in result.diagnostics)
+    assert any("integer element" in d.message for d in result.diagnostic_items)
 
 
 def test_json_multifile_fixture_preserves_actual_coordinate_values_and_set_holes():
     result = sp.translate(path=str(_FIXTURES / "json_data.mzn"),
                           data=[str(_FIXTURES / "json_data.json")],
                           language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.add(*z3.parse_smt2_string(result.to_smt2()))
     expected = z3.And(z3.Int("x") == 2, z3.Int("z") == 6,

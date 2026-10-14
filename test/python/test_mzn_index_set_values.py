@@ -6,7 +6,7 @@ import somtparser as sp
 
 def translate(source):
     result = sp.translate(source=source + '\nsolve satisfy;', language='minizinc')
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     return z3.And(*z3.parse_smt2_string(result.to_smt2()))
 
 
@@ -71,7 +71,7 @@ def test_wrong_array_rank_is_rejected(function):
     result=sp.translate(source=f'array[1..2,4..5] of var int:a; '
         f'set of int:S={function}(a); solve satisfy;',language='minizinc')
     assert not result.ok
-    assert any('dimension' in d.message or 'rank' in d.message for d in result.diagnostics)
+    assert any('dimension' in d.message or 'rank' in d.message for d in result.diagnostic_items)
 
 
 def test_local_array_alias_index_sets_are_independent():
@@ -147,7 +147,7 @@ def test_inferred_parameter_array_rank_preserves_each_constructor_axis(rank, fro
         path=tmp_path/'data.dzn';path.write_text('a='+initializer+';')
         kwargs['data']=[str(path)]
     result=sp.translate(source=source,language='minizinc',**kwargs)
-    assert result.ok,[d.message for d in result.diagnostics]
+    assert result.ok,[d.message for d in result.diagnostic_items]
     formula=z3.And(*z3.parse_smt2_string(result.to_smt2()))
     solver=z3.Solver();solver.add(z3.Xor(formula,z3.Int('q')==10+2**rank))
     assert solver.check()==z3.unsat
@@ -175,7 +175,7 @@ def test_inferred_decision_matrix_keeps_constructor_axes_and_aliases():
 def test_inferred_array_rank_is_checked(typ,shape,value):
     result=sp.translate(source=f'array[{shape}] of {typ}:a={value}; solve satisfy;',language='minizinc')
     assert not result.ok
-    assert any('rank' in d.message for d in result.diagnostics)
+    assert any('rank' in d.message for d in result.diagnostic_items)
 
 
 def test_inferred_empty_matrix_preserves_nonempty_second_axis():

@@ -45,7 +45,7 @@ def translate(raw, route):
         else:
             source = expand_cp_model(raw) if route == "expanded" else raw
             result = build_hir(source, "x").translate()
-        assert result.ok, [d.message for d in result.diagnostics]
+        assert result.ok, [d.message for d in result.diagnostic_items]
         return z3.And(*z3.parse_smt2_string(result.to_smt2()))
     finally:
         assert raw == before
@@ -206,7 +206,7 @@ def test_public_empty_vector_expansion_keeps_its_structural_list_contract():
     builder.declare("result", "Int")
     builder.constrain(op("eq", var("result"), expanded))
     translated = builder.translate(dialect=sp.OmtDialect.Z3)
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     loaded = z3.Optimize()
     loaded.from_string(translated.to_smt2(dialect=sp.OmtDialect.Z3))
     assert len(loaded.objectives()) == 0

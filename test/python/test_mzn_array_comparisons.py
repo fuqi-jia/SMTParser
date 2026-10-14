@@ -78,7 +78,7 @@ def test_reference_semantics(name, source, expected):
     if expected == "reject":
         assert not result.ok
         return
-    assert result.ok, [diagnostic.message for diagnostic in result.diagnostics]
+    assert result.ok, [diagnostic.message for diagnostic in result.diagnostic_items]
     context = z3.Context()
     solver = z3.Solver(ctx=context)
     solver.set(timeout=5000)

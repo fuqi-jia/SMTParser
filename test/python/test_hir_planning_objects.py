@@ -20,7 +20,7 @@ def fixture(names=('x', 'y')):
 
 def body(model):
     result = model.translate()
-    assert result.ok, [row.message for row in result.diagnostics]
+    assert result.ok, [row.message for row in result.diagnostic_items]
     return z3.And(*z3.parse_smt2_string(result.to_smt2()))
 
 

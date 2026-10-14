@@ -17,7 +17,7 @@ def test_json_hir_equality_matches_independent_chain(sort, smt_sort, negated):
     equal = {"op": "eq", "args": [{"var": name} for name in names]}
     builder.constrain({"op": "not", "args": [equal]} if negated else equal)
     result = builder.translate()
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     reference = ''.join(f'(declare-const {name} {smt_sort})' for name in names)
     chain = '(and (= a b) (= b c) (= c d))'
     reference += '(assert ' + ('(not ' + chain + ')' if negated else chain) + ')'

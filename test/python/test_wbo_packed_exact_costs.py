@@ -14,7 +14,7 @@ def padding():
 
 def translated(source, require_strategy=True):
     result = sp.translate(source=source, language="opb", dialect=sp.OmtDialect.Z3)
-    assert result.ok, [item.message for item in result.diagnostics]
+    assert result.ok, [item.message for item in result.diagnostic_items]
     assert result.uses_packed_smt_stream
     if require_strategy:
         assert any(c.strategy == "packed-exact-weighted-violations" for c in result.report.choices)

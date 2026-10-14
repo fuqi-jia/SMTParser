@@ -42,7 +42,7 @@ def indexed(n, indices, *args):
 
 def relation(builder):
     t = builder.translate()
-    assert t.ok, [d.message for d in t.diagnostics]
+    assert t.ok, [d.message for d in t.diagnostic_items]
     return z3.And(*z3.parse_smt2_string(t.to_smt2()))
 
 

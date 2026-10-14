@@ -14,7 +14,7 @@ def encode(tmp_path, body, network, horizon, depth=1, goal="(and)", initial=""):
                        "(:init " + initial + ") (:goal " + goal + "))")
     result = sp.translate(source=domain, language="hddl", data=[str(problem)], profile="bmc",
                           options={"plan_horizon": str(horizon), "decomposition_depth": str(depth)})
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     context = z3.Context()
     solver = z3.Solver(ctx=context)
     solver.set(timeout=10000)

@@ -30,7 +30,7 @@ def check_source_and_roundtrip(source, expected):
         language="smtlib2",
         options={"cvc5_sets": "1"},
     )
-    assert translated.ok, [item.message for item in translated.diagnostics]
+    assert translated.ok, [item.message for item in translated.diagnostic_items]
     target = translated.to_smt2()
     if "(check-sat)" not in target:
         target += "\n(check-sat)\n"

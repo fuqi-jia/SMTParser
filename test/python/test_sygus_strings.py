@@ -68,7 +68,7 @@ def check_explicit_string_function_witness(translated, use_first_argument):
 
 def test_pinned_official_pbe_slia_grammar_translates_and_z3_parses():
     translated = translate(OFFICIAL.read_text(encoding="utf-8"))
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     assert translated.report.fidelity.sound
     assert not translated.report.fidelity.complete
     script = translated.to_smt2()
@@ -84,7 +84,7 @@ def test_escaped_quotes_and_unicode_strings_are_preserved_for_z3():
 (constraint (= f "a""b"))
 (check-synth)'''
     translated = translate(source, depth=0)
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     assert check_z3(translated) == z3.sat
 
 
@@ -97,7 +97,7 @@ def test_quoted_symbols_remain_single_identifiers():
 (constraint g)
 (check-synth)'''
     translated = translate(source, depth=0)
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     assert "|x odd|" in translated.to_smt2()
     assert check_z3(translated) == z3.sat
 
@@ -111,7 +111,7 @@ def test_empty_and_quote_bearing_identifiers_round_trip_through_variable_grammar
 (constraint g)
 (check-synth)'''
     translated = translate(source, depth=0)
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     script = translated.to_smt2()
     assert '|x"y|' in script
     # The shared lowerer alpha-renames builtin spellings. Inspect the parsed
@@ -149,7 +149,7 @@ def test_string_operators_in_grammar_and_constraints_are_typed_and_parsed():
 (constraint (= (str.replace "abc" "b" "x") "axc"))
 (check-synth)'''
     translated = translate(source)
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     assert check_z3(translated) == z3.sat
 
 
@@ -159,14 +159,14 @@ def test_legacy_string_conversion_operators_preserve_candidate_semantics():
 (constraint (= (f 12) "12"))
 (check-synth)'''
     translated = translate(to_string, depth=0)
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     script = translated.to_smt2()
     assert "int.to.str" not in script
     assert check_z3(translated) == z3.sat
 
     contradictory = to_string.replace('"12"', '"13"')
     translated_bad = translate(contradictory, depth=0)
-    assert translated_bad.ok, [d.message for d in translated_bad.diagnostics]
+    assert translated_bad.ok, [d.message for d in translated_bad.diagnostic_items]
     assert check_z3(translated_bad) == z3.unsat
 
     to_int = r'''(set-logic SLIA)
@@ -174,14 +174,14 @@ def test_legacy_string_conversion_operators_preserve_candidate_semantics():
 (constraint (= (g "12") 12))
 (check-synth)'''
     translated = translate(to_int, depth=0)
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     script = translated.to_smt2()
     assert "str.to.int" not in script
     assert check_z3(translated) == z3.sat
 
     contradictory = to_int.replace('12))', '13))')
     translated_bad = translate(contradictory, depth=0)
-    assert translated_bad.ok, [d.message for d in translated_bad.diagnostics]
+    assert translated_bad.ok, [d.message for d in translated_bad.diagnostic_items]
     assert check_z3(translated_bad) == z3.unsat
 
 
@@ -193,7 +193,7 @@ def test_joint_candidates_normalize_legacy_string_conversion_operators():
 (constraint (= (g "34") 34))
 (check-synth)'''
     translated = translate(source, depth=0)
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     script = translated.to_smt2()
     assert "str.from_int" in script
     assert "str.to_int" in script
@@ -209,7 +209,7 @@ def test_user_helper_named_like_legacy_alias_is_not_rewritten_in_all_logic():
 (constraint (= (f 1) "manual"))
 (check-synth)'''
     translated = translate(source, depth=0)
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     script = translated.to_smt2()
     assert "str.from_int" not in script
     assert "int.to.str" not in script
@@ -224,7 +224,7 @@ def test_user_helper_named_like_reverse_legacy_alias_is_not_rewritten_in_all_log
 (constraint (= (f "anything") 7))
 (check-synth)'''
     translated = translate(source, depth=0)
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     script = translated.to_smt2()
     assert "str.to.int" not in script
     assert "str.to_int" not in script
@@ -237,7 +237,7 @@ def test_fixed_string_candidate_is_unsat_for_conflicting_example():
 (constraint (= f "wrong"))
 (check-synth)'''
     translated = translate(source, depth=0)
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     assert check_z3(translated) == z3.unsat
 
 
@@ -250,7 +250,7 @@ def test_string_grammar_rejects_wrong_operator_argument_sorts():
     assert not translated.ok
     assert any("str.at requires (String, Int)" in d.message
                or "grammar str.at" in d.message
-               for d in translated.diagnostics)
+               for d in translated.diagnostic_items)
 
 
 def test_quoted_symbol_rejects_forbidden_backslash():
@@ -260,7 +260,7 @@ def test_quoted_symbol_rejects_forbidden_backslash():
     translated = translate(source, depth=0)
     assert not translated.ok
     assert any("invalid character in SMT-LIB quoted symbol" in d.message
-               for d in translated.diagnostics)
+               for d in translated.diagnostic_items)
 
 
 def test_quoted_symbols_allow_tab_and_newline_whitespace():
@@ -270,7 +270,7 @@ def test_quoted_symbols_allow_tab_and_newline_whitespace():
 (constraint (= (f "x" "x") "x"))
 (check-synth)'''
     translated = translate(source, depth=0)
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     assert check_z3(translated) == z3.sat
 
 
@@ -280,7 +280,7 @@ def test_string_literal_does_not_alias_same_named_parameter_during_instantiation
 (constraint (= (f "other") "p"))
 (check-synth)'''
     translated = translate(source, depth=0)
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     assert check_z3(translated) == z3.sat
 
 
@@ -291,7 +291,7 @@ def test_string_literal_does_not_alias_unused_same_named_global():
 (constraint (= (str.len f) 1))
 (check-synth)'''
     translated = translate(source, depth=0)
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     assert check_z3(translated) == z3.sat
 
 
@@ -303,7 +303,7 @@ def test_string_literal_matching_helper_name_is_not_a_recursive_reference():
 (constraint (= (|"h"| "other") "h"))
 (check-synth)'''
     translated = translate(source, depth=0)
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     assert check_z3(translated) == z3.sat
 
 
@@ -313,7 +313,7 @@ def test_string_literal_matching_synth_name_survives_reference_renaming():
 (constraint (= |"f"| "f"))
 (check-synth)'''
     translated = translate(source, depth=0)
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     assert check_z3(translated) == z3.sat
 
     negative = r'''(set-logic SLIA)
@@ -321,5 +321,5 @@ def test_string_literal_matching_synth_name_survives_reference_renaming():
 (constraint (= |"f"| "f"))
 (check-synth)'''
     translated = translate(negative, depth=0)
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     assert check_z3(translated) == z3.unsat

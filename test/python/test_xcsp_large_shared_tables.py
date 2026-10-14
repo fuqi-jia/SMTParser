@@ -21,7 +21,7 @@ def test_large_functional_table_is_shared_with_exact_boundary_semantics(kind):
               '<args>a b u</args><args>c d v</args>'
               '</group></constraints></instance>')
     result = sp.translate(source=source, language='xcsp3')
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     script = result.to_smt2()
     helpers = re.findall(r'\(define-fun (__somt_xcsp_group_\d+)\s+\(', script)
     assert len(helpers) == 1

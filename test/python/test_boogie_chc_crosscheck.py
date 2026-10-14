@@ -34,7 +34,7 @@ ROUTE_B_EXCLUDED = {"call_forall": "quantified lemma assumption is not a Horn cl
 
 def verdict_direct(source):
     t = sp.translate(source=source, language="boogie")
-    assert t.ok, t.diagnostics[0].message if t.diagnostics else "no model"
+    assert t.ok, t.diagnostic_items[0].message if t.diagnostic_items else "no model"
     solver = z3.Solver()
     solver.set("timeout", 20000)
     solver.from_string(t.to_smt2())
@@ -167,9 +167,9 @@ def test_boogie_chc_crosscheck(name, source, expected):
         # The named route-B refusal, pinned so a silent change in what the
         # Horn route cannot express shows up here.
         assert not tb.ok
-        assert any("not a Horn clause" in d.message for d in tb.diagnostics)
+        assert any("not a Horn clause" in d.message for d in tb.diagnostic_items)
         return
-    assert tb.ok, f"chc emission failed: {tb.diagnostics[0].message if tb.diagnostics else ''}"
+    assert tb.ok, f"chc emission failed: {tb.diagnostic_items[0].message if tb.diagnostic_items else ''}"
 
     text = tb.to_smt2()
     # The format check: our own chc frontend validates the CHC-COMP shape (the
@@ -180,9 +180,9 @@ def test_boogie_chc_crosscheck(name, source, expected):
     horn_text = text.replace("(set-logic ALL)", "(set-logic HORN)", 1)
     fmt = sp.translate(source=horn_text, language="chc")
     if not fmt.ok:
-        assert any("must return Bool" in d.message for d in fmt.diagnostics), (
+        assert any("must return Bool" in d.message for d in fmt.diagnostic_items), (
             "emitted text is not CHC-COMP-shaped: "
-            + (fmt.diagnostics[0].message if fmt.diagnostics else ""))
+            + (fmt.diagnostic_items[0].message if fmt.diagnostic_items else ""))
 
     route_b = horn_verdict(text)
     assert route_a == route_b, (

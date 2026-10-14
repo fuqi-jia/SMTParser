@@ -51,7 +51,7 @@ def test_json_record_fields_bind_by_name_and_nested_selection_is_typed(tmp_path)
         "shade": {"e": "blue"},
         "units": 2,
     }})
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     formula = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     _assert_exact_total(formula, z3.Int("total"), 7)
 
@@ -70,7 +70,7 @@ def test_typed_record_binding_rejects_missing_unknown_and_mistyped_fields(
         tmp_path, record, diagnostic):
     result = _translate(tmp_path, {"entry": record})
     assert not result.ok
-    assert any(diagnostic in d.message for d in result.diagnostics)
+    assert any(diagnostic in d.message for d in result.diagnostic_items)
 
 
 def test_duplicate_record_field_is_rejected_by_json_reader(tmp_path):
@@ -82,7 +82,7 @@ def test_duplicate_record_field_is_rejected_by_json_reader(tmp_path):
     result = sp.translate(source=MODEL, language="minizinc", data=[str(data)])
     assert not result.ok
     assert any("duplicate JSON record field 'units'" in d.message
-               for d in result.diagnostics)
+               for d in result.diagnostic_items)
 
 
 @pytest.mark.parametrize("declaration", [
@@ -105,7 +105,7 @@ solve satisfy;
         {"units": 4, "label": "second"},
     ]}), encoding="utf-8")
     result = sp.translate(source=source, language="minizinc", data=[str(data)])
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     formula = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     _assert_exact_total(formula, z3.Int("total"), 7)
 
@@ -131,7 +131,7 @@ solve satisfy;
     data = tmp_path / "patients.json"
     data.write_text(json.dumps({"patients": records}), encoding="utf-8")
     result = sp.translate(source=source, language="minizinc", data=[str(data)])
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     formula = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     x = z3.Array("x", z3.IntSort(), z3.IntSort())
     expected = z3.And(*[z3.And(x[i] >= 0, x[i] <= 9) for i in range(1, 4)],
@@ -156,7 +156,7 @@ solve satisfy;
         {"units": 4, "action": "buy"},
     ]}), encoding="utf-8")
     result = sp.translate(source=source, language="minizinc", data=[str(data)])
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     formula = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     _assert_exact_total(formula, z3.Int("bought_units"), 7)
 
@@ -178,7 +178,7 @@ solve satisfy;
     data = tmp_path / "local-records.json"
     data.write_text(json.dumps({"entries": [{"units": 3}, {"units": 7}]}))
     result = sp.translate(source=source, language="minizinc", data=[str(data)])
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     formula = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     reference = z3.And(z3.Int("selected") == expected, z3.Int("outer_total") == 10)
     solver = z3.Solver()
@@ -199,7 +199,7 @@ solve satisfy;
     data.write_text(json.dumps({"entries": entries}))
     result = sp.translate(source=source, language="minizinc", data=[str(data)])
     assert not result.ok
-    assert any("not structurally compatible" in d.message for d in result.diagnostics)
+    assert any("not structurally compatible" in d.message for d in result.diagnostic_items)
 
 
 def test_local_record_list_coerces_structural_aliases_and_field_order(tmp_path):
@@ -216,7 +216,7 @@ solve satisfy;
     data.write_text(json.dumps({"entries": [
         {"units": 3, "label": "selected"}, {"units": 7, "label": "other"}]}))
     result = sp.translate(source=source, language="minizinc", data=[str(data)])
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     formula = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     _assert_exact_total(formula, z3.Real("total"), 3)
 
@@ -232,7 +232,7 @@ solve satisfy;
     data.write_text('{"entries":[{"units":3},{"units":7}]}')
     result = sp.translate(source=source, language="minizinc", data=[str(data)])
     assert not result.ok
-    assert any("indexed from 1" in d.message for d in result.diagnostics)
+    assert any("indexed from 1" in d.message for d in result.diagnostic_items)
 
 
 @pytest.mark.parametrize("declaration", ["var int: x;", "var 0..2: x;"])
@@ -247,7 +247,7 @@ solve satisfy;
 """
     result = sp.translate(source=source, language="minizinc")
     assert not result.ok
-    assert any("cannot depend on a decision value" in d.message for d in result.diagnostics)
+    assert any("cannot depend on a decision value" in d.message for d in result.diagnostic_items)
 
 
 @pytest.mark.parametrize("rooms, occupants, expected", [
@@ -272,7 +272,7 @@ solve satisfy;
     data = tmp_path / "room-lookup.json"
     data.write_text(json.dumps({"rooms": rooms, "occupants": occupants}))
     result = sp.translate(source=source, language="minizinc", data=[str(data)])
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     formula = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     _assert_exact_total(formula, z3.Int("total"), expected)
 
@@ -290,7 +290,7 @@ solve satisfy;
     data = tmp_path / "nested-empty-records.json"
     data.write_text('{"entries":[]}')
     result = sp.translate(source=source, language="minizinc", data=[str(data)])
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     formula = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     _assert_exact_total(formula, z3.Int("total"), 0)
 
@@ -307,7 +307,7 @@ solve satisfy;
     data.write_text('{"entries":[]}')
     result = sp.translate(source=source, language="minizinc", data=[str(data)])
     assert not result.ok
-    assert any("Int" in d.message or "no field" in d.message for d in result.diagnostics)
+    assert any("Int" in d.message or "no field" in d.message for d in result.diagnostic_items)
 
 
 def test_nonempty_generator_does_not_hide_missing_record_lookup(tmp_path):
@@ -323,7 +323,7 @@ solve satisfy;
     # The pinned MiniZinc compiler closes the missing read to false at the
     # equality. It must neither reject a valid partial expression nor let the
     # record probe's placeholder zero turn this constraint into true.
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.add(z3.parse_smt2_string(result.to_smt2()))
     assert solver.check() == z3.unsat
@@ -361,7 +361,7 @@ def test_computed_record_lookup_preserves_context(tmp_path, context):
     data = tmp_path / "record-lookup-context.json"
     data.write_text(json.dumps({"entries": entries}))
     result = sp.translate(source=source, language="minizinc", data=[str(data)])
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     formula = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     solver = z3.Solver()
     solver.add(z3.Xor(formula, expected))
@@ -379,7 +379,7 @@ solve satisfy;
     data = tmp_path / "tag-field.json"
     data.write_text(json.dumps({"tagged": {field: value}}), encoding="utf-8")
     result = sp.translate(source=source, language="minizinc", data=[str(data)])
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     formula = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     solver = z3.Solver()
     solver.add(formula)
@@ -397,7 +397,7 @@ solve satisfy;
     data = tmp_path / "enum-tag-field.json"
     data.write_text('{"tagged":{"e":"blue"}}', encoding="utf-8")
     result = sp.translate(source=source, language="minizinc", data=[str(data)])
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     formula = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     solver = z3.Solver()
     solver.add(formula)
@@ -418,7 +418,7 @@ solve satisfy;
     data.write_text(json.dumps({"entries": [{"units": -3}, {"units": 10}]}),
                     encoding="utf-8")
     result = sp.translate(source=source, language="minizinc", data=[str(data)])
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     formula = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     _assert_exact_total(formula, z3.Int("total"), 7)
 
@@ -428,7 +428,7 @@ solve satisfy;
     assert any(d.code == sp.ErrorCode.E_TYPE
                and "expected enum 'Slot'" in d.message
                and "source type 'Other'" in d.message
-               for d in rejected.diagnostics)
+               for d in rejected.diagnostic_items)
 
 
 def test_negative_integer_and_real_record_cells_keep_their_numeric_values(tmp_path):
@@ -445,7 +445,7 @@ solve satisfy;
         '{"limits":{"floor":-9223372036854775808,"offset":-0.25}}',
         encoding="utf-8")
     result = sp.translate(source=source, language="minizinc", data=[str(data)])
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     formula = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     _assert_exact_total(formula, z3.Int("total"), -(2 ** 63))
 
@@ -455,7 +455,7 @@ solve satisfy;
     rejected = sp.translate(source=source, language="minizinc", data=[str(data)])
     assert not rejected.ok
     assert any("integer record field 'floor' is out of range" in d.message
-               for d in rejected.diagnostics)
+               for d in rejected.diagnostic_items)
 
 
 def test_record_array_at_maximum_index_does_not_reconstruct_overflowed_shape(tmp_path):
@@ -469,7 +469,7 @@ solve satisfy;
     data = tmp_path / "maximum-index.json"
     data.write_text('{"entries":[{"units":11}]}', encoding="utf-8")
     result = sp.translate(source=source, language="minizinc", data=[str(data)])
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     formula = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     _assert_exact_total(formula, z3.Int("total"), 11)
 
@@ -491,7 +491,7 @@ solve satisfy;
     data = tmp_path / "empty-records.json"
     data.write_text('{"entries":[],"ordinary":[]}', encoding="utf-8")
     result = sp.translate(source=source, language="minizinc", data=[str(data)])
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     formula = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     _assert_exact_total(formula, z3.Int("total"), 0)
 
@@ -518,7 +518,7 @@ solve satisfy;
             {"active": True, "day": 4}], "id": 20},
     ]}), encoding="utf-8")
     result = sp.translate(source=source, language="minizinc", data=[str(data)])
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     formula = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     _assert_exact_total(formula, z3.Int("total"), 43)
 
@@ -541,7 +541,7 @@ solve satisfy;
         {"id": 2, "working_shifts": [{"day": 5}], "skills": [7, 8]},
     ]}), encoding="utf-8")
     result = sp.translate(source=source, language="minizinc", data=[str(data)])
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     formula = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     _assert_exact_total(formula, z3.Int("total"), 34)
 
@@ -560,7 +560,7 @@ R: r;
     data = tmp_path / "boolean-list-oob.json"
     data.write_text('{"r":{"flags":[true]}}', encoding="utf-8")
     result = sp.translate(source=source, language="minizinc", data=[str(data)])
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     formula = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     solver = z3.Solver()
     solver.add(formula)
@@ -582,7 +582,7 @@ solve satisfy;
     result = sp.translate(source=source, language="minizinc", data=[str(data)])
     assert not result.ok
     assert any("whole-record equality is not implemented" in d.message
-               for d in result.diagnostics)
+               for d in result.diagnostic_items)
 
 
 def test_list_of_lists_is_refused_instead_of_flattened(tmp_path):
@@ -600,12 +600,12 @@ solve satisfy;
     # is lowered. Keep this data-path regression as well as a parser-only check
     # of the source construct so neither route can silently flatten the list.
     assert any("unsupported value in JSON record" in d.message
-               for d in result.diagnostics)
+               for d in result.diagnostic_items)
     schema_only = sp.translate(source=source, language="minizinc")
     assert not schema_only.ok
     assert any(d.code == sp.ErrorCode.E_UNSUPPORTED_CONSTRUCT
                and "nested list-valued record fields are not implemented" in d.message
-               for d in schema_only.diagnostics)
+               for d in schema_only.diagnostic_items)
 
 
 def test_ihtc_top_level_scalar_lists_bind_json_length_iteration_and_index(tmp_path):
@@ -626,7 +626,7 @@ solve satisfy;
         "genders": ["A", "B"],
     }), encoding="utf-8")
     result = sp.translate(source=source, language="minizinc", data=[str(data)])
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     formula = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     solver = z3.Solver()
     solver.add(formula)
@@ -647,7 +647,7 @@ solve satisfy;
     data.write_text(json.dumps({"empty_values": [], "prices": [1, 2.75]}),
                     encoding="utf-8")
     result = sp.translate(source=source, language="minizinc", data=[str(data)])
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     formula = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     solver = z3.Solver()
     solver.add(formula)
@@ -664,7 +664,7 @@ solve satisfy;
     data = tmp_path / "bool-list.json"
     data.write_text('{"flags":[true,false]}', encoding="utf-8")
     result = sp.translate(source=source, language="minizinc", data=[str(data)])
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     formula = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     solver = z3.Solver()
     solver.add(formula)
@@ -681,7 +681,7 @@ solve satisfy;
     data = tmp_path / "enum-list.json"
     data.write_text(json.dumps({"colors": ["Red", "Blue"]}), encoding="utf-8")
     result = sp.translate(source=source, language="minizinc", data=[str(data)])
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
 
     mismatched_source = """
 enum Color = {Red, Blue};
@@ -697,7 +697,7 @@ solve satisfy;
     assert not mismatch.ok
     assert any("not a member of enum 'Color'" in d.message
                or "not a member of type 'Color'" in d.message
-               for d in mismatch.diagnostics)
+               for d in mismatch.diagnostic_items)
 
 
 def test_top_level_scalar_list_rejects_wrong_element_type(tmp_path):
@@ -706,7 +706,7 @@ def test_top_level_scalar_list_rejects_wrong_element_type(tmp_path):
     data.write_text('{"counts":["seven"]}', encoding="utf-8")
     result = sp.translate(source=source, language="minizinc", data=[str(data)])
     assert not result.ok
-    assert any(d.code == sp.ErrorCode.E_TYPE for d in result.diagnostics)
+    assert any(d.code == sp.ErrorCode.E_TYPE for d in result.diagnostic_items)
 
 
 def test_record_functions_from_included_frame_return_and_filter_records(tmp_path):
@@ -734,7 +734,7 @@ solve satisfy;
         "rooms": [{"id": "r1"}, {"id": "r0"}],
     }), encoding="utf-8")
     result = sp.translate(path=str(source), language="minizinc", data=[str(data)])
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.add(z3.And(*z3.parse_smt2_string(result.to_smt2())))
     assert solver.check() == z3.sat
@@ -744,7 +744,7 @@ solve satisfy;
         "constraint has_room(occupants[1], rooms[2]) /\\ not has_room(occupants[1], rooms[2]);"),
         encoding="utf-8")
     contradictory = sp.translate(path=str(source), language="minizinc", data=[str(data)])
-    assert contradictory.ok, [d.message for d in contradictory.diagnostics]
+    assert contradictory.ok, [d.message for d in contradictory.diagnostic_items]
     solver = z3.Solver()
     solver.add(z3.And(*z3.parse_smt2_string(contradictory.to_smt2())))
     assert solver.check() == z3.unsat
@@ -759,7 +759,7 @@ constraint choose(choices[1]) /\\ choose(choices[2]);
 solve satisfy;
 """
     result = sp.translate(source=source, language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     script = result.to_smt2()
     from _public_relation import private_witness_names, public_relation
     assert len(private_witness_names(result)) == 2
@@ -780,7 +780,7 @@ constraint add_one(4) = 6;
 solve satisfy;
 """
     result = sp.translate(source=source, language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.add(z3.And(*z3.parse_smt2_string(result.to_smt2())))
     assert solver.check() == z3.unsat
@@ -798,7 +798,7 @@ solve satisfy;
     data = tmp_path / "wrong-record-function-type.json"
     data.write_text(json.dumps({"values": [{"id": 1}]}), encoding="utf-8")
     result = sp.translate(source=source, language="minizinc", data=[str(data)])
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
 
     # Record aliases with a changed field name or field type are not
     # structurally compatible, even when their tuple carrier sorts coincide.
@@ -818,7 +818,7 @@ solve satisfy;
         assert not rejected.ok
         assert any("structurally compatible" in d.message
                    or "incompatible structural types" in d.message
-                   for d in rejected.diagnostics)
+                   for d in rejected.diagnostic_items)
 
 
 def test_empty_bool_string_and_float_lists_keep_declared_scalar_types(tmp_path):
@@ -834,7 +834,7 @@ solve satisfy;
         "empty_flags": [], "empty_names": [], "empty_values": []
     }), encoding="utf-8")
     result = sp.translate(source=source, language="minizinc", data=[str(data)])
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.add(z3.And(*z3.parse_smt2_string(result.to_smt2())))
     assert solver.check() == z3.unsat
@@ -847,7 +847,7 @@ constraint not first_is_one([1, 2.5]);
 solve satisfy;
 """
     result = sp.translate(source=source, language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.add(z3.And(*z3.parse_smt2_string(result.to_smt2())))
     assert solver.check() == z3.unsat
@@ -861,7 +861,7 @@ solve satisfy;
 """
     result = sp.translate(source=list_return, language="minizinc")
     assert not result.ok
-    assert any("return type" in d.message for d in result.diagnostics)
+    assert any("return type" in d.message for d in result.diagnostic_items)
 
 
 def test_function_free_names_use_definition_scope_when_caller_let_shadows_name():
@@ -872,7 +872,7 @@ constraint let { int: g = 9 } in add_global(2) = 3;
 solve satisfy;
 """
     result = sp.translate(source=source, language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.add(z3.And(*z3.parse_smt2_string(result.to_smt2())))
     assert solver.check() == z3.sat
@@ -886,7 +886,7 @@ constraint sum(g in [9])(add_global(2)) = 3;
 solve satisfy;
 """
     result = sp.translate(source=source, language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.add(z3.And(*z3.parse_smt2_string(result.to_smt2())))
     assert solver.check() == z3.sat
@@ -901,7 +901,7 @@ solve satisfy;
 """
     result = sp.translate(source=source, language="minizinc")
     assert not result.ok
-    assert any("fixed-return function" in d.message for d in result.diagnostics)
+    assert any("fixed-return function" in d.message for d in result.diagnostic_items)
 
 
 def test_fixed_function_return_may_ignore_var_formal():
@@ -912,7 +912,7 @@ constraint constant(decision) = 7;
 solve satisfy;
 """
     result = sp.translate(source=source, language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.add(z3.And(*z3.parse_smt2_string(result.to_smt2())))
     assert solver.check() == z3.sat
@@ -926,7 +926,7 @@ constraint identity(decision) = decision;
 solve satisfy;
 """
     result = sp.translate(source=source, language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
 
 
 def test_fixed_function_return_cannot_depend_on_global_decision_variable():
@@ -939,7 +939,7 @@ solve satisfy;
     result = sp.translate(source=source, language="minizinc")
     assert not result.ok
     assert any("depends on a decision variable" in d.message
-               for d in result.diagnostics)
+               for d in result.diagnostic_items)
 
 
 def test_nested_function_free_name_keeps_definition_environment_under_caller_let():
@@ -951,7 +951,7 @@ constraint let { int: g = 9 } in outer(2) = 3;
 solve satisfy;
 """
     result = sp.translate(source=source, language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.add(z3.And(*z3.parse_smt2_string(result.to_smt2())))
     assert solver.check() == z3.sat
@@ -965,4 +965,4 @@ solve satisfy;
 """
     result = sp.translate(source=source, language="minizinc")
     assert not result.ok
-    assert any("fixed-return function" in d.message for d in result.diagnostics)
+    assert any("fixed-return function" in d.message for d in result.diagnostic_items)

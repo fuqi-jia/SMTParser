@@ -111,7 +111,7 @@ def list_model(extra_constraint=None):
 
 def compile_json(candidate):
     translated = build_hir(candidate, "x").translate()
-    assert translated.ok, [item.message for item in translated.diagnostics]
+    assert translated.ok, [item.message for item in translated.diagnostic_items]
     return translated.to_smt2()
 
 
@@ -172,7 +172,7 @@ def test_forward_mutual_recursive_datatypes_resolve_as_one_batch():
         op("eq", var("x"), dt_ctor("fromB", {"Datatype": "A"}, dt_ctor("b0", {"Datatype": "B"})))
     )
     translated = builder.translate()
-    assert translated.ok, [item.message for item in translated.diagnostics]
+    assert translated.ok, [item.message for item in translated.diagnostic_items]
     assert cvc5_status(translated.to_smt2()) == "sat"
 
 
@@ -209,7 +209,7 @@ def test_wrong_selector_result_sort_is_rejected_by_native_typecheck():
     builder.constrain(op("eq", dt_sel("head", "Real", var("xs")), lit("7", "Real")))
     result = builder.translate()
     assert not result.ok
-    assert any("selector 'head' yields Int" in item.message for item in result.diagnostics)
+    assert any("selector 'head' yields Int" in item.message for item in result.diagnostic_items)
 
 
 def test_frontend_productivity_accepts_nested_parametric_constructor_path():
@@ -250,7 +250,7 @@ def test_frontend_productivity_accepts_nested_parametric_constructor_path():
         op("eq", var("d"), dt_ctor("wrapBox", d_sort, dt_ctor("emptyBox", box_d)))
     )
     translated = builder.translate()
-    assert translated.ok, [item.message for item in translated.diagnostics]
+    assert translated.ok, [item.message for item in translated.diagnostic_items]
     # This checks the direct HIR productivity analysis only. The current
     # serializer emits Box and D separately, and cvc5 rejects this nested
     # recursive type as not well-founded. Root's read-only probe also found
@@ -278,7 +278,7 @@ def test_failed_datatype_batch_rolls_back_and_allows_retry():
     builder.declare("x", retry_sort)
     builder.constrain(op("eq", var("x"), dt_ctor("retryGood", retry_sort)))
     translated = builder.translate()
-    assert translated.ok, [item.message for item in translated.diagnostics]
+    assert translated.ok, [item.message for item in translated.diagnostic_items]
     assert cvc5_status(translated.to_smt2()) == "sat"
 
 
@@ -390,7 +390,7 @@ def test_finite_nested_parametric_instances_and_parameter_propagation():
                 dt_ctor("box", {"Datatype": {"name": "Box", "args": ["Int"]}}, lit(23)))))
     )
     translated = builder.translate()
-    assert translated.ok, [item.message for item in translated.diagnostics]
+    assert translated.ok, [item.message for item in translated.diagnostic_items]
     assert cvc5_status(translated.to_smt2()) == "sat"
 
 
@@ -478,7 +478,7 @@ def test_datatype_parameter_substitution_is_simultaneous_and_hygienic():
     # U is an explicit user sort/term name, not an accidental alias for the
     # datatype's local parameter. Constructor checking remains native.
     translated = builder.translate()
-    assert translated.ok, [item.message for item in translated.diagnostics]
+    assert translated.ok, [item.message for item in translated.diagnostic_items]
 
     with pytest.raises(ModelError, match="collides with datatype parameter"):
         HirBuilder().declare_datatype(

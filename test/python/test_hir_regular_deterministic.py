@@ -11,7 +11,7 @@ from test_hir_regular_shared import accepted, automaton, lit, op
 
 def translated_formula(builder):
     result = builder.translate()
-    assert result.ok, [diagnostic.message for diagnostic in result.diagnostics]
+    assert result.ok, [diagnostic.message for diagnostic in result.diagnostic_items]
     script = result.to_smt2()
     return public_relation(result, script)
 

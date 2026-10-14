@@ -39,7 +39,7 @@ def test_old_global_coordinates_preserve_all_procedure_decisions(name, source, v
     if infer:
         options['infer_modifies'] = '1'
     result = sp.translate(source=source, language='boogie', options=options)
-    assert result.ok, [item.message for item in result.diagnostics]
+    assert result.ok, [item.message for item in result.diagnostic_items]
     solver = z3.SolverFor('HORN') if horn else z3.Solver()
     solver.set(timeout=10000)
     solver.from_string(result.to_smt2())

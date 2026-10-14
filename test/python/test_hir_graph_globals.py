@@ -46,7 +46,7 @@ def model(expression, n, e):
 
 def translated_relation(expression, n, e):
     translated = build_cp_hir(model(expression, n, e), "graph-global-test").translate()
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     return public_relation(translated)
 
 

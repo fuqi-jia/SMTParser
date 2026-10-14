@@ -62,7 +62,7 @@ def cvc5_status(script):
 
 def compiled_status(builder):
     translated = builder.translate()
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     script = translated.to_smt2(OmtDialect.SmtLib2025)
     return cvc5_status(script)
 
@@ -129,7 +129,7 @@ def test_set_catalog_nested_sorts_and_open_int_translation():
         )
     )
     result = b.translate()
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     assert "(Set Int)" in result.to_smt2(OmtDialect.SmtLib2025)
     assert "(Set (Set Int))" in result.to_smt2(OmtDialect.SmtLib2025)
 

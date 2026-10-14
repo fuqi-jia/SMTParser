@@ -510,12 +510,13 @@ void bind(py::module_& m) {
         }, py::arg("source_terms") = std::vector<H::LocatedExpr>{})
         .def("translate", [](const H::ConstraintModel& model, const std::string& profile,
                              SOMTParser::Lower::OmtDialect dialect,
-                             const std::vector<H::LocatedExpr>& source_terms) {
+                             const std::vector<H::LocatedExpr>& source_terms, bool details) {
             SOMTParser::TranslateOptions options;
+            options.details = details;
             options.profile_id = profile; options.omt_dialect = dialect;
-            return SOMTParser::translateHir(model, options, source_terms);
+            return SOMTParser::translate(model, options, source_terms);
         }, py::arg("profile") = "default", py::arg("dialect") = SOMTParser::Lower::OmtDialect::Z3,
-           py::kw_only(), py::arg("source_terms") = std::vector<H::LocatedExpr>{});
+           py::kw_only(), py::arg("source_terms") = std::vector<H::LocatedExpr>{}, py::arg("details") = true);
 }
 
 } // namespace SomtPythonHir

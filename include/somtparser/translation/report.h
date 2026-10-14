@@ -97,6 +97,11 @@ struct Stats {
 
 class TranslationReport {
 public:
+    void setDetailsEnabled(bool enabled) { details_enabled_ = enabled; }
+    bool detailsEnabled() const noexcept { return details_enabled_; }
+    // Fidelity gates remain active when optional audit records are disabled.
+    void beginPhase() { phase_active_ = true; phase_has_choice_ = false; }
+    Fidelity phaseFidelity() const { return phase_has_choice_ ? phase_fidelity_ : Fidelity::exact(); }
     /** Record a choice and fold its fidelity into the aggregate. */
     void addChoice(EncodingChoice c);
 
@@ -132,13 +137,15 @@ public:
     const std::map<std::string, std::size_t>& theoryUsage() const noexcept { return theory_usage_; }
     std::map<std::string, std::size_t>&       mutableTheoryUsage() noexcept { return theory_usage_; }
 
-    void addWarning(Diagnostic d) { warnings_.push_back(std::move(d)); }
+    void addWarning(Diagnostic d) { if (details_enabled_) warnings_.push_back(std::move(d)); }
     const std::vector<Diagnostic>& warnings() const noexcept { return warnings_; }
 
     /** Serialised for the evaluation database. JSON lives only in the .cpp. */
     std::string toJson() const;
 
 private:
+    bool details_enabled_ = true, phase_active_ = false, phase_has_choice_ = false;
+    Fidelity phase_fidelity_;
     Fidelity                           fidelity_;   // conservative unknown until evidence/choices
     bool                               has_choice_ = false;
     std::vector<EncodingChoice>        choices_;

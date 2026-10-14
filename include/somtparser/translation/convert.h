@@ -6,7 +6,8 @@
 #ifndef SOMTPARSER_TRANSLATION_CONVERT_HEADER
 #define SOMTPARSER_TRANSLATION_CONVERT_HEADER
 
-#include "somtparser/translation/language.h"
+#include "somtparser/translation/translate.h"
+#include "somtparser/languages/register_all.h"
 
 #include <iosfwd>
 #include <optional>
@@ -25,29 +26,33 @@ struct ConvertOptions {
     bool module = false;
 };
 
-struct ConvertResult {
-    /** 0 success, 1 translation failure, 2 invalid settings, 3 I/O failure. */
-    int exit_code = 0;
-    std::string smt2;
-    std::string diagnostics;
-};
+namespace detail {
+inline TranslateOptions translateOptions(const ConvertOptions& options) {
+    TranslateOptions result;
+    result.language_id = options.language;
+    result.profile_id = options.profile.value_or("default");
+    result.profile_explicit = options.profile.has_value();
+    result.dialect_name = options.dialect;
+    result.dialect_explicit = options.dialect.has_value();
+    result.parse = options.parse;
+    result.report_path = options.report;
+    result.module = options.module;
+    return result;
+}
 
-/** Convert without capturing a complete output script. Streams remain owned
- *  by the caller; output is flushed before success is returned. The input
- *  stream is read only for main_path == "-" without inline_source.
- *
- *  Link SOMTParser::languages; this function registers built-in languages.
- *  It does not parse command-line arguments or terminate the process.
- *  Diagnostics, report bytes and status codes retain the former converter's
- *  contract for the corresponding conversion settings. */
-int convert(const Lang::SourceUnit& source, const ConvertOptions& options,
-            std::istream& input, std::ostream& output, std::ostream& diagnostics);
+} // namespace detail
 
-/** Capture SMT-LIB and formatted diagnostics. For main_path == "-", read
- *  std::cin; callers needing another input stream can use the stream overload.
- *  Large outputs should use the stream overload to avoid a complete string. */
-ConvertResult convert(const Lang::SourceUnit& source, const ConvertOptions& options = {});
+[[deprecated("use translate(source, options)")]]
+inline Translation convert(const Lang::SourceUnit& source, const ConvertOptions& options = {}) {
+    Lang::registerAllLanguages(Lang::LanguageRegistry::instance());
+    return translate(source, detail::translateOptions(options));
+}
+[[deprecated("use translate(source, options, &input, &output, &diagnostics)")]]
+inline Translation convert(const Lang::SourceUnit& source, const ConvertOptions& options,
+                           std::istream& input, std::ostream& output, std::ostream& diagnostics) {
+    Lang::registerAllLanguages(Lang::LanguageRegistry::instance());
+    return translate(source, detail::translateOptions(options), &input, &output, &diagnostics);
+}
 
 } // namespace SOMTParser
-
-#endif /* SOMTPARSER_TRANSLATION_CONVERT_HEADER */
+#endif

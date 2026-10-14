@@ -17,7 +17,7 @@ def emit(model, constraints, profile):
         model.constrain(expression)
     assert model.validate() == []
     translated = model.translate(profile=profile, dialect=n.OmtDialect.Z3)
-    assert translated.ok, translated.diagnostics
+    assert translated.ok, translated.diagnostic_items
     parsed = z3.Optimize()
     parsed.from_string(translated.to_smt2(dialect=n.OmtDialect.Z3))
     assert len(parsed.objectives()) == 0

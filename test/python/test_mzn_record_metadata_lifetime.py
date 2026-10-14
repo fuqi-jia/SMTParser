@@ -27,7 +27,7 @@ def translate(tmp_path, body):
     data.write_text(json.dumps(DATA))
     result = sp.translate(source=SCHEMA + body + "\nsolve satisfy;",
                           language="minizinc", data=[str(data)])
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     return z3.And(*z3.parse_smt2_string(result.to_smt2()))
 
 

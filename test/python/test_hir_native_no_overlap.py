@@ -19,7 +19,7 @@ def test_large_unit_intervals_equal_independent_forbidden_integer_positions(nega
                 "durations": [1] * 65 + [0]}
     builder.constrain({"op": "not", "args": [relation]} if negated else relation)
     translated = builder.translate()
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     assert "cumulative-start-events-shared-load" in translated.report.to_json()
     context = z3.Context()
     actual = z3.And(*z3.parse_smt2_string(translated.to_smt2(), ctx=context))
@@ -76,7 +76,7 @@ def test_large_no_overlap_retains_lexical_quantifier_binding():
     builder.constrain({"quantifier": "forall", "binders": [{"name": "tail", "sort": "Int"}],
                        "body": {"op": "implies", "args": [guard, relation]}})
     translated = builder.translate()
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     context = z3.Context()
     actual = z3.And(*z3.parse_smt2_string(translated.to_smt2(), ctx=context))
     proof = z3.Solver(ctx=context)

@@ -76,7 +76,7 @@ def translate_graph(graph, mode, tmp_path, size=4):
     problem.write_text('(define (problem p) (:domain d) (:init) (:goal (and (p) (q))))')
     result = sp.translate(source=domain, data=[str(problem)], language='pddl', profile='bmc',
                           options={'fond_policy': mode, 'policy_size': str(size)})
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     assert result.report.fidelity.sound and not result.report.fidelity.complete
     assert [b.kind for b in result.report.fidelity.bounds] == [sp.Bound.STRATEGY_SIZE]
     solver = z3.Solver()
@@ -163,7 +163,7 @@ def test_independent_oneof_groups_form_cartesian_outcomes(tmp_path):
     problem.write_text('(define (problem p) (:domain d) (:init) (:goal (and (p) (q))))')
     result = sp.translate(source=domain, data=[str(problem)], language='pddl', profile='bmc',
                           options={'fond_policy': 'strong-cyclic', 'policy_size': '4'})
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.add(z3.parse_smt2_string(result.to_smt2()))
     # Mixed outcomes are dead ends. Zipping the two oneof groups instead of
@@ -180,7 +180,7 @@ def test_many_actions_remain_exclusive_without_quadratic_constraints(tmp_path):
               '(:predicates (p)) ' + actions + ')')
     result = sp.translate(source=domain, data=[str(problem)], language='pddl', profile='bmc',
                           options={'fond_policy': 'strong-cyclic', 'policy_size': '2'})
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     assert result.report.stats.num_constraints < 2000
     solver = z3.Solver()
     solver.set(timeout=10000)
@@ -204,7 +204,7 @@ def test_state_signature_keeps_an_odd_final_bit(tmp_path):
     for size, expected in [(3, z3.unsat), (4, z3.sat)]:
         result = sp.translate(source=domain, data=[str(problem)], language='pddl', profile='bmc',
                               options={'fond_policy': 'strong', 'policy_size': str(size)})
-        assert result.ok, [d.message for d in result.diagnostics]
+        assert result.ok, [d.message for d in result.diagnostic_items]
         solver = z3.Solver()
         solver.add(z3.parse_smt2_string(result.to_smt2()))
         assert solver.check() == expected
@@ -216,7 +216,7 @@ def test_upstream_acrobatics_policy_replays_in_source_states():
                           data=[str(root / 'acrobatics_p01.pddl')],
                           language='pddl', profile='bmc',
                           options={'fond_policy': 'strong-cyclic', 'policy_size': '6'})
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.set(timeout=10000)
     solver.add(z3.parse_smt2_string(result.to_smt2()))
@@ -298,7 +298,7 @@ def test_upstream_beam_walk_needs_eight_policy_states():
                               data=[str(root / 'beam-walk_p01.pddl')],
                               language='pddl', profile='bmc',
                               options={'fond_policy': 'strong-cyclic', 'policy_size': str(size)})
-        assert result.ok, [d.message for d in result.diagnostics]
+        assert result.ok, [d.message for d in result.diagnostic_items]
         solver = z3.Solver()
         solver.set(timeout=10000)
         formula = z3.parse_smt2_string(result.to_smt2())

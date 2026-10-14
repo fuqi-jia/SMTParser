@@ -6,7 +6,7 @@ import somtparser as sp
 
 def translated(source):
     result = sp.translate(source=source, language="minizinc")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     return result, public_relation(result)
 
 

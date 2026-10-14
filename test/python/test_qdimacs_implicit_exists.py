@@ -13,7 +13,7 @@ import somtparser as sp
 
 def translated(source):
     result = sp.translate(source=source, language="qdimacs")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     script = result.to_smt2()
     formula = z3.And(*z3.parse_smt2_string(script))
     private = get_vars(formula)
@@ -77,7 +77,7 @@ def test_partial_prefix_preserves_implicit_choices(explicit_outer, flip):
 def test_literal_magnitude_must_fit_before_absolute_value():
     result = sp.translate(source="p cnf 1 1\n-9223372036854775808 0\n", language="qdimacs")
     assert not result.ok
-    assert any("not a literal" in d.message for d in result.diagnostics)
+    assert any("not a literal" in d.message for d in result.diagnostic_items)
 
 
 @pytest.mark.parametrize("source", [
@@ -87,7 +87,7 @@ def test_literal_magnitude_must_fit_before_absolute_value():
 def test_header_and_prefix_lines_do_not_discard_trailing_tokens(source):
     result = sp.translate(source=source, language="qdimacs")
     assert not result.ok
-    assert any("unexpected token" in d.message for d in result.diagnostics)
+    assert any("unexpected token" in d.message for d in result.diagnostic_items)
 
 
 def _qbf_truth(prefix, clauses):

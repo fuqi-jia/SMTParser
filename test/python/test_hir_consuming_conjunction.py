@@ -16,7 +16,7 @@ def test_consuming_hard_conjunction_matches_independent_formula(nested):
     rhs = {"op": "and", "args": [q, excludes]} if nested else excludes
     builder.constrain({"op": "and", "args": [either, rhs]})
     translated = builder.translate()
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     context = z3.Context()
     pz, qz, rz = z3.Bools("p q r", ctx=context)
     expected = z3.And(z3.Or(pz, qz), z3.Not(rz), qz) if nested else z3.And(

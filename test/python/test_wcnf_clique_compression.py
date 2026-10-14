@@ -23,7 +23,7 @@ def translated(hard, soft, old_format=False, variables=None):
     for weight, clause in soft:
         text += str(weight) + " " + " ".join(map(str, clause)) + " 0\n"
     result = sp.translate(source=text, language="wcnf")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     target = z3.Optimize()
     target.from_string(result.to_smt2(sp.OmtDialect.Z3))
     return target

@@ -7,7 +7,7 @@ import somtparser as sp
 def translate(declarations, constraint):
     result = sp.translate(source="language ESSENCE' 1.0\n" + declarations +
                           "\nsuch that " + constraint, language="essence")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     assert result.report.fidelity.sound and result.report.fidelity.complete
     return result
 
@@ -58,4 +58,4 @@ def test_constant_overflow_remains_an_explicit_error(expression):
     result = sp.translate(source="language ESSENCE' 1.0\nletting n be " + expression +
                           "\nfind x : int(0..1)\nsuch that true", language="essence")
     assert not result.ok
-    assert any("overflows" in d.message for d in result.diagnostics)
+    assert any("overflows" in d.message for d in result.diagnostic_items)

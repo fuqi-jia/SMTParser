@@ -11,7 +11,7 @@ def test_int_to_bv_preserves_negative_and_wide_integer_values(width):
         source=f'(set-logic ALL)(declare-const n Int)(declare-const b (_ BitVec {width}))'
                f'(assert (= b ((_ int_to_bv {width}) n)))(check-sat)',
         language="smtlib2")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     formula = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     n = z3.Int('n')
     b = z3.BitVec('b', width)
@@ -40,7 +40,7 @@ def test_quoted_datatype_members_keep_their_declared_identity(contradiction):
                '(((|cell| (|value| Int)) (|empty|))))'
                f'(assert {contradiction})(check-sat)',
         language="smtlib2")
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver()
     solver.add(*z3.parse_smt2_string(result.to_smt2()))
     assert solver.check() == z3.unsat

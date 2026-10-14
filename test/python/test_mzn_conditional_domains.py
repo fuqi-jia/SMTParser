@@ -9,7 +9,7 @@ import somtparser as sp
 
 def _equivalent(source, expected, **kwargs):
     result = sp.translate(source=source + "solve satisfy;", language="minizinc", **kwargs)
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     actual = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     check = z3.Solver()
     check.set(timeout=10000)

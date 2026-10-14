@@ -21,7 +21,7 @@ def script(source, horn=False):
     import somtparser as sp
     translated = sp.translate(source=source, language="boogie",
                               options={"chc": "1"} if horn else {})
-    assert translated.ok, [d.message for d in translated.diagnostics]
+    assert translated.ok, [d.message for d in translated.diagnostic_items]
     return translated.to_smt2()
 
 

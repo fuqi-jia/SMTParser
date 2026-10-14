@@ -16,7 +16,7 @@ def padding():
 
 def translate(source):
     result = sp.translate(source=source, language="opb", dialect=sp.OmtDialect.Z3)
-    assert result.ok, [item.message for item in result.diagnostics]
+    assert result.ok, [item.message for item in result.diagnostic_items]
     return result, result.to_smt2(sp.OmtDialect.Z3)
 
 

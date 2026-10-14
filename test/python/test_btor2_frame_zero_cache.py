@@ -23,7 +23,7 @@ def test_aliases_keep_all_frames_and_complemented_operands(mode, negative, tmp_p
         result = sp.translate(path=str(path), **options)
     else:
         result = sp.translate(source=source, **options)
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     actual = z3.And(*z3.parse_smt2_string(result.to_smt2()))
     relations = []
     for frame in range(4):
@@ -48,7 +48,7 @@ def test_unused_alias_keeps_ill_typed_ancestor_validation(mode, tmp_path):
     else:
         result = sp.translate(source=source, **options)
     assert not result.ok
-    assert any(d.line == 5 and d.code == sp.ErrorCode.E_TYPE for d in result.diagnostics)
+    assert any(d.line == 5 and d.code == sp.ErrorCode.E_TYPE for d in result.diagnostic_items)
 
 
 @pytest.mark.parametrize('mode', ['inline', 'path'])
@@ -67,7 +67,7 @@ def test_unused_deep_source_chain_survives_parser_teardown(mode, tmp_path):
         result = sp.translate(path=str(path), **options)
     else:
         result = sp.translate(source=source, **options)
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Solver(); solver.set(timeout=5000)
     solver.add(z3.parse_smt2_string(result.to_smt2()))
     assert solver.check() == z3.sat

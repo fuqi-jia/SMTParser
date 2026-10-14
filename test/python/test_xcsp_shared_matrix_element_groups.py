@@ -7,7 +7,7 @@ z3 = pytest.importorskip("z3")
 
 def translated(source, shared=True):
     result = sp.translate(source=source, language="xcsp3")
-    assert result.ok, [item.message for item in result.diagnostics]
+    assert result.ok, [item.message for item in result.diagnostic_items]
     report = result.report.to_json()
     assert ("captured-matrix-indexed-equality-helper" in report) == shared
     return result, result.to_smt2()

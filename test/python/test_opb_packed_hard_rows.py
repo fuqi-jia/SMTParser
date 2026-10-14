@@ -16,7 +16,7 @@ def wide_identity_row():
 
 def translate(source):
     result = sp.translate(source=source, language="opb", dialect=sp.OmtDialect.Z3)
-    assert result.ok, [item.message for item in result.diagnostics]
+    assert result.ok, [item.message for item in result.diagnostic_items]
     assert result.uses_packed_smt_stream and not result.has_parser
     assert any(choice.strategy == "packed-linear-rows" for choice in result.report.choices)
     opt = z3.Optimize()

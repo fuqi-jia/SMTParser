@@ -9,7 +9,7 @@ def test_default_wcnf_keeps_the_expanded_parser_api():
         source="p wcnf 1 1 10\n1 1 0\n",
         language="wcnf",
     )
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     assert not result.uses_packed_smt_stream
     assert result.has_parser
     assert result.parser is not None
@@ -26,7 +26,7 @@ def test_streamed_translation_exposes_safe_parser_state_and_exact_weights():
         language="wcnf",
         options={"packed": "1"},
     )
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     assert result.uses_packed_smt_stream
     assert not result.has_parser
     with pytest.raises(RuntimeError, match="no materialized Parser"):
@@ -52,8 +52,8 @@ def test_public_wcnf_warns_and_expands_out_of_range_literal_domain():
         language="wcnf",
         options={"packed": "1"},
     )
-    assert result.ok, [d.message for d in result.diagnostics]
-    assert any("index 2 is used" in d.message for d in result.diagnostics)
+    assert result.ok, [d.message for d in result.diagnostic_items]
+    assert any("index 2 is used" in d.message for d in result.diagnostic_items)
     assert result.to_smt2(sp.OmtDialect.Z3) == (
         "(declare-const x1 Bool)\n"
         "(declare-const x2 Bool)\n"
@@ -82,7 +82,7 @@ def test_arbitrary_precision_top_still_marks_equal_weight_clause_hard():
         language="wcnf",
         options={"packed": "1"},
     )
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     assert result.to_smt2(sp.OmtDialect.Z3) == (
         "(declare-const x1 Bool)\n"
         "(declare-const x2 Bool)\n"
@@ -102,7 +102,7 @@ def test_arbitrary_precision_top_still_marks_equal_weight_clause_hard():
 def test_empty_clauses_parse_and_preserve_feasibility_and_cost(source, expected, cost, dialect):
     z3 = pytest.importorskip("z3")
     result = sp.translate(source=source, language="wcnf", options={"packed": "1"})
-    assert result.ok, [d.message for d in result.diagnostics]
+    assert result.ok, [d.message for d in result.diagnostic_items]
     solver = z3.Optimize()
     script = result.to_smt2(dialect)
     if dialect == sp.OmtDialect.Gomt:

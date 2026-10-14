@@ -17,7 +17,7 @@ def test_r209_official_generator_source_consumer_matrix():
         model = case["model"]
         assert hashlib.sha256(model.encode()).hexdigest() == case["model_sha256"]
         translated = sp.translate(source=model, language="minizinc")
-        assert translated.ok, (case["id"], [d.message for d in translated.diagnostics])
+        assert translated.ok, (case["id"], [d.message for d in translated.diagnostic_items])
         solver = z3.Solver()
         solver.set(timeout=5000)
         assertions = z3.parse_smt2_string(translated.to_smt2())

@@ -25,7 +25,7 @@
 #include "planning_objects_bindings.h"
 #include "planning_trajectory_bindings.h"
 #include "module_bindings.h"
-#include "convert_bindings.h"
+#include "translate_bindings.h"
 
 #include "somtparser/languages/register_all.h"
 #include "somtparser/translation/translate.h"
@@ -797,9 +797,18 @@ PYBIND11_MODULE(_somtparser, m) {
         .def_property_readonly("has_parser", &SOMTParser::Translation::hasParser)
         .def_property_readonly("uses_packed_smt_stream",
                                &SOMTParser::Translation::usesPackedSmtStream)
-        .def_property_readonly("report", &SOMTParser::Translation::report)
+        .def_property_readonly("report", [](py::object self) -> py::object {
+            const auto& t = self.cast<const SOMTParser::Translation&>();
+            return t.hasDetails()
+                ? py::cast(&t.report(), py::return_value_policy::reference_internal, self)
+                : py::none();
+        })
+        .def_property_readonly("smt2", &SOMTParser::Translation::smt2)
+        .def_property_readonly("exit_code", &SOMTParser::Translation::exitCode)
+        .def_property_readonly("details", &SOMTParser::Translation::hasDetails)
+        .def_property_readonly("diagnostics", &SOMTParser::Translation::diagnosticText)
         .def_property_readonly("set_solver_requirements", &SOMTParser::Translation::setSolverRequirements)
-        .def_property_readonly("diagnostics",
+        .def_property_readonly("diagnostic_items",
             [](const SOMTParser::Translation& t) { return t.diagnostics().all(); })
         .def("to_smt2",
              [](const SOMTParser::Translation& t, SOMTParser::Lower::OmtDialect d) {
@@ -848,41 +857,6 @@ PYBIND11_MODULE(_somtparser, m) {
         return spec;
     }, py::arg("language"),
        "Return the source Institution, decision problem, and SMT embedding contract");
-
-    // strict is handled entirely in the Python wrapper (somtparser/__init__.py):
-    // the C++ boundary never throws, because a batch translating tens of
-    // thousands of benchmarks cannot let one bad input end the run.
-    m.def("translate", [](const std::string& path,
-                          std::string source,
-                          const std::vector<std::string>& data,
-                          const std::string& language,
-                          const std::string& profile,
-                          SOMTParser::Lower::OmtDialect dialect,
-                          const std::map<std::string, std::string>& options) {
-        SOMTParser::Lang::SourceUnit unit;
-        unit.main_path = path;
-        // pybind11 already owns the UTF-8 argument buffer. Transfer it into
-        // the source unit instead of copying a potentially huge inline model.
-        unit.inline_source = std::move(source);
-        unit.data_paths = data;
-        unit.display_name = path.empty() ? "<string>" : path;
-
-        SOMTParser::TranslateOptions opts;
-        opts.language_id = language;
-        opts.profile_id = profile;
-        opts.omt_dialect = dialect;
-        opts.parse.options = options;
-
-        return SOMTParser::translate(unit, opts);
-    },
-    py::arg("path") = std::string(),
-    py::arg("source") = std::string(),
-    py::arg("data") = std::vector<std::string>(),
-    py::arg("language") = std::string(),
-    py::arg("profile") = std::string("default"),
-    py::arg("dialect") = SOMTParser::Lower::OmtDialect::SmtLib2025,
-    py::arg("options") = std::map<std::string, std::string>(),
-    "Translate any supported constraint language to SMT/OMT");
 
     // ===== Parser =====
     py::class_<Parser, std::shared_ptr<Parser>> parser(m, "Parser",
@@ -1905,6 +1879,6 @@ PYBIND11_MODULE(_somtparser, m) {
     SomtPythonPlanningContinuous::bind(m);
     SomtPythonPlanningObjects::bind(m);
     SomtPythonModule::bind(m);
-    SomtPythonConvert::bind(m);
+    SomtPythonTranslate::bind(m);
 
 }
