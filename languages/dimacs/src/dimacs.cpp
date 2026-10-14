@@ -30,6 +30,7 @@
 #include <istream>
 #include <filesystem>
 #include <fstream>
+#include <new>
 #include <limits>
 #include <memory>
 #include <sstream>
@@ -613,6 +614,10 @@ public:
                 out.semantics.add(Uir::Sem::directLanguageToRelationalContract(
                     *out.model, "dimacs", out.report.fidelity()));
             }
+        } catch (const std::bad_alloc&) {
+            out.model = nullptr;
+            out.diagnostics.error(ErrorCode::E_RESOURCE,
+                                  "dimacs frontend: memory allocation failed");
         } catch (const std::exception& e) {
             out.model = nullptr;
             out.diagnostics.error(ErrorCode::E_INTERNAL,

@@ -36,6 +36,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <new>
 #include <limits>
 #include <memory>
 #include <sstream>
@@ -447,6 +448,12 @@ ParseOutcome parsePackedWcnf(const SourceUnit& unit, const ParseOptions& opts) {
     if (!unit.inline_source.empty()) {
         std::istringstream input(unit.inline_source);
         try { WcnfParser p(input, name, opts.strict); out.model = p.parse(out.diagnostics); }
+        catch (const std::bad_alloc&) {
+            out.model = nullptr;
+            out.diagnostics.error(ErrorCode::E_RESOURCE,
+                                  "wcnf packed frontend: memory allocation failed");
+            return out;
+        }
         catch (const std::exception& e) {
             out.diagnostics.error(ErrorCode::E_INTERNAL,
                                   std::string("wcnf packed frontend: ") + e.what());
@@ -464,6 +471,12 @@ ParseOutcome parsePackedWcnf(const SourceUnit& unit, const ParseOptions& opts) {
             return out;
         }
         try { WcnfParser p(input, name, opts.strict); out.model = p.parse(out.diagnostics); }
+        catch (const std::bad_alloc&) {
+            out.model = nullptr;
+            out.diagnostics.error(ErrorCode::E_RESOURCE,
+                                  "wcnf packed frontend: memory allocation failed");
+            return out;
+        }
         catch (const std::exception& e) {
             out.diagnostics.error(ErrorCode::E_INTERNAL,
                                   std::string("wcnf packed frontend: ") + e.what());
