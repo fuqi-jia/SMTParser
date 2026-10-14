@@ -47,7 +47,7 @@ namespace SOMTParser::Lower {
 
 class ParserToHir {
 public:
-    explicit ParserToHir(ParserPtr parser) : parser_(std::move(parser)) {}
+    explicit ParserToHir(ParserPtr parser);
 
     /** Every declared variable and every assertion, as HIR. Returns false and
      *  records a diagnostic on the first construct it cannot lift; the model is
@@ -75,6 +75,7 @@ public:
                   Uir::Diagnostics& diagnostics);
 
 private:
+    std::string freshBoundName(const std::string& source, bool parameter = false);
     Uir::Hir::ExprPtr liftExprUncached(const std::shared_ptr<DAGNode>& n,
                                        Uir::Diagnostics& diagnostics);
     Uir::Hir::ExprPtr liftConst(const std::shared_ptr<DAGNode>& n,
@@ -133,6 +134,10 @@ private:
      *  the checker rejects. */
     struct Binding { std::string hir_name; Uir::Hir::Sort sort; };
     std::unordered_map<std::string, Binding> bound_;
+    /** Canonical global/generated names and currently active HIR binders.
+     *  Fresh names must not capture a global or another renamed binder. */
+    std::unordered_set<std::string> reserved_names_;
+    std::unordered_set<std::string> active_bound_names_;
     /** Counter for minted binder names, so a renamed binder is reproducible
      *  within one lift rather than depending on allocation order. */
     unsigned rename_seq_ = 0;

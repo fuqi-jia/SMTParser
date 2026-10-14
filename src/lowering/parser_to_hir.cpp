@@ -26,6 +26,15 @@ std::string boundSymbolKey(const std::string& name) {
         ? name.substr(1, name.size() - 2) : name;
 }
 
+bool symbolicFpConstructor(const std::shared_ptr<DAGNode>& node) {
+    if (!node || !node->isCFP() || node->getName() != "(fp_bit_representation)"
+        || node->getChildrenSize() != 3) { return false; }
+    for (std::size_t i = 0; i < 3; ++i) {
+        if (!node->getChild(i)->isCBV()) { return true; }
+    }
+    return false;
+}
+
 /** Build an application, expanding the SMT-LIB argument-list attributes the
  *  HIR's operators do not carry.
  *
@@ -57,6 +66,30 @@ bool isChainable(H::Op op) {
 }
 
 } // namespace
+
+ParserToHir::ParserToHir(ParserPtr parser) : parser_(std::move(parser)) {
+    if (!parser_) { return; }
+    for (const auto& variable : parser_->getDeclaredVariables()) {
+        reserved_names_.insert(boundSymbolKey(variable->getName()));
+    }
+    for (const auto& function : parser_->getFunctions()) {
+        reserved_names_.insert(boundSymbolKey(function->getName()));
+    }
+}
+
+std::string ParserToHir::freshBoundName(const std::string& source, bool parameter) {
+    const std::string key = boundSymbolKey(source);
+    std::string candidate;
+    do {
+        const auto suffix = std::to_string(++rename_seq_);
+        candidate = parameter ? "p!" + suffix + "!" + key : key + "!" + suffix;
+    } while (reserved_names_.count(candidate) || active_bound_names_.count(candidate));
+    reserved_names_.insert(candidate);
+    // Keep quoted spellings quoted: a space in a source symbol is still a
+    // space after alpha-renaming, not part of a legal simple symbol.
+    return source.size() >= 2 && source.front() == '|' && source.back() == '|'
+        ? "|" + candidate + "|" : candidate;
+}
 
 H::ExprPtr ParserToHir::mkNary(H::Op op, std::vector<H::ExprPtr> args,
                                Uir::Diagnostics& diagnostics) {
@@ -497,7 +530,10 @@ Uir::Hir::ExprPtr ParserToHir::liftQuantifier(const std::shared_ptr<DAGNode>& n,
         // Preserve lexical quoting for a fresh binder (e.g. |true| must not
         // become the Boolean literal true when exported).
         const std::string hir_name = prev == bound_.end()
-            ? v->getName() : src + "!" + std::to_string(++rename_seq_);
+                && !parser_->getSymbolManager()->hasVar(src)
+                && !active_bound_names_.count(src)
+            ? v->getName() : freshBoundName(v->getName());
+        active_bound_names_.insert(boundSymbolKey(hir_name));
         binders.push_back(H::Binder{hir_name, s});
         saved.emplace_back(src, prev == bound_.end() ? std::nullopt
                                                      : std::optional<Binding>(prev->second));
@@ -506,6 +542,9 @@ Uir::Hir::ExprPtr ParserToHir::liftQuantifier(const std::shared_ptr<DAGNode>& n,
     ++scope_id_;
     H::ExprPtr body = liftExpr(n->getQuantBody(), diagnostics);
     ++scope_id_;
+    for (const auto& binder : binders) {
+        active_bound_names_.erase(boundSymbolKey(binder.name));
+    }
     for (auto it = saved.rbegin(); it != saved.rend(); ++it) {
         if (it->second) { bound_[it->first] = *it->second; }
         else            { bound_.erase(it->first); }
@@ -606,7 +645,8 @@ Uir::Hir::ExprPtr ParserToHir::liftExpr(const std::shared_ptr<DAGNode>& n,
             || node->getKind() == NODE_KIND::NT_EXISTS);
         const bool captured_let = node && node->isLetBindVar()
             && let_values_.find(node.get()) != let_values_.end();
-        const bool ordinary = node && !node->isConst() && !scoped && !captured_let
+        const bool ordinary = node && (!node->isConst() || symbolicFpConstructor(node))
+            && !scoped && !captured_let
             && (!node->isVar() || node->isLetBindVar())
             && node->getKind() != NODE_KIND::NT_FUNC_PARAM;
         if (ordinary && frame.next_argument < node->getChildrenSize()) {
@@ -657,7 +697,22 @@ Uir::Hir::ExprPtr ParserToHir::liftExprUncached(const std::shared_ptr<DAGNode>& 
 
     H::ExprPtr result;
 
-    if (n->isConst()) {
+    if (symbolicFpConstructor(n)) {
+        // The native DAG stores every (fp sign exponent fraction) as NT_CONST,
+        // even when its BV fields are expressions. Preserve those operands as
+        // a shared HIR DAG; a float literal's text cannot contain variables.
+        H::Sort format;
+        if (!liftSort(n->getSort(), format, diagnostics)) { return nullptr; }
+        std::vector<H::ExprPtr> bits;
+        for (const auto& child : n->getChildren()) {
+            auto field = liftExpr(child, diagnostics);
+            if (!field) { return nullptr; }
+            bits.push_back(std::move(field));
+        }
+        auto pattern = H::mkOp(H::Op::BV_CONCAT, {bits[0],
+            H::mkOp(H::Op::BV_CONCAT, {bits[1], bits[2]})});
+        result = H::mkIeeeBvToFp(pattern, format.exponent_bits, format.significand_bits);
+    } else if (n->isConst()) {
         result = liftConst(n, diagnostics);
     } else if (n->getKind() == NODE_KIND::NT_FORALL
                || n->getKind() == NODE_KIND::NT_EXISTS) {
@@ -1000,7 +1055,16 @@ Uir::Hir::ExprPtr ParserToHir::liftExprUncached(const std::shared_ptr<DAGNode>& 
         } else {
         H::ExprPtr rm = liftExpr(n->getChild(2), diagnostics);
         if (!rm) { return nullptr; }
-        H::ExprPtr x = liftExpr(n->getChild(3), diagnostics);
+        const auto& operand = n->getChild(3);
+        // SMT-LIB has no Int-to-FP overload. A numeral in the numeric overload
+        // is Real even when the native DAG's overloaded numeral looks integer.
+        // Constant rounding modes used to hide this gap by folding to a float.
+        const H::Sort real = H::Sort::real();
+        H::ExprPtr x = n->getKind() == NODE_KIND::NT_FP_TO_FP && operand->isCInt()
+            ? H::mkReal(operand->toString())
+            : n->getKind() == NODE_KIND::NT_FP_TO_FP && operand->getSort()->isIntOrReal()
+                ? liftNumericChild(operand, &real, diagnostics)
+                : liftExpr(operand, diagnostics);
         if (!x) { return nullptr; }
         H::Sort fs;
         if (!liftSort(n->getSort(), fs, diagnostics)) { return nullptr; }
@@ -1295,14 +1359,11 @@ bool ParserToHir::lift(H::ConstraintModel& out, Uir::Diagnostics& diagnostics,
         std::vector<std::pair<std::string, std::optional<Binding>>> saved;
         for (std::size_t i = 0; i < params.size(); ++i) {
             H::Binder b;
-            // Alpha-renamed unconditionally, for the reason liftQuantifier
-            // renames on collision: a parameter named like a model variable
-            // would shadow it, and typeCheck refuses that because downstream
-            // the two cannot be told apart. Unconditional here because the
-            // model's variables are not all known yet -- getFunctions() runs
-            // before the assertions are walked.
+            // Parameters keep the existing unconditional alpha-renaming
+            // policy, using the same collision checks as quantifier binders.
             const std::string source_name = boundSymbolKey(params[i]->getName());
-            b.name = "p!" + std::to_string(++rename_seq_) + "!" + source_name;
+            b.name = freshBoundName(params[i]->getName(), true);
+            active_bound_names_.insert(boundSymbolKey(b.name));
             b.sort = d.params[i];
             binders.push_back(b);
             const auto prev = bound_.find(source_name);
@@ -1314,6 +1375,9 @@ bool ParserToHir::lift(H::ConstraintModel& out, Uir::Diagnostics& diagnostics,
         ++scope_id_;
         H::ExprPtr hir_body = liftNumericChild(body, &d.result, diagnostics);
         ++scope_id_;
+        for (const auto& binder : binders) {
+            active_bound_names_.erase(boundSymbolKey(binder.name));
+        }
         for (auto it = saved.rbegin(); it != saved.rend(); ++it) {
             if (it->second) { bound_[it->first] = *it->second; }
             else            { bound_.erase(it->first); }
