@@ -729,7 +729,7 @@ Translation translateImpl(const Lang::SourceUnit& unit, const TranslateOptions& 
             // allocating the parser DAG, so consuming lowering can release each
             // root as soon as its target exists. An externally retained frontend
             // model must remain untouched, as must every translateHir caller.
-            if (input_model || t.model_.unique()) {
+            if (input_model || t.model_.use_count() == 1) {
                 std::vector<Uir::Hir::Constraint>().swap(t.model_->constraints);
                 for (auto& function : t.model_->funs) { function.body.reset(); }
                 for (auto& declaration : t.model_->decls) {
@@ -860,7 +860,7 @@ Translation translateImpl(const Lang::SourceUnit& unit, const TranslateOptions& 
     // translateHir supplies a private container copy. A textual frontend may
     // retain its result elsewhere, so consume only when this container is ours.
     // Resetting roots never mutates the immutable expressions shared by callers.
-    const bool private_model = input_model || t.model_.unique();
+    const bool private_model = input_model || t.model_.use_count() == 1;
     const bool lowered = private_model
         ? t.lowered_->lowerConsumingForTranslation(
               *t.model_, t.report_, t.diagnostics_)

@@ -1070,7 +1070,7 @@ template<class Container>
 class SharedParameterStorage {
     std::shared_ptr<Container> data_ = std::make_shared<Container>();
     Container& writable() {
-        if (!data_.unique()) { data_ = std::make_shared<Container>(*data_); }
+        if (data_.use_count() != 1) { data_ = std::make_shared<Container>(*data_); }
         return *data_;
     }
 public:
@@ -1124,7 +1124,7 @@ class SharedBindingMap {
     using Map = std::unordered_map<Key, Value>;
     std::shared_ptr<Map> data_ = std::make_shared<Map>();
     Map& writable() {
-        if (!data_.unique()) { data_ = std::make_shared<Map>(*data_); }
+        if (data_.use_count() != 1) { data_ = std::make_shared<Map>(*data_); }
         return *data_;
     }
 public:
