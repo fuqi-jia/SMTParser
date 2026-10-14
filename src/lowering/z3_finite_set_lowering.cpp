@@ -80,8 +80,15 @@ using BoundMap=std::unordered_map<std::string,Bounds>;
 struct IntInterval { std::int64_t lo,hi; bool has_lo=false,has_hi=false; };
 using IntBoundMap=std::unordered_map<std::string,IntInterval>;
 void flattenAnd(const std::vector<Token>& t,Range r,std::vector<Range>& out) {
-    if(listHead(t,r.first,"and") && t[r.first].mate+1==r.second) { std::size_t p=r.first+2; while(p<t[r.first].mate) { auto q=next(t,p); flattenAnd(t,{p,q},out); p=q; } }
-    else out.push_back(r);
+    std::vector<Range> pending{r};
+    while(!pending.empty()) {
+        const auto term=pending.back(); pending.pop_back();
+        if(listHead(t,term.first,"and") && t[term.first].mate+1==term.second) {
+            const auto before=pending.size();
+            for(auto p=term.first+2;p<t[term.first].mate;p=next(t,p)) pending.emplace_back(p,next(t,p));
+            std::reverse(pending.begin()+static_cast<std::ptrdiff_t>(before),pending.end());
+        } else out.push_back(term);
+    }
 }
 void addBound(const std::vector<Token>& t,Range assert_r,BoundMap& bounds) {
     if(!listHead(t,assert_r.first,"assert") || t[assert_r.first].mate+1!=assert_r.second) return;
@@ -253,46 +260,54 @@ void findIntBounds(const std::vector<Token>& t,IntBoundMap& bounds) {
         p=q;
     }
 }
-bool integerInterval(const std::vector<Token>& t,Range term,const IntBoundMap& known,IntInterval& out) {
-    const auto found=known.find(proofKey(t,term));
-    if(found!=known.end() && found->second.has_lo && found->second.has_hi && found->second.lo<=found->second.hi) {
-        out=found->second; return true;
-    }
-    std::int64_t literal=0;
-    if(parseInt(t,term,literal)) { out={literal,literal,true,true}; return true; }
-    if(!listHead(t,term.first,"+") && !listHead(t,term.first,"-") && !listHead(t,term.first,"*")) return false;
-    if(t[term.first].mate+1!=term.second) return false;
-    std::vector<Range> args;
-    for(std::size_t p=term.first+2;p<t[term.first].mate;) { const auto q=next(t,p); args.emplace_back(p,q); p=q; }
-    const bool subtraction=is(t,term.first+1,"-");
-    if(args.empty() || (subtraction && args.size()>2)) return false;
-    IntInterval acc;
-    if(subtraction && args.size()==1) {
-        IntInterval a; if(!integerInterval(t,args[0],known,a)) return false;
-        std::int64_t lo=0,hi=0;
-        if(detail::subOverflow(std::int64_t{0},a.hi,&lo) || detail::subOverflow(std::int64_t{0},a.lo,&hi)) return false;
-        out={lo,hi,true,true}; return true;
-    }
-    if(!integerInterval(t,args[0],known,acc)) return false;
-    for(std::size_t i=1;i<args.size();++i) {
-        IntInterval b; if(!integerInterval(t,args[i],known,b)) return false;
-        std::int64_t lo=0,hi=0;
-        if(is(t,term.first+1,"+")) {
-            if(detail::addOverflow(acc.lo,b.lo,&lo) ||
-               detail::addOverflow(acc.hi,b.hi,&hi)) return false;
-        } else if(subtraction) {
-            if(detail::subOverflow(acc.lo,b.hi,&lo) ||
-               detail::subOverflow(acc.hi,b.lo,&hi)) return false;
-        } else {
-            std::int64_t products[4];
-            if(detail::mulOverflow(acc.lo,b.lo,&products[0]) || detail::mulOverflow(acc.lo,b.hi,&products[1]) ||
-               detail::mulOverflow(acc.hi,b.lo,&products[2]) || detail::mulOverflow(acc.hi,b.hi,&products[3])) return false;
-            const auto limits=std::minmax_element(std::begin(products),std::end(products));
-            lo=*limits.first; hi=*limits.second;
+bool integerInterval(const std::vector<Token>& t,Range root,const IntBoundMap& known,IntInterval& out) {
+    struct Pending { Range term; bool leave; };
+    std::vector<Pending> pending{{root,false}};
+    std::unordered_map<std::size_t,IntInterval> results;
+    while(!pending.empty()) {
+        const auto current=pending.back(); pending.pop_back();
+        const auto term=current.term;
+        const auto found=known.find(proofKey(t,term));
+        if(found!=known.end() && found->second.has_lo && found->second.has_hi && found->second.lo<=found->second.hi) {
+            results.emplace(term.first,found->second); continue;
         }
-        acc={lo,hi,true,true};
+        std::int64_t literal=0;
+        if(parseInt(t,term,literal)) { results.emplace(term.first,IntInterval{literal,literal,true,true}); continue; }
+        if((!listHead(t,term.first,"+") && !listHead(t,term.first,"-") && !listHead(t,term.first,"*"))
+           || t[term.first].mate+1!=term.second) return false;
+        std::vector<Range> args;
+        for(auto p=term.first+2;p<t[term.first].mate;p=next(t,p)) args.emplace_back(p,next(t,p));
+        const bool subtraction=is(t,term.first+1,"-");
+        if(args.empty() || (subtraction && args.size()>2)) return false;
+        if(!current.leave) {
+            pending.push_back({term,true});
+            for(auto it=args.rbegin();it!=args.rend();++it) pending.push_back({*it,false});
+            continue;
+        }
+        IntInterval acc=results.at(args[0].first);
+        if(subtraction && args.size()==1) {
+            std::int64_t lo=0,hi=0;
+            if(detail::subOverflow(std::int64_t{0},acc.hi,&lo) || detail::subOverflow(std::int64_t{0},acc.lo,&hi)) return false;
+            results.emplace(term.first,IntInterval{lo,hi,true,true}); continue;
+        }
+        for(std::size_t i=1;i<args.size();++i) {
+            const auto b=results.at(args[i].first);
+            std::int64_t lo=0,hi=0;
+            if(is(t,term.first+1,"+")) {
+                if(detail::addOverflow(acc.lo,b.lo,&lo) || detail::addOverflow(acc.hi,b.hi,&hi)) return false;
+            } else if(subtraction) {
+                if(detail::subOverflow(acc.lo,b.hi,&lo) || detail::subOverflow(acc.hi,b.lo,&hi)) return false;
+            } else {
+                std::int64_t products[4];
+                if(detail::mulOverflow(acc.lo,b.lo,&products[0]) || detail::mulOverflow(acc.lo,b.hi,&products[1]) ||
+                   detail::mulOverflow(acc.hi,b.lo,&products[2]) || detail::mulOverflow(acc.hi,b.hi,&products[3])) return false;
+                const auto limits=std::minmax_element(std::begin(products),std::end(products)); lo=*limits.first; hi=*limits.second;
+            }
+            acc={lo,hi,true,true};
+        }
+        results.emplace(term.first,acc);
     }
-    out=acc; return true;
+    out=results.at(root.first); return true;
 }
 // Resolve only globally unique let aliases whose RHS has a proven integer
 // interval. SMT-LIB let is lexical; globally unique names that are not also
@@ -687,6 +702,7 @@ bool hasScopedAssertionContext(const std::vector<Token>& t) {
 struct Rewriter {
     const std::vector<Token>& t; const BoundMap& bounds; const std::unordered_set<std::string>& names;
     const bool bound_context_unsupported;
+    const bool finite_array_operations;
     const std::unordered_set<std::string>& safe_let_names;
     std::string subset_name;
     std::unordered_map<std::string,std::size_t> scoped_names;
@@ -694,25 +710,29 @@ struct Rewriter {
     std::unordered_map<std::string,std::vector<LocalSupport>> local_supports;
     std::size_t support_serial=0;
     std::size_t cardinality_set_serial=0;
-    Rewriter(const std::vector<Token>& tt,const BoundMap& bb,const std::unordered_set<std::string>& nn,bool context_unsupported,const std::unordered_set<std::string>& safe_lets):t(tt),bounds(bb),names(nn),bound_context_unsupported(context_unsupported),safe_let_names(safe_lets) {
+    Rewriter(const std::vector<Token>& tt,const BoundMap& bb,const std::unordered_set<std::string>& nn,bool context_unsupported,const std::unordered_set<std::string>& safe_lets,bool finite_ops=false):t(tt),bounds(bb),names(nn),bound_context_unsupported(context_unsupported),finite_array_operations(finite_ops),safe_let_names(safe_lets) {
         std::size_t n=0; do { subset_name="__somt_z3_set_subset_element"+(n?"_"+std::to_string(n):""); ++n; } while(names.count(subset_name));
     }
     void sortExpr(Range r,std::string& out) {
-        if(listHead(t,r.first,"Set") && t[r.first].mate+1==r.second) {
-            std::size_t elem=r.first+2; if(!is(t,elem,"Int") || next(t,elem)!=t[r.first].mate) throw std::runtime_error("Z3 set lowering supports only Set Int");
-            out+="(Array Int Bool)"; return;
+        struct Pending { Range range; bool space=false; bool close=false; };
+        std::vector<Pending> pending{{r,false,false}};
+        while(!pending.empty()) {
+            const auto current=pending.back(); pending.pop_back();
+            if(current.close) { out+=')'; continue; }
+            if(current.space) out+=' ';
+            const auto term=current.range;
+            if(listHead(t,term.first,"Set") && t[term.first].mate+1==term.second) {
+                const auto elem=term.first+2;
+                if(!is(t,elem,"Int") || next(t,elem)!=t[term.first].mate)
+                    throw std::runtime_error("Z3 set lowering supports only Set Int");
+                out+="(Array Int Bool)";
+            } else if(term.first<term.second && t[term.first].list && t[term.first].text=="(" && t[term.first].mate+1==term.second) {
+                out+='('; pending.push_back({{},false,true});
+                std::vector<Range> children;
+                for(auto p=term.first+1;p<t[term.first].mate;p=next(t,p)) children.emplace_back(p,next(t,p));
+                for(std::size_t i=children.size();i>0;--i) pending.push_back({children[i-1],i>1,false});
+            } else appendRange(t,term,out);
         }
-        if(r.first<r.second && listHead(t,r.first,"Array") && t[r.first].mate+1==r.second) {
-            out+="(";
-            for(std::size_t p=r.first+1;p<t[r.first].mate;) { if(p>r.first+1) { out+=' '; } auto q=next(t,p); sortExpr({p,q},out); p=q; }
-            out+=')'; return;
-        }
-        if(r.first<r.second && t[r.first].list && t[r.first].text=="(" && t[r.first].mate+1==r.second) {
-            out+="(";
-            for(std::size_t p=r.first+1;p<t[r.first].mate;) { if(p>r.first+1) { out+=' '; } auto q=next(t,p); sortExpr({p,q},out); p=q; }
-            out+=')'; return;
-        }
-        appendRange(t,r,out);
     }
     void constructorList(Range r,std::string& out) {
         if(!is(t,r.first,"(") || t[r.first].mate+1!=r.second) throw std::runtime_error("Z3 datatype constructor list malformed");
@@ -776,7 +796,7 @@ struct Rewriter {
         // quadratic host-side deduplication.
         values.push_back(std::move(value));
     }
-    bool finiteSupport(Range r,std::vector<std::string>& values) {
+    bool finiteSupportImpl(Range r,std::vector<std::string>& values) {
         if(r.second==r.first+1 && !t[r.first].list && !t[r.first].string_literal) {
             const std::string name(symbolIdentity(t[r.first]));
             const auto support=local_supports.find(name);
@@ -916,7 +936,116 @@ struct Rewriter {
         if(bind_set) return "(let (("+set_name+" "+rendered_set+")) "+formula+")";
         return formula.substr(1); // remove the one leading space before ite
     }
+    struct RewriteRequest { Range range; bool support=false; bool top_level=false; };
+    struct RewriteResult {
+        RewriteRequest request;
+        std::string text;
+        std::vector<std::string> support;
+        bool finite=false;
+        std::size_t support_serial=0, cardinality_serial=0;
+    };
+    struct RewriteState {
+        std::unordered_map<std::string,std::size_t> scoped;
+        std::unordered_map<std::string,std::vector<LocalSupport>> supports;
+        std::size_t support_serial=0, cardinality_serial=0;
+    };
+    struct RewriteFrame {
+        RewriteRequest request;
+        RewriteState initial;
+        std::vector<RewriteResult> children;
+        std::size_t cursor=0;
+    };
+    struct NeedRewrite { RewriteRequest request; };
+    RewriteFrame* active_frame=nullptr;
+    RewriteState state() const { return {scoped_names,local_supports,support_serial,cardinality_set_serial}; }
+    void restore(const RewriteState& initial) {
+        scoped_names=initial.scoped; local_supports=initial.supports;
+        support_serial=initial.support_serial; cardinality_set_serial=initial.cardinality_serial;
+    }
+    const RewriteResult& dependency(RewriteRequest request) {
+        if(active_frame->cursor==active_frame->children.size()) throw NeedRewrite{request};
+        const auto& result=active_frame->children[active_frame->cursor++];
+        if(result.request.range!=request.range || result.request.support!=request.support || result.request.top_level!=request.top_level)
+            throw std::logic_error("finite-set lowering: inconsistent work queue replay");
+        support_serial=result.support_serial; cardinality_set_serial=result.cardinality_serial;
+        return result;
+    }
+    RewriteResult runRewrite(RewriteRequest request) {
+        const auto original=state();
+        std::vector<RewriteFrame> pending;
+        pending.push_back({request,original,{},0});
+        try {
+            while(!pending.empty()) {
+                active_frame=&pending.back();
+                active_frame->cursor=0; restore(active_frame->initial);
+                RewriteResult result; result.request=active_frame->request;
+                try {
+                    if(result.request.support) result.finite=finiteSupportImpl(result.request.range,result.support);
+                    else exprImpl(result.request.range,result.text,result.request.top_level);
+                    result.support_serial=support_serial; result.cardinality_serial=cardinality_set_serial;
+                } catch(const NeedRewrite& need) {
+                    auto child_state=state();
+                    pending.push_back({need.request,std::move(child_state),{},0});
+                    continue;
+                }
+                pending.pop_back();
+                if(pending.empty()) { active_frame=nullptr; return result; }
+                pending.back().children.push_back(std::move(result));
+            }
+        } catch(...) { active_frame=nullptr; restore(original); throw; }
+        throw std::logic_error("finite-set lowering: empty work queue");
+    }
     void expr(Range r,std::string& out,bool top_level=false) {
+        if(active_frame) { out+=dependency({r,false,top_level}).text; return; }
+        out+=runRewrite({r,false,top_level}).text;
+    }
+    bool finiteSupport(Range r,std::vector<std::string>& values) {
+        if(active_frame) {
+            const auto& result=dependency({r,true,false});
+            values.insert(values.end(),result.support.begin(),result.support.end()); return result.finite;
+        }
+        const auto result=runRewrite({r,true,false});
+        values.insert(values.end(),result.support.begin(),result.support.end()); return result.finite;
+    }
+    std::string freshOperand() {
+        std::string fresh;
+        do { fresh="__somt_oms_set_operand_"+std::to_string(support_serial++); }
+        while(names.count(fresh) || scoped_names.count(fresh));
+        return fresh;
+    }
+    std::string finiteOperation(Range whole,const std::vector<Range>& args,std::string_view operation) {
+        std::vector<std::string> support;
+        // For intersection one finite operand suffices, for difference the
+        // left operand suffices, and union requires every operand finite.
+        if(!finiteSupport(whole,support))
+            throw std::runtime_error("OptiMathSAT set operation requires a proved finite carrier: "+canonical(t,whole));
+        std::vector<std::string> operands;
+        std::string bindings="(let (";
+        for(const auto& arg:args) {
+            const auto name=freshOperand(); std::string value; expr(arg,value);
+            bindings+="("+name+" "+value+")"; operands.push_back(name);
+        }
+        bindings+=") ";
+        std::string result; result.reserve(bindings.size()+support.size()*32);
+        result+=bindings;
+        for(std::size_t i=0;i<support.size();++i) result+="(store ";
+        result+="((as const (Array Int Bool)) false)";
+        // Equal symbolic candidates write equal membership formulas, so this
+        // exact extensional construction needs no distinctness assumption.
+        for(auto it=support.rbegin();it!=support.rend();++it) {
+            result+=" "+*it+" (";
+            result+=(operation=="union"?"or":"and");
+            for(std::size_t i=0;i<operands.size();++i) {
+                result+=' ';
+                if(operation=="minus" && i==1) result+="(not ";
+                result+="(select "+operands[i]+" "+*it+")";
+                if(operation=="minus" && i==1) result+=')';
+            }
+            result+="))";
+        }
+        result+=')'; return result;
+    }
+    void exprImpl(Range r,std::string& out,bool top_level) {
         if(r.first>=r.second) return;
         if(!t[r.first].list || t[r.first].text!="(") { out.append(t[r.first].text.data(),t[r.first].text.size()); return; }
         const std::size_t close=t[r.first].mate, h=r.first+1;
@@ -944,7 +1073,7 @@ struct Rewriter {
             std::size_t bindings=h+1, body=next(t,bindings); if(!is(t,bindings,"(") || next(t,body)!=close) throw std::runtime_error("Z3 let malformed arity");
             std::vector<std::string> added;
             std::vector<std::pair<std::string,std::vector<std::string>>> supports;
-            const bool needs_support=containsHead(t,{body,close},"set.card");
+            const bool needs_support=finite_array_operations || containsHead(t,{body,close},"set.card");
             out+="(let (";
             for(std::size_t p=bindings+1;p<t[bindings].mate;) {
                 const auto q=next(t,p); if(!is(t,p,"(")) throw std::runtime_error("Z3 let malformed binding");
@@ -1063,12 +1192,14 @@ struct Rewriter {
         if(is(t,h,"set.union")||is(t,h,"set.inter")) {
             const char* op=is(t,h,"set.union")?"or":"and"; std::vector<Range> args; for(std::size_t p=h+1;p<close;) { auto q=next(t,p); args.emplace_back(p,q); p=q; }
             if(args.size()<2) throw std::runtime_error("Z3 set union/intersection needs at least two operands");
+            if(finite_array_operations) { out+=finiteOperation(r,args,is(t,h,"set.union")?"union":"inter"); return; }
             std::string left; expr(args[0],left);
             for(std::size_t j=1;j<args.size();++j) { std::string right; expr(args[j],right); left=std::string("((_ map ")+op+") "+left+" "+right+")"; }
             out+=left; return;
         }
         if(is(t,h,"set.minus")) {
             std::size_t a=h+1,ae=next(t,a),b=ae,be=next(t,b); if(be!=close) throw std::runtime_error("Z3 set.minus malformed arity");
+            if(finite_array_operations) { out+=finiteOperation(r,{{a,ae},{b,be}},"minus"); return; }
             // Built-in maps need no auxiliary declaration, so they also work
             // in scripts without set-logic and across reset commands.
             out+="((_ map and) "; expr({a,ae},out); out+=" ((_ map not) "; expr({b,be},out); out+="))"; return;
@@ -1087,6 +1218,14 @@ struct Rewriter {
         }
         if(is(t,h,"set.subset")) {
             std::size_t a=h+1,ae=next(t,a),b=ae,be=next(t,b); if(be!=close) throw std::runtime_error("Z3 set.subset malformed arity");
+            if(finite_array_operations) {
+                std::vector<std::string> support;
+                if(!finiteSupport({a,ae},support)) throw std::runtime_error("OptiMathSAT set.subset requires a proved finite left carrier");
+                const auto left=freshOperand(),right=freshOperand();
+                out+="(let (("+left+" "; expr({a,ae},out); out+=") ("+right+" "; expr({b,be},out); out+=")) (and";
+                for(const auto& element:support) out+=" (=> (select "+left+" "+element+") (select "+right+" "+element+"))";
+                out+="))"; return;
+            }
             out+="(forall (("+subset_name+" Int)) (=> (select "; expr({a,ae},out); out+=" "+subset_name+") (select "; expr({b,be},out); out+=" "+subset_name+")))"; return;
         }
         out+='('; for(std::size_t p=r.first+1;p<close;) { if(p>r.first+1) { out+=' '; } auto q=next(t,p); expr({p,q},out); p=q; } out+=')';
@@ -1096,7 +1235,7 @@ struct Rewriter {
 void gatherNames(const std::vector<Token>& t,std::unordered_set<std::string>& names) { for(const auto& x:t) if(!x.list && !x.string_literal) names.emplace(symbolIdentity(x)); }
 }
 
-std::string lowerFiniteSetsForZ3(const std::string& smt2) {
+std::string lowerFiniteSets(const std::string& smt2,bool finite_array_operations) {
     const auto tokens=tokenize(smt2);
     BoundMap bounds; findBounds(tokens,{0,tokens.size()},bounds);
     const bool scoped_context=hasScopedAssertionContext(tokens);
@@ -1104,7 +1243,7 @@ std::string lowerFiniteSetsForZ3(const std::string& smt2) {
     std::unordered_set<std::string> safe_let_symbols;
     if(hasQuantifiedSet(tokens,bounds,scoped_context,safe_let_symbols))
         throw std::runtime_error("Z3 set lowering refuses quantified Set formulas with unbounded carriers: HIR Set is finite, but Array Int Bool admits infinite subsets");
-    std::unordered_set<std::string> names; gatherNames(tokens,names); Rewriter rw(tokens,bounds,names,scoped_context,safe_let_symbols);
+    std::unordered_set<std::string> names; gatherNames(tokens,names); Rewriter rw(tokens,bounds,names,scoped_context,safe_let_symbols,finite_array_operations);
     std::string output;
     const std::size_t reserve_extra=smt2.size()/8;
     if(reserve_extra>output.max_size()-smt2.size())
@@ -1112,5 +1251,11 @@ std::string lowerFiniteSetsForZ3(const std::string& smt2) {
     output.reserve(smt2.size()+reserve_extra);
     for(std::size_t p=0;p<tokens.size();) { std::size_t q=next(tokens,p); if(q<=p) throw std::runtime_error("Z3 set lowering: invalid token tree"); std::string command; rw.expr({p,q},command,true); output+=command; output+='\n'; p=q; }
     return output;
+}
+std::string lowerFiniteSetsForZ3(const std::string& smt2) {
+    return lowerFiniteSets(smt2,false);
+}
+std::string lowerFiniteSetsForOptiMathSat(const std::string& smt2) {
+    return lowerFiniteSets(smt2,true);
 }
 }

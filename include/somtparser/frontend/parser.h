@@ -2964,6 +2964,9 @@ namespace SOMTParser{
          * @return Array store node (l[r] = v)
          */
         std::shared_ptr<DAGNode> mkStore(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> v); // l[r] = v
+        /** Pointwise Boolean array map, preserving the array index sort.
+         *  Supports the and/or/not maps emitted by finite-set lowering. */
+        std::shared_ptr<DAGNode> mkArrayMap(const std::string& op, const std::vector<std::shared_ptr<DAGNode>>& arrays);
 
         // TERM ANNOTATIONS
         /** @brief Create a :pattern annotation node holding the trigger terms */

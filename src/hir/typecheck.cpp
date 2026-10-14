@@ -110,6 +110,9 @@ const char* opName(Op op) {
     case Op::XOR: return "xor";
     case Op::ITE: return "ite";
     case Op::SELECT: return "select";
+    case Op::ARRAY_MAP_AND: return "array.map.and";
+    case Op::ARRAY_MAP_OR: return "array.map.or";
+    case Op::ARRAY_MAP_NOT: return "array.map.not";
     case Op::STORE:  return "store";
     case Op::EQ:  return "=";
     case Op::LE:  return "<=";
@@ -487,6 +490,7 @@ bool ruleFor(Op op, OpRule& out) {
     // and an index of that array's index sort -- so checkOp handles it directly
     // and ruleFor does not describe it.
     case Op::SELECT:
+    case Op::ARRAY_MAP_AND: case Op::ARRAY_MAP_OR: case Op::ARRAY_MAP_NOT:
     case Op::STORE: return false;
     }
     return false;
@@ -1994,6 +1998,23 @@ private:
     }
 
     bool checkOp(const ExprPtr& e, const SourceLoc& loc) {
+        if (e->op == Op::ARRAY_MAP_AND || e->op == Op::ARRAY_MAP_OR || e->op == Op::ARRAY_MAP_NOT) {
+            if ((e->op == Op::ARRAY_MAP_NOT && e->args.size() != 1)
+                || (e->op != Op::ARRAY_MAP_NOT && e->args.size() < 2)) {
+                error("invalid Boolean array map arity", loc);
+                return false;
+            }
+            for (const auto& arg : e->args) {
+                if (!checkedOperand(arg, loc)) return false;
+                const auto& sort = arg->sort;
+                if (sort.kind != SortKind::ARRAY || !sort.index || !sort.elem
+                    || sort.elem->kind != SortKind::BOOL || !sameSort(sort, e->sort)) {
+                    error("Boolean array map needs arrays with identical index sorts and Bool elements", loc);
+                    return false;
+                }
+            }
+            return true;
+        }
         if (e->op == Op::CONST_ARRAY) {
             // `((as const (Array T U)) v)`. The array sort is on the
             // EXPRESSION, not derivable from the argument -- v fixes U and says

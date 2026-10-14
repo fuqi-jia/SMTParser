@@ -28,6 +28,8 @@
 #include "somtparser/frontend/parser.h"
 #include "somtparser/core/timing.h"
 #include "somtparser/translation/translate.h"
+#include "somtparser/lowering/optimathsat_array_lowering.h"
+#include "somtparser/lowering/z3_finite_set_lowering.h"
 #include <fstream>
 #include <queue>
 #include <stack>
@@ -4024,7 +4026,13 @@ private:
 		writeSMT2(out, Lower::OmtDialect::Z3);
 	}
 
-	void Parser::writeSMT2(std::ostream& out, Lower::OmtDialect dialect){
+	void Parser::writeSMT2(std::ostream& destination, Lower::OmtDialect dialect){
+		const bool lower_sets = dialect == Lower::OmtDialect::OptiMathSAT
+		    && Lower::needsOptiMathSatSetLowering(*this);
+		const bool lower_arrays = dialect == Lower::OmtDialect::OptiMathSAT
+		    && (lower_sets || Lower::needsOptiMathSatArrayLowering(*this));
+		std::ostringstream array_output;
+		std::ostream& out = lower_arrays ? static_cast<std::ostream&>(array_output) : destination;
 		// Dump the current state, followed by the last query and its response
 		// requests. Replaying earlier checks against this state would be wrong.
 		const auto& commands = script_.commands();
@@ -4116,7 +4124,9 @@ private:
 			}
 		}
 		out << "(exit)\n";
-		if(!out){
+		if (lower_arrays) destination << Lower::lowerBooleanArraysForOptiMathSat(lower_sets
+		    ? Lower::lowerFiniteSetsForOptiMathSat(array_output.str()) : array_output.str());
+		if(!out || !destination){
 			throw std::runtime_error("writeSMT2: failed while writing SMT-LIB output");
 		}
 	}
@@ -4475,11 +4485,18 @@ private:
 	std::string Parser::dumpSMT2(const std::string& filename, Lower::OmtDialect dialect){
 		// Validate before truncating an existing destination.
 		(void)renderSMT2Objectives(dialect);
+		const bool lower_arrays = dialect == Lower::OmtDialect::OptiMathSAT
+		    && (Lower::needsOptiMathSatSetLowering(*this) || Lower::needsOptiMathSatArrayLowering(*this));
+		// Dialect lowering can reject an unsupported array construct. Complete
+		// that work before opening the user's destination with truncation.
+		std::string rendered;
+		if (lower_arrays) rendered = dumpSMT2(dialect);
 		std::ofstream file(filename, std::ios::binary | std::ios::out | std::ios::trunc);
 		if(!file){
 			throw std::runtime_error("dumpSMT2: could not open destination: " + filename);
 		}
-		writeSMT2(file, dialect);
+		if (lower_arrays) file << rendered;
+		else writeSMT2(file, dialect);
 		file.flush();
 		if(!file){
 			throw std::runtime_error("dumpSMT2: failed while writing destination: " + filename);

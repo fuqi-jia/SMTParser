@@ -129,6 +129,9 @@ const std::unordered_map<NODE_KIND, H::Op>& opTable() {
         {NODE_KIND::NT_ITE, H::Op::ITE},
         {NODE_KIND::NT_SELECT, H::Op::SELECT},
         {NODE_KIND::NT_STORE, H::Op::STORE},
+        {NODE_KIND::NT_ARRAY_MAP_AND, H::Op::ARRAY_MAP_AND},
+        {NODE_KIND::NT_ARRAY_MAP_OR, H::Op::ARRAY_MAP_OR},
+        {NODE_KIND::NT_ARRAY_MAP_NOT, H::Op::ARRAY_MAP_NOT},
 
         {NODE_KIND::NT_BV_NOT, H::Op::BV_NOT},
         {NODE_KIND::NT_BV_NEG, H::Op::BV_NEG},

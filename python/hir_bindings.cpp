@@ -174,6 +174,9 @@ void bind(py::module_& m) {
             {"implies", {H::Op::IMPLIES, 2, 2}}, {"xor", {H::Op::XOR, 2, 0}},
             {"ite", {H::Op::ITE, 3, 3}}, {"distinct", {H::Op::DISTINCT, 2, 0}},
             {"select", {H::Op::SELECT, 2, 2}}, {"store", {H::Op::STORE, 3, 3}},
+            {"array.map.and", {H::Op::ARRAY_MAP_AND, 2, 0}},
+            {"array.map.or", {H::Op::ARRAY_MAP_OR, 2, 0}},
+            {"array.map.not", {H::Op::ARRAY_MAP_NOT, 1, 1}},
             // Bit-vectors: n-ary where SMT-LIB is (the associative group and
             // concat), binary elsewhere, the two negations unary.
             {"bvnot", {H::Op::BV_NOT, 1, 1}}, {"bvneg", {H::Op::BV_NEG, 1, 1}},
@@ -239,6 +242,15 @@ void bind(py::module_& m) {
         // mkOp derives result sorts before typeCheck; enforce array shape here.
         if ((op == "select" || op == "store") && args[0].value->sort.kind != H::SortKind::ARRAY)
             throw py::value_error("array operand required");
+        if (op == "array.map.and" || op == "array.map.or" || op == "array.map.not") {
+            for (const auto& arg : args) {
+                const auto& sort = arg.value->sort;
+                if (sort.kind != H::SortKind::ARRAY || !sort.elem
+                    || sort.elem->kind != H::SortKind::BOOL
+                    || !H::sameSort(sort, args[0].value->sort))
+                    throw py::value_error("Boolean array map requires identical Boolean array sorts");
+            }
+        }
         // These builders feed native parser constructors, some of which report
         // wrong sorts through an unknown node instead of a Python exception.
         // Refuse bad signatures before constructing them.

@@ -300,7 +300,7 @@ the same objective, which no consistent misreading of either can satisfy.
 The consequence is not a fidelity loss but a **logic change**: QF_LRA becomes QF_NRA, which
 is a different decision problem with different solver support. That belongs in the report
 as a feature count, which is exactly what step 4 of `translate()` records
-(`src/translation/translate.cpp:526-528`), and the profile's `min_fidelity` floor is not the right
+(`src/translation/translate.cpp:616-618`), and the profile's `min_fidelity` floor is not the right
 place to catch it.
 
 Note also the `/ 2` in the quadratic syntax: LP's quadratic sections conventionally write

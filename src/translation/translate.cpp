@@ -6,6 +6,7 @@
 
 #include "somtparser/translation/translate.h"
 #include "somtparser/lowering/z3_finite_set_lowering.h"
+#include "somtparser/lowering/optimathsat_array_lowering.h"
 
 #include "somtparser/lowering/bound_ints_pass.h"
 #include "somtparser/lowering/positive_exists.h"
@@ -185,6 +186,17 @@ void Translation::writeSmt2(std::ostream& out, Lower::OmtDialect dialect) const 
     std::vector<std::string> objective_names;
     std::string preamble;
     const std::string omt = objectiveCommands(dialect, &objective_names, &preamble);
+    const auto& materialized = packed_smt_ ? packed_base_parser_ : parser_;
+    if (dialect == Lower::OmtDialect::OptiMathSAT
+        && (set_solver_requirements_.has_sets || (materialized
+            && Lower::needsOptiMathSatArrayLowering(*materialized)))) {
+        std::ostringstream raw;
+        writeSmt2Body(raw, omt, dialect, objective_names, preamble);
+        out << Lower::lowerBooleanArraysForOptiMathSat(set_solver_requirements_.has_sets
+            ? Lower::lowerFiniteSetsForOptiMathSat(raw.str()) : raw.str());
+        if (!out) throw std::runtime_error("writeSmt2: failed while writing OptiMathSAT array output");
+        return;
+    }
     // The parser body can be very large. Only buffer it when the translated
     // HIR actually contains sets that need Z3's representation rewrite.
     // set_solver_requirements_ was computed from typed HIR before lowering,
@@ -359,7 +371,16 @@ void Translation::writeSmt2(const std::string& path,
     std::string preamble;
     const std::string omt = objectiveCommands(dialect, &objective_names, &preamble);
     std::string rendered;
-    if (dialect == Lower::OmtDialect::Z3 && set_solver_requirements_.has_sets) {
+    const auto& materialized = packed_smt_ ? packed_base_parser_ : parser_;
+    const bool oms_arrays = dialect == Lower::OmtDialect::OptiMathSAT
+        && (set_solver_requirements_.has_sets || (materialized
+            && Lower::needsOptiMathSatArrayLowering(*materialized)));
+    if (oms_arrays) {
+        std::ostringstream raw;
+        writeSmt2Body(raw, omt, dialect, objective_names, preamble);
+        rendered = Lower::lowerBooleanArraysForOptiMathSat(set_solver_requirements_.has_sets
+            ? Lower::lowerFiniteSetsForOptiMathSat(raw.str()) : raw.str());
+    } else if (dialect == Lower::OmtDialect::Z3 && set_solver_requirements_.has_sets) {
         if (set_solver_requirements_.non_integer_carrier) {
             throw std::runtime_error("Z3 finite-set export currently requires Set Int; use the native Set dialect for other element sorts");
         }
@@ -371,7 +392,7 @@ void Translation::writeSmt2(const std::string& path,
     if (!out) {
         throw std::runtime_error("writeSmt2: could not open destination: " + path);
     }
-    if (dialect == Lower::OmtDialect::Z3 && set_solver_requirements_.has_sets) out << rendered;
+    if (oms_arrays || (dialect == Lower::OmtDialect::Z3 && set_solver_requirements_.has_sets)) out << rendered;
     else writeSmt2Body(out, omt, dialect, objective_names, preamble);
     out.flush();
     if (!out) {

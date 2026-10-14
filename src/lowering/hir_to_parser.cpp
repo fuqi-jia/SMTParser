@@ -117,6 +117,9 @@ const char* opName(H::Op op) {
     case H::Op::SUB: return "-";
     case H::Op::MUL: return "*";
     case H::Op::SELECT: return "select";
+    case H::Op::ARRAY_MAP_AND: return "array.map.and";
+    case H::Op::ARRAY_MAP_OR: return "array.map.or";
+    case H::Op::ARRAY_MAP_NOT: return "array.map.not";
     case H::Op::STORE:  return "store";
     case H::Op::BV_NOT:  return "bvnot";
     case H::Op::BV_NEG:  return "bvneg";
@@ -855,6 +858,9 @@ std::shared_ptr<DAGNode> HirToParser::lowerExprUncached(const H::ExprPtr& e,
             return parser_->mkIte(args[0], args[1], args[2]);
         case H::Op::ADD: return parser_->mkAdd(args);
         case H::Op::MUL: return parser_->mkMul(args);
+        case H::Op::ARRAY_MAP_AND: return parser_->mkArrayMap("and", args);
+        case H::Op::ARRAY_MAP_OR: return parser_->mkArrayMap("or", args);
+        case H::Op::ARRAY_MAP_NOT: return parser_->mkArrayMap("not", args);
         case H::Op::SELECT:
             if (args.size() != 2) {
                 diagnostics.error(ErrorCode::E_INTERNAL,

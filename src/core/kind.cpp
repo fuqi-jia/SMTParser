@@ -430,6 +430,9 @@ namespace SOMTParser{
             return "select";
         case NODE_KIND::NT_STORE:
             return "store";
+        case NODE_KIND::NT_ARRAY_MAP_AND: return "(_ map and)";
+        case NODE_KIND::NT_ARRAY_MAP_OR: return "(_ map or)";
+        case NODE_KIND::NT_ARRAY_MAP_NOT: return "(_ map not)";
         // DATATYPE / TUPLE / ANNOTATION operators — ported from the
         // SMTStabilizer fork.
         case NODE_KIND::NT_DT_TESTER:

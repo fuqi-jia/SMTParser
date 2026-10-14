@@ -747,7 +747,8 @@ ExprPtr mkOp(Op op, std::vector<ExprPtr> args, SourceLoc loc) {
         condAssert(args.size() == 3, "ite takes a condition and two branches");
         condAssert(args[1] != nullptr, "ite: null branch");
         e->sort = args[1]->sort;
-    } else if (op == Op::STORE) {
+    } else if (op == Op::STORE || op == Op::ARRAY_MAP_AND
+               || op == Op::ARRAY_MAP_OR || op == Op::ARRAY_MAP_NOT) {
         // (store a i v) is an array, not an element: the result sort is the
         // array's. Falling through to widen() would have made it Bool.
         //

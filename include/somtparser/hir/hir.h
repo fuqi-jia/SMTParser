@@ -444,6 +444,8 @@ enum class Op {
     SELECT,
     /** (store a i v): the array a with index i mapped to v. Same sort as a. */
     STORE,
+    /** Pointwise Boolean array maps used by finite-set encodings. */
+    ARRAY_MAP_AND, ARRAY_MAP_OR, ARRAY_MAP_NOT,
     /** `((as const (Array T U)) v)`: the array mapping every index to v.
      *
      *  Indexed by its RESULT SORT and not by its argument, like int2bv: the

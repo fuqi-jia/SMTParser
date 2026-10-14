@@ -396,8 +396,8 @@ multi-objective modes; see [the current dialect contract](../translation-output.
 Consequence for a baseline arm that reads OMT benchmarks: **the source dialect is part of
 the benchmark's identity**, and a translation between dialects is a real transformation even
 though it looks like formatting. `Parser::parseAny` already relies on this — it moves content
-between two in-process `Parser`s specifically via `OmtDialect::Z3`, its canonical
-internal replay dialect (`src/frontend/base_parser.cpp:4637`). The current parser
+between two in-process `Parser`s via `Translation::toParserSmt2()`, which preserves
+native theories for internal replay (`src/frontend/base_parser.cpp:4713`). The current parser
 also reads the supported GOMT objective forms described in the dialect contract.
 
 ---

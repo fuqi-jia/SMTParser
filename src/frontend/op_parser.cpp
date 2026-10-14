@@ -4287,6 +4287,44 @@ namespace SOMTParser{
         // Apply array simplification to normalize store chain
         return simplifyArray(store_node);
     }
+    std::shared_ptr<DAGNode> Parser::mkArrayMap(
+            const std::string& op, const std::vector<std::shared_ptr<DAGNode>>& arrays) {
+        const auto kind = op == "and" ? NODE_KIND::NT_ARRAY_MAP_AND
+                        : op == "or" ? NODE_KIND::NT_ARRAY_MAP_OR
+                        : op == "not" ? NODE_KIND::NT_ARRAY_MAP_NOT
+                        : NODE_KIND::NT_UNKNOWN;
+        if (kind == NODE_KIND::NT_UNKNOWN) {
+            err_all(ERROR_TYPE::ERR_UNKWN_SYM, "unsupported array map function: " + op, line_number);
+            return mkUnknown();
+        }
+        if ((op == "not" && arrays.size() != 1)
+            || (op != "not" && arrays.size() < 2)) {
+            err_all(ERROR_TYPE::ERR_PARAM_MIS, "invalid Boolean array map arity", line_number);
+            return mkUnknown();
+        }
+        std::shared_ptr<Sort> sort;
+        for (const auto& array : arrays) {
+            if (!array || !array->getSort() || !array->getSort()->isArray()
+                || !array->getSort()->getElemSort()->isBool()
+                || (sort && !sort->isEqTo(array->getSort()))) {
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "array map needs Boolean arrays with identical index sorts", line_number);
+                return mkUnknown();
+            }
+            sort = array->getSort();
+        }
+        // Z3's mapped Boolean functions have fixed arity. Normalize our
+        // variadic API into binary maps without recursive construction.
+        if (op != "not" && arrays.size() > 2) {
+            auto result = arrays.front();
+            for (size_t i = 1; i < arrays.size(); ++i) {
+                result = getNodeManager()->createNode(sort, kind, op, {result, arrays[i]});
+            }
+            return result;
+        }
+        // Bypass scalar folding: and/or/not here act on every array cell.
+        return getNodeManager()->createNode(sort, kind, op, arrays);
+    }
+
     // TERM ANNOTATIONS — ported from the SMTStabilizer fork.
     // These are structural wrappers, so they bypass mkOper (and therefore
     // simplification): folding an annotation away is exactly what we are trying
@@ -5607,6 +5645,9 @@ namespace SOMTParser{
                 return 4;
 
             // n-ary
+            case NODE_KIND::NT_ARRAY_MAP_AND:
+            case NODE_KIND::NT_ARRAY_MAP_OR:
+            case NODE_KIND::NT_ARRAY_MAP_NOT:
             case NODE_KIND::NT_SET_UNION:
             case NODE_KIND::NT_SET_INTER:
             case NODE_KIND::NT_SET_INSERT:

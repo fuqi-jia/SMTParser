@@ -55,6 +55,7 @@ namespace SOMTParser{
         FrameState state = FrameState::Start;
         std::string headSymbol;
         std::string second_symbol;
+        std::string array_map_operator;
         std::vector<std::shared_ptr<DAGNode>> func_args;
         std::vector<std::shared_ptr<DAGNode>> oper_params;
         std::shared_ptr<DAGNode> result;
@@ -159,6 +160,15 @@ namespace SOMTParser{
                         std::string s = getSymbol();
                         if(s == "_"){
                             std::string idx = getSymbol();
+                            if (idx == "map") {
+                                // The map index is a function symbol, not an
+                                // expression. Parsing `and` as an operand used
+                                // to reject our own finite-set output.
+                                frame.array_map_operator = getSymbol();
+                                parseRpar();
+                                frame.state = FrameState::ProcessingParamFuncParams;
+                                break;
+                            }
                             if(idx == "is"){
                                 std::string ctor = getSymbol();
                                 parseRpar();
@@ -819,7 +829,9 @@ namespace SOMTParser{
                         // inline the most common operators
                         const std::string& opName = frame.second_symbol;
                         
-                        res = parseOper(opName, frame.func_args, frame.oper_params, true);
+                        res = frame.array_map_operator.empty()
+                            ? parseOper(opName, frame.func_args, frame.oper_params, true)
+                            : mkArrayMap(frame.array_map_operator, frame.oper_params);
                         
                         if(res->isErr()) err_all(res, frame.second_symbol, frame.line);
                         frame.result = res;
