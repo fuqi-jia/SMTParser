@@ -2307,6 +2307,12 @@ namespace SOMTParser{
         // (a) bit_representation form with BV children
         if(name == "(fp_bit_representation)" && node->getChildren().size() == 3) {
             auto ch = node->getChildren();
+            // The SMT-LIB fp constructor also accepts symbolic bit-vector
+            // terms. parseBVBits is a literal reader; symbolic names would
+            // otherwise be read as zero and unsoundly folded by callers.
+            if (!ch[0]->isCBV() || !ch[1]->isCBV() || !ch[2]->isCBV()) {
+                return std::nullopt;
+            }
             v.sign = parseBVBits(ch[0]->getName());
             v.exponent = parseBVBits(ch[1]->getName());
             v.significand = parseBVBits(ch[2]->getName());

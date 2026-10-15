@@ -695,31 +695,31 @@ namespace SOMTParser{
                 return mkUnknown();
             }
             case NODE_KIND::NT_FP_IS_NORMAL:{
-                if(p->isCFP()) return fpNodeIsNormal(p) ? mkTrue() : mkFalse();
+                if(p->isCFP() && fpNodeToValue(p)) return fpNodeIsNormal(p) ? mkTrue() : mkFalse();
                 return mkUnknown();
             }
             case NODE_KIND::NT_FP_IS_SUBNORMAL:{
-                if(p->isCFP()) return fpNodeIsSubnormal(p) ? mkTrue() : mkFalse();
+                if(p->isCFP() && fpNodeToValue(p)) return fpNodeIsSubnormal(p) ? mkTrue() : mkFalse();
                 return mkUnknown();
             }
             case NODE_KIND::NT_FP_IS_ZERO:{
-                if(p->isCFP()) return fpNodeIsZero(p) ? mkTrue() : mkFalse();
+                if(p->isCFP() && fpNodeToValue(p)) return fpNodeIsZero(p) ? mkTrue() : mkFalse();
                 return mkUnknown();
             }
             case NODE_KIND::NT_FP_IS_INF:{
-                if(p->isCFP()) return fpNodeIsInf(p) ? mkTrue() : mkFalse();
+                if(p->isCFP() && fpNodeToValue(p)) return fpNodeIsInf(p) ? mkTrue() : mkFalse();
                 return mkUnknown();
             }
             case NODE_KIND::NT_FP_IS_NAN:{
-                if(p->isCFP()) return fpNodeIsNaN(p) ? mkTrue() : mkFalse();
+                if(p->isCFP() && fpNodeToValue(p)) return fpNodeIsNaN(p) ? mkTrue() : mkFalse();
                 return mkUnknown();
             }
             case NODE_KIND::NT_FP_IS_NEG:{
-                if(p->isCFP()) return fpNodeIsNeg(p) ? mkTrue() : mkFalse();
+                if(p->isCFP() && fpNodeToValue(p)) return fpNodeIsNeg(p) ? mkTrue() : mkFalse();
                 return mkUnknown();
             }
             case NODE_KIND::NT_FP_IS_POS:{
-                if(p->isCFP()) return (!fpNodeIsNeg(p)) ? mkTrue() : mkFalse();
+                if(p->isCFP() && fpNodeToValue(p)) return (!fpNodeIsNaN(p) && !fpNodeIsNeg(p)) ? mkTrue() : mkFalse();
                 return mkUnknown();
             }
             case NODE_KIND::NT_STR_LEN:{

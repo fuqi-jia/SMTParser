@@ -841,7 +841,7 @@ namespace SOMTParser{
             bool c = evaluatedOperand(this, child, model, eval);
             if(!c) eval = child;
             changed |= c;
-            if(eval->isConst() || eval->isDtGroundValue()){
+            if((eval->isConst() && (!eval->isCFP() || fpNodeToValue(eval))) || eval->isDtGroundValue()){
                 const_vals.emplace_back(eval);
             }
             else{
@@ -957,7 +957,7 @@ namespace SOMTParser{
                 }
                 dt_vals.push_back(eval);
             }
-            else if(eval->isConst()){
+            else if(eval->isConst() && (!eval->isCFP() || fpNodeToValue(eval))){
                 if(const_vals.empty()){
                     const_vals.insert(eval);
                 }
@@ -1932,7 +1932,7 @@ namespace SOMTParser{
         std::shared_ptr<DAGNode> fp1 = NodeManager::NULL_NODE;
         bool changed = evaluatedOperand(this, expr->getChildren()[0], model, fp1);
         if(!changed) fp1 = expr->getChildren()[0];
-        if(fp1->isCFP()){ result = fpNodeIsNormal(fp1) ? mkTrue() : mkFalse(); return true; }
+        if(fp1->isCFP() && fpNodeToValue(fp1)){ result = fpNodeIsNormal(fp1) ? mkTrue() : mkFalse(); return true; }
         result = mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_FP_IS_NORMAL, fp1);
         return true;
     }
@@ -1940,7 +1940,7 @@ namespace SOMTParser{
         std::shared_ptr<DAGNode> fp1 = NodeManager::NULL_NODE;
         bool changed = evaluatedOperand(this, expr->getChildren()[0], model, fp1);
         if(!changed) fp1 = expr->getChildren()[0];
-        if(fp1->isCFP()){ result = fpNodeIsSubnormal(fp1) ? mkTrue() : mkFalse(); return true; }
+        if(fp1->isCFP() && fpNodeToValue(fp1)){ result = fpNodeIsSubnormal(fp1) ? mkTrue() : mkFalse(); return true; }
         result = mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_FP_IS_SUBNORMAL, fp1);
         return true;
     }
@@ -1948,7 +1948,7 @@ namespace SOMTParser{
         std::shared_ptr<DAGNode> fp1 = NodeManager::NULL_NODE;
         bool changed = evaluatedOperand(this, expr->getChildren()[0], model, fp1);
         if(!changed) fp1 = expr->getChildren()[0];
-        if(fp1->isCFP()){ result = fpNodeIsZero(fp1) ? mkTrue() : mkFalse(); return true; }
+        if(fp1->isCFP() && fpNodeToValue(fp1)){ result = fpNodeIsZero(fp1) ? mkTrue() : mkFalse(); return true; }
         result = mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_FP_IS_ZERO, fp1);
         return true;
     }
@@ -1956,7 +1956,7 @@ namespace SOMTParser{
         std::shared_ptr<DAGNode> fp1 = NodeManager::NULL_NODE;
         bool changed = evaluatedOperand(this, expr->getChildren()[0], model, fp1);
         if(!changed) fp1 = expr->getChildren()[0];
-        if(fp1->isCFP()){ result = fpNodeIsInf(fp1) ? mkTrue() : mkFalse(); return true; }
+        if(fp1->isCFP() && fpNodeToValue(fp1)){ result = fpNodeIsInf(fp1) ? mkTrue() : mkFalse(); return true; }
         result = mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_FP_IS_INF, fp1);
         return true;
     }
@@ -1964,7 +1964,7 @@ namespace SOMTParser{
         std::shared_ptr<DAGNode> fp1 = NodeManager::NULL_NODE;
         bool changed = evaluatedOperand(this, expr->getChildren()[0], model, fp1);
         if(!changed) fp1 = expr->getChildren()[0];
-        if(fp1->isCFP()){ result = fpNodeIsNaN(fp1) ? mkTrue() : mkFalse(); return true; }
+        if(fp1->isCFP() && fpNodeToValue(fp1)){ result = fpNodeIsNaN(fp1) ? mkTrue() : mkFalse(); return true; }
         result = mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_FP_IS_NAN, fp1);
         return true;
     }
@@ -1972,7 +1972,7 @@ namespace SOMTParser{
         std::shared_ptr<DAGNode> fp1 = NodeManager::NULL_NODE;
         bool changed = evaluatedOperand(this, expr->getChildren()[0], model, fp1);
         if(!changed) fp1 = expr->getChildren()[0];
-        if(fp1->isCFP()){ result = fpNodeIsNeg(fp1) ? mkTrue() : mkFalse(); return true; }
+        if(fp1->isCFP() && fpNodeToValue(fp1)){ result = fpNodeIsNeg(fp1) ? mkTrue() : mkFalse(); return true; }
         result = mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_FP_IS_NEG, fp1);
         return true;
     }
@@ -1980,7 +1980,7 @@ namespace SOMTParser{
         std::shared_ptr<DAGNode> fp1 = NodeManager::NULL_NODE;
         bool changed = evaluatedOperand(this, expr->getChildren()[0], model, fp1);
         if(!changed) fp1 = expr->getChildren()[0];
-        if(fp1->isCFP()){ result = !fpNodeIsNaN(fp1) && !fpNodeIsNeg(fp1) ? mkTrue() : mkFalse(); return true; }
+        if(fp1->isCFP() && fpNodeToValue(fp1)){ result = !fpNodeIsNaN(fp1) && !fpNodeIsNeg(fp1) ? mkTrue() : mkFalse(); return true; }
         result = mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_FP_IS_POS, fp1);
         return true;
     }
