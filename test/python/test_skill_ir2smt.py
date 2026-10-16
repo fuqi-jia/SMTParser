@@ -9,6 +9,75 @@ import z3
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'skills/somtparser-nl-smtlib/scripts'))
 import ir2smt as bridge
 
+@pytest.mark.parametrize('node,expected', [
+    ('|a b|', '|a b|'),
+    ([], '()'),
+    (['assert', ['=', '|a b|', '"a ""quote""; (x)"']],
+     '(assert (= |a b| "a ""quote""; (x)"))'),
+    (['f', [], ['g', 'x'], 'y'], '(f () (g x) y)'),
+])
+def test_sexpr_preserves_tokens_spacing_and_empty_lists(node, expected):
+    before = deepcopy(node)
+    assert bridge.sexpr(node) == expected
+    assert node == before
+
+
+def test_sexpr_handles_deep_terms_without_changing_recursion_limit():
+    depth = 4000
+    node = 'x'
+    for _ in range(depth):
+        node = ['not', node]
+    limit = sys.getrecursionlimit()
+    assert bridge.sexpr(node) == '(not ' * depth + 'x' + ')' * depth
+    assert sys.getrecursionlimit() == limit
+
+
+def test_sexpr_serializes_every_shared_occurrence_without_mutation():
+    node = ['store', 'a', '0', '7']
+    root = ['=', node, node]
+    assert bridge.sexpr(root) == '(= (store a 0 7) (store a 0 7))'
+    assert root[1] is root[2] is node
+    assert node == ['store', 'a', '0', '7']
+
+
+def test_sexpr_rejects_cycles_without_rejecting_shared_nodes():
+    node = ['f']
+    node.append(node)
+    with pytest.raises(ValueError, match='cyclic SMT expression'):
+        bridge.sexpr(node)
+
+
+def test_sexpr_preserves_wide_term_order():
+    items = [str(i) for i in range(10000)]
+    assert bridge.sexpr(['f', *items]) == '(f ' + ' '.join(items) + ')'
+
+
+def test_hir_large_data_table_exports_and_preserves_total_lookup():
+    source = 'Choose integer index i and return table entry r, or -1 outside the table.'
+    raw = hir()
+    raw.update(decision='satisfiability', objectives=[], goal=None,
+               declarations=[dict(name='i', sort='Int'), dict(name='r', sort='Int')],
+               data={'a': list(range(1, 1201))},
+               constraints=[dict(span=[0, len(source)],
+                                 expr=O('eq', V('r'),
+                                        {'data': 'a', 'indices': [V('i')], 'default': L(-1)}))])
+    before = deepcopy(raw)
+    result = bridge.render(source, raw, route='hir')
+    assert result['status'] == 'translated', result.get('diagnostics')
+    assert raw == before
+    assert result['meta']['solver_executed'] is False
+    assert result['code'].count('(check-sat)') == 1
+    solver = z3.Solver()
+    solver.set(timeout=10000)
+    solver.from_string(result['code'])
+    i, r = z3.Ints('i r')
+    for index, expected in [(-1, -1), (0, 1), (600, 601), (1199, 1200), (1200, -1)]:
+        solver.push()
+        solver.add(i == index, r != expected)
+        assert solver.check() == z3.unsat
+        solver.pop()
+
+
 SOURCE = 'Choose an integer x between 4 and 9. Minimize x.'
 L = lambda n: {'literal': n, 'sort': 'Int'}
 V = lambda n: {'var': n}

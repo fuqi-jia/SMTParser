@@ -54,7 +54,32 @@ def expressions(text):
 
 
 def sexpr(node):
-    return "(" + " ".join(map(sexpr, node)) + ")" if isinstance(node, list) else node
+    """Write nested SMT terms without consuming the Python call stack."""
+    if not isinstance(node, list):
+        return node
+    pieces = ["("]
+    frames = [(node, 0)]
+    active = {id(node)}
+    while frames:
+        items, index = frames[-1]
+        if index == len(items):
+            pieces.append(")")
+            frames.pop()
+            active.remove(id(items))
+            continue
+        frames[-1] = (items, index + 1)
+        if index:
+            pieces.append(" ")
+        child = items[index]
+        if isinstance(child, list):
+            if id(child) in active:
+                raise ValueError("cyclic SMT expression")
+            pieces.append("(")
+            active.add(id(child))
+            frames.append((child, 0))
+        else:
+            pieces.append(child)
+    return "".join(pieces)
 
 
 def exact_fields(value, required, optional=()):
