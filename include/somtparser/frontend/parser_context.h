@@ -80,6 +80,11 @@ public:
     std::shared_ptr<ObjectiveManager> getObjectiveManager() const { return objective_manager_; }
 
 public:
+    // One heap signature per script, retained by reset-assertions and scopes.
+    // Only a full reset permits a new signature.
+    std::shared_ptr<Sort> heap_location_sort;
+    std::shared_ptr<Sort> heap_data_sort;
+    bool heap_declaration_open = true;
     std::vector<std::shared_ptr<DAGNode>> assertions;
     std::unordered_map<std::string, std::unordered_set<size_t>> assertion_groups;
     std::unordered_map<std::string, std::shared_ptr<DAGNode>> named_assertions;

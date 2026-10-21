@@ -143,6 +143,9 @@ namespace SOMTParser{
         NT_ROOT_OF_WITH_INTERVAL,
         NT_REAL_ALGEBRAIC_NUMBER,
         
+        // Separation logic. Appended to preserve existing kind values.
+        NT_SEP_EMP, NT_SEP_NIL, NT_SEP_PTO, NT_SEP_STAR, NT_SEP_WAND,
+
         // NUM_KINDS
         NUM_KINDS
     };
@@ -178,6 +181,11 @@ namespace SOMTParser{
         {"inf", NODE_KIND::NT_INFINITY},
     };
     const std::unordered_map<std::string, NODE_KIND> oper_key_map = {
+        {"sep.emp", NODE_KIND::NT_SEP_EMP},
+        {"sep.nil", NODE_KIND::NT_SEP_NIL},
+        {"pto", NODE_KIND::NT_SEP_PTO},
+        {"sep", NODE_KIND::NT_SEP_STAR},
+        {"wand", NODE_KIND::NT_SEP_WAND},
         {"and", NODE_KIND::NT_AND},
         {"or", NODE_KIND::NT_OR},
         {"not", NODE_KIND::NT_NOT},

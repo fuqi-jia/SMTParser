@@ -80,7 +80,8 @@ namespace SOMTParser{
         // OPTIMIZATION COMMANDS
         CT_GET_OBJECTIVES, CT_ASSERT_SOFT, 
         CT_DEFINE_OBJ, CT_DEFINE_MIN_OBJ, CT_DEFINE_MAX_OBJ,
-        CT_MINIMIZE, CT_MAXIMIZE, CT_LEX_OPTIMIZE, CT_PARETO_OPTIMIZE, CT_BOX_OPTIMIZE, CT_MINMAX, CT_MAXMIN, CT_MAXSAT, CT_MINSAT, CT_OPTIMIZE
+        CT_MINIMIZE, CT_MAXIMIZE, CT_LEX_OPTIMIZE, CT_PARETO_OPTIMIZE, CT_BOX_OPTIMIZE, CT_MINMAX, CT_MAXMIN, CT_MAXSAT, CT_MINSAT, CT_OPTIMIZE,
+        CT_DECLARE_HEAP
         // CT_LEX_MAXIMIZE, CT_PARETO_MINIMIZE, CT_PARETO_MAXIMIZE, 
         // CT_BOX_MINIMIZE, CT_BOX_MAXIMIZE, CT_MINMAX, CT_MAXMIN
     };
@@ -321,6 +322,9 @@ namespace SOMTParser{
          */
         std::shared_ptr<NodeManager> getNodeManager() { return context_.getNodeManager(); }
         std::shared_ptr<NodeManager> getNodeManager() const { return context_.getNodeManager(); }
+        std::shared_ptr<Sort> getHeapLocationSort() const { return context_.heap_location_sort; }
+        std::shared_ptr<Sort> getHeapDataSort() const { return context_.heap_data_sort; }
+        std::shared_ptr<DAGNode> mkSpatial(NODE_KIND, const std::vector<std::shared_ptr<DAGNode>>&);
 
         std::shared_ptr<SortManager> getSortManager() { return context_.getSortManager(); }
         std::shared_ptr<SortManager> getSortManager() const { return context_.getSortManager(); }
@@ -514,6 +518,9 @@ namespace SOMTParser{
          * @return Vector of all functions
          */
         std::vector<std::shared_ptr<DAGNode>> getFunctions() const;
+        std::vector<SymbolManager::RecursiveDefinition> getRecursiveDefinitions() const {
+            return getSymbolManager()->getRecursiveDefinitions();
+        }
 
         /**
          * @brief Check if a function is declared
@@ -711,6 +718,7 @@ namespace SOMTParser{
          * @return Function declaration node
          */
         std::shared_ptr<DAGNode> mkFuncDec(const std::string &name, const std::vector<std::shared_ptr<Sort>> &params, std::shared_ptr<Sort> out_sort);
+        std::shared_ptr<DAGNode> mkFuncRecDecl(const std::string &name, const std::vector<std::shared_ptr<Sort>> &params, std::shared_ptr<Sort> out_sort);
 
         /**
          * @brief Create a function definition
@@ -4020,7 +4028,7 @@ namespace SOMTParser{
         std::shared_ptr<DAGNode>	            bindFunVar(const std::string &key, std::shared_ptr<DAGNode> expr);
         // conversion
         std::shared_ptr<DAGNode>                substitute(std::shared_ptr<DAGNode> expr, std::unordered_map<std::string, std::shared_ptr<DAGNode>> &params, std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> & visited);
-        std::shared_ptr<DAGNode>	            applyFunPostOrder(std::shared_ptr<DAGNode> node, std::unordered_map<std::string, std::shared_ptr<DAGNode>> &params);
+        std::shared_ptr<DAGNode>	            applyFunPostOrder(std::shared_ptr<DAGNode> node, std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> &params);
         
         std::shared_ptr<DAGNode>                replaceAtoms(std::shared_ptr<DAGNode> expr, 
                                                             std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& atom_map, 

@@ -39,14 +39,14 @@ std::shared_ptr<DAGNode> SymbolManager::resolveSymbol(const std::string& name, c
     auto it_fun = fun_key_map_.find(name);
     if (it_fun != fun_key_map_.end())
         return it_fun->second;
-    auto it_fv = fun_var_map_.find(name);
-    if (it_fv != fun_var_map_.end())
-        return it_fv->second;
     if (scope.in_quantifier_scope) {
         auto it_q = quant_var_map_.find(name);
         if (it_q != quant_var_map_.end())
-            return it_q->second;
+            return it_q->second.back();
     }
+    auto it_fv = fun_var_map_.find(name);
+    if (it_fv != fun_var_map_.end())
+        return it_fv->second;
 
     auto it_var = var_names_.find(name);
     if (it_var != var_names_.end())
@@ -76,15 +76,14 @@ std::shared_ptr<DAGNode> SymbolManager::resolveTerm(const std::string& name, con
     }
 
     // Function parameters (fun_var) are term bindings inside function bodies
-    auto it_fv = fun_var_map_.find(name);
-    if (it_fv != fun_var_map_.end())
-        return it_fv->second;
-
     if (scope.in_quantifier_scope) {
         auto it_q = quant_var_map_.find(name);
         if (it_q != quant_var_map_.end())
-            return it_q->second;
+            return it_q->second.back();
     }
+    auto it_fv = fun_var_map_.find(name);
+    if (it_fv != fun_var_map_.end())
+        return it_fv->second;
 
     auto it_var = var_names_.find(name);
     if (it_var != var_names_.end())
@@ -172,6 +171,29 @@ bool SymbolManager::hasFun(const std::string& name) const {
     return fun_key_map_.find(name) != fun_key_map_.end();
 }
 
+void SymbolManager::registerRecursiveDefinition(const std::shared_ptr<DAGNode>& symbol,
+                                                const std::shared_ptr<DAGNode>& definition) {
+    recursive_definitions_[symbol->getName()] = {symbol, definition};
+    registerFun(symbol->getName(), definition);
+}
+
+std::shared_ptr<DAGNode> SymbolManager::getRecursiveSymbol(const std::shared_ptr<DAGNode>& function) const {
+    const auto it = recursive_definitions_.find(function->getName());
+    if (it != recursive_definitions_.end() && it->second.definition == function)
+        return it->second.symbol;
+    // Also used while parsing a recursive group, before bodies exist.
+    return function;
+}
+
+std::vector<SymbolManager::RecursiveDefinition> SymbolManager::getRecursiveDefinitions() const {
+    std::vector<RecursiveDefinition> result;
+    for (const auto& name : function_names_) {
+        auto it = recursive_definitions_.find(name);
+        if (it != recursive_definitions_.end()) result.push_back(it->second);
+    }
+    return result;
+}
+
 void SymbolManager::registerFunVar(const std::string& name, const std::shared_ptr<DAGNode>& node) {
     fun_var_map_[name] = node;
 }
@@ -197,16 +219,21 @@ void SymbolManager::removeSort(const std::string& name) {
 }
 
 void SymbolManager::registerQuantVar(const std::string& name, const std::shared_ptr<DAGNode>& node) {
-    quant_var_map_[name] = node;
+    quant_var_map_[name].push_back(node);
 }
 
 std::shared_ptr<DAGNode> SymbolManager::getQuantVar(const std::string& name) const {
     auto it = quant_var_map_.find(name);
-    return it != quant_var_map_.end() ? it->second : nullptr;
+    return it != quant_var_map_.end() ? it->second.back() : nullptr;
 }
 
 void SymbolManager::popQuantScope(const std::vector<std::string>& keys) {
-    for (const auto& k : keys) quant_var_map_.erase(k);
+    for (auto key = keys.rbegin(); key != keys.rend(); ++key) {
+        auto it = quant_var_map_.find(*key);
+        if (it == quant_var_map_.end()) continue;
+        it->second.pop_back();
+        if (it->second.empty()) quant_var_map_.erase(it);
+    }
 }
 
 bool SymbolManager::hasQuantVar(const std::string& name) const {
@@ -327,6 +354,7 @@ const std::unordered_map<std::string, std::shared_ptr<Sort>>& SymbolManager::get
 
 void SymbolManager::removeFun(const std::string& name) {
     fun_key_map_.erase(name);
+    recursive_definitions_.erase(name);
     removeFunctionName(name);
 }
 

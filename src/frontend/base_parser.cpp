@@ -930,6 +930,25 @@ namespace SOMTParser{
 		size_t command_ln = line_number;
 		std::string command = getSymbol();
 
+        if (command == "declare-heap") {
+            if (context_.heap_location_sort || !context_.heap_declaration_open ||
+                !context_.scope_stack_.empty())
+                err_all(ERROR_TYPE::ERR_LOGIC, "declare-heap requires a fresh base context", command_ln);
+            parseLpar();
+            auto location = parseSort();
+            auto data = parseSort();
+            parseRpar();
+            scanToNextSymbol();
+            if (*bufptr != ')')
+                err_all(ERROR_TYPE::ERR_PARAM_MIS, "declare-heap expects one sort pair", command_ln);
+            context_.heap_location_sort = std::move(location);
+            context_.heap_data_sort = std::move(data);
+            return CMD_TYPE::CT_DECLARE_HEAP;
+        }
+        if (command == "assert" || command == "assert-soft" || command == "push" ||
+            command == "check-sat" || command == "check-sat-assuming")
+            context_.heap_declaration_open = false;
+
 		// (assert <expr>) or (assert <expr> [:id <symbol>])
 		if (command == "assert") {
 			std::string grp_id = "";
@@ -1239,12 +1258,7 @@ namespace SOMTParser{
 			std::string name = getSymbol();
 
 			std::shared_ptr<DAGNode> check_fun = getSymbolManager()->getFun(name);
-			if(check_fun && check_fun->getKind() == NODE_KIND::NT_FUNC_DEF){
-				err_mul_def(name, name_ln);
-			}
-			if(check_fun){
-				return CMD_TYPE::CT_DEFINE_FUN_REC;
-			}
+			if(check_fun) err_mul_def(name, name_ln);
 			// keep the function name with the same order
 			getSymbolManager()->addFunctionName(name);
 			context_.registerFunInScope(name);
@@ -1287,7 +1301,7 @@ namespace SOMTParser{
 			
 			// For recursive functions, we need to create a function declaration first
 			// so it can be referenced in its own body
-			std::shared_ptr<DAGNode> func_dec = mkFuncDec(name, param_sorts, out_sort);
+			std::shared_ptr<DAGNode> func_dec = mkFuncRecDecl(name, param_sorts, out_sort);
 			
 			// Now parse the function body (which can reference the function itself)
 			std::shared_ptr<DAGNode> func_body = parseExpr();
@@ -1320,16 +1334,12 @@ namespace SOMTParser{
 				std::string name = getSymbol();
 				
 				std::shared_ptr<DAGNode> check_fun = getSymbolManager()->getFun(name);
-				if(check_fun && check_fun->getKind() == NODE_KIND::NT_FUNC_DEF){
+				if(check_fun || std::find(func_names.begin(), func_names.end(), name) != func_names.end())
 					err_mul_def(name, line_number);
-				}
-				if(check_fun){
-					skipToRpar();
-					continue;
-				}
 				
 				func_names.emplace_back(name);
 				getSymbolManager()->addFunctionName(name);
+				context_.registerFunInScope(name);
 				
 				// Parse parameters: ((param1 type1)...)
 				parseLpar();
@@ -1341,6 +1351,8 @@ namespace SOMTParser{
 					parseLpar();
 					std::string pname = getSymbol();
 					std::shared_ptr<Sort> ptype = parseSort();
+					if (std::find(key_list.begin(), key_list.end(), pname) != key_list.end())
+						err_mul_decl(pname, line_number);
 					key_list.emplace_back(pname);
 					param_sorts.emplace_back(ptype);
 					std::shared_ptr<DAGNode> expr = mkFunParamVar(ptype, pname);
@@ -1364,7 +1376,7 @@ namespace SOMTParser{
 			// Create function declarations for all functions first
 			// so they can be referenced in each other's bodies
 			for(size_t i = 0; i < func_names.size(); i++) {
-				mkFuncDec(func_names[i], all_param_sorts[i], return_sorts[i]);
+				mkFuncRecDecl(func_names[i], all_param_sorts[i], return_sorts[i]);
 			}
 			
 			// Parse function bodies
@@ -1527,6 +1539,8 @@ namespace SOMTParser{
 				std::string num = getSymbol();
 				n = std::stoul(num);
 			}
+			if (n > context_.scope_stack_.size())
+				err_all(ERROR_TYPE::ERR_LOGIC, "assertion stack pop underflow", command_ln);
 			context_.popScope(n);
 			skipToRpar();
 			return CMD_TYPE::CT_POP;
@@ -1585,6 +1599,8 @@ namespace SOMTParser{
 				opt_key = opt_key.substr(1);
 			}
 			std::string opt_value = getSymbol();
+			if (opt_key == "global-declarations" && opt_value != "true" && opt_value != "false")
+				err_all(ERROR_TYPE::ERR_PARAM_MIS, "global-declarations expects true or false", command_ln);
 			if (!opt_key.empty()) {
 				setOption(opt_key, opt_value);
 			}
@@ -1753,10 +1769,6 @@ namespace SOMTParser{
 
 	bool Parser::reset() {
 		context_.resetAll();
-		// Reset SymbolManager and ObjectiveManager by creating new instances
-		context_.setSymbolManager(std::make_shared<SymbolManager>());
-		context_.setObjectiveManager(std::make_shared<ObjectiveManager>());
-		// Re-initialize options if needed (keep existing options)
 		if (command_logging_) {
 			script_.addCommand(Command(CMD_TYPE::CT_RESET));
 		}
@@ -1925,6 +1937,7 @@ namespace SOMTParser{
 		bool is_complete;
 		bool scope_pushed = false;
 		std::unordered_set<std::string> frame_names;
+		std::vector<std::pair<std::string, std::shared_ptr<DAGNode>>> pending_bindings;
 		
 		LetContext(int level = 0) : result(nullptr), bind_var_list(nullptr), nesting_level(level), is_complete(false) {}
 	};
@@ -1982,12 +1995,16 @@ namespace SOMTParser{
 					}
 					
 					std::shared_ptr<DAGNode> let_var = mkLetBindVar(name, expr);
-					getSymbolManager()->registerLet(name, let_var);
+					currentState.pending_bindings.emplace_back(name, let_var);
 					currentState.frame_names.insert(name);
 					params.emplace_back(let_var);
 					parseRpar();
 				}
 				
+				// SMT-LIB let bindings are simultaneous. Every RHS must be
+				// parsed in the outer environment; only the body sees this frame.
+				for (const auto& binding : currentState.pending_bindings)
+					getSymbolManager()->registerLet(binding.first, binding.second);
 				currentState.bind_var_list = mkLetBindVarList(params);
 				all_bind_var_lists.emplace_back(currentState.bind_var_list);
 				parseRpar();
@@ -2071,12 +2088,14 @@ namespace SOMTParser{
 						err_all(expr, name, name_ln);
 					}
 					
-					getSymbolManager()->registerLet(name, expr);
+					currentState.pending_bindings.emplace_back(name, expr);
 					currentState.frame_names.insert(name);
 					params.emplace_back(expr);
 					parseRpar();
 				}
 				
+				for (const auto& binding : currentState.pending_bindings)
+					getSymbolManager()->registerLet(binding.first, binding.second);
 				parseRpar();
 			}
 			
@@ -2159,6 +2178,19 @@ namespace SOMTParser{
 		if (fun->getFuncParamsSize() != params.size()){
 			return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
 		}
+		const auto formals = fun->getFuncParams();
+		for (size_t i = 0; i < params.size(); ++i) {
+			if (params[i]->isErr()) return params[i];
+			const auto expected = formals[i]->getSort(), actual = params[i]->getSort();
+			if (!actual || !expected || !(*expected == *actual ||
+				(actual->isIntOrReal() && (expected->isInt() || expected->isReal())) ||
+				(expected->isReal() && actual->isInt())))
+				return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+		}
+		// Recursive declarations are recognizable even before their bodies have
+		// been parsed. Calls refer to an immutable symbol, not the definition DAG.
+		if (fun->isFuncRec() && (fun->getFuncBody()->isNull() ||
+			!getOptions()->getExpandRecursiveFunctions())) return mkApplyRecFunc(fun, params);
 
 		// For declare-fun (uninterpreted functions), create a function application node
 		if(fun->getFuncBody()->isNull()){
@@ -2198,13 +2230,13 @@ namespace SOMTParser{
 	
 	// Expand the function: replace parameters with actual arguments
 	// variable map for local variables
-	std::unordered_map<std::string, std::shared_ptr<DAGNode>> new_params_map;
+	std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> new_params_map;
 	std::vector<std::shared_ptr<DAGNode>> func_params = fun->getFuncParams();
 	for (size_t i = 0; i < func_params.size(); i++) {
 		if(params[i]->isErr()){
 			return params[i];
 		}
-		new_params_map.insert(std::pair<std::string, std::shared_ptr<DAGNode>>(func_params[i]->getName(), params[i]));
+		new_params_map.emplace(func_params[i], params[i]);
 	}
 	
 	// function content
@@ -2214,94 +2246,53 @@ namespace SOMTParser{
 	return applyFunPostOrder(formula, new_params_map);
 	}
 
-	// Iterative version of post-order traversal function application
-	std::shared_ptr<DAGNode> Parser::applyFunPostOrder(std::shared_ptr<DAGNode> node, std::unordered_map<std::string, std::shared_ptr<DAGNode>> & params){
-		if (!node) return nullptr;
-		
-		// Stack to track nodes to process
-		std::stack<std::pair<std::shared_ptr<DAGNode>, bool>> todo;
-		
-		// Map to store processed results for each node
-		std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> results;
-		
-		// Push initial node to stack
-		todo.push(std::make_pair(node, false));
-		
-		while (!todo.empty()) {
-			std::shared_ptr<DAGNode> current = todo.top().first;
-			bool processed = todo.top().second;
-			todo.pop();
-			
-			if (processed) {
-				// Node is being revisited after processing its children
-				std::vector<std::shared_ptr<DAGNode>> childResults;
-				
-				// Collect results from all children
-				for (size_t i = 0; i < current->getChildrenSize(); i++) {
-					childResults.emplace_back(results[current->getChild(i)]);
-				}
-					
-				// Create a new node with processed children
-				std::shared_ptr<DAGNode> result;
-				if (current->isUFApplication() || current->isConstructorApp() || current->isSelectorApp() || current->isTesterApp()) {
-					// NT_UF_APPLY or NT_DT_*: Must preserve function name when recreating node
-					result = mkApplyUF(current->getSort(), current->getName(), childResults);
-				} else if (current->isFuncRecApplication() && !getOptions()->getExpandRecursiveFunctions()) {
-					// NT_FUNC_REC_APPLY: Recursive function call when not expanding
-					// Must preserve function name when recreating node
-					result = mkApplyRecFunc(current, childResults);
-				} else if (current->isFuncApplication() || (current->isFuncRecApplication() && getOptions()->getExpandRecursiveFunctions())) {
-					// NT_FUNC_APPLY or NT_FUNC_REC_APPLY (when expanding)
-					// Parameters have been processed, now expand the function
-					std::vector<std::shared_ptr<DAGNode>> funcParams;
-					for (size_t i = 1; i < childResults.size(); i++) {
-						funcParams.emplace_back(childResults[i]);
-					}
-					result = applyFun(current->getFuncBody(), funcParams);
-				} else {
-					// For all other cases: regular operators
-					result = mkOper(current->getSort(), current->getKind(), childResults);
-				}
-				results[current] = result;
-			} else {
-				// First visit to this node
-				if (current->isFuncParam()) {
-					// Function parameter - replace with actual parameter
-					auto it = params.find(current->getName());
-					if (it != params.end()) {
-						results[current] = it->second;
-					} else {
-						// Parameter not found, this should not happen if applyFun is called correctly
-						results[current] = mkErr(ERROR_TYPE::ERR_FUN_LOCAL_VAR);
-					}
-				} else if (current->isConst()) {
-					// Constants remain unchanged
-					results[current] = current;
-				} else if (current->isVar()) {
-					// Variables (NT_VAR, NT_TEMP_VAR, etc.) are leaves, keep unchanged
-					results[current] = current;
-				} else {
-					// All other cases: operators, function applications, UF applications, etc.
-					// Mark the node for revisit after processing children
-					todo.push(std::make_pair(current, true));
-					
-					// For function applications that will be expanded, skip the first child (function definition itself)
-					// For all other nodes, process all children
-					bool isFuncAppToExpand = current->isFuncApplication() || 
-					                        (current->isFuncRecApplication() && getOptions()->getExpandRecursiveFunctions());
-					int startIdx = isFuncAppToExpand ? 1 : 0;
-					
-					// Push all children onto the stack in reverse order
-					for (int i = current->getChildrenSize() - 1; i >= startIdx; i--) {
-						todo.push(std::make_pair(current->getChild(i), false));
-					}
-				}
-			}
-		}
-		
-		return results[node];
-	}
-	
+    // Substitution is keyed by binder identity. Definition/symbol children of
+    // applications are metadata and must never be substituted or unfolded here.
+    std::shared_ptr<DAGNode> Parser::applyFunPostOrder(std::shared_ptr<DAGNode> node,
+        std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& params) {
+        if (!node) return nullptr;
+        std::vector<std::pair<std::shared_ptr<DAGNode>, bool>> todo{{node, false}};
+        std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> results;
+        while (!todo.empty()) {
+            auto [current, processed] = todo.back();
+            todo.pop_back();
+            if (results.count(current)) continue;
+            if (auto it = params.find(current); it != params.end()) {
+                results.emplace(current, it->second);
+                continue;
+            }
+            if (!current->getChildrenSize()) {
+                results.emplace(current, current);
+                continue;
+            }
+            const bool application = current->isFuncApplication() || current->isFuncRecApplication();
+            const size_t first = application ? 1 : 0;
+            if (!processed) {
+                todo.emplace_back(current, true);
+                for (size_t i = current->getChildrenSize(); i > first; --i)
+                    todo.emplace_back(current->getChild(i - 1), false);
+                continue;
+            }
+            std::vector<std::shared_ptr<DAGNode>> args;
+            bool changed = false;
+            for (size_t i = first; i < current->getChildrenSize(); ++i) {
+                auto child = results.at(current->getChild(i));
+                changed |= child != current->getChild(i);
+                args.push_back(child);
+            }
+            auto result = current;
+            if (current->isFuncApplication()) result = applyFun(current->getChild(0), args);
+            else if (changed && current->isFuncRecApplication())
+                result = mkApplyRecFunc(current->getChild(0), args);
+            else if (changed && (current->isUFApplication() || current->isConstructorApp() ||
+                                 current->isSelectorApp() || current->isTesterApp()))
+                result = getNodeManager()->createNode(current->getSort(), current->getKind(), current->getName(), args);
+            else if (changed) result = mkOper(current->getSort(), current->getKind(), args);
+            results.emplace(current, result);
+        }
+        return results.at(node);
+    }
+
 	std::shared_ptr<DAGNode> Parser::mkApplyFunc(std::shared_ptr<DAGNode> fun, const std::vector<std::shared_ptr<DAGNode>> &params){
 		// Intern function applications through NodeManager to avoid creating大量重复 NT_FUNC_APPLY 节点
 		// when expand_functions=false and the same function call appears many times.
@@ -2316,6 +2307,7 @@ namespace SOMTParser{
 
 	
     std::shared_ptr<DAGNode> Parser::mkApplyRecFunc(std::shared_ptr<DAGNode> fun, const std::vector<std::shared_ptr<DAGNode>> &params){
+        fun = getSymbolManager()->getRecursiveSymbol(fun);
         // Intern recursive function applications through NodeManager as well.
 		std::vector<std::shared_ptr<DAGNode>> children;
 		children.reserve(params.size() + 1);
@@ -2480,9 +2472,7 @@ namespace SOMTParser{
 	// QUANTIFIERS
 	// (quantifier ((<identifier> <sort>)+） <expr>)
 	std::shared_ptr<DAGNode> Parser::mkQuantVar(const std::string& name, std::shared_ptr<Sort> sort){
-		std::shared_ptr<DAGNode> var = getSymbolManager()->getQuantVar(name);
-		if(var) return var;
-		var = getNodeManager()->createNode(sort, NODE_KIND::NT_QUANT_VAR, name);
+		auto var = getNodeManager()->createNode(sort, NODE_KIND::NT_QUANT_VAR, name);
 		getSymbolManager()->registerQuantVar(name, var);
 		return var;
 	}

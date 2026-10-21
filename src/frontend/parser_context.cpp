@@ -3,6 +3,7 @@
  */
 
 #include "somtparser/frontend/parser_context.h"
+#include <stdexcept>
 
 namespace SOMTParser {
 
@@ -60,8 +61,7 @@ void ParserContext::pushScope(size_t n) {
 
 void ParserContext::popScope(size_t n) {
     if (n > scope_stack_.size()) {
-        // SMT-LIB error: pop underflow. For now, pop all available levels.
-        n = scope_stack_.size();
+        throw std::invalid_argument("assertion stack pop underflow");
     }
     for (size_t i = 0; i < n; ++i) {
         const ScopeFrame& frame = scope_stack_.back();
@@ -130,34 +130,47 @@ void ParserContext::resetAssertions() {
     soft_assertion_groups.clear();
     named_assertions.clear();
     split_lemmas.clear();
-    // Note: scope_stack_ is NOT cleared; declarations and options are kept.
+    scope_stack_.clear();
+    if (auto om = getObjectiveManager()) om->clear();
+    // Declarations belong to the assertion stack unless explicitly global.
+    if (!getOptions() || !getOptions()->global_declarations)
+        setSymbolManager(std::make_shared<SymbolManager>());
 }
 
 void ParserContext::resetAll() {
     resetAssertions();
+    heap_location_sort.reset();
+    heap_data_sort.reset();
+    heap_declaration_open = true;
     scope_stack_.clear();
-    if (auto sm = getSymbolManager()) {
-        // SymbolManager has no clear() method; we rely on the shared_ptr being reset
-        // by the Parser's init or by creating a new SymbolManager.
-        // For a full reset, we clear all maps manually if accessible.
-        // Since SymbolManager internals are private, the Parser should recreate managers.
+    setSymbolManager(std::make_shared<SymbolManager>());
+    setObjectiveManager(std::make_shared<ObjectiveManager>());
+    auto options = std::make_shared<GlobalOptions>();
+    if (auto old = getOptions()) {
+        // Parser implementation policy is not an SMT-LIB script option.
+        // Preserve the embedding application's native DAG/expansion policy.
+        options->parsing_preserve_let = old->parsing_preserve_let;
+        options->expand_functions = old->expand_functions;
+        options->expand_recursive_functions = old->expand_recursive_functions;
+        options->strict_smtlib_fp = old->strict_smtlib_fp;
     }
-    if (auto om = getObjectiveManager()) {
-        om->clear();
-    }
+    setOptions(std::move(options));
 }
 
 // --- Scope recording helpers (no-op if no active scope) ---
 
 void ParserContext::registerVarInScope(const std::string& name) {
+    if (getOptions() && getOptions()->global_declarations) return;
     if (!scope_stack_.empty()) scope_stack_.back().added_vars.push_back(name);
 }
 
 void ParserContext::registerFunInScope(const std::string& name) {
+    if (getOptions() && getOptions()->global_declarations) return;
     if (!scope_stack_.empty()) scope_stack_.back().added_funs.push_back(name);
 }
 
 void ParserContext::registerSortInScope(const std::string& name) {
+    if (getOptions() && getOptions()->global_declarations) return;
     if (!scope_stack_.empty()) scope_stack_.back().added_sorts.push_back(name);
 }
 

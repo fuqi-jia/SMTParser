@@ -32,6 +32,50 @@
 #include <unordered_set>
 
 namespace SOMTParser{
+    bool DAGNode::isEquivalentTo(const DAGNode& other) const {
+        TIME_FUNC();
+        using Pair = std::pair<const DAGNode*, const DAGNode*>;
+        std::vector<Pair> pending{{this, &other}};
+        std::unordered_set<Pair, PairNodePtrHash, PairNodePtrEqual> visited;
+        while (!pending.empty()) {
+            const auto [a, b] = pending.back();
+            pending.pop_back();
+            if (a == b) continue;
+            if (!a || !b || a->kind == NODE_KIND::NT_QUANT_VAR || b->kind == NODE_KIND::NT_QUANT_VAR ||
+                a->kind == NODE_KIND::NT_FUNC_PARAM || b->kind == NODE_KIND::NT_FUNC_PARAM ||
+                a->kind == NODE_KIND::NT_FUNC_REC || b->kind == NODE_KIND::NT_FUNC_REC) return false;
+            if (a->kind != b->kind || a->sort.get() != b->sort.get() ||
+                a->name != b->name || a->children.size() != b->children.size())
+                return false;
+            if (!a->children_hash.empty() && !b->children_hash.empty() &&
+                a->children_hash != b->children_hash) return false;
+            if (!visited.emplace(a, b).second) continue;
+            for (size_t i = a->children.size(); i > 0; --i)
+                pending.emplace_back(a->children[i - 1].get(), b->children[i - 1].get());
+        }
+        return true;
+    }
+
+    DAGNode::~DAGNode() {
+        // Release arbitrarily deep DAGs without recursion through shared_ptr.
+        // A nested destructor only queues its children; the outermost one
+        // drains the queue. Live shared nodes are never modified.
+        static thread_local std::vector<std::shared_ptr<DAGNode>>* active = nullptr;
+        if (active) {
+            for (auto& child : children) active->push_back(std::move(child));
+            return;
+        }
+        std::vector<std::shared_ptr<DAGNode>> pending;
+        pending.swap(children);
+        active = &pending;
+        while (!pending.empty()) {
+            auto child = std::move(pending.back());
+            pending.pop_back();
+            child.reset();
+        }
+        active = nullptr;
+    }
+
     void DAGNode::updateFuncDef(std::shared_ptr<Sort> out_sort, std::shared_ptr<DAGNode> body, const std::vector<std::shared_ptr<DAGNode>> &params, bool is_rec){
         condAssert(out_sort == sort, "updateFuncDef: out_sort != sort");
         (void)out_sort;
@@ -139,6 +183,9 @@ namespace SOMTParser{
             kind_cache[NODE_KIND::NT_DIV_REAL] = "/";
             kind_cache[NODE_KIND::NT_NEG] = "-";
             kind_cache[NODE_KIND::NT_DISTINCT] = "distinct";
+            kind_cache[NODE_KIND::NT_SEP_PTO] = "pto";
+            kind_cache[NODE_KIND::NT_SEP_STAR] = "sep";
+            kind_cache[NODE_KIND::NT_SEP_WAND] = "wand";
             kind_cache[NODE_KIND::NT_FP_ADD] = "fp.add";
             kind_cache[NODE_KIND::NT_FP_SUB] = "fp.sub";
             kind_cache[NODE_KIND::NT_FP_MUL] = "fp.mul";
@@ -200,6 +247,12 @@ namespace SOMTParser{
 
             auto kind = node->getKind();
             switch (kind) {
+            case NODE_KIND::NT_SEP_EMP:
+                out << "sep.emp";
+                break;
+            case NODE_KIND::NT_SEP_NIL:
+                out << "(as sep.nil " << node->getSort()->toString() << ")";
+                break;
             case NODE_KIND::NT_CONST_TRUE:
                 out << "true";
                 break;
@@ -266,6 +319,9 @@ namespace SOMTParser{
             // N-ary operations - most common case, highly optimized
             case NODE_KIND::NT_AND:
             case NODE_KIND::NT_OR:
+            case NODE_KIND::NT_SEP_PTO:
+            case NODE_KIND::NT_SEP_STAR:
+            case NODE_KIND::NT_SEP_WAND:
             case NODE_KIND::NT_DISTINCT: {
                 const char* op = kind_cache[kind];
                 if (!op) op = kindToString(kind).c_str();
@@ -1063,16 +1119,12 @@ namespace SOMTParser{
     }
 
     void NodeManager::clear() {
-        // Clear non-static nodes only (preserve static constants)
-        for (size_t i = static_node_count; i < nodes.size(); i++) {
-            nodes[i]->clear();
-        }
-        nodes.clear();
-        
-        // Clear hash buckets and re-insert static nodes
+        // Drop manager ownership, preserving nodes retained by query handles.
+        // Destructive node->clear() invalidated DAGs shared with other users.
         for (auto& bucket : node_buckets) {
             bucket.clear();
         }
+        nodes.clear();
     }
     
     std::shared_ptr<DAGNode> NodeManager::insertNodeToBucket(const std::shared_ptr<DAGNode>& node) {

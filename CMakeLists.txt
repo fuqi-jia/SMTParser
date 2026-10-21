@@ -60,6 +60,32 @@ endif()
 # collect all source files under src/ (mirrors include/somtparser/)
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 
+# The native DAG/numeric library is also usable without the parser frontend.
+# Compile these objects once and reuse them in the standalone IR archive and
+# the complete parser libraries.
+set(SOMTPARSER_IR_SOURCES
+    src/core/kind.cpp src/core/util.cpp
+    src/ir/dag.cpp src/ir/sort.cpp src/ir/number.cpp
+    src/ir/interval.cpp src/ir/value.cpp)
+foreach(source IN LISTS SOMTPARSER_IR_SOURCES)
+    list(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/${source}")
+endforeach()
+add_library(somtparser_ir_objects OBJECT ${SOMTPARSER_IR_SOURCES})
+set_target_properties(somtparser_ir_objects PROPERTIES POSITION_INDEPENDENT_CODE ON)
+target_include_directories(somtparser_ir_objects PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include ${GMP_INCLUDE_DIRS} ${MPFR_INCLUDE_DIRS})
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(somtparser_ir_objects PRIVATE -include cstdint)
+endif()
+if(ENABLE_DEBUG_SYMBOLS)
+    target_compile_options(somtparser_ir_objects PRIVATE -g -O0)
+endif()
+add_library(somtparser_ir STATIC $<TARGET_OBJECTS:somtparser_ir_objects>)
+target_include_directories(somtparser_ir PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include ${GMP_INCLUDE_DIRS} ${MPFR_INCLUDE_DIRS})
+target_link_libraries(somtparser_ir PUBLIC ${MPFR_LIBRARIES} ${GMP_LIBRARIES})
+list(APPEND SOURCES $<TARGET_OBJECTS:somtparser_ir_objects>)
+
 # collect all header files under include/somtparser/
 file(GLOB_RECURSE HEADERS "include/somtparser/*.h")
 
@@ -158,4 +184,4 @@ install(DIRECTORY include/somtparser DESTINATION include FILES_MATCHING PATTERN 
 # if needed, add test subdirectory
 if(BUILD_TESTS)
     add_subdirectory(test)
-endif() 
+endif()
