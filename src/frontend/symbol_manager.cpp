@@ -26,6 +26,11 @@ void SymbolManager::reserve(size_t capacity) {
 }
 
 namespace {
+std::string bindingKey(const std::string& name) {
+    return name.size() > 2 && name.front() == '|' && name.back() == '|'
+        ? name.substr(1, name.size() - 2) : name;
+}
+
 
 /**
  * A lookup that treats `foo` and `|foo|` as the same key.
@@ -134,13 +139,14 @@ void SymbolManager::popLetScope() {
 }
 
 void SymbolManager::popLetScope(const std::vector<std::string>& keys) {
-    for (const auto& k : keys) let_key_map_.erase(k);
+    for (const auto& k : keys) let_key_map_.erase(bindingKey(k));
 }
 
 void SymbolManager::registerLet(const std::string& name, const std::shared_ptr<DAGNode>& node) {
     LetBackup backup;
-    backup.name = name;
-    auto it = let_key_map_.find(name);
+    const auto key = bindingKey(name);
+    backup.name = key;
+    auto it = let_key_map_.find(key);
     if (it != let_key_map_.end()) {
         backup.oldNode = it->second;
         backup.hadOld = true;
@@ -148,11 +154,11 @@ void SymbolManager::registerLet(const std::string& name, const std::shared_ptr<D
         backup.hadOld = false;
     }
     let_scope_backup_.push_back(std::move(backup));
-    let_key_map_[name] = node;
+    let_key_map_[key] = node;
 }
 
 bool SymbolManager::hasLet(const std::string& name) const {
-    return let_key_map_.find(name) != let_key_map_.end();
+    return let_key_map_.find(bindingKey(name)) != let_key_map_.end();
 }
 
 void SymbolManager::registerFun(const std::string& name, const std::shared_ptr<DAGNode>& node) {
@@ -216,22 +222,17 @@ void SymbolManager::removeSort(const std::string& name) {
 }
 
 void SymbolManager::registerQuantVar(const std::string& name, const std::shared_ptr<DAGNode>& node) {
-    quant_var_map_[name].push_back(node);
+    quant_var_map_[bindingKey(name)].push_back(node);
 }
 
 std::shared_ptr<DAGNode> SymbolManager::getQuantVar(const std::string& name) const {
-    auto it = quant_var_map_.find(name);
-    if (it == quant_var_map_.end()) {
-        const auto alternate = name.size() > 2 && name.front() == '|' && name.back() == '|'
-            ? name.substr(1, name.size() - 2) : '|' + name + '|';
-        it = quant_var_map_.find(alternate);
-    }
+    auto it = quant_var_map_.find(bindingKey(name));
     return it != quant_var_map_.end() ? it->second.back() : nullptr;
 }
 
 void SymbolManager::popQuantScope(const std::vector<std::string>& keys) {
     for (auto key = keys.rbegin(); key != keys.rend(); ++key) {
-        auto it = quant_var_map_.find(*key);
+        auto it = quant_var_map_.find(bindingKey(*key));
         if (it == quant_var_map_.end()) continue;
         it->second.pop_back();
         if (it->second.empty()) quant_var_map_.erase(it);

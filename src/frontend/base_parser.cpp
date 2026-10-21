@@ -2941,51 +2941,39 @@ namespace SOMTParser{
 		getSymbolManager()->registerQuantVar(name, var);
 		return var;
 	}
-	std::shared_ptr<DAGNode> Parser::parseQuant(const std::string& type){
-		// (quantifier ((<identifier> <sort>)+） <expr>)
-		//             ^
-		parseLpar();
-		std::vector<std::shared_ptr<DAGNode>> params;
-		std::vector<std::string> quant_var_names;
-		// The bindings this quantifier shadows, so leaving its scope RESTORES
-		// them. popQuantScope erases by name, which is right when nothing was
-		// shadowed and wrong when something was: the outer binder would vanish
-		// and its remaining occurrences would resolve as free symbols.
-		std::vector<std::pair<std::string, std::shared_ptr<DAGNode>>> shadowed;
-		while (*bufptr != ')') {
-			// (quantifier ((<identifier> <sort>)+） <expr>)
-			//              ^
-			parseLpar();
-			std::string var_name = getSymbol();
-			std::shared_ptr<Sort> var_sort = parseSort();
-			std::shared_ptr<DAGNode> outer = getSymbolManager()->getQuantVar(var_name);
-			std::shared_ptr<DAGNode> var = mkQuantVar(var_name, var_sort);
-			if(outer && outer != var) shadowed.emplace_back(var_name, outer);
-			params.emplace_back(var);
-			quant_var_names.emplace_back(var_name);
-			parseRpar();
-		}
-		// (quantifier ((<identifier> <sort>)+） <expr>)
-		//                                    ^
-		parseRpar();
-		std::shared_ptr<DAGNode> body = parseExpr();
-		params.insert(params.begin(), body);
-		std::shared_ptr<DAGNode> res = NodeManager::NULL_NODE;
-		if (type == "forall") {
-			res = mkForall(params);
-		}
-		else if (type == "exists") {
-			res = mkExists(params);
-		}
-		else{
-			condAssert(false, "Invalid quantifier");
-		}
-		getSymbolManager()->popQuantScope(quant_var_names);
-		for(auto it = shadowed.rbegin(); it != shadowed.rend(); ++it){
-			getSymbolManager()->registerQuantVar(it->first, it->second);
-		}
-		return res;
-	}
+    std::shared_ptr<DAGNode> Parser::parseQuant(const std::string& type) {
+        parseLpar();
+        std::vector<std::shared_ptr<DAGNode>> params;
+        std::vector<std::string> names;
+        std::unordered_set<std::string> local;
+        auto symbols = getSymbolManager();
+        // Let and quantifier bindings share lexical precedence. A quantifier
+        // masks an outer let; an inner let can in turn mask the quantifier.
+        symbols->pushLetScope();
+        struct Scope {
+            std::shared_ptr<SymbolManager> symbols;
+            std::vector<std::string>& names;
+            ~Scope() { symbols->popQuantScope(names); symbols->popLetScope(); }
+        } scope{symbols, names};
+        while (*bufptr != ')') {
+            parseLpar();
+            const auto name = getSymbol();
+            const auto key = name.size() > 2 && name.front() == '|' && name.back() == '|'
+                ? name.substr(1, name.size() - 2) : name;
+            if (!local.insert(key).second) err_mul_decl(name, line_number);
+            const auto sort = parseSort();
+            auto variable = mkQuantVar(name, sort);
+            names.push_back(name);
+            params.push_back(variable);
+            symbols->registerLet(name, variable);
+            parseRpar();
+        }
+        if (params.empty()) err_all(ERROR_TYPE::ERR_PARAM_MIS, "empty quantifier binder list", line_number);
+        parseRpar();
+        auto body = parseExpr();
+        params.insert(params.begin(), body);
+        return type == "forall" ? mkForall(params) : mkExists(params);
+    }
 
 	std::shared_ptr<DAGNode> Parser::mkForall(const std::vector<std::shared_ptr<DAGNode>> &params){
 		return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_FORALL, params);

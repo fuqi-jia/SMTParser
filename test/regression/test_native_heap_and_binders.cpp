@@ -38,6 +38,25 @@ int main() {
         for (auto c : children(n)) pending.push_back(c);
     }
     VERIFY(innerCount == 1);
+    for (bool preserve : {false, true}) {
+        Parser scoped;
+        scoped.getOptions()->parsing_preserve_let = preserve;
+        VERIFY(scoped.parseStr("(set-logic ALL)"
+            "(assert (let ((x 0)) (forall ((|x| Int)) (= x 0))))"
+            "(assert (forall ((x Int)) (let ((|x| 7)) (= x 7))))"));
+        std::vector<Node> terms = scoped.getAssertions();
+        size_t boundEqualities = 0;
+        while (!terms.empty()) {
+            auto node = terms.back(); terms.pop_back();
+            if (node->getKind() == NODE_KIND::NT_EQ && node->getChildrenSize() == 2)
+                boundEqualities += node->getChild(0)->getKind() == NODE_KIND::NT_QUANT_VAR ||
+                                   node->getChild(1)->getKind() == NODE_KIND::NT_QUANT_VAR;
+            for (auto child : children(node)) terms.push_back(child);
+        }
+        VERIFY(boundEqualities == 1);
+        VERIFY(!scoped.getSymbolManager()->getQuantVar("x"));
+        VERIFY(!scoped.getSymbolManager()->hasLet("x"));
+    }
 
     Parser heap;
     VERIFY(heap.parseStr("(set-logic ALL)(declare-heap (Int Int))(declare-const x Int)"
@@ -66,7 +85,8 @@ int main() {
         "(push 1)(declare-heap (Int Int))",
         "(declare-heap (Int Int))(assert (pto true 1))",
         "(declare-heap (Int Int))(assert (pto (as sep.nil Bool) 1))",
-        "(pop 1)"}) {
+        "(pop 1)",
+        "(assert (forall ((x Int) (|x| Int)) true))"}) {
         Parser invalid;
         VERIFY(!invalid.parseStr("(set-logic ALL)" + source));
     }

@@ -731,7 +731,7 @@ namespace SOMTParser{
 		}
 		{
 			ResolveScope scope;
-			scope.check_let = (current_let_mode != LET_MODE::LM_NON_LET);
+			scope.check_let = (current_let_mode != LET_MODE::LM_NON_LET) || in_quantifier_scope;
 			scope.in_quantifier_scope = in_quantifier_scope;
 			std::shared_ptr<DAGNode> var = getSymbolManager()->resolveTerm(s, scope);
 			if (var) return var;
