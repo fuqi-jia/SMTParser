@@ -987,8 +987,8 @@ namespace SOMTParser{
 				condAssert(oper_params.size() == 2, "Invalid number of parameters for pow");
 				return mkPow(oper_params[0], oper_params[1]);
 			case NODE_KIND::NT_DIV_INT:
-				condAssert(oper_params.size() == 2, "Invalid number of parameters for div");
-				return mkDivInt(oper_params[0], oper_params[1]);
+				condAssert(oper_params.size() >= 2, "Invalid number of parameters for div");
+				return mkDivInt(oper_params);
 			case NODE_KIND::NT_DIV_REAL:
 				condAssert(oper_params.size() == 2, "Invalid number of parameters for div");
 				return mkDivReal(oper_params[0], oper_params[1]);

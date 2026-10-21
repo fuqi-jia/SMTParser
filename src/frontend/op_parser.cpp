@@ -1546,10 +1546,22 @@ namespace SOMTParser{
             err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for div", line_number);
             return mkUnknown();
         }
-        if(params.size() == 1){
-            return params[0];
-        }
         if(params.size() == 2) return mkDivInt(params[0], params[1]);
+        bool allConstants = true;
+        for(const auto& param : params) {
+            if(!isIntParam(param)) {
+                err_all(ERROR_TYPE::ERR_TYPE_MIS, "Type mismatch in div", line_number);
+                return mkUnknown();
+            }
+            allConstants = allConstants && param->isConst();
+        }
+        if(allConstants && !getOptions()->shouldPreserveOperator(NODE_KIND::NT_DIV_INT)) {
+            // SMT-LIB div is left associative, including negative divisors.
+            // The binary builder preserves zero division as an unspecified term.
+            auto result = params[0];
+            for(size_t i = 1; i < params.size(); ++i) result = mkDivInt(result, params[i]);
+            return result;
+        }
         return mkOper(SortManager::INT_SORT, NODE_KIND::NT_DIV_INT, params);
     }
     /*
