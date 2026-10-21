@@ -60,7 +60,10 @@ namespace SOMTParser{
     };
 
     enum class KEYWORD{
-        KW_ID, KW_WEIGHT, KW_COMP, KW_EPSILON, KW_M, KW_OPT_KIND, KW_NAMED , KW_NULL
+        KW_ID, KW_WEIGHT, KW_COMP, KW_EPSILON, KW_M, KW_OPT_KIND, KW_NAMED,
+        // Quantifier annotations — ported from the SMTStabilizer fork.
+        KW_PATTERN, KW_NO_PATTERN, KW_QID, KW_SKOLEMID, KW_LBLPOS, KW_LBLNEG,
+        KW_NULL
     };
 
     enum class CMD_TYPE {
@@ -205,7 +208,7 @@ namespace SOMTParser{
                                                         array_canonical_cache;
 
         // result
-        RESULT_TYPE                                   result_type;
+        RESULT_TYPE                                   result_type = RESULT_TYPE::RT_UNKNOWN;
         std::shared_ptr<DAGNode>                      result_node;
         std::shared_ptr<Model>                        result_model;
 
@@ -223,6 +226,18 @@ namespace SOMTParser{
          *  the start of each nextCommand(). */
         std::vector<std::shared_ptr<DAGNode>>         pending_value_terms_;
         std::string                                   pending_keyword_;
+        std::shared_ptr<DAGNode>                      pending_command_expr_;
+        std::string                                   pending_command_name_;
+        std::shared_ptr<Sort>                         pending_command_sort_;
+        std::vector<std::shared_ptr<DAGNode>>         pending_command_params_;
+        std::string                                   pending_command_logic_;
+        std::string                                   source_text_;
+        std::string                                   source_name_ = "<memory>";
+        size_t                                        next_command_index_ = 0;
+
+        SourcePosition sourcePosition(size_t offset) const;
+        Command makeCommand(CMD_TYPE type, size_t begin_offset,
+                            size_t end_offset, size_t begin_line);
 
     public:
         
@@ -267,7 +282,15 @@ namespace SOMTParser{
          * @param constraint Constraint to parse
          * @return True if parsing was successful, false otherwise
          */
-        bool parseStr(const std::string& constraint);
+        bool parseStr(const std::string& constraint,
+                      const std::string& source_name = "<memory>");
+
+        /** Load SMT-LIB text for command-at-a-time parsing with nextCommand(). */
+        bool loadStr(const std::string& constraint,
+                     const std::string& source_name = "<memory>");
+
+        const std::string& getSourceText() const { return source_text_; }
+        const std::string& getSourceName() const { return source_name_; }
         
         /**
          * @brief Assert a constraint
@@ -343,6 +366,9 @@ namespace SOMTParser{
          */
         std::unordered_map<std::string, std::unordered_set<size_t>> getGroupedAssertions() const;
 
+        /** Get assertions indexed by their SMT-LIB :named attribute. */
+        std::unordered_map<std::string, std::shared_ptr<DAGNode>> getNamedAssertions() const;
+
         /**
          * @brief Get assumptions
          * 
@@ -391,6 +417,11 @@ namespace SOMTParser{
         * @return set option value
         */
         void setOption(const std::string& key, const std::string& value);
+        // A string literal must be treated as a string, not as a bool. Without
+        // this overload setOption("keep_let", "false") selects the bool
+        // overload -- pointer-to-bool is a standard conversion and so beats the
+        // user-defined conversion to std::string -- and silently sets true.
+        void setOption(const std::string& key, const char* value);
         void setOption(const std::string& key, const int& value);
         void setOption(const std::string& key, const double& value);
         void setOption(const std::string& key, const bool& value);
@@ -789,6 +820,27 @@ namespace SOMTParser{
          * @return Sort definition node
          */
         std::shared_ptr<Sort> mkSortDef(const std::string &name, const std::vector<std::shared_ptr<Sort>> &params, std::shared_ptr<Sort> out_sort);
+
+        /**
+         * @brief Apply a declared sort constructor: `(S Bool)`.
+         *
+         * `(declare-sort S 1)` declares a function from sorts to sorts, not a
+         * sort, so `mkSortDec` alone cannot produce a sort a variable may have.
+         * parseSort builds the application inline; there was no builder, so a
+         * caller working through the API could declare a constructor and had no
+         * way to instantiate it except by reaching into `Sort::children`.
+         *
+         * Bad input yields the NULL sort rather than throwing, unlike the
+         * DAGNode builders: those report through err_all, which throws and is
+         * caught by parseStr, and an escaped exception makes a caller's own bad
+         * argument look like a defect in this parser.
+         *
+         * @param ctor  the declared constructor, from `mkSortDec(name, arity)`
+         * @param args  one sort per declared parameter; arity 0 returns @p ctor
+         * @return the applied sort, or the NULL sort if the arity disagrees
+         */
+        std::shared_ptr<Sort> mkSortApp(const std::shared_ptr<Sort> &ctor,
+                                        const std::vector<std::shared_ptr<Sort>> &args);
 
         // mk special sort
         /**
@@ -2497,7 +2549,23 @@ namespace SOMTParser{
          * @return Integer to bitvector conversion node (to_bv(param, width))
          */
         std::shared_ptr<DAGNode> mkIntToBv(std::shared_ptr<DAGNode> param, std::shared_ptr<DAGNode> width); // to_bv(param, width)
-        
+
+        /**
+         * @brief Create an unsigned bitvector-to-integer node (SMT-LIB 2.7 ubv_to_int)
+         *
+         * @param param Bitvector parameter
+         * @return ubv_to_int(param)
+         */
+        std::shared_ptr<DAGNode> mkUbvToInt(std::shared_ptr<DAGNode> param);
+
+        /**
+         * @brief Create a signed bitvector-to-integer node (SMT-LIB 2.7 sbv_to_int)
+         *
+         * @param param Bitvector parameter
+         * @return sbv_to_int(param)
+         */
+        std::shared_ptr<DAGNode> mkSbvToInt(std::shared_ptr<DAGNode> param);
+
         // FLOATING POINT COMMON OPERATORS
         /**
          * @brief Create a floating-point addition node
@@ -2789,7 +2857,44 @@ namespace SOMTParser{
          * @return Array store node (l[r] = v)
          */
         std::shared_ptr<DAGNode> mkStore(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> v); // l[r] = v
-        
+
+        // TERM ANNOTATIONS
+        /** @brief Create a :pattern annotation node holding the trigger terms */
+        std::shared_ptr<DAGNode> mkPattern(const std::vector<std::shared_ptr<DAGNode>> &params);
+        /** @brief Create a :no-pattern annotation node */
+        std::shared_ptr<DAGNode> mkNoPattern(std::shared_ptr<DAGNode> param);
+        /** @brief Create a :weight annotation node */
+        std::shared_ptr<DAGNode> mkWeight(std::shared_ptr<DAGNode> weight);
+        /** @brief Create a :qid annotation node */
+        std::shared_ptr<DAGNode> mkQid(const std::string &qid);
+        /**
+         * @brief Wrap @p term in (! <term> <annotations>...); returns @p term unchanged
+         *        when there are no annotations.
+         */
+        std::shared_ptr<DAGNode> mkAttribute(std::shared_ptr<DAGNode> term, const std::vector<std::shared_ptr<DAGNode>> &annotations);
+
+        // TUPLE OPERATORS
+        /**
+         * @brief Create a tuple constructor node (tuple t1 ... tn); nullary yields tuple.unit
+         */
+        std::shared_ptr<DAGNode> mkTuple(const std::vector<std::shared_ptr<DAGNode>> &params);
+        /**
+         * @brief Create a tuple projection node ((_ tuple.select i) t)
+         */
+        std::shared_ptr<DAGNode> mkTupleSelect(std::shared_ptr<DAGNode> tuple, std::shared_ptr<DAGNode> index);
+        /**
+         * @brief Create a functional tuple update node ((_ tuple.update i) t v)
+         */
+        std::shared_ptr<DAGNode> mkTupleUpdate(std::shared_ptr<DAGNode> tuple, std::shared_ptr<DAGNode> index, std::shared_ptr<DAGNode> value);
+        /**
+         * @brief Create a tuple projection node ((_ tuple.project i1 ... ik) t)
+         */
+        std::shared_ptr<DAGNode> mkTupleProject(std::shared_ptr<DAGNode> tuple, const std::vector<std::shared_ptr<DAGNode>> &indices);
+        /**
+         * @brief Create a datatype update node ((_ update <selector>) t v)
+         */
+        std::shared_ptr<DAGNode> mkDtUpdate(const std::string &selector, std::shared_ptr<DAGNode> dt, std::shared_ptr<DAGNode> value);
+
         // STRINGS COMMON OPERATORS
         /**
          * @brief Create a string length node
@@ -2911,7 +3016,7 @@ namespace SOMTParser{
          * @param r Regular expression
          * @return String indexof-regex node (str.indexof_re(l, r))
          */
-        std::shared_ptr<DAGNode> mkStrIndexofReg(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r); // str.indexof_re(l, r)
+        std::shared_ptr<DAGNode> mkStrIndexofReg(std::shared_ptr<DAGNode> l, std::shared_ptr<DAGNode> r, std::shared_ptr<DAGNode> i); // str.indexof_re(l, r, i)
 
         /**
          * @brief Create a string to-lower node
@@ -3344,6 +3449,9 @@ namespace SOMTParser{
          */
         bool pop(size_t n = 1);
 
+        /** Get the current incremental push/pop depth. */
+        size_t getScopeDepth() const { return context_.scope_stack_.size(); }
+
         /**
          * @brief Reset assertions (keep declarations and options).
          * @return true on success.
@@ -3432,14 +3540,34 @@ namespace SOMTParser{
          */
         std::shared_ptr<DAGNode>	            negateComp(std::shared_ptr<DAGNode> atom);
 
-        // flip a comparison atom
+        // converse of a comparison atom
         /**
-         * @brief Flip a comparison atom
-         * 
+         * @brief Rewrite a comparison atom into its converse relation
+         *
+         * @note Swaps the operands while keeping the operator, i.e. the
+         *       result is the CONVERSE of the input, not an equivalent form:
+         *       converseComp(x < 3) = (3 < x), which means x > 3.
+         *       Symmetric relations (=, distinct) are returned unchanged.
+         *       For an equivalence-preserving rewrite use mirrorComp().
+         *
          * @param atom Comparison atom to flip
-         * @return Flipped comparison atom
+         * @return Converse comparison atom
          */
-        std::shared_ptr<DAGNode>	            flipComp(std::shared_ptr<DAGNode> atom);
+        std::shared_ptr<DAGNode>	            converseComp(std::shared_ptr<DAGNode> atom);
+
+        // mirror a comparison atom
+        /**
+         * @brief Rewrite a comparison atom into its mirrored equivalent form
+         *
+         * @note Swaps the operands AND flips the operator, so the result is
+         *       logically EQUIVALENT to the input:
+         *       mirrorComp(x < 3) = (3 > x), which still means x < 3.
+         *       Atoms without a mirrored operator are returned unchanged.
+         *
+         * @param atom Comparison atom to mirror
+         * @return Equivalent mirrored comparison atom
+         */
+        std::shared_ptr<DAGNode>	            mirrorComp(std::shared_ptr<DAGNode> atom);
         
         // evaluate: return true if the evaluation has changed the expression
         /**
@@ -3988,6 +4116,40 @@ namespace SOMTParser{
         std::shared_ptr<DAGNode>                parseMatch();
         /** Parse one <datatype_dec> ((ctor...)...) after its opening '('; register ctors/selectors/testers on @p dt_sort. */
         void                                    defineDatatypeConstructors(const std::shared_ptr<Sort>& dt_sort);
+        /** Reads an optional `(par (X ...)` wrapper before a datatype's
+         *  constructor list and returns the parameter names, empty when the body
+         *  is not parametric. Leaves the buffer where the plain form would. */
+        std::vector<std::string>                parseDatatypeParams();
+        /** Sort-parameter binding for an application of a parametric datatype's
+         *  member. See the definition for how selectors, testers and
+         *  constructors each determine it. */
+        void                                    dtParamBinding(const std::shared_ptr<DAGNode>& fun,
+                                                    const std::vector<std::shared_ptr<DAGNode>>& params,
+                                                    std::unordered_map<std::string, std::shared_ptr<Sort>>& out);
+    public:
+        /** The result sort an application of @p fun should carry, with a
+         *  parametric datatype's parameters substituted. Returns the declared
+         *  sort unchanged for everything else. */
+        std::shared_ptr<Sort>                   dtAppliedSort(const std::shared_ptr<DAGNode>& fun,
+                                                    const std::vector<std::shared_ptr<DAGNode>>& params);
+        /** A parametric datatype's sort parameters, in declaration order; empty
+         *  for an ordinary one. A Sort records only the arity, so a caller that
+         *  needs the names has to ask here. */
+        std::vector<std::string>                datatypeParams(const std::string& dt) const {
+            const auto it = datatype_params_.find(dt);
+            return it == datatype_params_.end() ? std::vector<std::string>{} : it->second;
+        }
+        /** Record a parametric datatype's parameter names, for a caller that
+         *  builds a model programmatically rather than parsing a script. */
+        void                                    setDatatypeParams(const std::string& dt,
+                                                    const std::vector<std::string>& p) {
+            datatype_params_[dt] = p;
+        }
+    private:
+        /** Sort-parameter names per parametric datatype, in declaration order.
+         *  A Sort records its ARITY and not what its parameters were called, so
+         *  dumpSMT2 could not otherwise write the `par` form back. */
+        std::unordered_map<std::string, std::vector<std::string>> datatype_params_;
         
         // parse optimization
         // single_opt = (maximize <expr> [:comp <symbol>] [:epsilon <symbol>] [:M <symbol>] [:id <symbol>]) 
@@ -4041,6 +4203,11 @@ namespace SOMTParser{
         std::shared_ptr<DAGNode>                toCNF(std::shared_ptr<DAGNode> expr);
         std::shared_ptr<DAGNode>                toTseitinCNF(std::shared_ptr<DAGNode> expr, 
                                                             std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited, 
+                                                            std::vector<std::shared_ptr<DAGNode>>& clauses);
+        // encode a formula in asserted (top-level, positive) position without a
+        // Tseitin variable for its root connective; see conv_parser.cpp
+        void                                    assertTopCNF(std::shared_ptr<DAGNode> expr,
+                                                            std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited,
                                                             std::vector<std::shared_ptr<DAGNode>>& clauses);
         std::shared_ptr<DAGNode>                toTseitinXor(std::shared_ptr<DAGNode> a, std::shared_ptr<DAGNode> b, std::vector<std::shared_ptr<DAGNode>>& clauses);
         std::shared_ptr<DAGNode>                toTseitinEq(std::shared_ptr<DAGNode> a, std::shared_ptr<DAGNode> b, std::vector<std::shared_ptr<DAGNode>>& clauses);
@@ -4134,6 +4301,8 @@ namespace SOMTParser{
         void		err_open_file(const std::string) const;
 
         void 		warn_cmd_nsup(const std::string nm, const size_t ln) const;
+        /** Reports what a `:named` annotation displaced; silent when it displaced nothing. */
+        void        warn_named_displaced(const NameAssertionOutcome& outcome, const std::string& name, const size_t ln) const;
 
         // collect atoms
         void        collectAtoms(std::shared_ptr<DAGNode> expr, std::unordered_set<std::shared_ptr<DAGNode>>& atoms, std::unordered_set<std::shared_ptr<DAGNode>>& visited);

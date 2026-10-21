@@ -31,6 +31,12 @@
 
 namespace SOMTParser{
 
+    // Internal marker used to route ((_ update <selector>) t v) through the
+    // regular operator path while carrying the selector name. The leading
+    // control character cannot appear in an SMT-LIB symbol, so this can never
+    // be confused with a user-declared function.
+    static constexpr const char* DT_UPDATE_PREFIX = "\x01update-";
+
     // State of the parser
     enum class FrameState {
         Start,
@@ -116,6 +122,19 @@ namespace SOMTParser{
                                 frame.state = FrameState::ProcessingParams;
                                 break;
                             }
+                            // ((_ update <selector>) t v): like (_ is C), the
+                            // index is a selector *symbol* rather than a
+                            // numeral, so it cannot go through the generic
+                            // ParamFunc path (which parses indices as terms).
+                            // Ported from the SMTStabilizer fork.
+                            if(idx == "update"){
+                                std::string sel = getSymbol();
+                                parseRpar();
+                                frame.headSymbol = "_";
+                                frame.second_symbol = DT_UPDATE_PREFIX + sel;
+                                frame.state = FrameState::ProcessingParams;
+                                break;
+                            }
                             frame.special_type = SpecialType::ParamFunc;
                             frame.second_symbol = idx;
                             frame.state = FrameState::ProcessingParamFuncArgs;
@@ -135,6 +154,35 @@ namespace SOMTParser{
                                 // Create constant array
                                 frame.result = mkConstArray(array_sort, value);
                                 parseRpar(); // close outer parentheses
+                                frame.state = FrameState::Finish;
+                                break;
+                            }
+                            else if(std::shared_ptr<DAGNode> dtf =
+                                        getSymbolManager()->getFun(second)){
+                                // `(as nil (L Int))` -- ASCRIBING which instance
+                                // of a parametric datatype a constructor builds.
+                                // A constructor mentioning none of the
+                                // parameters has no arguments to infer them
+                                // from, so SMT-LIB makes the script say. Without
+                                // this a parametric datatype has declarations
+                                // and no way to build a value.
+                                //
+                                // The ascribed sort becomes the term's, so `nil`
+                                // at `(L Int)` and at `(L Bool)` are different
+                                // terms rather than one shared node.
+                                const std::vector<std::shared_ptr<DAGNode>> none;
+                                const NODE_KIND dtk =
+                                    getDtFunctionKind(dtf->getSort(), second, none);
+                                if(dtk != NODE_KIND::NT_DT_CONSTRUCTOR){
+                                    err_unkwn_sym("as " + second, frame.line);
+                                    frame.result = mkErr(ERROR_TYPE::ERR_UNKWN_SYM);
+                                    frame.state = FrameState::Finish;
+                                    break;
+                                }
+                                std::shared_ptr<Sort> want = parseSort();
+                                parseRpar(); // close (as C S)
+                                frame.result = getNodeManager()->createNode(
+                                    want, dtk, second, none);
                                 frame.state = FrameState::Finish;
                                 break;
                             }
@@ -212,17 +260,42 @@ namespace SOMTParser{
                     std::string head = getSymbol();
                     frame.headSymbol = head;
 
-                    if (head == "as") {
-                        const auto symbol = getSymbol();
-                        const auto sort = parseSort();
-                        if (symbol != "sep.nil" || !getHeapLocationSort() ||
-                            !(*sort == *getHeapLocationSort()))
-                            err_all(ERROR_TYPE::ERR_TYPE_MIS, "invalid qualified heap nil", frame.line);
-                        frame.result = mkSpatial(NODE_KIND::NT_SEP_NIL, {});
-                        parseRpar();
+                    // `(as nil (L Int))` is a COMPLETE term, not an annotation
+                    // applied to arguments, so it arrives here rather than in
+                    // the `((as const T) value)` branch above: the two `as`
+                    // forms differ in whether the annotation is the operator or
+                    // the whole term, and they are separate code paths.
+                    if(head == "as"){
+                        const std::string what = getSymbol();
+                        if (what == "sep.nil") {
+                            const auto sort = parseSort();
+                            if (!getHeapLocationSort() || !(*sort == *getHeapLocationSort()))
+                                err_all(ERROR_TYPE::ERR_TYPE_MIS, "invalid qualified heap nil", frame.line);
+                            frame.result = mkSpatial(NODE_KIND::NT_SEP_NIL, {});
+                            parseRpar();
+                            frame.state = FrameState::Finish;
+                            break;
+                        }
+                        if(std::shared_ptr<DAGNode> dtf = getSymbolManager()->getFun(what)){
+                            const std::vector<std::shared_ptr<DAGNode>> none;
+                            const NODE_KIND dtk =
+                                getDtFunctionKind(dtf->getSort(), what, none);
+                            if(dtk == NODE_KIND::NT_DT_CONSTRUCTOR){
+                                std::shared_ptr<Sort> want = parseSort();
+                                parseRpar();
+                                frame.result = getNodeManager()->createNode(
+                                    want, dtk, what, none);
+                                frame.state = FrameState::Finish;
+                                break;
+                            }
+                        }
+                        err_unkwn_sym("as " + what, frame.line);
+                        frame.result = mkErr(ERROR_TYPE::ERR_UNKWN_SYM);
                         frame.state = FrameState::Finish;
+                        break;
                     }
-                    else if(head == "exists" || head == "forall"){
+
+                    if(head == "exists" || head == "forall"){
                         in_quantifier_scope = true;
                         quant_nesting_depth++;
                         auto res = parseQuant(head);
@@ -412,6 +485,13 @@ namespace SOMTParser{
                         // parenthesised pattern lists.  Previously only :named
                         // was handled, so quantified benchmarks carrying
                         // :pattern (almost all of UFNIA/UFDT/...) failed to parse.
+                        // With preserve_annotations enabled the understood
+                        // annotations are kept as nodes so printing round-trips
+                        // triggers instead of silently dropping them (ported
+                        // from the SMTStabilizer fork); otherwise the original
+                        // skip-everything behaviour is retained.
+                        const bool keep_annots = getOptions()->getPreserveAnnotations();
+                        std::vector<std::shared_ptr<DAGNode>> annotations;
                         std::shared_ptr<DAGNode> formula = parseExpr();
                         scanToNextSymbol();
                         while(*bufptr && *bufptr != ')'){
@@ -424,8 +504,39 @@ namespace SOMTParser{
                                 scanToNextSymbol();
                                 if(kw == ":named" && *bufptr
                                    && *bufptr != ':' && *bufptr != ')'){
+                                    // `formula` is a whole assertion only when this
+                                    // (! ...) sits directly under (assert ...). A name
+                                    // on a nested subterm is recorded here and found by
+                                    // getNamedAssertions(), but dumpSMT2 annotates whole
+                                    // assertions and so drops it -- not supported for now.
+                                    size_t name_ln = line_number;
                                     std::string name = getSymbol();
-                                    context_.named_assertions[name] = formula;
+                                    warn_named_displaced(context_.nameAssertion(name, formula),
+                                                         name, name_ln);
+                                    scanToNextSymbol();
+                                }else if(keep_annots && kw == ":pattern" && *bufptr == '('){
+                                    parseLpar();
+                                    std::vector<std::shared_ptr<DAGNode>> patterns;
+                                    scanToNextSymbol();
+                                    while(*bufptr && *bufptr != ')'){
+                                        patterns.emplace_back(parseExpr());
+                                        scanToNextSymbol();
+                                    }
+                                    parseRpar();
+                                    annotations.emplace_back(mkPattern(patterns));
+                                    scanToNextSymbol();
+                                }else if(keep_annots && kw == ":no-pattern"
+                                         && *bufptr && *bufptr != ':' && *bufptr != ')'){
+                                    annotations.emplace_back(mkNoPattern(parseExpr()));
+                                    scanToNextSymbol();
+                                }else if(keep_annots && kw == ":weight"
+                                         && *bufptr && *bufptr != ':' && *bufptr != ')'){
+                                    annotations.emplace_back(mkWeight(parseExpr()));
+                                    scanToNextSymbol();
+                                }else if(keep_annots && kw == ":qid"
+                                         && *bufptr && *bufptr != ':' && *bufptr != ')'
+                                         && *bufptr != '('){
+                                    annotations.emplace_back(mkQid(getSymbol()));
                                     scanToNextSymbol();
                                 }else if(*bufptr == '('){
                                     // skip a balanced parenthesised value
@@ -444,6 +555,9 @@ namespace SOMTParser{
                                 getSymbol();  // unexpected token; make progress
                                 scanToNextSymbol();
                             }
+                        }
+                        if(!annotations.empty()){
+                            formula = mkAttribute(formula, annotations);
                         }
                         frame.result = formula;
                         parseRpar();
@@ -691,6 +805,11 @@ namespace SOMTParser{
 			return mkConstStr(s);
 		}
 		// no parameters
+		// tuple.unit is the nullary tuple constant, so it appears as a bare
+		// symbol rather than an application. Ported from the SMTStabilizer fork.
+		else if (s == "tuple.unit"){
+			return mkTuple({});
+		}
 		else if (s == "re.none"){
 			return mkRegNone();
 		}
@@ -739,6 +858,12 @@ namespace SOMTParser{
 	std::shared_ptr<DAGNode> Parser::parseOper(const std::string& s, const std::vector<std::shared_ptr<DAGNode>>& func_args, const std::vector<std::shared_ptr<DAGNode>> &oper_params, bool indexed_under_score){
 		TIME_FUNC();
 		auto func = getSymbolManager()->resolveFun(s);
+		// ((_ update <sel>) t v) arrives with the selector folded into the name
+		// under a marker prefix that cannot occur in an SMT-LIB symbol, so this
+		// can never collide with a user-declared function.
+		if(!func && s.rfind(DT_UPDATE_PREFIX, 0) == 0 && oper_params.size() == 2){
+			return mkDtUpdate(s.substr(std::string(DT_UPDATE_PREFIX).size()), oper_params[0], oper_params[1]);
+		}
 		// Datatype tester/constructor/selector applied here: the indexed tester
 		// form (_ is C) registers as a FuncDec named "is-C", and an applied
 		// constructor/selector also resolves as a FuncDec — applyFun would emit a
@@ -752,7 +877,13 @@ namespace SOMTParser{
 			NODE_KIND dtk = getDtFunctionKind(func->getSort(), s, oper_params);
 			if(dtk == NODE_KIND::NT_DT_TESTER || dtk == NODE_KIND::NT_DT_CONSTRUCTOR ||
 			   dtk == NODE_KIND::NT_DT_SELECTOR){
-				return getNodeManager()->createNode(func->getSort(), dtk, s, oper_params);
+				// A PARAMETRIC datatype's member is polymorphic, so the sort the
+				// application carries is the declared one with the parameters
+				// substituted: `hd` of an `(L Int)` is an Int, not an `X`. This
+				// path intercepts the application before applyFun, so it needs
+				// the same substitution rather than func->getSort() raw.
+				return getNodeManager()->createNode(
+					dtAppliedSort(func, oper_params), dtk, s, oper_params);
 			}
 		}
 		// Non-indexed (op ...): user define-fun / define-fun-rec / pending declare-fun (body) may shadow only allow_builtin_shadow names.
@@ -926,13 +1057,24 @@ namespace SOMTParser{
             case NODE_KIND::NT_CSCH:
                 condAssert(oper_params.size() == 1, "Invalid number of parameters for csch");
                 return mkCsch(oper_params[0]);
+            // The four orderings are :chainable (SMT-LIB 2.6, theory Ints and
+			// Reals): `(<= a b c)` is legal and means `(and (<= a b) (<= b c))`.
+			// The n-ary builders below have always done exactly that expansion
+			// -- and nothing called them, because this dispatch asserted two
+			// parameters, so a conforming script aborted here instead. `=` and
+			// `distinct`, which are chainable and pairwise in the same way,
+			// were wired to their n-ary forms from the first.
             case NODE_KIND::NT_LE:
+				condAssert(oper_params.size() >= 2, "Not enough parameters for <=");
 				return mkLe(oper_params);
 			case NODE_KIND::NT_LT:
+				condAssert(oper_params.size() >= 2, "Not enough parameters for <");
 				return mkLt(oper_params);
 			case NODE_KIND::NT_GE:
+				condAssert(oper_params.size() >= 2, "Not enough parameters for >=");
 				return mkGe(oper_params);
 			case NODE_KIND::NT_GT:
+				condAssert(oper_params.size() >= 2, "Not enough parameters for >");
 				return mkGt(oper_params);
 			case NODE_KIND::NT_TO_REAL:
 				condAssert(oper_params.size() == 1, "Invalid number of parameters for to_real");
@@ -944,7 +1086,18 @@ namespace SOMTParser{
 				condAssert(oper_params.size() == 1, "Invalid number of parameters for is_int");
 				return mkIsInt(oper_params[0]);
 			case NODE_KIND::NT_IS_DIVISIBLE:
-				condAssert(oper_params.size() == 2, "Invalid number of parameters for is_divisible");
+				// ((_ divisible n) t) -- the standard form, where n is an INDEX
+				// and arrives in func_args rather than as an argument. Same
+				// shape as nat2bv above, and the same defect: without this the
+				// two-parameter assert aborted on every conforming script.
+				//
+				// The children stay (term, n) either way, so the flat form and
+				// the indexed one build the identical node and nothing
+				// downstream has to know which was written.
+				if(func_args.size() == 1 && oper_params.size() == 1){
+					return mkIsDivisible(oper_params[0], func_args[0]);
+				}
+				condAssert(oper_params.size() == 2, "Invalid number of parameters for divisible");
 				return mkIsDivisible(oper_params[0], oper_params[1]);
 			case NODE_KIND::NT_IS_PRIME:
 				condAssert(oper_params.size() == 1, "Invalid number of parameters for is_prime");
@@ -1048,8 +1201,20 @@ namespace SOMTParser{
                 condAssert(oper_params.size() == 1, "Invalid number of parameters for bv2nat");
                 return mkBvToNat(oper_params[0]);
             case NODE_KIND::NT_NAT_TO_BV:
+                // Both the indexed SMT-LIB form ((_ nat2bv m) t) — where the
+                // width arrives in func_args — and the flat (nat2bv t m) form.
+                // The indexed form used to abort on the 2-parameter assert.
+                if(func_args.size() == 1 && oper_params.size() == 1){
+                    return mkNatToBv(oper_params[0], func_args[0]);
+                }
                 condAssert(oper_params.size() == 2, "Invalid number of parameters for nat2bv");
                 return mkNatToBv(oper_params[0], oper_params[1]);
+            case NODE_KIND::NT_UBV_TO_INT:
+                condAssert(oper_params.size() == 1, "Invalid number of parameters for ubv_to_int");
+                return mkUbvToInt(oper_params[0]);
+            case NODE_KIND::NT_SBV_TO_INT:
+                condAssert(oper_params.size() == 1, "Invalid number of parameters for sbv_to_int");
+                return mkSbvToInt(oper_params[0]);
             case NODE_KIND::NT_INT_TO_BV:
                 condAssert(func_args.size() == 1, "Invalid number of arguments for int_to_bv");
                 condAssert(oper_params.size() == 1, "Invalid number of parameters for int_to_bv");
@@ -1093,7 +1258,7 @@ namespace SOMTParser{
             case NODE_KIND::NT_FP_DIV:
                 return mkFpDiv(oper_params);
             case NODE_KIND::NT_FP_FMA:
-                condAssert(oper_params.size() == 3, "Invalid number of parameters for fp.fma");
+                condAssert(oper_params.size() == 4, "Invalid number of parameters for fp.fma");
                 return mkFpFma(oper_params);
             case NODE_KIND::NT_FP_SQRT:
                 if(oper_params.size() == 1) {
@@ -1248,12 +1413,32 @@ namespace SOMTParser{
             case NODE_KIND::NT_STORE:
                 condAssert(oper_params.size() == 3, "Invalid number of parameters for store");
                 return mkStore(oper_params[0], oper_params[1], oper_params[2]);
+            // TUPLE OPERATORS — ported from the SMTStabilizer fork. The
+            // select/update/project indices arrive as func_args because the
+            // operators are indexed: ((_ tuple.select i) t).
+            case NODE_KIND::NT_TUPLE_CONSTRUCTOR:
+                return mkTuple(oper_params);
+            case NODE_KIND::NT_TUPLE_UNIT:
+                condAssert(oper_params.empty(), "tuple.unit takes no parameters");
+                return mkTuple({});
+            case NODE_KIND::NT_TUPLE_SELECT:
+                condAssert(func_args.size() == 1, "Invalid number of arguments for tuple.select");
+                condAssert(oper_params.size() == 1, "Invalid number of parameters for tuple.select");
+                return mkTupleSelect(oper_params[0], func_args[0]);
+            case NODE_KIND::NT_TUPLE_UPDATE:
+                condAssert(func_args.size() == 1, "Invalid number of arguments for tuple.update");
+                condAssert(oper_params.size() == 2, "Invalid number of parameters for tuple.update");
+                return mkTupleUpdate(oper_params[0], func_args[0], oper_params[1]);
+            case NODE_KIND::NT_TUPLE_PROJECT:
+                condAssert(oper_params.size() == 1, "Invalid number of parameters for tuple.project");
+                return mkTupleProject(oper_params[0], func_args);
             case NODE_KIND::NT_ROOT_OBJ:
                 condAssert(oper_params.size() == 2, "root-obj requires exactly 2 parameters");
                 {
                     auto expr = oper_params[0];
                     auto index_node = oper_params[1];
-                    condAssert(index_node->isConst() && index_node->getSort()->isInt(), "root-obj index must be integer constant");
+                    condAssert(index_node->isConst() && index_node->isCInt(),
+                               "root-obj index must be integer constant");
                     int index = std::stoi(index_node->getName());
                     return mkRootObj(expr, index);
                 }
@@ -1293,8 +1478,8 @@ namespace SOMTParser{
                 condAssert(oper_params.size() == 3, "Invalid number of parameters for str.replace_re_all");
                 return mkStrReplaceRegAll(oper_params[0], oper_params[1], oper_params[2]);
             case NODE_KIND::NT_STR_INDEXOF_REG:
-                condAssert(oper_params.size() == 2, "Invalid number of parameters for str.indexof_re");
-                return mkStrIndexofReg(oper_params[0], oper_params[1]);
+                condAssert(oper_params.size() == 3, "Invalid number of parameters for str.indexof_re");
+                return mkStrIndexofReg(oper_params[0], oper_params[1], oper_params[2]);
             case NODE_KIND::NT_STR_TO_LOWER:
                 condAssert(oper_params.size() == 1, "Invalid number of parameters for str.to_lower");
                 return mkStrToLower(oper_params[0]);

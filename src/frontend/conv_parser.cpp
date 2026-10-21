@@ -110,21 +110,16 @@ namespace SOMTParser {
         return false;
     }
     std::vector<std::shared_ptr<DAGNode>> Parser::getCNFAtoms() {
+        // Only report positive pairs; each atom is registered together with its
+        // negation, so filtering by polarity (instead of a visited-set that
+        // depends on unordered_map iteration order) yields a stable result.
         std::vector<std::shared_ptr<DAGNode>> atoms;
-        std::unordered_set<std::shared_ptr<DAGNode>> visited;
+        std::unordered_set<std::shared_ptr<DAGNode>> seen;
         for(auto& [atom, bool_var] : cnf_bool_var_map){
-            // skip the atom if it has been visited
-            if(visited.find(bool_var) != visited.end()){
+            if(atom->isNot() || bool_var->isNot()){
                 continue;
             }
-            // skip the atom if its negation has been visited
-            else if(visited.find(mkNot(bool_var)) != visited.end()){
-                continue;
-            }
-            // insert the atom into the vector
-            visited.insert(bool_var);
-            // skip the not bool_var, only insert the positive bool_var
-            if(bool_var->isNot()){
+            if(!seen.insert(bool_var).second){
                 continue;
             }
             atoms.emplace_back(atom);
@@ -138,21 +133,15 @@ namespace SOMTParser {
         return NodeManager::NULL_NODE;
     }
     std::vector<std::shared_ptr<DAGNode>> Parser::getCNFBoolVars() {
+        // Symmetric to getCNFAtoms: keep only positive pairs so the result is
+        // independent of unordered_map iteration order.
         std::vector<std::shared_ptr<DAGNode>> bool_vars;
-        std::unordered_set<std::shared_ptr<DAGNode>> visited;
+        std::unordered_set<std::shared_ptr<DAGNode>> seen;
         for(auto& [bool_var, atom] : cnf_atom_map){
-            // skip the bool_var if it has been visited
-            if(visited.find(bool_var) != visited.end()){
+            if(bool_var->isNot() || atom->isNot()){
                 continue;
             }
-            // skip the bool_var if its negation has been visited
-            else if(visited.find(mkNot(bool_var)) != visited.end()){
-                continue;
-            }
-            // insert the bool_var into the vector
-            visited.insert(bool_var);
-            // skip the not bool_var, only insert the positive bool_var
-            if(bool_var->isNot()){
+            if(!seen.insert(bool_var).second){
                 continue;
             }
             bool_vars.emplace_back(bool_var);
@@ -380,9 +369,25 @@ namespace SOMTParser {
     std::shared_ptr<DAGNode> Parser::toTseitinCNF(std::shared_ptr<DAGNode> expr, std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited, std::vector<std::shared_ptr<DAGNode>>& clauses) {
         // Tseitin CNF is ¬applied to atoms: all atoms are already in CNF form
         if(expr->isAtom()){
-            // directly return the original expression
-            condAssert(cnf_map.find(expr) != cnf_map.end(), "toTseitinCNF: expr is an atom but not in cnf_map");
-            return cnf_map[expr];
+            auto atom_it = cnf_map.find(expr);
+            if(atom_it != cnf_map.end()){
+                return atom_it->second;
+            }
+            // Standalone toTseitinCNF call (outside the toCNF pipeline): the
+            // atom has not been abstracted yet, so register a fresh Boolean
+            // abstraction variable on the fly, mirroring the bookkeeping done
+            // in toCNF. Returning cnf_map[expr] blindly would hand out a null
+            // node in release builds.
+            std::shared_ptr<DAGNode> new_var = mkTempVar(SortManager::BOOL_SORT);
+            std::shared_ptr<DAGNode> not_atom = mkNot(expr);
+            std::shared_ptr<DAGNode> not_new_var = mkNot(new_var);
+            cnf_map[expr] = new_var;
+            cnf_map[not_atom] = not_new_var;
+            cnf_atom_map[new_var] = expr;
+            cnf_bool_var_map[expr] = new_var;
+            cnf_atom_map[not_new_var] = not_atom;
+            cnf_bool_var_map[not_atom] = not_new_var;
+            return new_var;
         }
         if(expr->isLiteral() || expr->isTempVar()) {
             // always return the original expression
@@ -402,10 +407,13 @@ namespace SOMTParser {
         // => ¬c or ¬a
         // => a or c
         if(expr->isNot()){
-            // TODO: after NNF
+            // Convert the child first so that clauses only ever reference
+            // literals / abstraction variables (the child may be an atom or a
+            // nested formula when toTseitinCNF is called outside toCNF).
+            std::shared_ptr<DAGNode> a = toTseitinCNF(expr->getChild(0), visited, clauses);
             std::shared_ptr<DAGNode> c = mkTempVar(SortManager::BOOL_SORT);
-            clauses.emplace_back(mkOr({mkNot(c), mkNot(expr->getChild(0))}));
-            clauses.emplace_back(mkOr({expr->getChild(0), c}));
+            clauses.emplace_back(mkOr({mkNot(c), mkNot(a)}));
+            clauses.emplace_back(mkOr({a, c}));
             visited[expr] = c;
             return c;
         }
@@ -793,6 +801,124 @@ namespace SOMTParser {
         return is_changed;
     }
 
+    // Encode a formula that sits in asserted (top-level, positive) position.
+    // The root connective needs no Tseitin definition variable: conjunctions
+    // split into independently asserted conjuncts, literals become unit
+    // clauses, and a disjunction/xor/implication/iff root is emitted as its
+    // direct clausal form. Only nested boolean structure goes through
+    // toTseitinCNF and receives definition variables.
+    void Parser::assertTopCNF(std::shared_ptr<DAGNode> expr,
+                              std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>>& visited,
+                              std::vector<std::shared_ptr<DAGNode>>& clauses) {
+        if(expr->isLet()){
+            assertTopCNF(expandLet(expr), visited, clauses);
+            return;
+        }
+        if(expr->isAtom()){
+            // map the atom to its boolean abstraction literal (no clauses emitted)
+            clauses.emplace_back(toTseitinCNF(expr, visited, clauses));
+            return;
+        }
+        if(expr->isLiteral()){
+            if(expr->isTrue()){
+                return; // asserting true adds no constraint
+            }
+            clauses.emplace_back(expr);
+            return;
+        }
+        if(expr->isAnd()){
+            // each conjunct is asserted independently
+            for(size_t i = 0; i < expr->getChildrenSize(); i++){
+                assertTopCNF(expr->getChild(i), visited, clauses);
+            }
+            return;
+        }
+        if(expr->isNot()){
+            // NNF pushes negation onto atoms; an unabstracted ¬atom lands here
+            std::shared_ptr<DAGNode> lit = toTseitinCNF(expr->getChild(0), visited, clauses);
+            clauses.emplace_back(mkNot(lit));
+            return;
+        }
+        if(expr->isOr()){
+            // an asserted disjunction is itself a single clause
+            std::vector<std::shared_ptr<DAGNode>> lits;
+            for(size_t i = 0; i < expr->getChildrenSize(); i++){
+                lits.emplace_back(toTseitinCNF(expr->getChild(i), visited, clauses));
+            }
+            clauses.emplace_back(mkOr(lits));
+            return;
+        }
+        if(expr->isXor()){
+            // fold all but the last operand through Tseitin, then assert the
+            // final pair directly: r xor l <=> (r or l) and (¬r or ¬l)
+            std::vector<std::shared_ptr<DAGNode>> lits;
+            for(size_t i = 0; i < expr->getChildrenSize(); i++){
+                lits.emplace_back(toTseitinCNF(expr->getChild(i), visited, clauses));
+            }
+            if(lits.size() == 1){
+                clauses.emplace_back(lits[0]);
+                return;
+            }
+            std::shared_ptr<DAGNode> r = lits[0];
+            for(size_t i = 1; i + 1 < lits.size(); i++){
+                r = toTseitinXor(r, lits[i], clauses);
+            }
+            std::shared_ptr<DAGNode> last = lits.back();
+            clauses.emplace_back(mkOr({r, last}));
+            clauses.emplace_back(mkOr({mkNot(r), mkNot(last)}));
+            return;
+        }
+        if(expr->isImplies()){
+            // (=> a1 ... an b) asserted is the single clause ¬a1 ∨ ... ∨ ¬an ∨ b
+            std::vector<std::shared_ptr<DAGNode>> lits;
+            for(size_t i = 0; i < expr->getChildrenSize(); i++){
+                lits.emplace_back(toTseitinCNF(expr->getChild(i), visited, clauses));
+            }
+            if(lits.size() == 1){
+                clauses.emplace_back(lits[0]);
+                return;
+            }
+            std::vector<std::shared_ptr<DAGNode>> or_children;
+            for(size_t i = 0; i + 1 < lits.size(); i++){
+                or_children.emplace_back(mkNot(lits[i]));
+            }
+            or_children.emplace_back(lits.back());
+            clauses.emplace_back(mkOr(or_children));
+            return;
+        }
+        if(expr->isEq() && expr->getChildrenSize() >= 2){
+            bool all_bool = true;
+            for(size_t i = 0; i < expr->getChildrenSize(); i++){
+                if(!expr->getChild(i)->getSort()->isBool()){
+                    all_bool = false;
+                    break;
+                }
+            }
+            if(all_bool){
+                // asserted iff chain: a1 = ai for all i, two binary clauses each
+                std::vector<std::shared_ptr<DAGNode>> lits;
+                for(size_t i = 0; i < expr->getChildrenSize(); i++){
+                    lits.emplace_back(toTseitinCNF(expr->getChild(i), visited, clauses));
+                }
+                for(size_t i = 1; i < lits.size(); i++){
+                    clauses.emplace_back(mkOr({mkNot(lits[0]), lits[i]}));
+                    clauses.emplace_back(mkOr({lits[0], mkNot(lits[i])}));
+                }
+                return;
+            }
+        }
+        if(expr->isDistinct() && expr->getChildrenSize() == 2 &&
+           expr->getChild(0)->getSort()->isBool() && expr->getChild(1)->getSort()->isBool()){
+            std::shared_ptr<DAGNode> a = toTseitinCNF(expr->getChild(0), visited, clauses);
+            std::shared_ptr<DAGNode> b = toTseitinCNF(expr->getChild(1), visited, clauses);
+            clauses.emplace_back(mkOr({a, b}));
+            clauses.emplace_back(mkOr({mkNot(a), mkNot(b)}));
+            return;
+        }
+        // anything else: define the subformula and assert its literal
+        clauses.emplace_back(toTseitinCNF(expr, visited, clauses));
+    }
+
     // convert a list of expressions to CNF (a large AND node, whose children are all OR clauses)
     std::shared_ptr<DAGNode> Parser::toCNF(std::vector<std::shared_ptr<DAGNode>> exprs) {
         // make a large AND node -> the same atom will use the same variable 
@@ -953,13 +1079,17 @@ namespace SOMTParser {
             cnf = new_expr;
         }
         else{
-            // convert to CNF using Tseitin transformation
+            // convert to CNF: the asserted root (and any top-level conjunction)
+            // is encoded directly; only nested structure gets Tseitin variables
             std::vector<std::shared_ptr<DAGNode>> clauses;
-            std::shared_ptr<DAGNode> tseitin_cnf = toTseitinCNF(new_expr, clauses);
-            clauses.emplace_back(tseitin_cnf);
+            std::unordered_map<std::shared_ptr<DAGNode>, std::shared_ptr<DAGNode>> visited;
+            assertTopCNF(new_expr, visited, clauses);
 
-            // if there is only one clause, return it directly
-            if (clauses.size() == 1) {
+            if(clauses.empty()){
+                cnf = mkTrue();
+            }
+            else if (clauses.size() == 1) {
+                // if there is only one clause, return it directly
                 cnf = clauses[0];
             }
             else{

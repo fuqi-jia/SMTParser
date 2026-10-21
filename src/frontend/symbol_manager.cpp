@@ -3,8 +3,8 @@
  */
 
 #include "somtparser/frontend/symbol_manager.h"
+#include "somtparser/core/asserting.h"
 #include <algorithm>
-#include <cassert>
 
 namespace SOMTParser {
 
@@ -25,95 +25,87 @@ void SymbolManager::reserve(size_t capacity) {
     static_functions_.reserve(capacity);
 }
 
+namespace {
+
+/**
+ * A lookup that treats `foo` and `|foo|` as the same key.
+ *
+ * SMT-LIB 2.6 §3.1: enclosing a simple symbol in vertical bars **does not
+ * produce a new symbol** -- `abc` and `|abc|` are the same symbol, following the
+ * Common Lisp convention. The bars widen which characters a symbol may contain;
+ * they are not part of its identity.
+ *
+ * Declaring a predicate quoted and applying it unquoted is ordinary --
+ *
+ *     (declare-fun |inv| ( Int Int ) Bool)
+ *     ...
+ *     (inv B A)
+ *
+ * -- and it failed with `Unknown or unexpected symbol "inv"`.
+ *
+ * The equivalence was already implemented for var_names_ and for nothing else,
+ * which is why a quoted VARIABLE worked and a quoted FUNCTION did not: a
+ * zero-argument declare-fun goes through mkVar into var_names_, one with
+ * arguments through mkFuncDec into fun_key_map_. One helper, used by every map,
+ * is what keeps the two from drifting apart again.
+ */
+template <typename Map>
+typename Map::mapped_type findEitherSpelling(const Map& m, const std::string& name) {
+    auto it = m.find(name);
+    if (it != m.end()) { return it->second; }
+    if (name.size() > 2 && name.front() == '|' && name.back() == '|') {
+        it = m.find(name.substr(1, name.size() - 2));
+    } else {
+        it = m.find('|' + name + '|');
+    }
+    return it != m.end() ? it->second : nullptr;
+}
+
+}  // namespace
+
 std::shared_ptr<DAGNode> SymbolManager::resolveSymbol(const std::string& name, const ResolveScope& scope) const {
-    auto it_ph = placeholder_var_names_.find(name);
-    if (it_ph != placeholder_var_names_.end())
-        return it_ph->second;
-
+    // The resolution ORDER is unchanged and is documented in the header; only
+    // the lookup within each step now accepts either spelling.
+    if (auto n = findEitherSpelling(placeholder_var_names_, name)) { return n; }
     if (scope.check_let) {
-        auto it = let_key_map_.find(name);
-        if (it != let_key_map_.end())
-            return it->second;
+        if (auto n = findEitherSpelling(let_key_map_, name)) { return n; }
     }
-
-    auto it_fun = fun_key_map_.find(name);
-    if (it_fun != fun_key_map_.end())
-        return it_fun->second;
     if (scope.in_quantifier_scope) {
-        auto it_q = quant_var_map_.find(name);
-        if (it_q != quant_var_map_.end())
-            return it_q->second.back();
+        if (auto n = getQuantVar(name)) return n;
     }
-    auto it_fv = fun_var_map_.find(name);
-    if (it_fv != fun_var_map_.end())
-        return it_fv->second;
-
-    auto it_var = var_names_.find(name);
-    if (it_var != var_names_.end())
-        return it_var->second;
-    if (name.size() > 2 && name[0] == '|' && name[name.size() - 1] == '|') {
-        std::string inner = name.substr(1, name.size() - 2);
-        auto it = var_names_.find(inner);
-        if (it != var_names_.end())
-            return it->second;
-    }
-    std::string bar_name = '|' + name + '|';
-    auto it_bar = var_names_.find(bar_name);
-    if (it_bar != var_names_.end())
-        return it_bar->second;
+    if (auto n = findEitherSpelling(fun_var_map_, name)) return n;
+    if (auto n = findEitherSpelling(fun_key_map_, name)) return n;
+    if (auto n = findEitherSpelling(var_names_, name)) return n;
     return nullptr;
 }
 
 std::shared_ptr<DAGNode> SymbolManager::resolveTerm(const std::string& name, const ResolveScope& scope) const {
-    auto it_ph = placeholder_var_names_.find(name);
-    if (it_ph != placeholder_var_names_.end())
-        return it_ph->second;
-
+    if (auto n = findEitherSpelling(placeholder_var_names_, name)) { return n; }
     if (scope.check_let) {
-        auto it = let_key_map_.find(name);
-        if (it != let_key_map_.end())
-            return it->second;
+        if (auto n = findEitherSpelling(let_key_map_, name)) { return n; }
     }
-
     // Function parameters (fun_var) are term bindings inside function bodies
     if (scope.in_quantifier_scope) {
-        auto it_q = quant_var_map_.find(name);
-        if (it_q != quant_var_map_.end())
-            return it_q->second.back();
+        if (auto n = getQuantVar(name)) return n;
     }
-    auto it_fv = fun_var_map_.find(name);
-    if (it_fv != fun_var_map_.end())
-        return it_fv->second;
-
-    auto it_var = var_names_.find(name);
-    if (it_var != var_names_.end())
-        return it_var->second;
-    if (name.size() > 2 && name[0] == '|' && name[name.size() - 1] == '|') {
-        std::string inner = name.substr(1, name.size() - 2);
-        auto it = var_names_.find(inner);
-        if (it != var_names_.end())
-            return it->second;
-    }
-    std::string bar_name = '|' + name + '|';
-    auto it_bar = var_names_.find(bar_name);
-    if (it_bar != var_names_.end())
-        return it_bar->second;
+    if (auto n = findEitherSpelling(fun_var_map_, name)) return n;
+    if (auto n = findEitherSpelling(var_names_, name)) return n;
     return nullptr;
 }
 
 std::shared_ptr<DAGNode> SymbolManager::resolveFun(const std::string& name) const {
-    auto it_fun = fun_key_map_.find(name);
-    if (it_fun != fun_key_map_.end())
-        return it_fun->second;
-    auto it_fv = fun_var_map_.find(name);
-    if (it_fv != fun_var_map_.end())
-        return it_fv->second;
+    // This is the path an APPLICATION takes -- `(inv B A)` reaches here, not
+    // resolveSymbol -- and it is where a quoted declaration failed.
+    if (auto n = findEitherSpelling(fun_key_map_, name)) { return n; }
+    if (auto n = findEitherSpelling(fun_var_map_, name)) { return n; }
     return nullptr;
 }
 
 std::shared_ptr<Sort> SymbolManager::resolveSort(const std::string& name) const {
-    auto it = sort_key_map_.find(name);
-    return it != sort_key_map_.end() ? it->second : nullptr;
+    // Sorts too: `(declare-sort |S| 0)` then `(declare-fun x () S)` is the same
+    // rule, and leaving one map out is how this defect survived in the first
+    // place.
+    return findEitherSpelling(sort_key_map_, name);
 }
 
 void SymbolManager::pushLetScope() {
@@ -121,7 +113,12 @@ void SymbolManager::pushLetScope() {
 }
 
 void SymbolManager::popLetScope() {
-    assert(!let_scope_checkpoints_.empty() && "popLetScope: no checkpoint to pop");
+    // condAssert, not assert: the library is compiled with -DNDEBUG in the
+    // default Release build, where assert() is a no-op -- and the two lines
+    // below would then read and pop an empty vector, which is undefined
+    // behaviour. condAssert throws unconditionally, so an unbalanced pop
+    // surfaces as a diagnosable error in every configuration.
+    condAssert(!let_scope_checkpoints_.empty(), "popLetScope: no checkpoint to pop");
     size_t checkpoint = let_scope_checkpoints_.back();
     let_scope_checkpoints_.pop_back();
     // Restore from the end of backup list back to checkpoint
@@ -163,12 +160,11 @@ void SymbolManager::registerFun(const std::string& name, const std::shared_ptr<D
 }
 
 std::shared_ptr<DAGNode> SymbolManager::getFun(const std::string& name) const {
-    auto it = fun_key_map_.find(name);
-    return it != fun_key_map_.end() ? it->second : nullptr;
+    return findEitherSpelling(fun_key_map_, name);
 }
 
 bool SymbolManager::hasFun(const std::string& name) const {
-    return fun_key_map_.find(name) != fun_key_map_.end();
+    return findEitherSpelling(fun_key_map_, name) != nullptr;
 }
 
 void SymbolManager::registerRecursiveDefinition(const std::shared_ptr<DAGNode>& symbol,
@@ -207,6 +203,7 @@ bool SymbolManager::hasFunVar(const std::string& name) const {
 }
 
 void SymbolManager::registerSort(const std::string& name, const std::shared_ptr<Sort>& sort) {
+    if (sort_key_map_.find(name) == sort_key_map_.end()) sort_order_.push_back(name);
     sort_key_map_[name] = sort;
 }
 
@@ -224,6 +221,11 @@ void SymbolManager::registerQuantVar(const std::string& name, const std::shared_
 
 std::shared_ptr<DAGNode> SymbolManager::getQuantVar(const std::string& name) const {
     auto it = quant_var_map_.find(name);
+    if (it == quant_var_map_.end()) {
+        const auto alternate = name.size() > 2 && name.front() == '|' && name.back() == '|'
+            ? name.substr(1, name.size() - 2) : '|' + name + '|';
+        it = quant_var_map_.find(alternate);
+    }
     return it != quant_var_map_.end() ? it->second.back() : nullptr;
 }
 
@@ -237,20 +239,20 @@ void SymbolManager::popQuantScope(const std::vector<std::string>& keys) {
 }
 
 bool SymbolManager::hasQuantVar(const std::string& name) const {
-    return quant_var_map_.find(name) != quant_var_map_.end();
+    return getQuantVar(name) != nullptr;
 }
 
 void SymbolManager::registerVar(const std::string& name, const std::shared_ptr<DAGNode>& node) {
+    if (var_names_.find(name) == var_names_.end()) var_order_.push_back(name);
     var_names_[name] = node;
 }
 
 std::shared_ptr<DAGNode> SymbolManager::getVar(const std::string& name) const {
-    auto it = var_names_.find(name);
-    return it != var_names_.end() ? it->second : nullptr;
+    return findEitherSpelling(var_names_, name);
 }
 
 bool SymbolManager::hasVar(const std::string& name) const {
-    return var_names_.find(name) != var_names_.end();
+    return findEitherSpelling(var_names_, name) != nullptr;
 }
 
 void SymbolManager::removeVar(const std::string& name) {
@@ -275,6 +277,7 @@ size_t SymbolManager::nextTempVarCounter() {
 }
 
 void SymbolManager::registerTempVar(const std::string& name, const std::shared_ptr<DAGNode>& node) {
+    if (temp_var_names_.find(name) == temp_var_names_.end()) temp_var_order_.push_back(name);
     temp_var_names_[name] = node;
 }
 
@@ -335,6 +338,22 @@ bool SymbolManager::hasFunctionName(const std::string& name) const {
     return std::find(function_names_.begin(), function_names_.end(), name) != function_names_.end();
 }
 
+void SymbolManager::addRecFunGroup(const std::vector<std::string>& names) {
+    if (names.empty()) return;
+    const size_t index = rec_fun_groups_.size();
+    rec_fun_groups_.emplace_back(names);
+    for (const auto& name : names) {
+        rec_fun_group_of_[name] = index;
+    }
+}
+
+const std::vector<std::string>* SymbolManager::getRecFunGroup(const std::string& name) const {
+    auto it = rec_fun_group_of_.find(name);
+    if (it == rec_fun_group_of_.end()) return nullptr;
+    condAssert(it->second < rec_fun_groups_.size(), "getRecFunGroup: dangling group index");
+    return &rec_fun_groups_[it->second];
+}
+
 void SymbolManager::removeFunctionName(const std::string& name) {
     auto it = std::find(function_names_.begin(), function_names_.end(), name);
     if (it != function_names_.end()) function_names_.erase(it);
@@ -346,6 +365,18 @@ void SymbolManager::addStaticFunction(const std::shared_ptr<DAGNode>& node) {
 
 const std::vector<std::shared_ptr<DAGNode>>& SymbolManager::getStaticFunctions() const {
     return static_functions_;
+}
+
+const std::vector<std::string>& SymbolManager::getSortOrder() const {
+    return sort_order_;
+}
+
+const std::vector<std::string>& SymbolManager::getVarOrder() const {
+    return var_order_;
+}
+
+const std::vector<std::string>& SymbolManager::getTempVarOrder() const {
+    return temp_var_order_;
 }
 
 const std::unordered_map<std::string, std::shared_ptr<Sort>>& SymbolManager::getSortKeyMap() const {

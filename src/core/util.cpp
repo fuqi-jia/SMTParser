@@ -254,17 +254,20 @@ namespace SOMTParser{
 
     bool TypeChecker::isInt(const std::string& str){
         if (str.empty()) return false;
+        bool has_digit = false;
         for (size_t i = 0; i < str.size(); i++){
             if (i == 0 && (str[i] == '-' || str[i] == '+')) continue;
             if (!isdigit(str[i])) return false;
+            has_digit = true;
         }
-        return true;
+        return has_digit;
 
     }
     bool TypeChecker::isReal(const std::string& str){
         if (str.empty()) return false;
         bool has_dot = false;
         bool has_slash = false;
+        bool has_digit = false;
         for (size_t i = 0; i < str.size(); i++){
             if (i == 0 && (str[i] == '-' || str[i] == '+')) continue;
             if (str[i] == '.' && !has_dot && !has_slash){
@@ -276,7 +279,9 @@ namespace SOMTParser{
                 continue;
             }
             if (!isdigit(str[i])) return false;
+            has_digit = true;
         }
+        if (!has_digit) return false;
         if (has_slash) {
             size_t sl = str.find('/');
             if (sl == std::string::npos || sl == 0 || sl == str.size() - 1) return false;
@@ -887,41 +892,61 @@ namespace SOMTParser{
     }
 
 
-    std::string BitVectorUtils::bvShl(const std::string& bv, const std::string& n){
-        // left shift
-        condAssert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvShl: invalid bitvector");
-        condAssert(n[0] == '#' && n[1] == 'b', "BitVectorUtils::bvShl: invalid bitvector");
-        size_t shift = Integer(n.substr(2, n.size() - 2)).toULong();
-        if(shift >= bv.size() - 2){
-            return "#b0" + std::string(shift - bv.size() + 2, '0');
+    // Normalize a BV literal (#b... or #x...) to canonical #b binary form.
+    // The string-manipulating BV utilities below operate on the bit string, so
+    // a hex literal must first be widened to 4 bits per hex digit.
+    static std::string normBvBin(const std::string& s){
+        if(s.size() >= 2 && s[0] == '#' && s[1] == 'b') return s;
+        if(s.size() >= 2 && s[0] == '#' && s[1] == 'x'){
+            std::string r = "#b";
+            for(size_t i = 2; i < s.size(); ++i){
+                char c = s[i];
+                int d = (c >= '0' && c <= '9') ? c - '0'
+                      : (c >= 'a' && c <= 'f') ? c - 'a' + 10
+                      : (c >= 'A' && c <= 'F') ? c - 'A' + 10 : 0;
+                for(int b = 3; b >= 0; --b) r += ((d >> b) & 1) ? '1' : '0';
+            }
+            return r;
         }
-        else{
-            return "#b" + bv.substr(2, bv.size() - 2 - shift) + std::string(shift, '0');
-        }
+        return s;
     }
-    std::string BitVectorUtils::bvLshr(const std::string& bv, const std::string& n){
-        // logical right shift
-        condAssert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvLshr: invalid bitvector");
-        condAssert(n[0] == '#' && n[1] == 'b', "BitVectorUtils::bvLshr: invalid bitvector");
-        size_t shift = Integer(n.substr(2, n.size() - 2)).toULong();
-        if(shift >= bv.size() - 2){
-            return "#b0" + std::string(shift - bv.size() + 2, '0');
+
+    std::string BitVectorUtils::bvShl(const std::string& bv_in, const std::string& n_in){
+        // logical left shift: value << shift (mod 2^width)
+        const std::string bv = normBvBin(bv_in);
+        const std::string n  = normBvBin(n_in);
+        const size_t width = bv.size() - 2;
+        const size_t shift = bvToNat(n).toULong();   // shift = unsigned VALUE of n
+        if(shift >= width){
+            return "#b" + std::string(width, '0');
         }
-        else{
-            return "#b" + std::string(shift, '0') + bv.substr(2, bv.size() - 2 - shift);
-        }
+        // bit string is MSB-first: a left shift drops the top `shift` bits and
+        // pads `shift` zeros on the low (LSB) end.
+        return "#b" + bv.substr(2 + shift) + std::string(shift, '0');
     }
-    std::string BitVectorUtils::bvAshr(const std::string& bv, const std::string& n){
-        // arithmetic right shift
-        condAssert(bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvAshr: invalid bitvector");
-        condAssert(n[0] == '#' && n[1] == 'b', "BitVectorUtils::bvAshr: invalid bitvector");
-        size_t shift = Integer(n.substr(2, n.size() - 2)).toULong();
-        if(shift >= bv.size() - 2){
-            return "#b" + std::string(bv.size() - 2, bv[2]);
+    std::string BitVectorUtils::bvLshr(const std::string& bv_in, const std::string& n_in){
+        // logical right shift: value >> shift (zero-fill)
+        const std::string bv = normBvBin(bv_in);
+        const std::string n  = normBvBin(n_in);
+        const size_t width = bv.size() - 2;
+        const size_t shift = bvToNat(n).toULong();
+        if(shift >= width){
+            return "#b" + std::string(width, '0');
         }
-        else{
-            return "#b" + std::string(shift, bv[2]) + bv.substr(2, bv.size() - 2 - shift);
+        // prepend `shift` zeros, keep the top `width - shift` bits.
+        return "#b" + std::string(shift, '0') + bv.substr(2, width - shift);
+    }
+    std::string BitVectorUtils::bvAshr(const std::string& bv_in, const std::string& n_in){
+        // arithmetic right shift: value >> shift (sign-fill with the MSB)
+        const std::string bv = normBvBin(bv_in);
+        const std::string n  = normBvBin(n_in);
+        const size_t width = bv.size() - 2;
+        const size_t shift = bvToNat(n).toULong();
+        const char sign = bv[2];   // MSB
+        if(shift >= width){
+            return "#b" + std::string(width, sign);
         }
+        return "#b" + std::string(shift, sign) + bv.substr(2, width - shift);
     }
 
     std::string BitVectorUtils::bvConcat(const std::string& bv1, const std::string& bv2){
@@ -1004,6 +1029,45 @@ namespace SOMTParser{
             res = res * 2 + (bv[i] == '1' ? 1 : 0);
         }
         return res;
+    }
+    // Bit-pattern predicates — ported from the SMTStabilizer fork.
+    bool BitVectorUtils::bvIsMaxSigned(const std::string& bv){
+        condAssert(bv.size() > 2 && bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvIsMaxSigned: invalid bitvector");
+        if(bv[2] != '0') return false;
+        return std::all_of(bv.begin() + 3, bv.end(), [](char c){ return c == '1'; });
+    }
+    bool BitVectorUtils::bvIsMinSigned(const std::string& bv){
+        condAssert(bv.size() > 2 && bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvIsMinSigned: invalid bitvector");
+        if(bv[2] != '1') return false;
+        return std::all_of(bv.begin() + 3, bv.end(), [](char c){ return c == '0'; });
+    }
+    bool BitVectorUtils::bvIsMaxUnsigned(const std::string& bv){
+        condAssert(bv.size() > 2 && bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvIsMaxUnsigned: invalid bitvector");
+        return std::all_of(bv.begin() + 2, bv.end(), [](char c){ return c == '1'; });
+    }
+    bool BitVectorUtils::bvIsNegOne(const std::string& bv){
+        // -1 and the maximum unsigned value share the all-ones bit pattern.
+        return bvIsMaxUnsigned(bv);
+    }
+    int BitVectorUtils::bvCompareToUint(const std::string& bv, const uint64_t& u){
+        condAssert(bv.size() > 2 && bv[0] == '#' && bv[1] == 'b', "BitVectorUtils::bvCompareToUint: invalid bitvector");
+        const size_t width = bv.size() - 2;
+        // Any set bit above bit 63 already exceeds every uint64_t value.
+        if(width > 64){
+            for(size_t i = 2; i + 64 < bv.size(); ++i){
+                if(bv[i] == '1') return 1;
+            }
+        }
+        uint64_t value = 0;
+        for(size_t i = (width > 64 ? bv.size() - 64 : 2); i < bv.size(); ++i){
+            value = (value << 1) | (bv[i] == '1' ? 1u : 0u);
+        }
+        if(value < u) return -1;
+        if(value > u) return 1;
+        return 0;
+    }
+    std::string BitVectorUtils::mkOnes(const Integer& n){
+        return "#b" + std::string(n.toULong(), '1');
     }
     std::string BitVectorUtils::natToBv(const Integer& i, const Integer& n){
         std::string res = "#b";
@@ -1299,6 +1363,9 @@ namespace SOMTParser{
         std::string s_clean = (s[0] == '"' && s[s.length()-1] == '"') ? s.substr(1, s.length()-2) : s;
         std::string t_clean = (t[0] == '"' && t[t.length()-1] == '"') ? t.substr(1, t.length()-2) : t;
         std::string u_clean = (u[0] == '"' && u[u.length()-1] == '"') ? u.substr(1, u.length()-2) : u;
+
+        // SMT-LIB defines replacement by the empty string as a no-op.
+        if (t_clean.empty()) return s;
         
         std::string res = s_clean;
         size_t pos = res.find(t_clean);
@@ -1326,6 +1393,12 @@ namespace SOMTParser{
     std::string StringUtils::strRev(const std::string& s){
         std::string res = (s[0] == '"' && s[s.length()-1] == '"') ? s.substr(1, s.length()-2) : s;
         return "\"" + std::string(res.rbegin(), res.rend()) + "\"";
+    }
+
+    // Ported from the SMTStabilizer fork.
+    std::string StringUtils::strUnquote(const std::string& s){
+        if(s.size() >= 2 && s.front() == '"' && s.back() == '"') return s.substr(1, s.size() - 2);
+        return s;
     }
 
     // ─── RegexUtils ─────────────────────────────────────────────────────────────
@@ -1369,7 +1442,7 @@ namespace SOMTParser{
 
     std::string ConversionUtils::escapeString(const std::string& s){
         std::string result = "";
-        for(char c : s){
+        for(unsigned char c : s){
             // SMT-LIB2 string escaping rules:
             //   - double quote is escaped as "" (two consecutive double-quotes)
             //   - backslash is escaped as two backslashes
@@ -1386,8 +1459,10 @@ namespace SOMTParser{
                     break;
                 default:
                     // printable ASCII: no escaping needed
-                    if(c >= 32 && c <= 126) {
-                        result += c;
+                    if(c >= 32) {
+                        // SMT-LIB strings are Unicode strings. Preserve UTF-8 bytes
+                        // instead of escaping each byte as a separate code point.
+                        result += static_cast<char>(c);
                     } else {
                         // non-printable: use SMT-LIB2 Unicode escape \u{X}
                         std::ostringstream oss;
@@ -1398,6 +1473,49 @@ namespace SOMTParser{
             }
         }
         return result;
+    }
+
+    size_t ConversionUtils::utf8Length(const std::string& s){
+        size_t length = 0;
+        for (unsigned char c : s) {
+            if ((c & 0xC0) != 0x80) ++length;
+        }
+        return length;
+    }
+
+    size_t ConversionUtils::utf8CodePointWidth(const std::string& s,
+                                               size_t index) {
+        if (index >= s.size()) return 0;
+        const auto lead = static_cast<unsigned char>(s[index]);
+        if (lead < 0x80) return 1;
+        if ((lead & 0xe0) == 0xc0) return 2;
+        if ((lead & 0xf0) == 0xe0) return 3;
+        if ((lead & 0xf8) == 0xf0) return 4;
+        return 0;
+    }
+
+    std::optional<std::vector<std::string>>
+    ConversionUtils::utf8CodePoints(const std::string& s) {
+        std::vector<std::string> result;
+        for (size_t index = 0; index < s.size();) {
+            const size_t width = utf8CodePointWidth(s, index);
+            if (width == 0 || index + width > s.size()) return std::nullopt;
+            for (size_t offset = 1; offset < width; ++offset) {
+                if ((static_cast<unsigned char>(s[index + offset]) & 0xc0) !=
+                    0x80)
+                    return std::nullopt;
+            }
+            result.push_back(s.substr(index, width));
+            index += width;
+        }
+        return result;
+    }
+
+    std::optional<size_t>
+    ConversionUtils::utf8CodePointCount(const std::string& s) {
+        const auto points = utf8CodePoints(s);
+        if (!points) return std::nullopt;
+        return points->size();
     }
 
     std::string ConversionUtils::unescapeString(const std::string& s){
@@ -1918,6 +2036,23 @@ namespace SOMTParser{
         } else if(real.getType() == Number::REAL_TYPE) {
             mpfr_srcptr src = real.getReal().getMPFR();
             mpfr_set(m, src, rnd);
+        } else if(real.getType() == Number::RATIONAL_TYPE) {
+            // Exact rational -> FP, correctly rounded in ONE step to the (eb,sb)
+            // IEEE format.  Setting MPFR's exponent range to the format and
+            // subnormalizing makes the result exactly representable, so fromMpfr()
+            // below merely extracts its bits (no double-rounding).  This is what
+            // makes the emitted (fp #b..) literal match SMT-LIB's native to_fp.
+            mpfr_set_prec(m, static_cast<mpfr_prec_t>(sb));
+            const mpfr_exp_t fmt_emax = static_cast<mpfr_exp_t>(1LL << (eb - 1));
+            const mpfr_exp_t fmt_emin = 3 - fmt_emax - static_cast<mpfr_exp_t>(sb - 1);
+            const mpfr_exp_t old_emin = mpfr_get_emin();
+            const mpfr_exp_t old_emax = mpfr_get_emax();
+            mpfr_set_emin(fmt_emin);
+            mpfr_set_emax(fmt_emax);
+            int tern = mpfr_set_q(m, real.getRational().getMPQ().get_mpq_t(), rnd);
+            mpfr_subnormalize(m, tern, rnd);
+            mpfr_set_emin(old_emin);
+            mpfr_set_emax(old_emax);
         } else {
             mpfr_clear(m);
             return std::nullopt;

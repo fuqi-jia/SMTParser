@@ -1,0 +1,126 @@
+name: Build Wheels
+
+# Builds distributable wheels for PyPI:
+#  - manylinux x86_64 (GMP/MPFR from yum, vendored by auditwheel)
+#  - macOS x86_64 + arm64 (GMP/MPFR from Homebrew, vendored by delocate)
+#  - Windows AMD64 (GMP/MPFR from vcpkg, vendored by delvewheel)
+# plus the sdist. Runs on demand (workflow_dispatch) and on version tags;
+# a v* tag additionally publishes to PyPI via trusted publishing.
+#
+# The macOS deployment target matches the runner's OS because the Homebrew
+# GMP/MPFR bottles are built for it — delocate refuses to vendor a dylib
+# whose minimum OS is newer than the wheel's target. Older macOS falls back
+# to the sdist.
+
+on:
+  workflow_dispatch:
+  push:
+    tags: [ "v*" ]
+
+jobs:
+  check_version:
+    name: Tag matches pyproject version
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Compare tag with pyproject.toml
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          version=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          if [ "$tag" != "$version" ]; then
+            echo "::error::Tag v$tag does not match pyproject.toml version $version"
+            exit 1
+          fi
+
+  build_sdist:
+    name: Build sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build sdist
+        run: pipx run build --sdist
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: sdist
+          path: dist/*.tar.gz
+
+  build_wheels:
+    name: Wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+          - os: macos-15-intel   # last free x86_64 macOS runner (until Aug 2027)
+            macos-target: "15.0"
+          - os: macos-14         # arm64
+            macos-target: "14.0"
+          - os: windows-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install GMP/MPFR (macOS)
+        if: runner.os == 'macOS'
+        run: brew install pkg-config gmp mpfr
+
+      - name: Install GMP/MPFR (Windows, vcpkg)
+        if: runner.os == 'Windows'
+        # the preinstalled vcpkg ports tree goes stale and its msys2
+        # download URLs start 404ing — update it first
+        run: |
+          git -C C:\vcpkg pull --ff-only
+          C:\vcpkg\bootstrap-vcpkg.bat -disableMetrics
+          vcpkg install gmp:x64-windows mpfr:x64-windows
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v4.2.0  # no floating major tag exists
+        env:
+          CIBW_BUILD: "cp39-* cp310-* cp311-* cp312-* cp313-* cp314-*"
+          # PyPy is opt-in since cibuildwheel v4, no pp* skip needed
+          CIBW_SKIP: "*musllinux*"
+          CIBW_ARCHS_LINUX: x86_64
+          CIBW_ARCHS_MACOS: auto
+          CIBW_ARCHS_WINDOWS: AMD64
+          # manylinux containers are yum-based
+          CIBW_BEFORE_ALL_LINUX: yum install -y gmp-devel mpfr-devel
+          # no CMAKE_PREFIX_PATH here: FindGMP/FindMPFR query `brew --prefix`
+          # themselves, and a -D override would clobber the pybind11 search
+          # path that scikit-build-core injects
+          CIBW_ENVIRONMENT_MACOS: >-
+            MACOSX_DEPLOYMENT_TARGET=${{ matrix.macos-target }}
+          CIBW_ENVIRONMENT_WINDOWS: >-
+            CMAKE_ARGS="-DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
+          CIBW_BEFORE_BUILD_WINDOWS: pip install delvewheel
+          # gmp/mpfr DLLs live in the vcpkg tree, which is not on PATH
+          CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: >-
+            delvewheel repair -w {dest_dir}
+            --add-path C:/vcpkg/installed/x64-windows/bin {wheel}
+          CIBW_TEST_REQUIRES: pytest
+          CIBW_TEST_COMMAND: pytest {project}/test/python -q
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: wheels-${{ matrix.os }}
+          path: wheelhouse/*.whl
+
+  publish:
+    name: Publish to PyPI
+    needs: [check_version, build_wheels, build_sdist]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write  # trusted publishing, no API token needed
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+
+      - uses: pypa/gh-action-pypi-publish@release/v1

@@ -117,7 +117,9 @@ namespace SOMTParser{
 		parseSmtlib2File(filename);
 	}
 
-	Parser::~Parser() {	}
+	Parser::~Parser() {
+		delete[] buffer;
+	}
 
 	RESULT_TYPE Parser::getResultType(){
 		return result_type;
@@ -141,7 +143,8 @@ namespace SOMTParser{
 			}
 			else if(assertion->isFalse()){
 				all_true = false;
-				return RESULT_TYPE::RT_UNSAT;
+				result_type = RESULT_TYPE::RT_UNSAT;
+				return result_type;
 			}
 			else if(assertion->isTrue()){
 				continue;
@@ -223,6 +226,9 @@ namespace SOMTParser{
 	std::unordered_map<std::string, std::unordered_set<size_t>> Parser::getGroupedAssertions() const{
 		return context_.getGroupedAssertions();
 	}
+	std::unordered_map<std::string, std::shared_ptr<DAGNode>> Parser::getNamedAssertions() const{
+		return context_.getNamedAssertions();
+	}
 	std::vector<std::vector<std::shared_ptr<DAGNode>>> Parser::getAssumptions() const{
 		return context_.getAssumptions();
 	}
@@ -242,6 +248,9 @@ namespace SOMTParser{
 	void Parser::setOption(const std::string& key, const std::string& value){
 		getOptions()->setOption(key, value);
 	}
+	void Parser::setOption(const std::string& key, const char* value){
+		getOptions()->setOption(key, value ? std::string(value) : std::string());
+	}
 	void Parser::setOption(const std::string& key, const int& value){
 		getOptions()->setOption(key, std::to_string(value));
 	}
@@ -251,18 +260,30 @@ namespace SOMTParser{
 	void Parser::setOption(const std::string& key, const bool& value){
 		getOptions()->setOption(key, value?"true":"false");
 	}
+	// Declaration order, not hash order: these feed dumpSMT2, and iterating the
+	// underlying unordered_map produced a variable order unrelated to the input,
+	// so dumping a query and re-parsing it did not converge.
 	std::vector<std::shared_ptr<DAGNode>> Parser::getVariables() const{
 		std::vector<std::shared_ptr<DAGNode>> vars;
-		for(const auto& var : getSymbolManager()->getVarNames())
-			vars.emplace_back(var.second);
-		for(const auto& var : getSymbolManager()->getTempVarNames())
-			vars.emplace_back(var.second);
+		const auto& var_names = getSymbolManager()->getVarNames();
+		for(const auto& name : getSymbolManager()->getVarOrder()){
+			auto it = var_names.find(name);
+			if(it != var_names.end()) vars.emplace_back(it->second);
+		}
+		const auto& temp_names = getSymbolManager()->getTempVarNames();
+		for(const auto& name : getSymbolManager()->getTempVarOrder()){
+			auto it = temp_names.find(name);
+			if(it != temp_names.end()) vars.emplace_back(it->second);
+		}
 		return vars;
 	}
 	std::vector<std::shared_ptr<DAGNode>> Parser::getDeclaredVariables() const{
 		std::vector<std::shared_ptr<DAGNode>> vars;
-		for(const auto& var : getSymbolManager()->getVarNames())
-			vars.emplace_back(var.second);
+		const auto& var_names = getSymbolManager()->getVarNames();
+		for(const auto& name : getSymbolManager()->getVarOrder()){
+			auto it = var_names.find(name);
+			if(it != var_names.end()) vars.emplace_back(it->second);
+		}
 		return vars;
 	}
 
@@ -759,24 +780,42 @@ namespace SOMTParser{
 	bool Parser::parseSmtlib2File(const std::string filename) {
 
 		/*
-		load file
+		load file -- an empty name or "-" reads the script from stdin, so the
+		parser can be used in a pipeline. Ported from the SMTStabilizer fork.
 		*/
-		std::ifstream fin(filename, std::ifstream::binary);
+		delete[] buffer;
+		buffer = nullptr;
 
-		if (!fin) {
-			std::cout << "error: Cannot open file \"" << filename << "\"." << std::endl;
-			return false;
+		if (filename.empty() || filename == "-") {
+			std::string content((std::istreambuf_iterator<char>(std::cin)),
+			                    std::istreambuf_iterator<char>());
+			buflen = (long)content.size();
+			buffer = new char[buflen + 1];
+			if (buflen > 0) std::memcpy(buffer, content.data(), (size_t)buflen);
+			buffer[buflen] = 0;
+			source_name_ = "<stdin>";
 		}
+		else {
+			std::ifstream fin(filename, std::ifstream::binary);
 
-		fin.seekg(0, std::ios::end);
-		buflen = (long)fin.tellg();
-		fin.seekg(0, std::ios::beg);
+			if (!fin) {
+				std::cout << "error: Cannot open file \"" << filename << "\"." << std::endl;
+				return false;
+			}
 
-		buffer = new char[buflen + 1];
-		fin.read(buffer, buflen);
-		buffer[buflen] = 0;
+			fin.seekg(0, std::ios::end);
+			buflen = (long)fin.tellg();
+			fin.seekg(0, std::ios::beg);
 
-		fin.close();
+			buffer = new char[buflen + 1];
+			fin.read(buffer, buflen);
+			buffer[buflen] = 0;
+			source_name_ = filename;
+
+			fin.close();
+		}
+		source_text_.assign(buffer, static_cast<size_t>(buflen));
+		next_command_index_ = 0;
 
 		/*
 		parse command
@@ -789,19 +828,21 @@ namespace SOMTParser{
 
 		try {
 			while (*bufptr) {
+				const size_t begin_offset = static_cast<size_t>(bufptr - buffer);
+				const size_t begin_line = line_number;
 				parseLpar();
 				CMD_TYPE type = parseCommand();
-				if (command_logging_ || isResponseCommand(type)) {
-					Command cmd(type);
-					cmd.line_number = line_number;
-					if (!pending_value_terms_.empty()) cmd.value_terms = std::move(pending_value_terms_);
-					if (!pending_keyword_.empty()) cmd.keyword = std::move(pending_keyword_);
-					script_.addCommand(cmd);
-				}
-				if (type == CMD_TYPE::CT_EXIT) break;
+				const size_t end_offset = static_cast<size_t>(bufptr - buffer) +
+				    (*bufptr == ')' ? 1U : 0U);
 				parseRpar();
+				if (command_logging_ || isResponseCommand(type)) {
+					script_.addCommand(makeCommand(type, begin_offset, end_offset,
+					                               begin_line));
+				}
+				else ++next_command_index_;
+				if (type == CMD_TYPE::CT_EXIT) break;
 			}
-		} catch (const ParseErrorException&) {
+		} catch (const std::exception&) {
 			bufptr = nullptr;
 			if (buffer) { delete[] buffer; buffer = nullptr; }
 			buflen = 0;
@@ -823,8 +864,12 @@ namespace SOMTParser{
 		return new_str;
 	}
 
-	bool Parser::parseStr(const std::string& constraint) {
+	bool Parser::parseStr(const std::string& constraint,
+	                     const std::string& source_name) {
 		if (constraint.empty()) return true;
+		source_text_ = constraint;
+		source_name_ = source_name;
+		next_command_index_ = 0;
 		buffer = safe_strdup(constraint);
 		if (!buffer) return false;
 		buflen = constraint.length();
@@ -833,19 +878,21 @@ namespace SOMTParser{
 		scanToNextSymbol();
 		try {
 			while (*bufptr) {
+				const size_t begin_offset = static_cast<size_t>(bufptr - buffer);
+				const size_t begin_line = line_number;
 				parseLpar();
 				CMD_TYPE type = parseCommand();
-				if (command_logging_ || isResponseCommand(type)) {
-					Command cmd(type);
-					cmd.line_number = line_number;
-					if (!pending_value_terms_.empty()) cmd.value_terms = std::move(pending_value_terms_);
-					if (!pending_keyword_.empty()) cmd.keyword = std::move(pending_keyword_);
-					script_.addCommand(cmd);
-				}
-				if (type == CMD_TYPE::CT_EXIT) break;
+				const size_t end_offset = static_cast<size_t>(bufptr - buffer) +
+				    (*bufptr == ')' ? 1U : 0U);
 				parseRpar();
+				if (command_logging_ || isResponseCommand(type)) {
+					script_.addCommand(makeCommand(type, begin_offset, end_offset,
+					                               begin_line));
+				}
+				else ++next_command_index_;
+				if (type == CMD_TYPE::CT_EXIT) break;
 			}
-		} catch (const ParseErrorException&) {
+		} catch (const std::exception&) {
 			bufptr = nullptr;
 			if (buffer) { delete[] buffer; buffer = nullptr; }
 			buflen = 0;
@@ -855,6 +902,58 @@ namespace SOMTParser{
 		delete[] buffer;
 		buffer = nullptr;
 		return true;
+	}
+
+	bool Parser::loadStr(const std::string& constraint,
+	                    const std::string& source_name) {
+		delete[] buffer;
+		buffer = nullptr;
+		bufptr = nullptr;
+		buflen = 0;
+		if (constraint.empty()) return true;
+		source_text_ = constraint;
+		source_name_ = source_name;
+		next_command_index_ = 0;
+
+		buffer = safe_strdup(constraint);
+		if (!buffer) return false;
+		buflen = constraint.length();
+		bufptr = buffer;
+		line_number = 1;
+		scanToNextSymbol();
+		return true;
+	}
+
+	SourcePosition Parser::sourcePosition(size_t offset) const {
+		SourcePosition position;
+		position.offset = std::min(offset, source_text_.size());
+		for (size_t i = 0; i < position.offset; ++i) {
+			if (source_text_[i] == '\n') {
+				++position.line;
+				position.column = 1;
+			} else {
+				++position.column;
+			}
+		}
+		return position;
+	}
+
+	Command Parser::makeCommand(CMD_TYPE type, size_t begin_offset,
+	                            size_t end_offset, size_t begin_line) {
+		Command cmd(type);
+		cmd.index = next_command_index_++;
+		cmd.line_number = begin_line;
+		cmd.range = {sourcePosition(begin_offset), sourcePosition(end_offset)};
+		if (end_offset >= begin_offset && end_offset <= source_text_.size())
+			cmd.original = source_text_.substr(begin_offset, end_offset - begin_offset);
+		cmd.expr = pending_command_expr_;
+		cmd.name = pending_command_name_;
+		cmd.sort = pending_command_sort_;
+		cmd.params = pending_command_params_;
+		cmd.logic = pending_command_logic_;
+		if (!pending_value_terms_.empty()) cmd.value_terms = std::move(pending_value_terms_);
+		if (!pending_keyword_.empty()) cmd.keyword = std::move(pending_keyword_);
+		return cmd;
 	}
 
 	bool Parser::assert(const std::string& constraint) {
@@ -905,6 +1004,25 @@ namespace SOMTParser{
 		else if(key == ":weight"){
 			return KEYWORD::KW_WEIGHT;
 		}
+		// Quantifier annotations — ported from the SMTStabilizer fork.
+		else if(key == ":pattern"){
+			return KEYWORD::KW_PATTERN;
+		}
+		else if(key == ":no-pattern"){
+			return KEYWORD::KW_NO_PATTERN;
+		}
+		else if(key == ":qid"){
+			return KEYWORD::KW_QID;
+		}
+		else if(key == ":skolemid"){
+			return KEYWORD::KW_SKOLEMID;
+		}
+		else if(key == ":lblpos"){
+			return KEYWORD::KW_LBLPOS;
+		}
+		else if(key == ":lblneg"){
+			return KEYWORD::KW_LBLNEG;
+		}
 		else if (key == ":comp"){
 			return KEYWORD::KW_COMP;
 		}
@@ -926,6 +1044,11 @@ namespace SOMTParser{
 		// Reset the per-command interactive payload before parsing this command.
 		pending_value_terms_.clear();
 		pending_keyword_.clear();
+		pending_command_expr_.reset();
+		pending_command_name_.clear();
+		pending_command_sort_.reset();
+		pending_command_params_.clear();
+		pending_command_logic_.clear();
 
 		size_t command_ln = line_number;
 		std::string command = getSymbol();
@@ -960,21 +1083,26 @@ namespace SOMTParser{
 				grp_id = getSymbol();
 			}
 			std::shared_ptr<DAGNode> assert_expr = parseExpr();
+			pending_command_expr_ = assert_expr;
 			size_t index = context_.assertions.size();
 			context_.assertions.emplace_back(assert_expr);
 			// 
-			if(grp_id == ""){
+			// (assert <expr> [:id <symbol>] [:named <symbol>]), in either order.
+			// attemptParseKeywords() consumes the keyword it reads, so the two
+			// separate attempts this replaces did not compose: the one looking
+			// for :id swallowed a trailing :named and discarded it, and the
+			// :named attempt then saw the bare name. Loop over the keywords
+			// instead, the way parseAssertSoft already does.
+			while(true){
 				KEYWORD key_ = attemptParseKeywords();
-				if(key_ == KEYWORD::KW_ID){
-					// (assert <expr> [:id <symbol>])
+				if(key_ == KEYWORD::KW_ID && grp_id == ""){
 					grp_id = getSymbol();
 				}
-			}
-			if (named_name == ""){
-				KEYWORD key_ = attemptParseKeywords();
-				if(key_ == KEYWORD::KW_NAMED){
-					// (assert <expr> (! expr :named <symbol>))
+				else if(key_ == KEYWORD::KW_NAMED && named_name == ""){
 					named_name = getSymbol();
+				}
+				else{
+					break;
 				}
 			}
 			// if grp_id is not empty, insert to assertion_groups
@@ -988,8 +1116,8 @@ namespace SOMTParser{
 			}
 			//if named_name is not empty, insert to named_assertions
 			if (named_name != ""){
-				context_.named_assertions[named_name] = assert_expr;
-				context_.registerNamedAssertionInScope(named_name);
+				warn_named_displaced(context_.nameAssertion(named_name, assert_expr),
+				                     named_name, command_ln);
 			}
 			if(grp_id != ""){
 				context_.registerAssertionGroupInScope(grp_id);
@@ -1020,8 +1148,8 @@ namespace SOMTParser{
 				std::shared_ptr<DAGNode> assump = parseExpr();
 				cur_assumptions.emplace_back(assump);
 			}
+			parseRpar();
 			context_.assumptions.emplace_back(cur_assumptions);
-			skipToRpar();
 			return CMD_TYPE::CT_CHECK_SAT_ASSUMING;
 		}
 
@@ -1035,7 +1163,14 @@ namespace SOMTParser{
 			// get returned type
 			std::shared_ptr<DAGNode> res = nullptr;
 			std::shared_ptr<Sort> sort = parseSort();
+			if(!sort || sort->isNull()){
+				// (declare-const x) with the sort missing
+				err_all(ERROR_TYPE::ERR_PARAM_MIS, "declare-const requires a sort", name_ln);
+			}
 			res = mkVar(sort, name);
+			pending_command_name_ = name;
+			pending_command_sort_ = sort;
+			pending_command_expr_ = res;
 
 			// multiple declarations
 			if (res->isErr()) err_all(res, name, name_ln);
@@ -1062,6 +1197,9 @@ namespace SOMTParser{
 				// (declare-fun <symbol> () <sort>)
 				parseRpar();
 				std::shared_ptr<Sort> out_sort = parseSort();
+				if(!out_sort || out_sort->isNull()){
+					err_all(ERROR_TYPE::ERR_PARAM_MIS, "declare-fun requires a return sort", name_ln);
+				}
 				res = mkVar(out_sort, name);
 				if(!res->isErr()) context_.registerVarInScope(name);
 			}
@@ -1081,6 +1219,9 @@ namespace SOMTParser{
 			}
 
 			//multiple declarations
+			pending_command_name_ = name;
+			pending_command_sort_ = res ? res->getSort() : nullptr;
+			pending_command_expr_ = res;
 			if (res->isErr()) err_all(res, name, name_ln);
 			skipToRpar();
 
@@ -1098,6 +1239,8 @@ namespace SOMTParser{
 
 			// make sort
 			std::shared_ptr<Sort> sort = mkSortDec(name, num);
+			pending_command_name_ = name;
+			pending_command_sort_ = sort;
 			getSymbolManager()->registerSort(name, sort);
 			context_.registerSortInScope(name);
 			skipToRpar();
@@ -1113,7 +1256,29 @@ namespace SOMTParser{
 			getSymbolManager()->registerSort(dt_name, ps);
 			context_.registerSortInScope(dt_name);
 			parseLpar();
-			defineDatatypeConstructors(ps);
+			// `(declare-datatype Pair (par (A B) (...)))`. The arity is not
+			// written in this form -- it is the number of parameters -- so it is
+			// set from what `par` declares.
+			{
+				const std::vector<std::string> params = parseDatatypeParams();
+				if (!params.empty()) {
+					ps->arity = params.size();
+					datatype_params_[dt_name] = params;
+					for (const std::string& pn : params) {
+						getSymbolManager()->registerSort(
+							pn, getSortManager()->createSort(
+								SORT_KIND::SK_DEC, pn, 0));
+						context_.registerSortInScope(pn);
+					}
+				}
+				defineDatatypeConstructors(ps);
+				// Out of scope again: a parameter is bound by its `par` and the
+				// next command must not see it.
+				for (const std::string& pn : params) {
+					getSymbolManager()->removeSort(pn);
+				}
+				if (!params.empty()) { parseRpar(); }   // close the `par`
+			}
 			skipToRpar();
 			return CMD_TYPE::CT_DECLARE_DATATYPES;
 		}
@@ -1151,8 +1316,26 @@ namespace SOMTParser{
 			parseLpar(); // outer '(' for datatype list
 			for(size_t ti = 0; ti < sort_decls.size(); ++ti) {
 				parseLpar(); // '(' for this datatype
+				// `(par (X) (<ctors>))` when the sort was declared with a
+				// non-zero arity. The parameters are in scope only while this
+				// datatype's constructors are read.
+				const std::vector<std::string> params = parseDatatypeParams();
+				if (!params.empty()) {
+					datatype_params_[sort_decls[ti].first] = params;
+					for (const std::string& pn : params) {
+						getSymbolManager()->registerSort(
+							pn, getSortManager()->createSort(
+								SORT_KIND::SK_DEC, pn, 0));
+						context_.registerSortInScope(pn);
+					}
+				}
 				defineDatatypeConstructors(placeholder_sorts[ti]);
+				for (const std::string& pn : params) {
+					getSymbolManager()->removeSort(pn);
+				}
+				if (!params.empty()) { parseRpar(); }   // close the `par`
 			}
+
 			parseRpar(); // close outer datatype list
 			skipToRpar(); // close the declare-datatypes command
 
@@ -1181,6 +1364,9 @@ namespace SOMTParser{
 			std::shared_ptr<DAGNode> func_body = parseExpr();
 			std::vector<std::shared_ptr<DAGNode>> params; // empty params for constant
 			std::shared_ptr<DAGNode> res = mkFuncDef(name, params, out_sort, func_body);
+			pending_command_name_ = name;
+			pending_command_sort_ = out_sort;
+			pending_command_expr_ = res;
 			skipToRpar();
 			
 			return CMD_TYPE::CT_DEFINE_FUN;
@@ -1239,6 +1425,10 @@ namespace SOMTParser{
 			std::shared_ptr<Sort> out_sort = parseSort();
 			std::shared_ptr<DAGNode> func_body = parseExpr();
 			std::shared_ptr<DAGNode> res = mkFuncDef(name, params, out_sort, func_body);
+			pending_command_name_ = name;
+			pending_command_sort_ = out_sort;
+			pending_command_params_ = params;
+			pending_command_expr_ = res;
 			skipToRpar();
 
 			//remove key bindings: for let uses local variables. 
@@ -1306,6 +1496,10 @@ namespace SOMTParser{
 			// Now parse the function body (which can reference the function itself)
 			std::shared_ptr<DAGNode> func_body = parseExpr();
 			std::shared_ptr<DAGNode> res = mkFuncRec(name, params, out_sort, func_body);
+			pending_command_name_ = name;
+			pending_command_sort_ = out_sort;
+			pending_command_params_ = params;
+			pending_command_expr_ = res;
 			skipToRpar();
 
 			//remove key bindings: for let uses local variables. 
@@ -1397,7 +1591,13 @@ namespace SOMTParser{
 				}
 			}
 			parseRpar(); // end of function bodies list
-			
+
+			// Remember that these names form one mutually recursive group. The
+			// nodes themselves carry no trace of it, so without this the dump
+			// would split the group into standalone define-fun-rec commands and
+			// forward-reference the members defined later.
+			getSymbolManager()->addRecFunGroup(func_names);
+
 			skipToRpar();
 			return CMD_TYPE::CT_DEFINE_FUNS_REC;
 		}
@@ -1559,6 +1759,11 @@ namespace SOMTParser{
 
 		if (command == "reset") {
 			context_.resetAll();
+			result_type = RESULT_TYPE::RT_UNKNOWN;
+			result_node.reset();
+			result_model.reset();
+			context_.setSymbolManager(std::make_shared<SymbolManager>());
+			context_.setObjectiveManager(std::make_shared<ObjectiveManager>());
 			skipToRpar();
 			return CMD_TYPE::CT_RESET;
 		}
@@ -1580,9 +1785,26 @@ namespace SOMTParser{
 		if (command == "set-logic") {
 			size_t type_ln = line_number;
 			std::string type = getSymbol();
+			pending_command_logic_ = type;
 			bool is_valid = getOptions()->setLogic(type);
 			if(!is_valid){
-				err_unkwn_sym(type, type_ln);
+				// A WARNING, not a parse error. setLogic already handles this
+				// case and says so where it is defined: an unrecognised name
+				// "should not disable theories; fall back to ALL and report the
+				// name as unrecognised". Throwing here contradicted that and
+				// made the whole file unparseable.
+				//
+				// The names this rejects are not exotic. `HORN` is what Z3,
+				// Eldarica and Golem consume and what every CHC-COMP instance
+				// opens with (docs/languages/chc-comp.md §2.1), and SMT-LIB
+				// gains logics over time -- so a released parser refusing an
+				// unknown one refuses inputs that are legal today and inputs
+				// that become legal later. Falling back to ALL is strictly
+				// safer than the alternative, since ALL enables every theory.
+				std::cerr << "warning: unrecognised logic \"" << type
+				          << "\" in line " << type_ln
+				          << "; continuing with ALL, which enables every theory"
+				          << std::endl;
 			}
 
 			return CMD_TYPE::CT_SET_LOGIC;
@@ -1718,18 +1940,23 @@ namespace SOMTParser{
 	// --- Incremental / sequential API ---
 
 	Command Parser::nextCommand() {
-		if (!bufptr || !*bufptr) return Command(CMD_TYPE::CT_EOF);
+		if (!bufptr || !*bufptr) {
+			delete[] buffer;
+			buffer = nullptr;
+			bufptr = nullptr;
+			buflen = 0;
+			return Command(CMD_TYPE::CT_EOF);
+		}
 		pending_value_terms_.clear();
 		pending_keyword_.clear();
+		const size_t begin_offset = static_cast<size_t>(bufptr - buffer);
+		const size_t begin_line = line_number;
 		parseLpar();
 		CMD_TYPE type = parseCommand();
-		Command cmd(type);
-		cmd.line_number = line_number;
-		// Attach any interactive-command payload captured during parseCommand
-		// (get-value term list / echo string / get-info keyword).
-		if (!pending_value_terms_.empty()) cmd.value_terms = std::move(pending_value_terms_);
-		if (!pending_keyword_.empty()) cmd.keyword = std::move(pending_keyword_);
+		const size_t end_offset = static_cast<size_t>(bufptr - buffer) +
+		    (*bufptr == ')' ? 1U : 0U);
 		parseRpar();
+		Command cmd = makeCommand(type, begin_offset, end_offset, begin_line);
 		if (command_logging_ || isResponseCommand(type)) {
 			script_.addCommand(cmd);
 		}
@@ -1769,6 +1996,9 @@ namespace SOMTParser{
 
 	bool Parser::reset() {
 		context_.resetAll();
+		result_type = RESULT_TYPE::RT_UNKNOWN;
+		result_node.reset();
+		result_model.reset();
 		if (command_logging_) {
 			script_.addCommand(Command(CMD_TYPE::CT_RESET));
 		}
@@ -1806,9 +2036,30 @@ namespace SOMTParser{
 			if (basic_it != BASIC_SORTS.end()) {
 				return basic_it->second;
 			}
+			// The nullary tuple sort is spelled UnitTuple; it needs the sort
+			// manager, so it cannot live in the static BASIC_SORTS table.
+			else if (s == "UnitTuple") {
+				return getSortManager()->createTupleSort({});
+			}
 			// then check the user-defined type
 			else {
 				std::shared_ptr<Sort> usort = getSymbolManager()->resolveSort(s);
+				// A PARAMETRIC datatype's name is a sort CONSTRUCTOR, and a
+				// constructor is not a sort until it is applied: `L` alone has
+				// no more meaning than `Array` alone. Accepting it declared
+				// variables at a non-sort, and the dump then said
+				// `(declare-fun l () L)` -- an arity-1 name used at arity 0,
+				// which nothing reads back.
+				if(usort && usort->isDatatype() && usort->getChildrenSize() == 0){
+					const std::vector<std::string> ps = datatypeParams(s);
+					if(!ps.empty()){
+						err_arity_mis(s + " (a datatype taking " +
+						              std::to_string(ps.size()) +
+						              " sort argument(s), used with none)",
+						              expr_ln);
+						return SortManager::NULL_SORT;
+					}
+				}
 				if(usort) return usort;
 				err_unkwn_sym(s, expr_ln);
 			}
@@ -1833,6 +2084,16 @@ namespace SOMTParser{
 				sort = getSortManager()->createArraySort(sortS, sortT);
 				getSymbolManager()->registerSort(sort_key_name, sort);
 			}
+		}
+		else if(s == "Tuple"){
+			// (Tuple T1 ... Tn) — ported from the SMTStabilizer fork.
+			std::vector<std::shared_ptr<Sort>> fields;
+			scanToNextSymbol();
+			while(*bufptr && *bufptr != ')'){
+				fields.emplace_back(parseSort());
+				scanToNextSymbol();
+			}
+			sort = getSortManager()->createTupleSort(fields);
 		}
 		else if(s == "Datatype"){}
 		else if(s == "Set"){}
@@ -2173,30 +2434,196 @@ namespace SOMTParser{
 		return symbol;
 	}
 
+	/** The key under which dtParamBinding records the APPLIED datatype sort for a
+	 *  constructor, whose declared result is the bare name. Not a valid SMT-LIB
+	 *  symbol, so it cannot collide with a parameter. */
+	static const char* const kDtSelfKey = "\x01self";
+
+	/** Collect a parameter binding by matching a DECLARED sort against an ACTUAL
+	 *  one. Names in @p names are the parameters; anything else must agree
+	 *  structurally, and a disagreement is reported by the caller's sort check
+	 *  rather than here. */
+	static void matchSortParams(const std::shared_ptr<Sort>& declared,
+	                            const std::shared_ptr<Sort>& actual,
+	                            const std::unordered_set<std::string>& names,
+	                            std::unordered_map<std::string, std::shared_ptr<Sort>>& out){
+		if(!declared || !actual) return;
+		if(names.count(declared->name)){
+			if(out.find(declared->name) == out.end()) out[declared->name] = actual;
+			return;
+		}
+		const size_t n = std::min(declared->children.size(), actual->children.size());
+		for(size_t i = 0; i < n; i++){
+			matchSortParams(declared->children[i], actual->children[i], names, out);
+		}
+	}
+
+	/** Replace every parameter in @p s by its binding. Returns @p s unchanged
+	 *  when it mentions none, so a non-parametric datatype costs nothing. */
+	static std::shared_ptr<Sort> substituteSortParams(
+			const std::shared_ptr<Sort>& s,
+			const std::unordered_map<std::string, std::shared_ptr<Sort>>& b){
+		if(!s || b.empty()) return s;
+		const auto it = b.find(s->name);
+		if(it != b.end()) return it->second;
+		bool any = false;
+		std::vector<std::shared_ptr<Sort>> kids;
+		kids.reserve(s->children.size());
+		for(const auto& ch : s->children){
+			std::shared_ptr<Sort> r = substituteSortParams(ch, b);
+			if(r != ch) any = true;
+			kids.push_back(r);
+		}
+		if(!any) return s;
+		auto out = std::make_shared<Sort>(*s);
+		out->children = kids;
+		return out;
+	}
+
+	/** The sort-parameter binding for an application of a PARAMETRIC datatype's
+	 *  member, empty when the datatype has none.
+	 *
+	 *  A member is polymorphic and its declaration records the parameters
+	 *  rather than an instance: `hd` is declared `L -> X`, so applying it to an
+	 *  `(L Int)` must give `Int` and not `X` -- a sort no longer in scope, over
+	 *  which the next operator reports a type mismatch naming a symbol the
+	 *  script never wrote.
+	 *
+	 *  For a SELECTOR or TESTER the argument determines everything: its sort is
+	 *  the instance, and its sort arguments are the parameters in order. Its
+	 *  declared domain cannot serve, because that is the BARE datatype -- `L`
+	 *  carrying its arity and no arguments -- with nothing in it to match a
+	 *  parameter against.
+	 *
+	 *  For a CONSTRUCTOR the parameters appear among the argument sorts, so they
+	 *  are matched structurally; the result is the bare datatype name and is
+	 *  applied to the bindings in parameter order, under the reserved key below.
+	 *  A constructor that mentions no parameter -- `nil` -- cannot be resolved
+	 *  this way and needs the script's own `(as nil (L Int))`.
+	 */
+	void Parser::dtParamBinding(const std::shared_ptr<DAGNode>& fun,
+	                            const std::vector<std::shared_ptr<DAGNode>>& params,
+	                            std::unordered_map<std::string, std::shared_ptr<Sort>>& out){
+		if(!fun) return;
+		const std::vector<std::shared_ptr<DAGNode>> declared = fun->getFuncParams();
+		const std::shared_ptr<Sort> ret = fun->getSort();
+		const std::string dt_name = ret ? ret->name : std::string();
+		const auto pit = datatype_params_.find(dt_name);
+		const std::string arg_dt =
+			(!params.empty() && params[0] && params[0]->getSort())
+				? params[0]->getSort()->name : std::string();
+		const auto ait = datatype_params_.find(arg_dt);
+		const std::vector<std::string>* names = nullptr;
+		if(pit != datatype_params_.end()) names = &pit->second;
+		else if(ait != datatype_params_.end()) names = &ait->second;
+		if(!names || names->empty()) return;
+
+		const std::unordered_set<std::string> nameset(names->begin(), names->end());
+		if(ait != datatype_params_.end() && !params.empty() && params[0]
+		   && params[0]->getSort()){
+			const std::shared_ptr<Sort> inst = params[0]->getSort();
+			const auto& kids = inst->children;
+			for(size_t i = 0; i < names->size() && i < kids.size(); i++){
+				out[(*names)[i]] = kids[i];
+			}
+			// The datatype's own NAME binds to the instance. A selector's
+			// declared domain is the BARE datatype -- `hd : L -> X`, with `L`
+			// carrying its arity and no arguments -- and an applied instance is
+			// a different sort from it now that a datatype's arguments count in
+			// a comparison. Without this binding `(hd (tl l))` fails its own
+			// argument check: `tl` correctly returns `(L Int)`, and `hd`
+			// declares it takes `L`.
+			if(!kids.empty()) out[arg_dt] = inst;
+		}
+		for(size_t i = 0; i < params.size() && i < declared.size(); i++){
+			if(!declared[i] || !params[i]) continue;
+			matchSortParams(declared[i]->getSort(), params[i]->getSort(), nameset, out);
+		}
+		if(pit != datatype_params_.end() && ret && ret->children.empty()
+		   && out.size() >= names->size()){
+			auto applied = std::make_shared<Sort>(*ret);
+			bool complete = true;
+			for(const std::string& pn : *names){
+				const auto b = out.find(pn);
+				if(b == out.end()){ complete = false; break; }
+				applied->children.push_back(b->second);
+			}
+			if(complete) out[kDtSelfKey] = applied;
+		}
+	}
+
+	/** The result sort an application should carry. Returns the declared sort
+	 *  unchanged for a non-parametric datatype and for everything else, so the
+	 *  cost is one failed map lookup on the ordinary path. */
+	std::shared_ptr<Sort> Parser::dtAppliedSort(
+			const std::shared_ptr<DAGNode>& fun,
+			const std::vector<std::shared_ptr<DAGNode>>& params){
+		std::unordered_map<std::string, std::shared_ptr<Sort>> b;
+		dtParamBinding(fun, params, b);
+		if(b.empty()) return fun ? fun->getSort() : nullptr;
+		const auto self = b.find(kDtSelfKey);
+		if(self != b.end()) return self->second;
+		return substituteSortParams(fun->getSort(), b);
+	}
+
 	std::shared_ptr<DAGNode> Parser::applyFun(std::shared_ptr<DAGNode> fun, const std::vector<std::shared_ptr<DAGNode>> & params){
 		// check the number of params
 		if (fun->getFuncParamsSize() != params.size()){
 			return mkErr(ERROR_TYPE::ERR_PARAM_MIS);
 		}
-		const auto formals = fun->getFuncParams();
-		for (size_t i = 0; i < params.size(); ++i) {
-			if (params[i]->isErr()) return params[i];
-			const auto expected = formals[i]->getSort(), actual = params[i]->getSort();
-			if (!actual || !expected || !(*expected == *actual ||
-				(actual->isIntOrReal() && (expected->isInt() || expected->isReal())) ||
-				(expected->isReal() && actual->isInt())))
+
+		// ...and their SORTS, which were not checked at all. A declaration is a
+		// signature, and an application that ignores it is not an application
+		// of that function:
+		//
+		//     (declare-fun f (Int) Bool)
+		//     (declare-const b Bool)
+		//     (assert (f b))            -- accepted, and is not a term
+		//
+		// The count was checked and the sorts were not, so the half of the
+		// signature that says what the arguments MEAN was carried by nothing.
+		//
+		// Sort::operator== is what decides, so the numeric leniency the rest of
+		// the parser depends on is unchanged: a literal carries IntOrReal and
+		// compares equal to both Int and Real, so `(f 1)` against an Int or a
+		// Real parameter still applies.
+		const std::vector<std::shared_ptr<DAGNode>> declared = fun->getFuncParams();
+
+		// A member of a PARAMETRIC datatype is polymorphic, and its declaration
+		// records the parameters rather than any instance of them, so both the
+		// argument check and the result sort are taken after substituting them.
+		std::unordered_map<std::string, std::shared_ptr<Sort>> dt_binding;
+		dtParamBinding(fun, params, dt_binding);
+
+		for (size_t i = 0; i < params.size() && i < declared.size(); i++){
+			if (!declared[i] || !params[i]) continue;
+			const std::shared_ptr<Sort> want =
+				substituteSortParams(declared[i]->getSort(), dt_binding);
+			const std::shared_ptr<Sort> got = params[i]->getSort();
+			// A missing sort on either side is someone else's error to report;
+			// refusing here would turn it into a misleading one.
+			if (!want || !got || want->isNull() || got->isNull()) continue;
+			if (*want != *got){
 				return mkErr(ERROR_TYPE::ERR_TYPE_MIS);
+			}
 		}
-		// Recursive declarations are recognizable even before their bodies have
-		// been parsed. Calls refer to an immutable symbol, not the definition DAG.
-		if (fun->isFuncRec() && (fun->getFuncBody()->isNull() ||
-			!getOptions()->getExpandRecursiveFunctions())) return mkApplyRecFunc(fun, params);
+
+        // The declaration is already recursive while its body is being parsed.
+        if (fun->isFuncRec() && (fun->getFuncBody()->isNull() ||
+            !getOptions()->getExpandRecursiveFunctions())) return mkApplyRecFunc(fun, params);
 
 		// For declare-fun (uninterpreted functions), create a function application node
 		if(fun->getFuncBody()->isNull()){
 			// Determine if this is a datatype constructor/selector/tester
 			NODE_KIND nk = getDtFunctionKind(fun->getSort(), fun->getName(), params);
-			std::shared_ptr<DAGNode> result = getNodeManager()->createNode(fun->getSort(), nk, fun->getName(), params);
+			std::shared_ptr<Sort> ret_sort = fun->getSort();
+			if(!dt_binding.empty()){
+				const auto self = dt_binding.find(kDtSelfKey);
+				ret_sort = self != dt_binding.end()
+					? self->second
+					: substituteSortParams(ret_sort, dt_binding);
+			}
+			std::shared_ptr<DAGNode> result = getNodeManager()->createNode(ret_sort, nk, fun->getName(), params);
 			return result;
 		}
 
@@ -2343,6 +2770,44 @@ namespace SOMTParser{
         return getNodeManager()->createNode(sort, nk, name, params);
     }
 
+    /** `(par (X Y) (<ctors>))` -- SMT-LIB's PARAMETRIC datatype body.
+     *
+     *  The parameters are sorts, and inside the body they are ordinary sorts in
+     *  scope: `(cons (hd X) (tl (L X)))` needs `X` to resolve while the
+     *  constructors are read and needs it gone afterwards, or the next command
+     *  would see a sort the script never declared.
+     *
+     *  Returns the parameter names, empty when the body is not parametric. The
+     *  names are kept because they are not recoverable from the sort -- a sort
+     *  records its ARITY and not what its parameters were called -- and
+     *  dumpSMT2 has to write the same `par` form back.
+     *
+     *  Leaves the buffer positioned exactly where the non-parametric form
+     *  would, so the caller does not branch. */
+    std::vector<std::string> Parser::parseDatatypeParams() {
+        char* const save = bufptr;
+        const size_t save_line = line_number;
+        std::vector<std::string> params;
+        // `par` sits where a constructor's `(` would, so a symbol here means
+        // the parametric form and anything else means the plain one.
+        if (*bufptr == '(') { return params; }
+        std::string head = getSymbol();
+        if (head != "par") {
+            bufptr = save;
+            line_number = save_line;
+            return params;
+        }
+        scanToNextSymbol();           // getSymbol stops AT the symbol's end
+        parseLpar();
+        while (*bufptr != ')') {
+            params.push_back(getSymbol());
+            scanToNextSymbol();
+        }
+        parseRpar();
+        parseLpar();                  // the constructor list's own '('
+        return params;
+    }
+
     void Parser::defineDatatypeConstructors(const std::shared_ptr<Sort>& dt_sort) {
         std::vector<Sort::DtConstructor> constructors;
         while (*bufptr != ')') {
@@ -2482,13 +2947,20 @@ namespace SOMTParser{
 		parseLpar();
 		std::vector<std::shared_ptr<DAGNode>> params;
 		std::vector<std::string> quant_var_names;
+		// The bindings this quantifier shadows, so leaving its scope RESTORES
+		// them. popQuantScope erases by name, which is right when nothing was
+		// shadowed and wrong when something was: the outer binder would vanish
+		// and its remaining occurrences would resolve as free symbols.
+		std::vector<std::pair<std::string, std::shared_ptr<DAGNode>>> shadowed;
 		while (*bufptr != ')') {
 			// (quantifier ((<identifier> <sort>)+） <expr>)
 			//              ^
 			parseLpar();
 			std::string var_name = getSymbol();
 			std::shared_ptr<Sort> var_sort = parseSort();
+			std::shared_ptr<DAGNode> outer = getSymbolManager()->getQuantVar(var_name);
 			std::shared_ptr<DAGNode> var = mkQuantVar(var_name, var_sort);
+			if(outer && outer != var) shadowed.emplace_back(var_name, outer);
 			params.emplace_back(var);
 			quant_var_names.emplace_back(var_name);
 			parseRpar();
@@ -2509,6 +2981,9 @@ namespace SOMTParser{
 			condAssert(false, "Invalid quantifier");
 		}
 		getSymbolManager()->popQuantScope(quant_var_names);
+		for(auto it = shadowed.rbegin(); it != shadowed.rend(); ++it){
+			getSymbolManager()->registerQuantVar(it->first, it->second);
+		}
 		return res;
 	}
 
@@ -3316,20 +3791,219 @@ namespace SOMTParser{
 
 	std::string Parser::dumpSMT2(){
 		std::stringstream ss;
-		ss << "(set-logic " << getOptions()->getLogic() << ")" << std::endl;
-		// custom sorts
-		for(const auto& sort_pair : getSymbolManager()->getSortKeyMap()){
-			if(sort_pair.second->isDec()){
-				ss << "(declare-sort " << sort_pair.first << " " << sort_pair.second->arity << ")" << std::endl;
+		// An input without (set-logic ...) leaves the logic at the placeholder
+		// UNKNOWN_LOGIC, which is not a logic name any parser accepts -- ours
+		// included -- so emitting it made every such dump unreadable. Fall back
+		// to ALL, which is what "no logic was stated" means for a dump.
+		const std::string logic = getOptions()->getLogic();
+		ss << "(set-logic " << (logic == "UNKNOWN_LOGIC" ? "ALL" : logic) << ")" << std::endl;
+		// custom sorts, in declaration order (getSortKeyMap is unordered)
+		const auto& sort_map = getSymbolManager()->getSortKeyMap();
+		// Names introduced by a datatype declaration: its constructors, their
+		// selectors and the derived testers. (declare-datatypes ...) already
+		// declares all of them, so emitting a declare-fun for each as well
+		// would make the dump reject itself as a redeclaration.
+		std::unordered_set<std::string> datatype_member_names;
+		// Datatype sorts in declaration order; emitted in dependency groups
+		// after this loop, because a group cannot be split.
+		std::vector<std::string> datatype_order;
+		for(const auto& sort_name : getSymbolManager()->getSortOrder()){
+			auto it = sort_map.find(sort_name);
+			if(it == sort_map.end() || !it->second) continue;
+			const auto& sort = it->second;
+			if(sort->isDec()){
+				ss << "(declare-sort " << sort_name << " " << sort->arity << ")" << std::endl;
+			}
+			else if(sort->isDatatype() && sort->hasDtConstructors()){
+				// Emitted below, in dependency groups. A datatype whose
+				// selector names another datatype cannot be declared before
+				// it, and MUTUALLY recursive ones cannot be declared apart at
+				// all -- SMT-LIB puts a whole group in one command for exactly
+				// that reason.
+				datatype_order.push_back(sort_name);
+			}
+		}
+		// (declare-datatypes ((T 0) (TL 0)) ((<T ctors>) (<TL ctors>)))
+		//
+		// One command per group of mutually recursive datatypes, groups in
+		// dependency order. Emitting one command per SORT is what this did, and
+		// it produced a script THIS PARSER COULD NOT READ for any mutually
+		// recursive pair: `T` mentions `TL` in a selector, `TL` is declared in
+		// the next command, and re-parsing failed with `Unknown or unexpected
+		// symbol "TL"`. dumpSMT2 returned that text and reported nothing.
+		//
+		// A datatype that depends on nothing still gets its own command, so the
+		// output for every non-mutual script is unchanged.
+		if(!datatype_order.empty()){
+			const auto ctors_of = [&](const std::string& n)
+				-> const std::vector<Sort::DtConstructor>* {
+				auto i = sort_map.find(n);
+				if(i == sort_map.end() || !i->second) return nullptr;
+				return &i->second->getDtConstructors();
+			};
+			// A -> B when a selector of A MENTIONS B anywhere in its sort.
+			// Collected by NAME, since a placeholder sort and the finished one
+			// are different objects.
+			//
+			// Anywhere, not just at the top: a selector of sort
+			// `(Array Int TL)` depends on TL exactly as one of sort `TL` does,
+			// and reading only the outermost name missed the edge. The two
+			// datatypes then landed in different groups, were emitted as
+			// separate commands, and the second was named before it was
+			// declared -- which is the very defect this grouping exists to fix,
+			// reached through a sort constructor instead of directly.
+			std::unordered_map<std::string, std::unordered_set<std::string>> deps;
+			std::unordered_set<std::string> is_dt(datatype_order.begin(),
+			                                      datatype_order.end());
+			std::function<void(const std::shared_ptr<Sort>&, const std::string&)>
+				mentions = [&](const std::shared_ptr<Sort>& s,
+				               const std::string& owner){
+					if(!s) return;
+					if(s->name != owner && is_dt.count(s->name)){
+						deps[owner].insert(s->name);
+					}
+					for(const auto& ch : s->children){ mentions(ch, owner); }
+				};
+			for(const auto& n : datatype_order){
+				const auto* cs = ctors_of(n);
+				if(!cs) continue;
+				for(const auto& c : *cs){
+					for(const auto& sel : c.selectors){
+						mentions(sel.sort, n);
+					}
+				}
+			}
+			// Tarjan, iterative-free: the graph has one node per datatype and a
+			// script does not declare enough of them for recursion depth to be
+			// a concern. Groups come out in reverse topological order, which is
+			// the order they must be DECLARED in -- a group's dependencies
+			// finish first.
+			std::unordered_map<std::string, int> index, low;
+			std::unordered_set<std::string> on_stack;
+			std::vector<std::string> stack;
+			std::vector<std::vector<std::string>> groups;
+			int next_index = 0;
+			std::function<void(const std::string&)> strongconnect =
+				[&](const std::string& v){
+					index[v] = low[v] = next_index++;
+					stack.push_back(v);
+					on_stack.insert(v);
+					auto it = deps.find(v);
+					if(it != deps.end()){
+						for(const auto& w : it->second){
+							if(index.find(w) == index.end()){
+								strongconnect(w);
+								low[v] = std::min(low[v], low[w]);
+							} else if(on_stack.count(w)){
+								low[v] = std::min(low[v], index[w]);
+							}
+						}
+					}
+					if(low[v] == index[v]){
+						std::vector<std::string> group;
+						for(;;){
+							const std::string w = stack.back();
+							stack.pop_back();
+							on_stack.erase(w);
+							group.push_back(w);
+							if(w == v) break;
+						}
+						groups.push_back(std::move(group));
+					}
+				};
+			for(const auto& n : datatype_order){
+				if(index.find(n) == index.end()) strongconnect(n);
+			}
+			for(auto& group : groups){
+				// Declaration order within a group, so a one-element group and
+				// a group of three both read the way the script declared them.
+				std::sort(group.begin(), group.end(),
+				          [&](const std::string& a, const std::string& b){
+					          return std::find(datatype_order.begin(),
+					                           datatype_order.end(), a)
+					               < std::find(datatype_order.begin(),
+					                           datatype_order.end(), b);
+				          });
+				ss << "(declare-datatypes (";
+				for(std::size_t gi = 0; gi < group.size(); ++gi){
+					auto i = sort_map.find(group[gi]);
+					const size_t ar = (i != sort_map.end() && i->second)
+					                      ? i->second->arity : 0;
+					if(gi) ss << " ";
+					ss << "(" << group[gi] << " " << ar << ")";
+				}
+				ss << ") (";
+				for(std::size_t gi = 0; gi < group.size(); ++gi){
+					const auto* cs = ctors_of(group[gi]);
+					if(gi) ss << " ";
+					ss << "(";
+					// A PARAMETRIC datatype's body is wrapped in `par`, which
+					// binds the sort names its selectors mention. The names are
+					// not recoverable from the sort -- a Sort records its arity
+					// and not what its parameters were called -- so they are
+					// carried in datatype_params_ from the declaration.
+					const auto pit = datatype_params_.find(group[gi]);
+					const bool parametric = pit != datatype_params_.end()
+						&& !pit->second.empty();
+					if(parametric){
+						ss << "par (";
+						for(std::size_t pi = 0; pi < pit->second.size(); ++pi){
+							if(pi) ss << " ";
+							ss << pit->second[pi];
+						}
+						ss << ") (";
+					}
+					bool first_ctor = true;
+					if(cs){
+						for(const auto& ctor : *cs){
+							if(!first_ctor) ss << " ";
+							first_ctor = false;
+							datatype_member_names.insert(ctor.name);
+							datatype_member_names.insert("is-" + ctor.name);
+							ss << "(" << ctor.name;
+							for(const auto& sel : ctor.selectors){
+								datatype_member_names.insert(sel.name);
+								ss << " (" << sel.name << " "
+								   << sel.sort->toString() << ")";
+							}
+							ss << ")";
+						}
+					}
+					if(parametric){ ss << ")"; }      // close the `par`
+					ss << ")";
+				}
+				ss << "))" << std::endl;
 			}
 		}
 		// variables
 		std::vector<std::shared_ptr<DAGNode>> vars = getVariables();
 		for(auto& var : vars){
-			ss << "(declare-fun " << var->getName() << " () " << var->getSort()->toString() << ")" << std::endl;
+			ss << "(declare-fun " << smtSymbol(var->getName()) << " () " << var->getSort()->toString() << ")" << std::endl;
 		}
 	std::vector<std::shared_ptr<DAGNode>> functions = getFunctions();
+	// Members of a (define-funs-rec ...) group are emitted together, at the
+	// position of whichever member comes first, so the rest must be skipped
+	// when the loop reaches them.
+	std::unordered_set<std::string> emitted_funcs;
 	for(auto& func : functions){
+		if(!func) continue;
+		if(datatype_member_names.count(func->getName())) continue;
+		if(!emitted_funcs.insert(func->getName()).second) continue;
+		if(const auto* group = getSymbolManager()->getRecFunGroup(func->getName())){
+			std::vector<std::shared_ptr<DAGNode>> members;
+			for(const auto& member_name : *group){
+				auto member = getSymbolManager()->getFun(member_name);
+				// A member removed via removeFuns() leaves the rest of the
+				// group behind; dropping it silently would emit a group whose
+				// bodies call a name nothing defines, so refuse instead.
+				condAssert(member != nullptr,
+					"dumpSMT2: define-funs-rec group member `" + member_name + "` is gone");
+				members.emplace_back(member);
+				emitted_funcs.insert(member_name);
+			}
+			ss << dumpFuncsRec(members) << std::endl;
+			continue;
+		}
 		if(func->isFuncDec()){
 			// NT_FUNC_DEC: Uninterpreted function declaration (declare-fun)
 			ss << dumpFuncDec(func) << std::endl;
@@ -3343,9 +4017,28 @@ namespace SOMTParser{
 			ss << dumpFuncDef(func) << std::endl;
 		}
 	}
-		// constraints
+		// constraints. A `:named` annotation is stripped during parsing and kept
+		// aside for unsat cores; dumping it back is what lets a dumped script
+		// still answer (get-unsat-core) with the names the input used.
+		// Hash-consing can put one named node in `assertions` more than once --
+		// (assert (! p :named n)) (assert p) -- and repeating the name would be a
+		// duplicate declaration on re-parse, so only the first occurrence carries it.
+		//
+		// NOT SUPPORTED: a name on a nested subterm, e.g.
+		// (assert (and (! p :named n) q)).  SMT-LIB allows :named on any term,
+		// and the parser records such a name so getNamedAssertions() can find
+		// it, but this loop annotates whole assertions, so the name is dropped
+		// from the dump.  Emitting it would mean re-inserting the annotation at
+		// the right position while printing the term.
+		std::unordered_set<std::string> emitted_names;
 		for(auto& constraint : context_.assertions){
-			ss << "(assert " << dumpSMTLIB2(constraint) << ")" << std::endl;
+			const std::string* name = context_.getAssertionName(constraint);
+			if(name && emitted_names.insert(*name).second){
+				ss << "(assert (! " << dumpSMTLIB2(constraint) << " :named " << *name << "))" << std::endl;
+			}
+			else{
+				ss << "(assert " << dumpSMTLIB2(constraint) << ")" << std::endl;
+			}
 		}
 		ss << "(check-sat)" << std::endl;
 		ss << "(exit)" << std::endl;
@@ -3378,6 +4071,20 @@ namespace SOMTParser{
 	// command not support
 	void Parser::warn_cmd_nsup(const std::string nm, const size_t ln) const {
 		std::cout << "warning: \"" << nm << "\" command is safely ignored in line " << ln << "." << std::endl;
+	}
+
+	// An assertion carries at most one name, so a second ":named" on the same
+	// assertion -- or a name taken from another one -- drops a binding. Say so:
+	// the loss is silent otherwise and only shows up in an unsat core.
+	void Parser::warn_named_displaced(const NameAssertionOutcome& outcome, const std::string& name, const size_t ln) const {
+		if (outcome.assertion_was_named) {
+			std::cout << "warning: assertion was already named \"" << outcome.previous_name
+			          << "\" in line " << ln << "; keeping only the last name \"" << name << "\"." << std::endl;
+		}
+		if (outcome.name_was_reused) {
+			std::cout << "warning: name \"" << name << "\" was already used for another assertion in line "
+			          << ln << "; keeping only the last assertion so named." << std::endl;
+		}
 	}
 
 	ParserPtr newParser(){

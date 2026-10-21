@@ -192,7 +192,9 @@ namespace SOMTParser{
         case NODE_KIND::NT_IS_INT:
             return "is_int";
         case NODE_KIND::NT_IS_DIVISIBLE:
-            return "is_divisible";
+            // The standard name, so a dumped script is readable by another
+            // solver. `is_divisible` remains accepted on input.
+            return "divisible";
         case NODE_KIND::NT_IS_PRIME:
             return "is_prime";
         case NODE_KIND::NT_IS_EVEN:
@@ -335,6 +337,16 @@ namespace SOMTParser{
             return "bv2nat";
         case NODE_KIND::NT_NAT_TO_BV:
             return "nat2bv";
+        // These two had no case at all, so they fell through to the
+        // "UNKNOWN_KIND" default and printed as (UNKNOWN_KIND x).
+        case NODE_KIND::NT_BV_TO_INT:
+            return "bv2int";
+        case NODE_KIND::NT_INT_TO_BV:
+            return "int2bv";
+        case NODE_KIND::NT_UBV_TO_INT:
+            return "ubv_to_int";
+        case NODE_KIND::NT_SBV_TO_INT:
+            return "sbv_to_int";
         // FLOATING POINT COMMON OPERATORS
         case NODE_KIND::NT_FP_ADD:
             return "fp.add";
@@ -405,6 +417,32 @@ namespace SOMTParser{
             return "select";
         case NODE_KIND::NT_STORE:
             return "store";
+        // DATATYPE / TUPLE / ANNOTATION operators — ported from the
+        // SMTStabilizer fork.
+        case NODE_KIND::NT_DT_TESTER:
+            return "is";
+        case NODE_KIND::NT_DT_UPDATER:
+            return "update";
+        case NODE_KIND::NT_TUPLE_CONSTRUCTOR:
+            return "tuple";
+        case NODE_KIND::NT_TUPLE_UNIT:
+            return "tuple.unit";
+        case NODE_KIND::NT_TUPLE_SELECT:
+            return "tuple.select";
+        case NODE_KIND::NT_TUPLE_UPDATE:
+            return "tuple.update";
+        case NODE_KIND::NT_TUPLE_PROJECT:
+            return "tuple.project";
+        case NODE_KIND::NT_ATTRIBUTE:
+            return "!";
+        case NODE_KIND::NT_PATTERN:
+            return ":pattern";
+        case NODE_KIND::NT_NO_PATTERN:
+            return ":no-pattern";
+        case NODE_KIND::NT_WEIGHT:
+            return ":weight";
+        case NODE_KIND::NT_QID:
+            return ":qid";
         // STRINGS COMMON OPERATORS
         case NODE_KIND::NT_STR_LEN:
             return "str.len";
@@ -507,7 +545,11 @@ namespace SOMTParser{
         case NODE_KIND::NT_STR_REPLACE_REG_ALL:
             return "str.replace_re_all";
         case NODE_KIND::NT_STR_INDEXOF_REG:
-            return "str.indexof";
+            // Not "str.indexof": that is NT_STR_INDEXOF, which takes a string
+            // needle and a start offset (arity 3). This one takes a regular
+            // expression and no offset (arity 2), so printing the other name
+            // produced a term no parser can read back.
+            return "str.indexof_re";
         // INTERVAL
         case NODE_KIND::NT_MAX:
             return "max";
@@ -720,6 +762,9 @@ namespace SOMTParser{
         "sinh", "cosh", "tanh", "sech", "csch", "coth",
         "asinh", "arcsinh", "acosh", "arccosh", "atanh", "arctanh",
         "asech", "acsch", "arccsch", "acoth", "arccoth",
+        // "tuple" is a plausible user symbol, so let a declared function of that
+        // name win over the tuple-theory constructor.
+        "tuple",
     };
 
     bool builtinOperMayBeShadowedByUserFun(const std::string& s) {

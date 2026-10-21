@@ -84,10 +84,8 @@ namespace SOMTParser{
                     );
                 }
                 else if(p->isCReal()){
-                    // p is a real number
-                    return mkConstReal(
-                        -toReal(p)
-                    );
+                    ensureNumberValue(p);
+                    return mkConstReal(-p->getValue()->getNumberValue());
                 }
                 else{
                     return mkUnknown();
@@ -104,14 +102,9 @@ namespace SOMTParser{
                     }
                 }
                 else if(p->isCReal()){
-                    // p is a real number
-                    Real r = toReal(p);
-                    if(r < 0){
-                        return mkConstReal(-r);
-                    }
-                    else{
-                        return p;
-                    }
+                    ensureNumberValue(p);
+                    const Number number = p->getValue()->getNumberValue();
+                    return number < Number(0) ? mkConstReal(number.abs()) : p;
                 }
                 else{
                     return mkUnknown();
@@ -584,7 +577,7 @@ namespace SOMTParser{
                     }
                 }
                 else{
-                    err_all(p, "Prime check on non-integer", line_number);
+                    // symbolic operand: legal, just not foldable
                     return mkUnknown();
                 }
             }
@@ -599,7 +592,7 @@ namespace SOMTParser{
                     }
                 }
                 else{
-                    err_all(p, "Even check on non-integer", line_number);
+                    // symbolic operand: legal, just not foldable
                     return mkUnknown();
                 }
             }
@@ -614,7 +607,7 @@ namespace SOMTParser{
                     }
                 }
                 else{
-                    err_all(p, "Odd check on non-integer", line_number);
+                    // symbolic operand: legal, just not foldable
                     return mkUnknown();
                 }
             }
@@ -633,7 +626,7 @@ namespace SOMTParser{
                     }
                 }
                 else{
-                    err_all(p, "Factorial on non-integer", line_number);
+                    // symbolic operand: legal, just not foldable
                     return mkUnknown();
                 }
             }
@@ -715,13 +708,8 @@ namespace SOMTParser{
             }
             case NODE_KIND::NT_STR_LEN:{
                 if(p->isCStr()){
-                    // Use getStringLiteral() to strip SMT-LIB quotes before counting.
-                    // toString() returns the raw name which includes quotes, making
-                    // str.len("abc") evaluate to 5 instead of 3.
-                    // getStringLiteral() correctly handles empty strings (returns ""),
-                    // so we always use lit.size() — the empty fallback was a bug.
-                    auto lit = p->getStringLiteral();
-                    return mkConstInt(static_cast<int>(lit.size()));
+                    return mkConstInt(static_cast<int>(
+                        ConversionUtils::utf8Length(p->getStringLiteral())));
                 }
                 return mkUnknown();
             }
@@ -739,13 +727,20 @@ namespace SOMTParser{
             }
             case NODE_KIND::NT_STR_REV:{
                 if(p->isCStr()){
-                    return mkConstStr(StringUtils::strRev(p->toString()));
+                    return mkConstStr(StringUtils::strRev(p->getStringLiteral()));
                 }
                 return mkUnknown();
             }
+            // `str.is_digit` holds for a ONE-CHARACTER string that is a digit,
+            // and for nothing else. It was sharing `str.to_int`'s test, so a
+            // longer run of digits satisfied it too and `(str.is_digit "77")`
+            // folded to true.
             case NODE_KIND::NT_STR_IS_DIGIT:{
                 if(p->isCStr()){
-                    return TypeChecker::isInt(p->toString()) ? mkTrue() : mkFalse();
+                    const std::string v = p->getStringLiteral();
+                    const bool one_digit =
+                        v.size() == 1 && v[0] >= '0' && v[0] <= '9';
+                    return one_digit ? mkTrue() : mkFalse();
                 }
                 return mkUnknown();
             }
@@ -755,27 +750,50 @@ namespace SOMTParser{
                 }
                 return mkUnknown();
             }
+            // **`str.to_int` returns -1; it does not fail.** SMT-LIB defines it
+            // total: a string that is not a non-empty run of digits maps to -1,
+            // so `(str.to_int "abc")` is a well-formed term with a value.
+            // Raising an error turned a legal script into a parse failure.
+            //
+            // It also read `toString()`, which renders a string constant WITH
+            // its quotes, so the digit test saw `"7"` rather than `7` and every
+            // literal took the error branch -- `(str.to_int "7")` included.
+            // `getStringLiteral()` is the accessor for the value, and the
+            // NT_STR_LEN case above was already using it.
             case NODE_KIND::NT_STR_TO_INT:{
                 if(p->isCStr()){
-                    if(TypeChecker::isInt(p->toString())){
-                        return mkConstInt(stoi(p->toString()));
+                    const std::string v = p->getStringLiteral();
+                    bool digits = !v.empty();
+                    for(const char c : v){
+                        if(c < '0' || c > '9'){ digits = false; break; }
                     }
-                    else{
-                        err_all(p, "String to int on non-integer", line_number);
+                    if(!digits){ return mkConstInt(-1); }
+                    // Leading zeroes are digits, so "0007" is 7.
+                    try{
+                        return mkConstInt(Integer(v));
+                    }
+                    catch(...){
+                        // Too large for the integer type rather than malformed.
+                        // Left unfolded, which is sound: the term keeps its
+                        // meaning and a solver may still reason about it.
                         return mkUnknown();
                     }
                 }
                 return mkUnknown();
             }
+            // `str.to_code` is total too: -1 for anything that is not a
+            // one-character string. Same two defects as str.to_int above -- an
+            // error where the standard has a value, and the quoted rendering
+            // where the value was wanted, which made `"a"` three characters
+            // long so no literal ever reached the folding branch.
             case NODE_KIND::NT_STR_TO_CODE:{
                 if(p->isCStr()){
-                    if(p->toString().size() == 1){
-                        return mkConstInt(static_cast<int>(p->toString()[0]));
+                    const std::string v = p->getStringLiteral();
+                    if(v.size() == 1){
+                        return mkConstInt(static_cast<int>(
+                            static_cast<unsigned char>(v[0])));
                     }
-                    else{
-                        err_all(p, "String to code on non-single character string", line_number);
-                        return mkUnknown();
-                    }
+                    return mkConstInt(-1);
                 }
                 return mkUnknown();
             }
@@ -967,8 +985,21 @@ namespace SOMTParser{
                     return mkUnknown();
                 }
                 if(l->isCInt() && r->isCInt()){
-                    // SMT-LIB div uses floor semantics (towards -inf), not C++ truncation
-                    return mkConstInt(toInt(l).floorDiv(toInt(r)));
+                    // SMT-LIB's Ints theory defines div and mod together, as the
+                    // unique q, r with m = n*q + r and 0 <= r < |n| -- Euclidean,
+                    // not floor and not C++ truncation. This used to call
+                    // floorDiv while NT_MOD below used C++ '%', which agree only
+                    // when both operands are positive: (div -7 2) folded to -4
+                    // and (mod -7 2) to -1, so 2*(-4) + (-1) = -9, not -7. The
+                    // defining identity was broken by the folding itself.
+                    if(toInt(r) == Integer(0)){
+                        // Division by zero is *total* in SMT-LIB and its value is
+                        // unconstrained, so there is no constant to fold to.
+                        // Leaving the term symbolic is the faithful action;
+                        // throwing would reject a script a solver accepts.
+                        return mkUnknown();
+                    }
+                    return mkConstInt(toInt(l).euclideanDiv(toInt(r)));
                 }
                 else if((l->isCReal() && r->isCReal()) || (l->isCInt() && r->isCReal()) || (l->isCReal() && r->isCInt()) || (l->isCInt() && r->isCInt())){
                     if(getEvaluateUseFloating()){
@@ -1008,7 +1039,14 @@ namespace SOMTParser{
                     return mkUnknown();
                 }
                 if(l->isCInt() && r->isCInt()){
-                    return mkConstInt(toInt(l) % toInt(r));
+                    // Euclidean, to match NT_DIV_INT above. C++ '%' truncates and
+                    // takes the sign of the dividend, so it returned negative
+                    // remainders -- violating SMT-LIB's 0 <= (mod m n) < |n| in
+                    // every case with a negative dividend.
+                    if(toInt(r) == Integer(0)){
+                        return mkUnknown();     // see NT_DIV_INT
+                    }
+                    return mkConstInt(toInt(l).euclideanMod(toInt(r)));
                 }
                 return mkUnknown();
             }
@@ -1136,34 +1174,24 @@ namespace SOMTParser{
                 return mkUnknown();
             }
             case NODE_KIND::NT_IS_DIVISIBLE:{
+                // Fold only when both operands are integer constants; symbolic
+                // operands (e.g. variables) are legal and stay unsimplified.
                 if(l->isCInt() && r->isCInt()){
                     return toInt(l) % toInt(r) == 0 ? mkTrue() : mkFalse();
                 }
-                else{
-                    err_all(l, "Is divisible on non-integer", line_number);
-                    err_all(r, "Is divisible on non-integer", line_number);
-                    return mkUnknown();
-                }
+                return mkUnknown();
             }
             case NODE_KIND::NT_GCD:{
                 if(l->isCInt() && r->isCInt()){
                     return mkConstInt(MathUtils::gcd(toInt(l), toInt(r)));
                 }
-                else{
-                    err_all(l, "GCD on non-integer", line_number);
-                    err_all(r, "GCD on non-integer", line_number);
-                    return mkUnknown();
-                }
+                return mkUnknown();
             }
             case NODE_KIND::NT_LCM:{
                 if(l->isCInt() && r->isCInt()){
                     return mkConstInt(MathUtils::lcm(toInt(l), toInt(r)));
                 }
-                else{
-                    err_all(l, "LCM on non-integer", line_number);
-                    err_all(r, "LCM on non-integer", line_number);
-                    return mkUnknown();
-                }
+                return mkUnknown();
             }
             case NODE_KIND::NT_BV_UDIV:{
                 // division by zero evaluates to all ones.

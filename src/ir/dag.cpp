@@ -27,8 +27,13 @@
 
 #include "somtparser/ir/dag.h"
 #include "somtparser/core/timing.h"
+#include "somtparser/core/util.h"
+#include "somtparser/ir/value.h"
 #include <stack>
+#include <optional>
+#include <ostream>
 #include <sstream>
+#include <streambuf>
 #include <unordered_set>
 
 namespace SOMTParser{
@@ -85,6 +90,11 @@ namespace SOMTParser{
             children.emplace_back(p);
         }
         kind = is_rec ? NODE_KIND::NT_FUNC_REC : NODE_KIND::NT_FUNC_DEF;
+        // The node now prints differently, so any ordering key taken from the
+        // old printed form is stale.
+        cached_print_hash = 0;
+        cached_print_len = 0;
+        print_hash_computed = false;
     }
 
     
@@ -97,6 +107,10 @@ namespace SOMTParser{
             children.emplace_back(p);
         }
         kind = is_rec ? NODE_KIND::NT_FUNC_REC_APPLY : NODE_KIND::NT_FUNC_APPLY;
+        // As in updateFuncDef: the printed form changed, drop the stale key.
+        cached_print_hash = 0;
+        cached_print_len = 0;
+        print_hash_computed = false;
     }
 
     // Helper: check if a string is in canonical rational a/b form
@@ -119,6 +133,45 @@ namespace SOMTParser{
         return result;
     }
 
+    /** A symbol as SMT-LIB can legally spell it.
+     *
+     *  SMT-LIB 2.6 §3.1 gives a symbol two spellings: a SIMPLE symbol, whose
+     *  characters are letters, digits and `~!@$%^&*_-+=<>.?/` and which may not
+     *  start with a digit; and a QUOTED one, `|...|`, which may contain
+     *  anything but `|` and `\`. The two denote the same symbol, so choosing
+     *  between them is a printing decision.
+     *
+     *  It was not being made. A name that arrived quoted was printed quoted,
+     *  because the bars were kept as part of the name; a name built through the
+     *  public API was printed exactly as given. So a variable created as
+     *  `x(1)` -- legal through mkVar, and a perfectly ordinary identifier in
+     *  several input languages this library reads -- was emitted as
+     *
+     *      (declare-fun x(1) () Int)
+     *
+     *  which is not a well-formed command. No other solver accepts it, and this
+     *  library reads it back only because getSymbol() scans leniently, so the
+     *  defect did not show up in a round trip through this parser alone.
+     *
+     *  Quoting is applied where the symbol is printed rather than where it is
+     *  stored, because the stored name is the symbol's identity and `x(1)` and
+     *  `|x(1)|` are the same symbol. */
+    std::string smtSymbolImpl(const std::string& name) {
+        if (name.empty()) { return "||"; }
+        if (name.size() >= 2 && name.front() == '|' && name.back() == '|') {
+            return name;                       // already quoted; do not double it
+        }
+        auto simple = [](char c) {
+            return std::isalnum(static_cast<unsigned char>(c)) != 0
+                || std::strchr("~!@$%^&*_-+=<>.?/", c) != nullptr;
+        };
+        bool ok = std::isdigit(static_cast<unsigned char>(name.front())) == 0;
+        for (const char c : name) {
+            if (!simple(c)) { ok = false; break; }
+        }
+        return ok ? name : "|" + name + "|";
+    }
+
     std::string dumpConst(const std::string& name, const std::shared_ptr<Sort>& sort){
         // Rational a/b form is only meaningful for ARITHMETIC sorts.  It must
         // never apply to other sorts: a string literal may legitimately
@@ -129,7 +182,7 @@ namespace SOMTParser{
             && isRationalFormat(name)) {
             return formatRationalDivision(name);
         }
-        if(sort->isReal() || sort->isIntOrReal()){
+        if(sort->isReal() || sort->isInt() || sort->isIntOrReal()){
             if(name[0] == '-'){
                 return "(- " + name.substr(1) + ")";
             }
@@ -155,11 +208,111 @@ namespace SOMTParser{
         return name;
     }
 
+    // Evaluate a closed arithmetic subterm to an exact rational, or nullopt if it
+    // is not a constant.  Used to fold ((_ to_fp eb sb) RM <const>) into an
+    // (fp #b..) literal at dump time, so the dumped query stays in the pure FP
+    // theory and strict backends without the Reals theory (e.g. Bitwuzla) accept
+    // it.  Handles the constant forms the parser leaves unfolded: rational
+    // literals (kept as NT_DIV_REAL "(/ a b)") and negations (NT_NEG "(- x)").
+    static std::optional<Number> constToNumber(const std::shared_ptr<DAGNode>& n) {
+        if (!n) return std::nullopt;
+        if (n->isCInt() || n->isCReal()) {
+            try { return Number(n->getName(), false); } catch (...) { return std::nullopt; }
+        }
+        const NODE_KIND k = n->getKind();
+        const size_t sz = n->getChildrenSize();
+        if (k == NODE_KIND::NT_NEG && sz == 1) {
+            auto a = constToNumber(n->getChild(0));
+            if (a) return -*a;
+        } else if ((k == NODE_KIND::NT_DIV_REAL || k == NODE_KIND::NT_DIV_INT) && sz == 2) {
+            auto a = constToNumber(n->getChild(0));
+            auto b = constToNumber(n->getChild(1));
+            if (a && b && !b->isZero()) return *a / *b;
+        } else if (k == NODE_KIND::NT_ADD && sz >= 1) {
+            auto acc = constToNumber(n->getChild(0)); if (!acc) return std::nullopt;
+            for (size_t i = 1; i < sz; ++i) { auto c = constToNumber(n->getChild(i)); if (!c) return std::nullopt; acc = *acc + *c; }
+            return acc;
+        } else if (k == NODE_KIND::NT_SUB && sz >= 1) {
+            auto acc = constToNumber(n->getChild(0)); if (!acc) return std::nullopt;
+            if (sz == 1) return -*acc;
+            for (size_t i = 1; i < sz; ++i) { auto c = constToNumber(n->getChild(i)); if (!c) return std::nullopt; acc = *acc - *c; }
+            return acc;
+        } else if (k == NODE_KIND::NT_MUL && sz >= 1) {
+            auto acc = constToNumber(n->getChild(0)); if (!acc) return std::nullopt;
+            for (size_t i = 1; i < sz; ++i) { auto c = constToNumber(n->getChild(i)); if (!c) return std::nullopt; acc = *acc * *c; }
+            return acc;
+        }
+        return std::nullopt;
+    }
+
     // High-performance iterative streaming version to avoid stack overflow
-    void dumpSMTLIB2_streaming(const std::shared_ptr<DAGNode>& root, std::ostream& out) {
+    // Hashes everything written to it without ever materialising the text, so
+    // a node's printed form can be hashed in place of being built.
+    //
+    // The hash is polynomial/rolling rather than a plain accumulator because it
+    // has to compose: H(A.B) = H(A)*BASE^|B| + H(B). That identity is what lets
+    // an already-hashed subtree be folded in as a single unit (absorb), so no
+    // node ever re-walks a subtree an ancestor already walked. Hashing every
+    // operand of n nested commutative operators is then linear; re-printing
+    // each ancestor's whole subtree instead would be quadratic.
+    //
+    // BASE must be odd to stay invertible modulo 2^64 (unsigned overflow is
+    // well-defined wraparound), otherwise low bits would decay to zero.
+    class PrintHashBuf : public std::streambuf {
+    public:
+        static const uint64_t BASE = 1099511628211ull;  // FNV-1a prime, odd
+
+        uint64_t hash() const { return h_; }
+        uint64_t length() const { return len_; }
+
+        void absorb(uint64_t chunk_hash, uint64_t chunk_len) {
+            h_ = h_ * ipow(BASE, chunk_len) + chunk_hash;
+            len_ += chunk_len;
+        }
+
+    protected:
+        std::streamsize xsputn(const char* s, std::streamsize n) override {
+            for (std::streamsize i = 0; i < n; i++) {
+                h_ = h_ * BASE + static_cast<unsigned char>(s[i]);
+            }
+            len_ += static_cast<uint64_t>(n);
+            return n;
+        }
+
+        int_type overflow(int_type c) override {
+            if (c != traits_type::eof()) {
+                h_ = h_ * BASE + static_cast<unsigned char>(c);
+                len_ += 1;
+            }
+            return c;
+        }
+
+    private:
+        static uint64_t ipow(uint64_t base, uint64_t exp) {
+            uint64_t r = 1;
+            while (exp) {
+                if (exp & 1) r *= base;
+                base *= base;
+                exp >>= 1;
+            }
+            return r;
+        }
+
+        uint64_t h_ = 0;
+        uint64_t len_ = 0;
+    };
+
+    // Takes a raw pointer so that a node can print itself without owning a
+    // shared_ptr to itself (see DAGNode::orderKey). Ownership is the caller's;
+    // this only reads.
+    //
+    // `hb`, when set, must be the streambuf backing `out`: it switches on the
+    // subtree folding described on PrintHashBuf. It is null for ordinary
+    // printing, which always walks the whole term.
+    void dumpSMTLIB2_streaming(DAGNode* root, std::ostream& out, PrintHashBuf* hb = nullptr) {
         if (!root) return;
 
-        std::shared_ptr<DAGNode> actualRoot = root;
+        DAGNode* actualRoot = root;
 
         // Static kind string cache for performance
         static std::unordered_map<NODE_KIND, const char*> kind_cache;
@@ -217,7 +370,7 @@ namespace SOMTParser{
         // Pre-allocate stack with reasonable capacity to avoid frequent reallocations
         std::vector<WorkItem> work_stack;
         work_stack.reserve(65536); // Reserve space for deep expressions
-        work_stack.emplace_back(actualRoot.get(), 0);
+        work_stack.emplace_back(actualRoot, 0);
 
         while (!work_stack.empty()) {
             WorkItem item = work_stack.back();
@@ -244,6 +397,14 @@ namespace SOMTParser{
             // Process node (action == 0)
             DAGNode* node = item.node;
             if (!node) continue;
+
+            // Every node -- root and child alike -- reaches the printer through
+            // this one point, so folding in an already-hashed subtree here
+            // covers all of them.
+            if (hb && node->hasPrintHash()) {
+                hb->absorb(node->printHash(), node->printLength());
+                continue;
+            }
 
             auto kind = node->getKind();
             switch (kind) {
@@ -278,7 +439,7 @@ namespace SOMTParser{
             case NODE_KIND::NT_VAR:
             case NODE_KIND::NT_TEMP_VAR:
             case NODE_KIND::NT_PLACEHOLDER_VAR:
-                out << node->getName();
+                out << smtSymbolImpl(node->getName());
                 break;
             case NODE_KIND::NT_CONST_ARRAY: {
                 out << "((as const ";
@@ -323,8 +484,7 @@ namespace SOMTParser{
             case NODE_KIND::NT_SEP_STAR:
             case NODE_KIND::NT_SEP_WAND:
             case NODE_KIND::NT_DISTINCT: {
-                const char* op = kind_cache[kind];
-                if (!op) op = kindToString(kind).c_str();
+                const std::string op = kind_cache[kind] ? kind_cache[kind] : kindToString(kind);
 
                 out << "(" << op;
                 const auto& children = node->getChildren();
@@ -404,7 +564,17 @@ namespace SOMTParser{
             case NODE_KIND::NT_BV_ZERO_EXT:
             case NODE_KIND::NT_BV_SIGN_EXT:
             case NODE_KIND::NT_BV_ROTATE_LEFT:
-            case NODE_KIND::NT_BV_ROTATE_RIGHT: {
+            case NODE_KIND::NT_BV_ROTATE_RIGHT:
+            // int2bv/nat2bv are indexed too — without these two they fell to
+            // the generic path and printed as (int2bv x 8) instead of
+            // ((_ int2bv 8) x).  Ported from the SMTStabilizer fork.
+            case NODE_KIND::NT_INT_TO_BV:
+            case NODE_KIND::NT_NAT_TO_BV:
+            // divisible is indexed for the same reason and was missing for the
+            // same reason: it printed as (divisible x 3), which is not the
+            // operator SMT-LIB defines and which this parser would read back as
+            // a two-argument application.
+            case NODE_KIND::NT_IS_DIVISIBLE: {
                 auto child0 = node->getChild(0).get();
                 auto child1 = node->getChild(1).get();
 
@@ -635,7 +805,20 @@ namespace SOMTParser{
                 // Constructor application: (CtorName arg1 arg2 ...) or just CtorName
                 const auto& children = node->getChildren();
                 if (children.empty()) {
-                    out << node->getName();
+                    // A NULLARY constructor of a PARAMETRIC datatype must keep
+                    // its sort ascription. `nil` names a constructor of every
+                    // instance of `L` at once, and having no arguments there is
+                    // nothing to infer the instance from -- which is why SMT-LIB
+                    // requires `(as nil (L Int))`. Printing the bare name gave a
+                    // term this parser had built at a definite sort and could
+                    // not read back at any.
+                    std::shared_ptr<Sort> s = node->getSort();
+                    if (s && s->isDatatype() && s->getChildrenSize() > 0) {
+                        out << "(as " << node->getName() << " " << s->toString()
+                            << ")";
+                    } else {
+                        out << node->getName();
+                    }
                 } else {
                     out << "(" << node->getName();
                     work_stack.emplace_back(nullptr, 2);  // )
@@ -662,17 +845,116 @@ namespace SOMTParser{
                 break;
             }
             case NODE_KIND::NT_DT_TESTER: {
-                // Tester application: (is-CtorName arg); bare symbol if no arg (same as ctor)
+                // Tester application.  SMT-LIB 2.6 spells this ((_ is C) arg);
+                // we used to emit the legacy (is-C arg) form, which standard
+                // solvers reject.  The node name is stored as "is-C", so strip
+                // the prefix here.  Ported from the SMTStabilizer fork.
+                const std::string& tester = node->getName();
+                const std::string ctor = (tester.rfind("is-", 0) == 0) ? tester.substr(3) : tester;
                 const auto& children = node->getChildren();
                 if (children.empty()) {
-                    out << node->getName();
+                    out << "(_ is " << ctor << ")";
                 } else {
-                    out << "(" << node->getName();
+                    out << "((_ is " << ctor << ")";
                     work_stack.emplace_back(nullptr, 2);  // )
                     for (int i = children.size() - 1; i >= 0; i--) {
                         work_stack.emplace_back(children[i].get(), 0);
                         work_stack.emplace_back(nullptr, 1);  // space
                     }
+                }
+                break;
+            }
+            case NODE_KIND::NT_DT_UPDATER: {
+                // ((_ update <selector>) t v) — ported from the SMTStabilizer fork.
+                const auto& children = node->getChildren();
+                out << "((_ update " << node->getName() << ")";
+                work_stack.emplace_back(nullptr, 2);  // )
+                for (int i = children.size() - 1; i >= 0; i--) {
+                    work_stack.emplace_back(children[i].get(), 0);
+                    work_stack.emplace_back(nullptr, 1);  // space
+                }
+                break;
+            }
+            // TERM ANNOTATIONS: (! <term> :pattern (...) :qid q ...).
+            // Ported from the SMTStabilizer fork: these used to be parsed and
+            // then dropped, so quantifier triggers silently vanished from the
+            // printed output.
+            case NODE_KIND::NT_ATTRIBUTE: {
+                const auto& children = node->getChildren();
+                out << "(!";
+                work_stack.emplace_back(nullptr, 2);  // )
+                for (int i = children.size() - 1; i >= 0; i--) {
+                    work_stack.emplace_back(children[i].get(), 0);
+                    work_stack.emplace_back(nullptr, 1);  // space
+                }
+                break;
+            }
+            case NODE_KIND::NT_PATTERN: {
+                const auto& children = node->getChildren();
+                out << ":pattern (";
+                work_stack.emplace_back(nullptr, 2);  // )
+                for (int i = children.size() - 1; i >= 0; i--) {
+                    work_stack.emplace_back(children[i].get(), 0);
+                    if (i) work_stack.emplace_back(nullptr, 1);  // space
+                }
+                break;
+            }
+            case NODE_KIND::NT_NO_PATTERN: {
+                out << ":no-pattern ";
+                if (node->getChildrenSize() > 0) {
+                    work_stack.emplace_back(node->getChild(0).get(), 0);
+                }
+                break;
+            }
+            case NODE_KIND::NT_WEIGHT: {
+                out << ":weight ";
+                if (node->getChildrenSize() > 0) {
+                    work_stack.emplace_back(node->getChild(0).get(), 0);
+                }
+                break;
+            }
+            case NODE_KIND::NT_QID:
+                out << ":qid " << node->getName();
+                break;
+            // TUPLE OPERATORS — ported from the SMTStabilizer fork.
+            case NODE_KIND::NT_TUPLE_UNIT:
+                out << "tuple.unit";
+                break;
+            case NODE_KIND::NT_TUPLE_CONSTRUCTOR: {
+                const auto& children = node->getChildren();
+                out << "(tuple";
+                work_stack.emplace_back(nullptr, 2);  // )
+                for (int i = children.size() - 1; i >= 0; i--) {
+                    work_stack.emplace_back(children[i].get(), 0);
+                    work_stack.emplace_back(nullptr, 1);  // space
+                }
+                break;
+            }
+            case NODE_KIND::NT_TUPLE_SELECT:
+            case NODE_KIND::NT_TUPLE_UPDATE:
+            case NODE_KIND::NT_TUPLE_PROJECT: {
+                // ((_ tuple.select i) t), ((_ tuple.update i) t v),
+                // ((_ tuple.project i ...) t).  The index children are stored
+                // after the tuple term, so emit them into the index list first.
+                const auto& children = node->getChildren();
+                const size_t nidx = (kind == NODE_KIND::NT_TUPLE_UPDATE) ? 1
+                                  : (kind == NODE_KIND::NT_TUPLE_SELECT) ? 1
+                                  : (children.size() >= 1 ? children.size() - 1 : 0);
+                out << "((_ " << kindToString(kind);
+                work_stack.emplace_back(nullptr, 2);  // )
+                // terms: tuple (child 0), then the value for tuple.update
+                if (kind == NODE_KIND::NT_TUPLE_UPDATE && children.size() >= 3) {
+                    work_stack.emplace_back(children[2].get(), 0);
+                    work_stack.emplace_back(nullptr, 1);  // space
+                }
+                if (!children.empty()) {
+                    work_stack.emplace_back(children[0].get(), 0);
+                    work_stack.emplace_back(nullptr, 1);  // space
+                }
+                work_stack.emplace_back(")", 4);
+                for (size_t i = nidx; i >= 1; i--) {
+                    work_stack.emplace_back(children[i].get(), 0);
+                    work_stack.emplace_back(nullptr, 1);  // space
                 }
                 break;
             }
@@ -839,6 +1121,25 @@ namespace SOMTParser{
                 auto sb = node->getChild(1).get();
                 
                 if(node->getChildrenSize() == 4) {
+                    // Constant folding for output: ((_ to_fp eb sb) RM <const>) is
+                    // rounded to a concrete value and emitted as an (fp #b..)
+                    // literal, keeping the dumped term in the pure FP theory so
+                    // strict backends without the Reals theory (e.g. Bitwuzla)
+                    // accept it.  realToFpValue rounds the exact rational in one
+                    // correct step, so the literal matches native to_fp (no
+                    // change for lenient backends such as z3/cvc5).
+                    {
+                        auto fpsort = node->getSort();
+                        if (fpsort && fpsort->isFp()) {
+                            auto num = constToNumber(node->getChild(3));
+                            if (num) {
+                                mpfr_rnd_t rnd = FloatingPointUtils::getFPRoundingModeMpfr(node->getChild(2));
+                                auto fv = FloatingPointUtils::realToFpValue(
+                                    *num, fpsort->getExponentWidth(), fpsort->getSignificandWidth(), rnd);
+                                if (fv) { out << fv->toSMTFP(); break; }
+                            }
+                        }
+                    }
                     // 4-parameter version: ((_ to_fp eb sb) rm param)
                     auto rm = node->getChild(2).get();
                     auto param = node->getChild(3).get();
@@ -1030,8 +1331,23 @@ namespace SOMTParser{
     // Wrapper function that returns string for compatibility
     std::string dumpSMTLIB2(const std::shared_ptr<DAGNode>& root) {
         std::ostringstream oss;
-        dumpSMTLIB2_streaming(root, oss);  // enable cache by default
+        dumpSMTLIB2_streaming(root.get(), oss);  // enable cache by default
         return oss.str();
+    }
+
+    std::size_t DAGNode::orderKey() const {
+        if(print_hash_computed) {
+            return static_cast<std::size_t>(cached_print_hash);
+        }
+        // const_cast is safe: the printer only reads. Its parameter is
+        // non-const because its internal work stack holds DAGNode*.
+        PrintHashBuf buf;
+        std::ostream os(&buf);
+        dumpSMTLIB2_streaming(const_cast<DAGNode*>(this), os, &buf);
+        cached_print_hash = buf.hash();
+        cached_print_len = buf.length();
+        print_hash_computed = true;
+        return static_cast<std::size_t>(cached_print_hash);
     }
 
     
@@ -1059,6 +1375,37 @@ namespace SOMTParser{
         res += dumpSMTLIB2(node->getChild(0)) +  ")";
         return res;
     }
+    // (define-funs-rec ((f (params) sort) ...) (body ...))
+    //
+    // A mutually recursive group has to be emitted as one command: its members
+    // call each other, so a sequence of define-fun-rec commands would refer to
+    // a function that the script has not defined yet.  SMT-LIB puts all the
+    // signatures first precisely so every body can see every name.
+    std::string dumpFuncsRec(const std::vector<std::shared_ptr<DAGNode>>& nodes){
+        condAssert(!nodes.empty(), "dumpFuncsRec: empty group");
+        std::string res = "(define-funs-rec (";
+        for(size_t n = 0; n < nodes.size(); n++){
+            const auto& node = nodes[n];
+            condAssert(node != nullptr, "dumpFuncsRec: null member");
+            if(n != 0) res += " ";
+            res += "(" + node->getName() + " (";
+            // children[0] is the body, children[1..n] are the parameters.
+            for(size_t i = 1; i < node->getChildrenSize(); i++){
+                if(i != 1) res += " ";
+                res += "(" + node->getChild(i)->getName() + " " +
+                       node->getChild(i)->getSort()->toString() + ")";
+            }
+            res += ") " + node->getSort()->toString() + ")";
+        }
+        res += ") (";
+        for(size_t n = 0; n < nodes.size(); n++){
+            if(n != 0) res += " ";
+            res += dumpSMTLIB2(nodes[n]->getChild(0));
+        }
+        res += "))";
+        return res;
+    }
+
     std::string dumpFuncDec(const std::shared_ptr<DAGNode>& node){
         std::string res = "(declare-fun " + node->getName() + " (";
         // For NT_FUNC_DEC, children[0] is NULL_NODE, children[1..n] are parameter type nodes
@@ -1277,4 +1624,8 @@ namespace SOMTParser{
         return insertNodeToBucket(node);
     }
 
+}
+
+namespace SOMTParser {
+std::string smtSymbol(const std::string& name) { return smtSymbolImpl(name); }
 }
