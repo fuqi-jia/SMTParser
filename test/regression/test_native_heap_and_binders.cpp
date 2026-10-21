@@ -47,6 +47,10 @@ int main() {
     auto saved = heap.getAssertions().at(0);
     const auto savedText = dumpSMTLIB2(saved);
     VERIFY(saved->getKind() == NODE_KIND::NT_SEP_WAND);
+    Parser roundtrip;
+    VERIFY(roundtrip.parseStr(heap.dumpSMT2()));
+    VERIFY(roundtrip.getHeapLocationSort()->isInt());
+    VERIFY(dumpSMTLIB2(roundtrip.getAssertions().at(0)) == savedText);
     VERIFY(dumpSMTLIB2(heap.mkExpr("(as sep.nil Int)")) == "(as sep.nil Int)");
     VERIFY(heap.parseStr("(reset-assertions)(declare-const x Int)(assert sep.emp)"));
     VERIFY(heap.getHeapLocationSort()->isInt());

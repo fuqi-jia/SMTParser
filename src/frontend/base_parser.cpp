@@ -3975,6 +3975,10 @@ namespace SOMTParser{
 				ss << "))" << std::endl;
 			}
 		}
+		// Heap sorts may refer to user-defined sorts declared above.
+        if (getHeapLocationSort())
+            ss << "(declare-heap (" << getHeapLocationSort()->toString() << " "
+               << getHeapDataSort()->toString() << "))\n";
 		// variables
 		std::vector<std::shared_ptr<DAGNode>> vars = getVariables();
 		for(auto& var : vars){
