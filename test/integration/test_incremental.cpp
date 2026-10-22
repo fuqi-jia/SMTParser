@@ -56,10 +56,24 @@ static void test_nested_push_pop() {
 
 static void test_reset_assertions() {
     std::cout << "--- test_reset_assertions ---" << std::endl;
-    Parser parser;
-    parser.parseStr("(declare-const x Int) (assert (> x 0)) (reset-assertions)");
-    VERIFY(parser.isDeclaredVariable("x"));
-    VERIFY(parser.getAssertions().size() == 0);
+    // SMT-LIB 2.6, reset-assertions: declarations/definitions survive only
+    // with :global-declarations true (the default is false).
+    // https://smt-lib.org/papers/smt-lib-reference-v2.6-r2024-09-20.pdf
+    for (bool global : {false, true}) {
+        Parser parser;
+        VERIFY(parser.parseStr(std::string("(set-option :global-declarations ") +
+            (global ? "true" : "false") + ")"
+            "(declare-const x Int)(define-fun f ((v Int)) Int (+ v 1))"
+            "(push 1)(declare-const y Int)(assert (> x 0))(reset-assertions)"));
+        VERIFY(parser.isDeclaredVariable("x") == global);
+        VERIFY(parser.isDeclaredVariable("y") == global);
+        VERIFY(static_cast<bool>(parser.getSymbolManager()->getFun("f")) == global);
+        VERIFY(parser.getAssertions().empty());
+        VERIFY(!parser.pop());
+        VERIFY(parser.parseStr("(reset)"));
+        VERIFY(!parser.isDeclaredVariable("x"));
+        VERIFY(parser.getFunctions().empty());
+    }
     std::cout << "PASS" << std::endl;
 }
 

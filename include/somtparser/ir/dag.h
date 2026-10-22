@@ -97,6 +97,7 @@ std::string smtSymbol(const std::string& name);
         mutable bool                            print_hash_computed = false;
 
     public:
+        ~DAGNode();
         DAGNode(std::shared_ptr<Sort> sort, NODE_KIND kind, std::string name, std::vector<std::shared_ptr<DAGNode>> children): sort(sort), kind(kind), name(name), value(nullptr), children(children){
             // value is not used for hash
             if(children.empty()) {
@@ -337,13 +338,13 @@ std::string smtSymbol(const std::string& name);
             _use_count = 0;
         }
 
-        bool operator==(const DAGNode elem)
+        bool operator==(const DAGNode& elem) const
         {
-            return (sort == elem.sort && kind == elem.kind && name == elem.name && children_hash == elem.children_hash);
+            return isEquivalentTo(elem);
         }
-        bool operator!=(const DAGNode elem)
+        bool operator!=(const DAGNode& elem) const
         {
-            return (sort != elem.sort || kind != elem.kind || name != elem.name || children_hash != elem.children_hash);
+            return !isEquivalentTo(elem);
         }
         
         bool isLeaf() 				const { return children.empty(); };
@@ -979,7 +980,7 @@ std::string smtSymbol(const std::string& name);
          * @return True if the node is equivalent to the other node, false otherwise
          */
         bool isEquivalentTo(const std::shared_ptr<DAGNode>& other) const {
-            return isEquivalentTo(*other);
+            return other && isEquivalentTo(*other);
         }
 
         /**
@@ -988,10 +989,7 @@ std::string smtSymbol(const std::string& name);
          * @param other The other node
          * @return True if the node is equivalent to the other node, false otherwise
          */
-        bool isEquivalentTo(const DAGNode& other) const {
-            std::unordered_set<std::pair<const DAGNode*, const DAGNode*>, PairNodePtrHash, PairNodePtrEqual> visited;
-            return isEquivalentTo(other, visited);
-        }
+        bool isEquivalentTo(const DAGNode& other) const;
 
         /**
          * @brief Get the hash code of the node
@@ -999,12 +997,17 @@ std::string smtSymbol(const std::string& name);
          * @return The hash code of the node
          */
         std::size_t hashCode() const{
+            // Binders and recursive function declarations have lexical identity,
+            // even when a previous declaration has the same printed signature.
+            if (kind == NODE_KIND::NT_QUANT_VAR || kind == NODE_KIND::NT_FUNC_PARAM ||
+                kind == NODE_KIND::NT_FUNC_REC)
+                return std::hash<const DAGNode*>{}(this);
             if(hash_computed) {
                 return cached_hash_code;
             }
             
             // high quality hash algorithm, reduce conflicts
-            size_t h1 = std::hash<std::string>{}(sort->toString());
+            size_t h1 = sort ? std::hash<std::string>{}(sort->toString()) : 0;
             size_t h2 = static_cast<size_t>(kind);
             size_t h3 = name.empty() ? 0 : std::hash<std::string>{}(name);
             size_t h4 = children.size();
@@ -1073,47 +1076,6 @@ std::string smtSymbol(const std::string& name);
          */
         void updateApplyFunc(std::shared_ptr<Sort> out_sort, std::shared_ptr<DAGNode> body, const std::vector<std::shared_ptr<DAGNode>> &params, bool is_rec = false);
 
-    private:
-        bool isEquivalentTo(const DAGNode& other, std::unordered_set<std::pair<const DAGNode*, const DAGNode*>, PairNodePtrHash, PairNodePtrEqual>& visited) const {
-            TIME_FUNC();
-            
-            // fastest check: pointer same
-            if (this == &other) {
-                return true;
-            }
-            
-            // fast structure check (avoid the expensive subsequent comparison)
-            if (kind != other.kind || 
-                children.size() != other.children.size() || 
-                sort.get() != other.sort.get()) {
-                return false;
-            }
-            
-            // name check
-            if (name != other.name) {
-                return false;
-            }
-            
-            // children_hash check (if both are calculated, this is the fastest deep comparison)
-            if (!children_hash.empty() && !other.children_hash.empty() && 
-                children_hash != other.children_hash) {
-                return false;
-            }
-            
-            auto p = std::make_pair(this, &other);
-            if(visited.find(p) != visited.end()){
-                return true;
-            }
-            visited.insert(p);
-            
-            // most expensive recursive comparison at the end
-            for (size_t i = 0; i < children.size(); i++) {
-                if (!children[i]->isEquivalentTo(*other.children[i], visited)) {
-                    return false;
-                }
-            }
-            return true;
-        }
     };
 
     struct NodeHash {

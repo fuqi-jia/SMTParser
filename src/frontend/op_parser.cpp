@@ -41,6 +41,40 @@ namespace {
 
 namespace SOMTParser{
 
+    std::shared_ptr<DAGNode> Parser::mkSpatial(
+        NODE_KIND kind, const std::vector<std::shared_ptr<DAGNode>>& args) {
+        if (!getHeapLocationSort() || !getHeapDataSort())
+            err_all(ERROR_TYPE::ERR_LOGIC, "spatial operator requires declare-heap", line_number);
+        auto require = [&](bool condition, const char* message) {
+            if (!condition) err_all(ERROR_TYPE::ERR_TYPE_MIS, message, line_number);
+        };
+        auto sameSort = [](const std::shared_ptr<DAGNode>& node, const std::shared_ptr<Sort>& sort) {
+            return node && node->getSort() && *node->getSort() == *sort;
+        };
+        const char* name = nullptr;
+        switch (kind) {
+        case NODE_KIND::NT_SEP_EMP:
+            require(args.empty(), "sep.emp is nullary"); name = "sep.emp"; break;
+        case NODE_KIND::NT_SEP_NIL:
+            require(args.empty(), "sep.nil is nullary");
+            return getNodeManager()->createNode(getHeapLocationSort(), kind, "sep.nil", {});
+        case NODE_KIND::NT_SEP_PTO:
+            require(args.size() == 2, "pto requires an address and a value");
+            require(sameSort(args[0], getHeapLocationSort()) &&
+                    sameSort(args[1], getHeapDataSort()), "pto does not match the declared heap sorts");
+            name = "pto"; break;
+        case NODE_KIND::NT_SEP_STAR: case NODE_KIND::NT_SEP_WAND:
+            require(kind == NODE_KIND::NT_SEP_STAR ? args.size() >= 2 : args.size() == 2,
+                    "invalid spatial connective arity");
+            for (const auto& arg : args)
+                require(sameSort(arg, SortManager::BOOL_SORT), "spatial operands must be Boolean");
+            name = kind == NODE_KIND::NT_SEP_STAR ? "sep" : "wand"; break;
+        default:
+            err_all(ERROR_TYPE::ERR_LOGIC, "invalid spatial node kind", line_number);
+        }
+        return getNodeManager()->createNode(SortManager::BOOL_SORT, kind, name, args);
+    }
+
     bool isIntParam(std::shared_ptr<DAGNode> param){auto sort = param->getSort(); return sort && (sort->isInt() || sort->isIntOrReal());}
     bool isRealParam(std::shared_ptr<DAGNode> param){auto sort = param->getSort(); return sort && (sort->isReal() || sort->isIntOrReal());}
     bool isBoolParam(std::shared_ptr<DAGNode> param){auto sort = param->getSort(); return sort && sort->isBool();}
@@ -330,28 +364,39 @@ namespace SOMTParser{
         return func;
     }
 
+    std::shared_ptr<DAGNode> Parser::mkFuncRecDecl(const std::string &name, const std::vector<std::shared_ptr<Sort>> &params, std::shared_ptr<Sort> out_sort){
+        if(isBuiltinNameReservedAgainstUserFun(name) || getSymbolManager()->hasFun(name)) {
+            err_all(ERROR_TYPE::ERR_MUL_DECL, "Invalid recursive function declaration: " + name, line_number);
+        }
+        std::vector<std::shared_ptr<DAGNode>> children{NodeManager::NULL_NODE};
+        for (const auto& sort : params) children.push_back(mkFunParamVar(sort, ""));
+        auto symbol = getNodeManager()->createNode(out_sort, NODE_KIND::NT_FUNC_REC, name, children);
+        getSymbolManager()->registerFun(name, symbol);
+        return symbol;
+    }
+
     std::shared_ptr<DAGNode> Parser::mkFuncRec(const std::string &name, const std::vector<std::shared_ptr<DAGNode>> &params, std::shared_ptr<Sort> out_sort, std::shared_ptr<DAGNode> body){
-        std::shared_ptr<DAGNode> func = getSymbolManager()->getFun(name);
-        if(func){
-            condAssert(func->getKind() == NODE_KIND::NT_FUNC_DEC, "mkFuncRec: func is not a function declaration");
-            if(func->getKind() == NODE_KIND::NT_FUNC_DEC){
-                func->updateFuncDef(out_sort, body, params, true);
-                return func;
-            }
+        auto symbol = getSymbolManager()->getFun(name);
+        if (symbol && (!symbol->isFuncRec() || !symbol->getFuncBody()->isNull())) {
             err_all(ERROR_TYPE::ERR_MUL_DEF, "Multiple definitions of recursive function", line_number);
             return mkUnknown();
         }
-        if(isBuiltinNameReservedAgainstUserFun(name)){
-            err_all(ERROR_TYPE::ERR_LOGIC, "reserved built-in name `" + name + "` (define-fun-rec)", line_number);
-            return mkUnknown();
+        if (!symbol) {
+            std::vector<std::shared_ptr<Sort>> sorts;
+            for (const auto& param : params) sorts.push_back(param->getSort());
+            symbol = mkFuncRecDecl(name, sorts, out_sort);
         }
+        if (!body || body->isErr() || !body->getSort() ||
+            !(*out_sort == *body->getSort() ||
+              (body->getSort()->isIntOrReal() && (out_sort->isInt() || out_sort->isReal()))))
+            err_all(ERROR_TYPE::ERR_TYPE_MIS, "Recursive function body sort: " + name, line_number);
         std::vector<std::shared_ptr<DAGNode>> children;
         children.emplace_back(body);
         for(auto &param: params){
             children.emplace_back(param);
         }
-        func = getNodeManager()->createNode(out_sort, NODE_KIND::NT_FUNC_REC, name, children);
-        getSymbolManager()->registerFun(name, func);
+        auto func = getNodeManager()->createNode(out_sort, NODE_KIND::NT_FUNC_REC, name, children);
+        getSymbolManager()->registerRecursiveDefinition(symbol, func);
         return func;
     }
 
@@ -490,12 +535,11 @@ namespace SOMTParser{
             err_all(ERROR_TYPE::ERR_PARAM_MIS, "Not enough parameters for equality", line_number);
             return mkUnknown();
         }
-        std::shared_ptr<Sort> sort = getSort(params);
-
         if(params.size() == 2){
             return mkEq(params[0], params[1]);
         }
 
+        const auto sort = getSort(params);
         bool all_boolean = true;
         bool has_true = false;
         bool has_false = false;
@@ -576,10 +620,10 @@ namespace SOMTParser{
             return mkDistinct(l->getChild(0), r->getChild(0));
         }
         else if(l->isNot()){
-            return mkDistinct(l->getChild(0), r);
+            return mkEq(l->getChild(0), r);
         }
         else if(r->isNot()){
-            return mkDistinct(l, r->getChild(0));
+            return mkEq(l, r->getChild(0));
         }
         else{
             return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_DISTINCT, l, r);
@@ -624,6 +668,7 @@ namespace SOMTParser{
         else{
             return mkOper(SortManager::BOOL_SORT, NODE_KIND::NT_DISTINCT, params);
         }
+
     }
     // CONST
     // defined in base_parser.cpp
