@@ -49,6 +49,7 @@ namespace SOMTParser{
         // get-info
         std::unordered_map<std::string, std::string> get_info;
         bool get_model = false;
+        bool global_declarations = false;
         // set-option
         std::unordered_map<std::string, std::string> options;
         // get-option
@@ -201,7 +202,8 @@ namespace SOMTParser{
                 logic_name == "UFIDL" ||
                 logic_name == "UFLIA" ||
                 logic_name == "UFNIRA" ||
-                logic_name == "ALL") {
+                logic_name == "ALL" ||
+                logic_name == "QF_ALL") {
                     logic = logic_name;
                     return true;
                 } else {
@@ -215,7 +217,10 @@ namespace SOMTParser{
 
         void setOption(const std::string& key, const std::string& value) {
             options[key] = value;
-            if(key == "keep_let") {
+            if(key == "global-declarations") {
+                global_declarations = value == "true";
+            }
+            else if(key == "keep_let") {
                 setKeepLet(value == "true");
             }
             else if(key == "precision"){

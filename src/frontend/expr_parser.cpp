@@ -267,6 +267,15 @@ namespace SOMTParser{
                     // the whole term, and they are separate code paths.
                     if(head == "as"){
                         const std::string what = getSymbol();
+                        if (what == "sep.nil") {
+                            const auto sort = parseSort();
+                            if (!getHeapLocationSort() || !(*sort == *getHeapLocationSort()))
+                                err_all(ERROR_TYPE::ERR_TYPE_MIS, "invalid qualified heap nil", frame.line);
+                            frame.result = mkSpatial(NODE_KIND::NT_SEP_NIL, {});
+                            parseRpar();
+                            frame.state = FrameState::Finish;
+                            break;
+                        }
                         if(std::shared_ptr<DAGNode> dtf = getSymbolManager()->getFun(what)){
                             const std::vector<std::shared_ptr<DAGNode>> none;
                             const NODE_KIND dtk =
@@ -614,79 +623,12 @@ namespace SOMTParser{
                         parseRpar();
                         std::shared_ptr<DAGNode> res;
                         
-                        // inline the most common operators, avoid parseOper overhead
+                        // Use one operator dispatcher for ordinary and indexed syntax.
+                        // A duplicate fast path used to discard all but the first
+                        // two operands of chainable comparisons in Release builds.
                         const std::string& opName = (frame.headSymbol == "_") ? frame.second_symbol : frame.headSymbol;
-                        
-                        // fast path: directly handle high frequency operators
-                        // 按使用频率排序，最高频的放前面
-                        if (opName == "=") {
-                            res = mkEq(frame.oper_params);
-                        } else if (opName == "and") {
-                            res = mkAnd(frame.oper_params);
-                        } else if (opName == "=>") {
-                            res = mkImplies(frame.oper_params);
-                        } else if (opName == "or") {
-                            res = mkOr(frame.oper_params);
-                        } else if (opName == "not") {
-                            condAssert(frame.oper_params.size() == 1, "Invalid number of parameters for not");
-                            res = mkNot(frame.oper_params[0]);
-                        } else if (opName == "ite") {
-                            condAssert(frame.oper_params.size() == 3, "Invalid number of parameters for ite");
-                            res = mkIte(frame.oper_params);
-                        } else if (opName == "distinct") {
-                            res = mkDistinct(frame.oper_params);
-                        } else if (opName == "+") {
-                            res = mkAdd(frame.oper_params);
-                        } else if (opName == "-") {
-                            res = mkSub(frame.oper_params);
-                        } else if (opName == "*") {
-                            res = mkMul(frame.oper_params);
-                        // :chainable, like `=` and `distinct` beside them --
-                        // `(<= a b c)` means `(and (<= a b) (<= b c))`, and the
-                        // n-ary builders do that expansion. This is the SECOND
-                        // dispatch for the same operators (parseOper has the
-                        // other), which is why the two disagreed for so long.
-                        } else if (opName == "<=") {
-                            condAssert(frame.oper_params.size() >= 2, "Not enough parameters for <=");
-                            res = mkLe(frame.oper_params);
-                        } else if (opName == "<") {
-                            condAssert(frame.oper_params.size() >= 2, "Not enough parameters for <");
-                            res = mkLt(frame.oper_params);
-                        } else if (opName == ">=") {
-                            condAssert(frame.oper_params.size() >= 2, "Not enough parameters for >=");
-                            res = mkGe(frame.oper_params);
-                        } else if (opName == ">") {
-                            condAssert(frame.oper_params.size() >= 2, "Not enough parameters for >");
-                            res = mkGt(frame.oper_params);
-                        } else if(opName == "bvult"){
-                            condAssert(frame.oper_params.size() == 2, "Invalid number of parameters for bvult");
-                            res = mkBvUlt(frame.oper_params[0], frame.oper_params[1]);
-                        } else if(opName == "bvugt"){
-                            condAssert(frame.oper_params.size() == 2, "Invalid number of parameters for bvugt");
-                            res = mkBvUgt(frame.oper_params[0], frame.oper_params[1]);
-                        } else if(opName == "bvule"){
-                            condAssert(frame.oper_params.size() == 2, "Invalid number of parameters for bvule");
-                            res = mkBvUle(frame.oper_params[0], frame.oper_params[1]);
-                        } else if(opName == "bvuge"){
-                            condAssert(frame.oper_params.size() == 2, "Invalid number of parameters for bvuge");
-                            res = mkBvUge(frame.oper_params[0], frame.oper_params[1]);
-                        } else if(opName == "bvsgt"){
-                            condAssert(frame.oper_params.size() == 2, "Invalid number of parameters for bvsgt");
-                            res = mkBvSgt(frame.oper_params[0], frame.oper_params[1]);
-                        } else if(opName == "bvsle"){   
-                            condAssert(frame.oper_params.size() == 2, "Invalid number of parameters for bvsle");
-                            res = mkBvSle(frame.oper_params[0], frame.oper_params[1]);
-                        } else if(opName == "bvslt"){
-                            condAssert(frame.oper_params.size() == 2, "Invalid number of parameters for bvslt");
-                            res = mkBvSlt(frame.oper_params[0], frame.oper_params[1]);
-                        } else if(opName == "bvsge"){
-                            condAssert(frame.oper_params.size() == 2, "Invalid number of parameters for bvsge");
-                            res = mkBvSge(frame.oper_params[0], frame.oper_params[1]);
-                        } else {
-                            // slow path: call parseOper
-                            res = parseOper(opName, frame.func_args, frame.oper_params);
-                        }
-                        
+                        res = parseOper(opName, frame.func_args, frame.oper_params);
+
                         if(res->isErr()) err_all(res, frame.headSymbol, frame.line);
                         frame.result = res;
                         frame.state = FrameState::Finish;
@@ -765,6 +707,8 @@ namespace SOMTParser{
 
 	
 	std::shared_ptr<DAGNode> Parser::parseConstFunc(const std::string& s){
+        if (s == "sep.emp") return mkSpatial(NODE_KIND::NT_SEP_EMP, {});
+        if (s == "sep.nil") return mkSpatial(NODE_KIND::NT_SEP_NIL, {});
         
 		// first handle the special symbols
 		if (s == "true") {
@@ -787,7 +731,7 @@ namespace SOMTParser{
 		}
 		{
 			ResolveScope scope;
-			scope.check_let = (current_let_mode != LET_MODE::LM_NON_LET);
+			scope.check_let = (current_let_mode != LET_MODE::LM_NON_LET) || in_quantifier_scope;
 			scope.in_quantifier_scope = in_quantifier_scope;
 			std::shared_ptr<DAGNode> var = getSymbolManager()->resolveTerm(s, scope);
 			if (var) return var;
@@ -952,6 +896,11 @@ namespace SOMTParser{
 		NODE_KIND kind = SOMTParser::getOperKind(s, getOptions()->getStrictSmtlib());
 		if(kind != NODE_KIND::NT_UNKNOWN){
 		switch(kind){
+            case NODE_KIND::NT_SEP_EMP: case NODE_KIND::NT_SEP_NIL:
+            case NODE_KIND::NT_SEP_PTO: case NODE_KIND::NT_SEP_STAR: case NODE_KIND::NT_SEP_WAND:
+                if (indexed_under_score || !func_args.empty())
+                    err_all(ERROR_TYPE::ERR_PARAM_MIS, "spatial operators are not indexed", line_number);
+                return mkSpatial(kind, oper_params);
 			case NODE_KIND::NT_AND:
 				return mkAnd(oper_params);
 			case NODE_KIND::NT_OR:

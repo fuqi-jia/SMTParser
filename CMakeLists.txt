@@ -23,6 +23,28 @@ find_package(MPFR REQUIRED)
 file(GLOB_RECURSE SOMTPARSER_SOURCES CONFIGURE_DEPENDS "src/*.cpp")
 file(GLOB_RECURSE SOMTPARSER_HEADERS CONFIGURE_DEPENDS "include/somtparser/*.h")
 
+# The IR/numeric library is independently linkable. Compile these objects once.
+set(SOMTPARSER_IR_SOURCES
+    src/core/kind.cpp src/core/util.cpp
+    src/ir/dag.cpp src/ir/sort.cpp src/ir/number.cpp
+    src/ir/interval.cpp src/ir/value.cpp)
+foreach(source IN LISTS SOMTPARSER_IR_SOURCES)
+    list(REMOVE_ITEM SOMTPARSER_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/${source}")
+endforeach()
+add_library(somtparser_ir_objects OBJECT ${SOMTPARSER_IR_SOURCES})
+set_target_properties(somtparser_ir_objects PROPERTIES POSITION_INDEPENDENT_CODE ON)
+target_compile_features(somtparser_ir_objects PUBLIC cxx_std_17)
+target_include_directories(somtparser_ir_objects PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_link_libraries(somtparser_ir_objects PUBLIC GMP::GMPXX MPFR::MPFR)
+add_library(somtparser_ir STATIC $<TARGET_OBJECTS:somtparser_ir_objects>)
+add_library(SOMTParser::somtparser_ir ALIAS somtparser_ir)
+target_compile_features(somtparser_ir PUBLIC cxx_std_17)
+target_include_directories(somtparser_ir PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+target_link_libraries(somtparser_ir PUBLIC GMP::GMPXX MPFR::MPFR)
+list(APPEND SOMTPARSER_SOURCES $<TARGET_OBJECTS:somtparser_ir_objects>)
+
 add_library(somtparser ${SOMTPARSER_SOURCES} ${SOMTPARSER_HEADERS})
 add_library(SOMTParser::somtparser ALIAS somtparser)
 set_target_properties(somtparser PROPERTIES
@@ -36,6 +58,8 @@ target_link_libraries(somtparser PUBLIC GMP::GMPXX MPFR::MPFR)
 
 if(SOMTPARSER_ENABLE_TIMING)
     target_compile_definitions(somtparser PUBLIC ENABLE_TIMING)
+    target_compile_definitions(somtparser_ir_objects PUBLIC ENABLE_TIMING)
+    target_compile_definitions(somtparser_ir PUBLIC ENABLE_TIMING)
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
@@ -59,7 +83,7 @@ if(SOMTPARSER_BUILD_TESTS)
     add_subdirectory(test)
 endif()
 
-install(TARGETS somtparser
+install(TARGETS somtparser somtparser_ir
     EXPORT SOMTParserTargets
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}

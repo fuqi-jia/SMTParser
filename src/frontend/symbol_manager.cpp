@@ -26,6 +26,11 @@ void SymbolManager::reserve(size_t capacity) {
 }
 
 namespace {
+std::string bindingKey(const std::string& name) {
+    return name.size() > 2 && name.front() == '|' && name.back() == '|'
+        ? name.substr(1, name.size() - 2) : name;
+}
+
 
 /**
  * A lookup that treats `foo` and `|foo|` as the same key.
@@ -70,12 +75,12 @@ std::shared_ptr<DAGNode> SymbolManager::resolveSymbol(const std::string& name, c
     if (scope.check_let) {
         if (auto n = findEitherSpelling(let_key_map_, name)) { return n; }
     }
-    if (auto n = findEitherSpelling(fun_key_map_, name)) { return n; }
-    if (auto n = findEitherSpelling(fun_var_map_, name)) { return n; }
     if (scope.in_quantifier_scope) {
-        if (auto n = findEitherSpelling(quant_var_map_, name)) { return n; }
+        if (auto n = getQuantVar(name)) return n;
     }
-    if (auto n = findEitherSpelling(var_names_, name)) { return n; }
+    if (auto n = findEitherSpelling(fun_var_map_, name)) return n;
+    if (auto n = findEitherSpelling(fun_key_map_, name)) return n;
+    if (auto n = findEitherSpelling(var_names_, name)) return n;
     return nullptr;
 }
 
@@ -85,11 +90,11 @@ std::shared_ptr<DAGNode> SymbolManager::resolveTerm(const std::string& name, con
         if (auto n = findEitherSpelling(let_key_map_, name)) { return n; }
     }
     // Function parameters (fun_var) are term bindings inside function bodies
-    if (auto n = findEitherSpelling(fun_var_map_, name)) { return n; }
     if (scope.in_quantifier_scope) {
-        if (auto n = findEitherSpelling(quant_var_map_, name)) { return n; }
+        if (auto n = getQuantVar(name)) return n;
     }
-    if (auto n = findEitherSpelling(var_names_, name)) { return n; }
+    if (auto n = findEitherSpelling(fun_var_map_, name)) return n;
+    if (auto n = findEitherSpelling(var_names_, name)) return n;
     return nullptr;
 }
 
@@ -134,13 +139,14 @@ void SymbolManager::popLetScope() {
 }
 
 void SymbolManager::popLetScope(const std::vector<std::string>& keys) {
-    for (const auto& k : keys) let_key_map_.erase(k);
+    for (const auto& k : keys) let_key_map_.erase(bindingKey(k));
 }
 
 void SymbolManager::registerLet(const std::string& name, const std::shared_ptr<DAGNode>& node) {
     LetBackup backup;
-    backup.name = name;
-    auto it = let_key_map_.find(name);
+    const auto key = bindingKey(name);
+    backup.name = key;
+    auto it = let_key_map_.find(key);
     if (it != let_key_map_.end()) {
         backup.oldNode = it->second;
         backup.hadOld = true;
@@ -148,11 +154,11 @@ void SymbolManager::registerLet(const std::string& name, const std::shared_ptr<D
         backup.hadOld = false;
     }
     let_scope_backup_.push_back(std::move(backup));
-    let_key_map_[name] = node;
+    let_key_map_[key] = node;
 }
 
 bool SymbolManager::hasLet(const std::string& name) const {
-    return let_key_map_.find(name) != let_key_map_.end();
+    return let_key_map_.find(bindingKey(name)) != let_key_map_.end();
 }
 
 void SymbolManager::registerFun(const std::string& name, const std::shared_ptr<DAGNode>& node) {
@@ -165,6 +171,29 @@ std::shared_ptr<DAGNode> SymbolManager::getFun(const std::string& name) const {
 
 bool SymbolManager::hasFun(const std::string& name) const {
     return findEitherSpelling(fun_key_map_, name) != nullptr;
+}
+
+void SymbolManager::registerRecursiveDefinition(const std::shared_ptr<DAGNode>& symbol,
+                                                const std::shared_ptr<DAGNode>& definition) {
+    recursive_definitions_[symbol->getName()] = {symbol, definition};
+    registerFun(symbol->getName(), definition);
+}
+
+std::shared_ptr<DAGNode> SymbolManager::getRecursiveSymbol(const std::shared_ptr<DAGNode>& function) const {
+    const auto it = recursive_definitions_.find(function->getName());
+    if (it != recursive_definitions_.end() && it->second.definition == function)
+        return it->second.symbol;
+    // Also used while parsing a recursive group, before bodies exist.
+    return function;
+}
+
+std::vector<SymbolManager::RecursiveDefinition> SymbolManager::getRecursiveDefinitions() const {
+    std::vector<RecursiveDefinition> result;
+    for (const auto& name : function_names_) {
+        auto it = recursive_definitions_.find(name);
+        if (it != recursive_definitions_.end()) result.push_back(it->second);
+    }
+    return result;
 }
 
 void SymbolManager::registerFunVar(const std::string& name, const std::shared_ptr<DAGNode>& node) {
@@ -193,20 +222,25 @@ void SymbolManager::removeSort(const std::string& name) {
 }
 
 void SymbolManager::registerQuantVar(const std::string& name, const std::shared_ptr<DAGNode>& node) {
-    quant_var_map_[name] = node;
+    quant_var_map_[bindingKey(name)].push_back(node);
 }
 
 std::shared_ptr<DAGNode> SymbolManager::getQuantVar(const std::string& name) const {
-    auto it = quant_var_map_.find(name);
-    return it != quant_var_map_.end() ? it->second : nullptr;
+    auto it = quant_var_map_.find(bindingKey(name));
+    return it != quant_var_map_.end() ? it->second.back() : nullptr;
 }
 
 void SymbolManager::popQuantScope(const std::vector<std::string>& keys) {
-    for (const auto& k : keys) quant_var_map_.erase(k);
+    for (auto key = keys.rbegin(); key != keys.rend(); ++key) {
+        auto it = quant_var_map_.find(bindingKey(*key));
+        if (it == quant_var_map_.end()) continue;
+        it->second.pop_back();
+        if (it->second.empty()) quant_var_map_.erase(it);
+    }
 }
 
 bool SymbolManager::hasQuantVar(const std::string& name) const {
-    return quant_var_map_.find(name) != quant_var_map_.end();
+    return getQuantVar(name) != nullptr;
 }
 
 void SymbolManager::registerVar(const std::string& name, const std::shared_ptr<DAGNode>& node) {
@@ -352,6 +386,7 @@ const std::unordered_map<std::string, std::shared_ptr<Sort>>& SymbolManager::get
 
 void SymbolManager::removeFun(const std::string& name) {
     fun_key_map_.erase(name);
+    recursive_definitions_.erase(name);
     removeFunctionName(name);
 }
 

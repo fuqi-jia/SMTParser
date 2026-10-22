@@ -34,6 +34,12 @@ struct ResolveScope {
  */
 class SymbolManager {
 public:
+    // Calls contain the immutable symbol, never a back edge to a definition.
+    // Solvers retain this environment alongside the assertion DAG.
+    struct RecursiveDefinition {
+        std::shared_ptr<DAGNode> symbol;
+        std::shared_ptr<DAGNode> definition;
+    };
     SymbolManager();
 
     void reserve(size_t capacity);
@@ -58,6 +64,10 @@ public:
     void registerFun(const std::string& name, const std::shared_ptr<DAGNode>& node);
     std::shared_ptr<DAGNode> getFun(const std::string& name) const;
     bool hasFun(const std::string& name) const;
+    void registerRecursiveDefinition(const std::shared_ptr<DAGNode>& symbol,
+                                     const std::shared_ptr<DAGNode>& definition);
+    std::shared_ptr<DAGNode> getRecursiveSymbol(const std::shared_ptr<DAGNode>& function) const;
+    std::vector<RecursiveDefinition> getRecursiveDefinitions() const;
     void registerFunVar(const std::string& name, const std::shared_ptr<DAGNode>& node);
     void eraseFunVar(const std::string& key);
     bool hasFunVar(const std::string& name) const;
@@ -142,9 +152,10 @@ private:
     std::vector<LetBackup> let_scope_backup_;
     std::vector<size_t> let_scope_checkpoints_;
     std::unordered_map<std::string, std::shared_ptr<DAGNode>> fun_key_map_;
+    std::unordered_map<std::string, RecursiveDefinition> recursive_definitions_;
     std::unordered_map<std::string, std::shared_ptr<DAGNode>> fun_var_map_;
     std::unordered_map<std::string, std::shared_ptr<Sort>> sort_key_map_;
-    std::unordered_map<std::string, std::shared_ptr<DAGNode>> quant_var_map_;
+    std::unordered_map<std::string, std::vector<std::shared_ptr<DAGNode>>> quant_var_map_;
     std::unordered_map<std::string, std::shared_ptr<DAGNode>> var_names_;
     size_t temp_var_counter_ = 0;
     std::unordered_map<std::string, std::shared_ptr<DAGNode>> temp_var_names_;
