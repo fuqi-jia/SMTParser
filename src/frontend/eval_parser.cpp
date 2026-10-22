@@ -788,58 +788,20 @@ namespace SOMTParser{
     bool Parser::evaluateDivInt(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
         bool changed = false;
         std::vector<std::shared_ptr<DAGNode>> children;
-        for(auto child : expr->getChildren()){
-            std::shared_ptr<DAGNode> eval = NodeManager::NULL_NODE;
-            changed |= evaluate(child, model, eval);
-            children.emplace_back(eval);
+        for(const auto& child : expr->getChildren()) {
+            std::shared_ptr<DAGNode> evaluated = NodeManager::NULL_NODE;
+            changed |= evaluate(child, model, evaluated);
+            children.push_back(std::move(evaluated));
         }
-        if(!changed){
+        if(!changed) {
             result = expr;
             return false;
         }
-        condAssert(changed, "evaluateDivInt: changed is false");
-        condAssert(!children.empty(), "evaluateDivInt: children is empty");
-        // compute the quotient of the children that are constant
-        bool first_child_is_const = children[0]->isConst();
-        std::vector<std::shared_ptr<DAGNode>> const_children;
-        std::vector<std::shared_ptr<DAGNode>> non_const_children;
-        for(auto child : children){
-            if(child->isConst()){
-                const_children.emplace_back(child);
-            }
-            else{
-                non_const_children.emplace_back(child);
-            }
-        }
-        if(const_children.empty()){
-            result = mkDivInt(non_const_children);
-        }
-        else{
-            if(first_child_is_const){
-                auto res = mkConstInt(1);
-                for(size_t i = 1; i < const_children.size(); ++i){
-                    res = mkMul({res, const_children[i]});
-                }
-                if(toInt(res) > toInt(const_children[0])){
-                    // 1 / 3 is 0 in integer arithmetic
-                    result = mkConstInt(0);
-                    return true;
-                }
-                else{
-                    // 5 / 3 is 1 in integer arithmetic
-                    auto div = mkDivInt({const_children[0], res});
-                    non_const_children.insert(non_const_children.begin(), div);
-                }
-            }
-            else{
-                auto res = mkConstInt(1);
-                for(size_t i = 0; i < const_children.size(); ++i){
-                    res = mkMul({res, const_children[i]});
-                }
-                non_const_children.emplace_back(res);
-                result = mkDivInt(non_const_children);
-            }
-        }
+        condAssert(children.size() >= 2, "evaluateDivInt: missing division operand");
+        // Constant grouping or operand reordering changes Euclidean division,
+        // especially with negative divisors and partially assigned models.
+        result = children[0];
+        for(size_t i = 1; i < children.size(); ++i) result = mkDivInt(result, children[i]);
         return true;
     }
     bool Parser::evaluateDivReal(const std::shared_ptr<DAGNode>& expr, const std::shared_ptr<Model>& model, std::shared_ptr<DAGNode> &result){
