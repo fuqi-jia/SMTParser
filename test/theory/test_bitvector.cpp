@@ -228,8 +228,8 @@ void test_signed_division_remainder_and_modulo(SOMTParser::ParserPtr& parser) {
             const int remainder = sb ? sa % sb : sa;
             const int modulo = remainder != 0 && sb != 0 && ((remainder < 0) != (sb < 0))
                 ? remainder + sb : remainder;
-            const auto x = BitVectorUtils::natToBv(Integer(a), Integer(width));
-            const auto y = BitVectorUtils::natToBv(Integer(b), Integer(width));
+            const auto x = BitVectorUtils::natToBv(Integer(a), Integer(static_cast<int>(width)));
+            const auto y = BitVectorUtils::natToBv(Integer(b), Integer(static_cast<int>(width)));
             VERIFY(BitVectorUtils::bvToNat(BitVectorUtils::bvSdiv(x, y)) == Integer(quotient & mask));
             VERIFY(BitVectorUtils::bvToNat(BitVectorUtils::bvSrem(x, y)) == Integer(remainder & mask));
             VERIFY(BitVectorUtils::bvToNat(BitVectorUtils::bvSmod(x, y)) == Integer(modulo & mask));
