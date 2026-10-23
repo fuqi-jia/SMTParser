@@ -1203,17 +1203,10 @@ namespace SOMTParser{
                 }
                 return mkUnknown();
             }
-            case NODE_KIND::NT_BV_SDIV:{            
-                // bvsdiv by zero evaluates to all ones if it's positive, otherwise 1.
-                if(r->isCBV() && isZero(r)){
-                    if(l->isCBV() && Integer(BitVectorUtils::bvToInt(l->toString())) >= 0){
-                        return mkConstBv("#b" + std::string(l->getSort()->getBitWidth(), '1'), l->getSort()->getBitWidth());
-                    }
-                    else{
-                        return mkConstBv("#b" + std::string(l->getSort()->getBitWidth() - 1, '0') + "1", l->getSort()->getBitWidth());
-                    }
-                }
-                else if(l->isCBV() && r->isCBV()){
+            case NODE_KIND::NT_BV_SDIV:{
+                // A zero divisor does not determine the sign of a symbolic
+                // dividend. Fold only when both operand values are known.
+                if(l->isCBV() && r->isCBV()){
                     return mkConstBv(BitVectorUtils::bvSdiv(l->toString(), r->toString()), l->getSort()->getBitWidth());
                 }
                 return mkUnknown();
