@@ -812,33 +812,15 @@ namespace SOMTParser{
         return neg ? -q : q;
     }
 
-    // mathematical modulo (always non-negative)
-    static Integer mathMod(const Integer& a, const Integer& b) {
-        // assumes b != 0
-        Integer m = a % b;
-        if (m < 0) m += (b > 0 ? b : -b);
-        return m;
-    }
     std::string BitVectorUtils::bvSdiv(const std::string& bv1,
         const std::string& bv2){
         size_t n = bv1.size() - 2;
         Integer a = bvToInt(bv1);
         Integer b = bvToInt(bv2);
 
-        // divisor = 0
-        if (b == 0) {
-            // special case: 1-bit crafted semantics
-            if (n == 1) {
-                // all-ones
-                return "#b1";
-            }
-
-            // n >= 2 : crafted semantics
-            if (a < 0)
-                return intToBv(Integer(1), n);
-            else
-                return intToBv(a, n);
-        }
+        // SMT-LIB signed division by zero: 1 for a negative dividend,
+        // all ones for a nonnegative dividend (including zero).
+        if (b == 0) return intToBv(a < 0 ? Integer(1) : Integer(-1), n);
 
         // special overflow: min / -1 = min
         Integer minVal = -(Integer(1) << (n - 1));
@@ -873,22 +855,9 @@ namespace SOMTParser{
         if (b == 0)
             return bv1;
 
-        Integer absb = (b > 0 ? b : -b);
-        Integer m = mathMod(a, absb);   // 0 <= m < |b|
-
-        if (m == 0)
-            return intToBv(Integer(0), n);
-
-        // same sign
-        if ((a > 0 && b > 0) || (a < 0 && b < 0))
-            return intToBv(m, n);
-
-        // opposite sign → sign follows b
-        Integer r = absb - m;
-        if (b < 0)
-            r = -r;
-
-        return intToBv(r, n);
+        Integer remainder = a - truncDiv(a, b) * b;
+        if (remainder != 0 && ((remainder < 0) != (b < 0))) remainder += b;
+        return intToBv(remainder, n);
     }
 
 

@@ -216,11 +216,48 @@ void test_bv_large_width_gmp_path(SOMTParser::ParserPtr& parser) {
     std::cout << "  Large BV GMP path: OK\n";
 }
 
+void test_signed_division_remainder_and_modulo(SOMTParser::ParserPtr& parser) {
+    using SOMTParser::BitVectorUtils;
+    using SOMTParser::Integer;
+    for (unsigned width = 1; width <= 4; ++width) {
+        const int modulus = 1 << width, mask = modulus - 1;
+        for (int a = 0; a < modulus; ++a) for (int b = 0; b < modulus; ++b) {
+            const int sa = a < modulus / 2 ? a : a - modulus;
+            const int sb = b < modulus / 2 ? b : b - modulus;
+            const int quotient = sb ? sa / sb : sa < 0 ? 1 : -1;
+            const int remainder = sb ? sa % sb : sa;
+            const int modulo = remainder != 0 && sb != 0 && ((remainder < 0) != (sb < 0))
+                ? remainder + sb : remainder;
+            const auto x = BitVectorUtils::natToBv(Integer(a), Integer(static_cast<int>(width)));
+            const auto y = BitVectorUtils::natToBv(Integer(b), Integer(static_cast<int>(width)));
+            VERIFY(BitVectorUtils::bvToNat(BitVectorUtils::bvSdiv(x, y)) == Integer(quotient & mask));
+            VERIFY(BitVectorUtils::bvToNat(BitVectorUtils::bvSrem(x, y)) == Integer(remainder & mask));
+            VERIFY(BitVectorUtils::bvToNat(BitVectorUtils::bvSmod(x, y)) == Integer(modulo & mask));
+            for (const auto& operation : std::vector<std::pair<std::string, int>>{
+                    {"bvsdiv", quotient}, {"bvsrem", remainder}, {"bvsmod", modulo}}) {
+                const auto value = parser->mkExpr("(" + operation.first + " " + x + " " + y + ")");
+                VERIFY(value && value->isCBV());
+                VERIFY(BitVectorUtils::bvToNat(value->toString()) == Integer(operation.second & mask));
+            }
+        }
+    }
+    VERIFY(parser->parseStr("(declare-const signed_dividend (_ BitVec 4))"));
+    const auto symbolic = parser->mkExpr("(bvsdiv signed_dividend #b0000)");
+    VERIFY(symbolic && !symbolic->isCBV());
+    VERIFY(symbolic->getKind() == SOMTParser::NODE_KIND::NT_BV_SDIV);
+    for (const auto& source : {"(= (bvsdiv (_ bv7 128) (_ bv0 128)) (bvnot (_ bv0 128)))",
+                               "(= (bvsmod (bvneg (_ bv7 128)) (_ bv3 128)) (_ bv2 128))"}) {
+        const auto value = parser->mkExpr(source);
+        VERIFY(value && value->isTrue());
+    }
+}
+
 int main() {
     std::cout << "======= Bitvector Operations Test =======" << std::endl;
 
     SOMTParser::ParserPtr parser = SOMTParser::newParser();
 
+    test_signed_division_remainder_and_modulo(parser);
     test_bitvector_constants(parser);
     test_bv_const_value_and_utils_nat(parser);
     test_bv_logical_operations(parser);
